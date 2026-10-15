@@ -173,6 +173,8 @@ return [
         'title' => 'رسوم حملات المسوّقين',
         'campaign_fee' => 'رسوم الحملة',
         'campaign_budget_commission' => 'عمولة مسوّق',
+        'influencer_fee' => 'رسوم حملة قديمة (كشف سابق للنموذج الجديد للرسوم)',
+        'affiliate_marketing_fee' => 'رسوم تسويق أفلييت قديمة (كشف سابق للنموذج الجديد للرسوم)',
     ],
 
     'finance' => [

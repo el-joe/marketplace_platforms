@@ -53,7 +53,6 @@ return [
         'manage_marketers' => 'Open marketers',
         'manage_acquisition' => 'Open acquisition commissions',
         'manage_admin_listings' => 'Open admin listings',
-        'manage_influencer_fee' => 'Open influencer fee settings',
     ],
 
     'tabs' => [
@@ -125,13 +124,11 @@ return [
         'platform_rules_fbm' => 'FBN uses the FBN columns; every other fulfillment model (FBM, cross-dock) resolves through the FBP columns, so there is no separate FBM rate. The category chain is walked self → parents (max 6 levels): country override first, then the category value. A matching price tier replaces the percentage and adds a per-unit minimum.',
         'vendor_rules_override' => 'Rows here are checked first at checkout and outrank vendors.commission_rate and every category rate. A matching row is applied as round(price × rate%), clamped to min/max. A vendor-specific row beats a category-specific one, then the nearest category wins, then the higher priority.',
         'vendor_rules_platform_wide_exists' => 'A platform-wide rule (no vendor, no category) exists. It applies to every product with no more specific row and bypasses category and vendor flat rates.',
-        'vendor_rules_tiered_ignored' => 'Some rows have rate type "tiered". Checkout ignores the type and applies them as a flat rate_pct.',
         'vendor_flat_semantics' => 'Used only when greater than 0, as a plain percentage of the line price. It is checked after the vendor-specific rules table and before the category chain.',
         'vendor_discount_applied_after' => 'The discount is applied to the commission after it is calculated. It lowers what the vendor is charged and what ends up in the payout; it is not a different rate.',
         'plan_discount_not_applied' => 'Stored and editable, but nothing calls SubscriptionService::applyCommissionDiscount(). Checkout does not apply this discount, even though plans advertise it. This page changes no checkout math.',
         'admin_listing_system' => 'When the platform is the seller the whole line subtotal is platform revenue. There is no vendor payout and nothing to configure.',
         'flash_override_analytics_only' => 'commission_override_pct is read only by FlashSaleAnalyticsJob (fallback 10%). It does not change the commission charged at checkout.',
-        'campaigns_tiered_note' => 'Tiered campaigns use the rule with the highest from_sale_number not above the marketer\'s sale count on that invitation. For other types the amount is the campaign amount × quantity, else the country/category amounts, else the marketer category rules.',
         'campaigns_suborder_note' => 'sub_orders.marketer_commission is filled at checkout only for fixed campaigns. For tiered, percentage and last-click campaigns it stays 0; the conversion row holds the real amount. Keep this in mind when reconciling payouts.',
         'marketer_rules_order' => 'Resolution order: marketer + category (walking up parents) → marketer default → platform category → platform default. Modes are fixed, percentage or both, with a per-unit minimum.',
         'marketer_rules_no_default_writer' => 'No screen creates platform-default rules (no marketer). The admin form only saves a rule for one marketer, so platform defaults have to come from data or migrations.',
@@ -154,7 +151,6 @@ return [
         'shipping_commission_unused' => 'commission_type and commission_value are stored and displayed but not used in the checkout calculation.',
         'shipping_extra_fee_applied' => 'extra_delivery_fee IS applied: it is added to the shipping fee for special-handling listings and is not waived by free-shipping thresholds.',
         'related_fees_not_commissions' => 'These are not commissions. They are listed so the whole money split is visible.',
-        'related_fees_influencer_fee' => 'The per-influencer promotion fee is a per-country setting; affiliate promotion is free. When an influencer accepts a campaign invitation the fee is debited from that influencer\'s own marketer wallet at that moment. It is not deducted from the seller\'s statement or weekly sales, which differs from the client\'s description.',
     ],
 
     'related_reference' => [
@@ -186,7 +182,6 @@ return [
         'acquisition_table' => 'Acquisition deals',
         'travel_offers_table' => 'Travel campaign offers',
         'shipping_rules_table' => 'Shipping rules with a value',
-        'influencer_fee_table' => 'Influencer fee per country',
     ],
 
     'columns' => [

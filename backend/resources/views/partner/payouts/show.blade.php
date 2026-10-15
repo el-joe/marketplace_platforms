@@ -19,10 +19,9 @@
 
     $subOrderItems = $payout->items->where('item_type', 'sub_order');
     $promotionFeeItems = $payout->items->where('item_type', 'promotion_fee');
-    $influencerFeeItems = $payout->items->where('item_type', 'influencer_fee');
-    $affiliateFeeItems = $payout->items->where('item_type', 'affiliate_marketing_fee');
     $promotionSampleItems = $payout->items->where('item_type', 'promotion_sample');
-    $campaignChargeItems = $payout->items->whereIn('item_type', ['campaign_fee', 'campaign_budget_commission']);
+    // influencer_fee / affiliate_marketing_fee only exist on statements generated before the v3 fee model.
+    $campaignChargeItems = $payout->items->whereIn('item_type', ['campaign_fee', 'campaign_budget_commission', 'influencer_fee', 'affiliate_marketing_fee']);
 @endphp
 
 @section('title', __('partner.payouts.payout_details_title', ['number' => $payout->payout_number]))
@@ -212,71 +211,6 @@
 
             {{-- P8: separate marketer-campaign totals of this statement --}}
             @include('partner.finance._marketing_totals', ['marketingTotals' => $statementMarketing, 'marketingTitle' => __('marketing_fees.reports.vendor_statement_title')])
-
-            {{-- Influencer platform fees (+VAT) deducted in this statement --}}
-            @if($influencerFeeItems->isNotEmpty())
-                <details open class="bg-white rounded-2xl border border-gray-200 overflow-hidden group" id="influencer-fee-lines">
-                    <summary class="px-5 py-4 border-b border-gray-100 flex items-center justify-between cursor-pointer select-none list-none">
-                        <h3 class="font-semibold text-gray-800">{{ __('partner.payouts.influencer_fees_title') }}</h3>
-                        <span class="text-xs text-gray-400">{{ __('partner.payouts.promotion_fee_count', ['count' => $influencerFeeItems->count()]) }}</span>
-                    </summary>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-gray-50 border-b border-gray-100">
-                                <tr class="text-xs text-gray-500 uppercase">
-                                    <th class="text-right py-3 px-5 font-medium">{{ __('partner.payouts.description') }}</th>
-                                    <th class="py-3 px-4 text-center font-medium">{{ __('partner.payouts.fee_excl_vat') }}</th>
-                                    <th class="py-3 px-4 text-center font-medium">{{ __('partner.payouts.vat') }}</th>
-                                    <th class="py-3 px-4 text-center font-medium">{{ __('partner.payouts.marketing_fees') }}</th>
-                                    <th class="py-3 px-4 text-center font-medium">{{ __('partner.payouts.amount') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50">
-                                @foreach($influencerFeeItems as $item)
-                                    <tr>
-                                        <td class="py-3 px-5 text-gray-700">{{ $item->description }}</td>
-                                        <td class="py-3 px-4 text-center">{{ number_format(abs($item->net) - $item->vat_amount - $item->marketing_fee_amount, 2) }}</td>
-                                        <td class="py-3 px-4 text-center">{{ number_format($item->vat_amount, 2) }}</td>
-                                        <td class="py-3 px-4 text-center">{{ number_format($item->marketing_fee_amount, 2) }}</td>
-                                        <td class="py-3 px-4 text-center text-red-500 font-medium">− {{ number_format(abs($item->net), 2) }} {{ $payout->currency }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot class="border-t border-gray-200 bg-gray-50">
-                                <tr class="text-sm font-semibold text-gray-800">
-                                    <td class="py-3 px-5">{{ __('partner.payouts.total') }}</td>
-                                    <td class="py-3 px-4 text-center">{{ number_format($influencerFeeItems->sum(fn($i) => abs($i->net) - $i->vat_amount - $i->marketing_fee_amount), 2) }}</td>
-                                    <td class="py-3 px-4 text-center">{{ number_format($influencerFeeItems->sum('vat_amount'), 2) }}</td>
-                                    <td class="py-3 px-4 text-center">{{ number_format($influencerFeeItems->sum('marketing_fee_amount'), 2) }}</td>
-                                    <td class="py-3 px-4 text-center text-red-500">− {{ number_format($influencerFeeItems->sum(fn($i) => abs($i->net)), 2) }} {{ $payout->currency }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </details>
-            @endif
-
-            {{-- Affiliate marketing fees accrued on affiliate campaigns, deducted in this statement --}}
-            @if($affiliateFeeItems->isNotEmpty())
-                <details open class="bg-white rounded-2xl border border-gray-200 overflow-hidden group" id="affiliate-fee-lines">
-                    <summary class="px-5 py-4 border-b border-gray-100 flex items-center justify-between cursor-pointer select-none list-none">
-                        <h3 class="font-semibold text-gray-800">{{ __('marketing_fees.affiliate.payout_title') }}</h3>
-                        <span class="text-xs text-gray-400">{{ __('partner.payouts.promotion_fee_count', ['count' => $affiliateFeeItems->count()]) }}</span>
-                    </summary>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <tbody class="divide-y divide-gray-50">
-                                @foreach($affiliateFeeItems as $item)
-                                    <tr>
-                                        <td class="py-3 px-5 text-gray-700">{{ $item->description }}</td>
-                                        <td class="py-3 px-4 text-center text-red-500 font-medium">− {{ number_format(abs($item->net), 2) }} {{ $payout->currency }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </details>
-            @endif
 
             {{-- Marketer campaign charges of this statement: the campaign fee and the commissions paid out of campaign budgets --}}
             @if($campaignChargeItems->isNotEmpty())

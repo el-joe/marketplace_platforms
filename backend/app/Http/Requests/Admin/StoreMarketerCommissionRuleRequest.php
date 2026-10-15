@@ -16,7 +16,7 @@ use Illuminate\Validation\Validator;
  *   affiliate:  a percentage only (fixed amount rejected);
  *   broker:     fixed, percentage, or both.
  */
-class StoreMarketerCategoryCommissionRequest extends FormRequest
+class StoreMarketerCommissionRuleRequest extends FormRequest
 {
     public function authorize(): bool
     {

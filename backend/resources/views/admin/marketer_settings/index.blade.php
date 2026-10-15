@@ -354,6 +354,7 @@
                         @foreach ([
                             'marketer_referral_grace_days' => ['min' => 0, 'max' => 90, 'key' => 'referral_grace'],
                             'marketer_payout_clearing_days' => ['min' => 0, 'max' => 60, 'key' => 'clearing'],
+                            'marketer_classified_approval_days' => ['min' => 0, 'max' => 60, 'key' => 'classified_approval'],
                             'marketer_attribution_window_days' => ['min' => 1, 'max' => 365, 'key' => 'attribution'],
                             'marketer_peer_campaign_min_stock' => ['min' => 1, 'max' => 100000, 'key' => 'peer_min_stock'],
                         ] as $name => $cfg)

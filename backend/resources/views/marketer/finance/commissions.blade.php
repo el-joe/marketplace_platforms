@@ -26,11 +26,13 @@
         <div class="font-bold mb-3">{{ __('marketer.finance.statement_title') }}</div>
         <dl class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
             <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ \App\Support\Money::format($totals['gross']) }}</dd></div>
-            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.cut_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($totals['cut']) }}</dd></div>
+            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.fee_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($totals['fee']) }}</dd></div>
             <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ \App\Support\Money::format($totals['net']) }}</dd></div>
         </dl>
         <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.statement_hint') }}</p>
     </div>
+
+    @include('marketer.finance._fixed_lines')
 
     @if(($salesTotals['count'] ?? 0) > 0)
     <div class="bg-white rounded-xl border overflow-hidden" data-sales-lines>
@@ -98,8 +100,7 @@
                         <th class="px-4 py-3 text-start">{{ __('marketer.finance.product_header') }}</th>
                         <th class="px-4 py-3 text-center">{{ __('marketer.finance.order_number_header') }}</th>
                         <th class="px-4 py-3 text-center">{{ __('marketer.finance.gross_header') }}</th>
-                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.cut_header') }}</th>
-                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.vat_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.fee_header') }}</th>
                         <th class="px-4 py-3 text-center">{{ __('marketer.finance.net_header') }}</th>
                         <th class="px-4 py-3 text-center">{{ __('marketer.finance.status_header') }}</th>
                     </tr>
@@ -108,18 +109,19 @@
                     @foreach($conversions as $conv)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 text-gray-600">{{ $conv->created_at->format('Y-m-d') }}</td>
-                        <td class="px-4 py-3">{{ $conv->campaign?->title ?? '—' }}</td>
+                        <td class="px-4 py-3">{{ $conv->campaign?->title ?? '—' }}@if($conv->conversion_type)<div class="text-[11px] text-gray-400">{{ __('marketer.finance.conversion_type_'.$conv->conversion_type) }}</div>@endif</td>
                         <td class="px-4 py-3">{{ $conv->campaign?->vendorListing?->productVariant?->product?->title_en ?? '—' }}</td>
                         <td class="px-4 py-3 text-center font-mono text-xs">{{ $conv->order?->order_number ?? '—' }}</td>
                         @php $st = $statements[$conv->id]; @endphp
                         <td class="px-4 py-3 text-center" data-gross>{{ \App\Support\Money::format($st['gross']) }}</td>
-                        <td class="px-4 py-3 text-center text-red-600" data-cut>−{{ \App\Support\Money::format($st['cut']) }}</td>
-                        <td class="px-4 py-3 text-center text-red-600" data-vat>−{{ \App\Support\Money::format($st['vat']) }}</td>
+                        <td class="px-4 py-3 text-center text-red-600" data-fee>−{{ \App\Support\Money::format($st['fee']) }} <span class="text-[11px] text-gray-400">({{ rtrim(rtrim(number_format($st['fee_percentage'], 2), '0'), '.') }}%)</span></td>
                         <td class="px-4 py-3 text-center font-bold text-green-600" data-net>{{ \App\Support\Money::format($st['net']) }} {{ $conv->currency }}</td>
                         <td class="px-4 py-3 text-center">
-                            <span class="px-2 py-0.5 rounded text-xs {{ $conv->commissioned ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                {{ $conv->commissioned ? __('marketer.finance.status_paid') : __('marketer.finance.status_pending') }}
-                            </span>
+                            @php
+                                $convState = $conv->status === 'reversed' ? 'reversed' : ($conv->commissioned ? 'paid' : ($conv->status === 'approved' ? 'approved' : 'pending'));
+                                $convClass = ['reversed' => 'bg-red-100 text-red-700', 'paid' => 'bg-green-100 text-green-700', 'approved' => 'bg-blue-100 text-blue-700', 'pending' => 'bg-yellow-100 text-yellow-700'][$convState];
+                            @endphp
+                            <span class="px-2 py-0.5 rounded text-xs {{ $convClass }}" data-status="{{ $convState }}">{{ __('marketer.finance.status_'.$convState) }}</span>
                         </td>
                     </tr>
                     @endforeach

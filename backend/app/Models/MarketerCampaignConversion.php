@@ -14,12 +14,11 @@ class MarketerCampaignConversion extends Model
 
     protected $fillable = [
         'campaign_id', 'invitation_id', 'order_id', 'order_item_id',
-        'referral_clicked_at', 'commission_amount', 'platform_commission_amount', 'currency',
-        'commissioned', 'paid_at', 'sale_number_in_campaign',
+        'referral_clicked_at', 'commission_amount', 'currency',
+        'commissioned', 'paid_at',
         'status', 'approved_at', 'reversed_at', 'wallet_credited_at', 'wallet_released_at',
         'payout_id',
-        'gross_commission_amount', 'platform_cut_percentage', 'platform_cut_base_amount', 'platform_cut_discount_amount',
-        'platform_cut_amount', 'platform_cut_vat_rate', 'platform_cut_vat_amount', 'net_commission_amount',
+        'gross_commission_amount', 'net_commission_amount',
         // v3: non-product verticals, basis and commission fee snapshot.
         'travel_booking_id', 'classified_inquiry_id', 'classified_listing_id', 'conversion_type',
         'sale_amount', 'commission_fee_amount', 'triggered_at', 'marketer_type', 'rule_source',
@@ -38,12 +37,7 @@ class MarketerCampaignConversion extends Model
         'paid_at' => 'datetime',
         'commissioned' => 'boolean',
         'commission_amount' => DecimalMoney::class,
-        'platform_commission_amount' => DecimalMoney::class,
         'gross_commission_amount' => DecimalMoney::class,
-        'platform_cut_base_amount' => DecimalMoney::class,
-        'platform_cut_discount_amount' => DecimalMoney::class,
-        'platform_cut_amount' => DecimalMoney::class,
-        'platform_cut_vat_amount' => DecimalMoney::class,
         'net_commission_amount' => DecimalMoney::class,
         'sale_amount' => DecimalMoney::class,
         'commission_fee_amount' => DecimalMoney::class,

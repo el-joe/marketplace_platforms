@@ -73,6 +73,8 @@ return [
         'referral_grace_hint' => 'After an invitation is rejected, times out or is replaced, its old code stops attracting new customers immediately. Customers who clicked it before that moment still credit the original marketer for this many days. 0 means no grace.',
         'clearing_label' => 'Commission clearing days',
         'clearing_hint' => 'How many days a commission stays pending after the sale is completed before it becomes available to withdraw. This protects the platform from returns and cancellations.',
+        'classified_approval_label' => 'Classified approval days',
+        'classified_approval_hint' => 'Classified sales are approved this many days after the listing is marked sold. Product sales wait for delivery and the return window; travel bookings wait until the booking is completed. Approved commissions then follow the clearing days above.',
         'attribution_label' => 'Attribution window (days)',
         'attribution_hint' => 'How long after clicking a referral link a purchase or booking is still credited to the marketer.',
         'peer_min_stock_label' => 'Peer promotion: minimum available units',

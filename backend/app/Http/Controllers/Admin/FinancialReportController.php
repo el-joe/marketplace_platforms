@@ -8,6 +8,8 @@ use App\Models\Currency;
 use App\Services\FinancialReportService;
 use App\Support\Money;
 use App\Traits\HasExport;
+use App\Enums\CommissionVertical;
+use App\Enums\MarketerType;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -231,37 +233,36 @@ class FinancialReportController extends Controller
         };
     }
 
-    /** @return array{country_id?: ?string, currency?: ?string, type?: ?string} */
+    /** @return array{country_id?: ?string, currency?: ?string, vertical?: ?string, marketer_type?: ?string} */
     private function marketingFilters(Request $request): array
     {
         return array_filter([
             'country_id' => $request->input('country_id'),
             'currency' => $request->input('currency'),
-            'type' => in_array($request->input('type'), ['fbm', 'fbn', 'fbp'], true) ? $request->input('type') : null,
+            'vertical' => in_array($request->input('vertical'), CommissionVertical::values(), true) ? $request->input('vertical') : null,
+            'marketer_type' => in_array($request->input('marketer_type'), MarketerType::values(), true) ? $request->input('marketer_type') : null,
         ]);
     }
 
-    /** CSV/Excel/Word of the marketing-fee block: one row per country + currency + billing type (and total). */
+    /** CSV/Excel/Word of the campaign-fee and commission block: one row per country + currency + vertical + marketer type (and total). */
     private function exportMarketing(Request $request, Carbon $from, Carbon $to): Response|StreamedResponse
     {
         $lines = $this->reports->marketingFeeLines($from, $to, $this->marketingFilters($request));
 
         $headers = [
-            'Country', 'Currency', 'Type',
-            'Influencer fees (excl. VAT)', 'VAT on influencer fees (liability)',
-            'Marketing fees - influencer', 'Marketing fees - affiliate', 'Marketing fees - total',
-            'Marketer fee-share payouts (net)', 'Affiliate commissions',
-            'Refunds', 'Refunded VAT', 'Platform margin', 'VAT liability (net of refunds)',
+            'Country', 'Currency', 'Vertical', 'Marketer type',
+            'Campaign fees earned (fixed)', 'Campaign fees earned (variable)', 'Campaign fees earned (total)', 'Campaign fees pending',
+            'Commissions pending', 'Commissions approved / paid (gross)', 'Commissions reversed',
+            'Commission fees earned', 'Net paid to marketers',
             'Period From', 'Period To',
         ];
 
         $fmt = fn ($v) => number_format((float) $v, 2, '.', '');
         $rows = collect($lines)->map(fn ($l) => [
-            $l['country_name'], $l['currency'], $l['type_label'],
-            $fmt($l['influencer_fees']), $fmt($l['influencer_vat']),
-            $fmt($l['influencer_marketing_fees']), $fmt($l['affiliate_marketing_fees']), $fmt($l['marketing_fees']),
-            $fmt($l['payouts_net']), $fmt($l['affiliate_commissions']),
-            $fmt($l['refunds']), $fmt($l['refunds_vat']), $fmt($l['platform_margin']), $fmt($l['vat_liability']),
+            $l['country_name'], $l['currency'], $l['vertical_label'], $l['marketer_type_label'],
+            $fmt($l['campaign_fee_fixed']), $fmt($l['campaign_fee_variable']), $fmt($l['campaign_fee_earned']), $fmt($l['campaign_fee_pending']),
+            $fmt($l['commission_pending']), $fmt($l['commission_approved']), $fmt($l['commission_reversed']),
+            $fmt($l['commission_fee_earned']), $fmt($l['commission_paid_net']),
             $from->toDateString(), $to->toDateString(),
         ]);
 
@@ -269,7 +270,7 @@ class FinancialReportController extends Controller
 
         return match ($request->input('format', 'csv')) {
             'excel' => $this->exportExcel($filename, $headers, $rows),
-            'word' => $this->exportWord($filename, 'Marketing Fees Report', $rows),
+            'word' => $this->exportWord($filename, 'Campaign Fees and Commissions Report', $rows),
             'csv' => $this->exportCsv($filename, $headers, $rows),
             default => abort(400, 'Invalid export format.'),
         };

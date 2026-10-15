@@ -22,46 +22,18 @@
             @endif
         </div>
 
-        {{-- P7: pending clawback of fee shares from cancelled campaigns --}}
-        @if(($pendingClawbacks ?? collect())->isNotEmpty())
-        <div class="bg-red-50 border border-red-200 rounded-xl p-5 text-sm" data-testid="wallet-clawbacks">
-            <h2 class="font-semibold text-red-800 mb-1">{{ __('marketer.finance.clawback_title') }}</h2>
-            <p class="text-xs text-red-700 mb-2">{{ __('marketer.finance.clawback_hint') }}</p>
-            <ul class="space-y-1">
-                @foreach($pendingClawbacks as $clawback)
-                    <li class="flex justify-between gap-3 text-red-800" data-testid="wallet-clawback-row">
-                        <span>{{ $clawback->campaign?->title ?: '#'.substr((string) $clawback->campaign_id, 0, 8) }}</span>
-                        <span class="font-bold" dir="ltr">−{{ \App\Support\Money::format($clawback->marketer_clawback_amount) }} {{ $wallet->currency }}</span>
-                    </li>
-                @endforeach
-            </ul>
-        </div>
-        @endif
-
-        {{-- P8: campaign fee-share credits (influencer campaigns) --}}
-        @if(! empty($feeShare['totals']))
-        <div class="bg-white rounded-xl border p-5" data-wallet-fee-share>
-            <h2 class="font-semibold text-gray-800 mb-3">{{ __('marketing_fees.reports.fee_share_totals') }}</h2>
-            <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                @php $fs = $feeShare['totals'][$wallet->currency] ?? ['credited' => 0, 'reversed' => 0, 'clawback' => 0, 'net' => 0]; @endphp
-                <div><dt class="text-xs text-gray-400">{{ __('marketing_fees.reports.credited') }}</dt><dd class="font-bold text-green-600" data-fs="credited">{{ \App\Support\Money::format($fs['credited']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketing_fees.reports.reversed') }}</dt><dd class="font-bold text-red-600" data-fs="reversed">−{{ \App\Support\Money::format($fs['reversed']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketing_fees.reports.clawback') }}</dt><dd class="font-bold text-red-600" data-fs="clawback">−{{ \App\Support\Money::format($fs['clawback']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketing_fees.reports.net') }}</dt><dd class="font-bold" data-fs="net">{{ \App\Support\Money::format($fs['net']) }} {{ $wallet->currency }}</dd></div>
-            </dl>
-        </div>
-        @endif
+        {{-- Influencer fixed amounts per campaign --}}
+        @include('marketer.finance._fixed_lines')
 
         {{-- Net statement (P11) --}}
         <div class="bg-white rounded-xl border p-5" data-wallet-statement>
             <h2 class="font-semibold text-gray-800 mb-3">{{ __('marketer.finance.statement_title') }}</h2>
-            <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+            <dl class="grid grid-cols-3 gap-3 text-sm">
                 <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ \App\Support\Money::format($statementTotals['gross']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.cut_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($statementTotals['cut']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.vat_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($statementTotals['vat']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.fee_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($statementTotals['fee']) }}</dd></div>
                 <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ \App\Support\Money::format($statementTotals['net']) }}</dd></div>
             </dl>
-            <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.withdraw_net_hint') }}</p>
+            <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.statement_hint') }} {{ __('marketer.finance.withdraw_net_hint') }}</p>
         </div>
 
         {{-- Sales of own listings (seller = marketer) --}}
@@ -145,7 +117,7 @@
                 <div class="px-5 py-3 flex items-center justify-between border-b last:border-0">
                     <div>
                         @if($tx->sourceLabel())
-                            <span class="inline-block mb-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $tx->source_type === 'marketer_campaign_fee_share' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}" data-tx-source="{{ $tx->source_type }}">{{ $tx->sourceLabel() }}</span>
+                            <span class="inline-block mb-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold {{ (($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}" data-tx-source="{{ $tx->source_type }}">{{ $tx->sourceLabel() }}</span>
                         @endif
                         <p class="text-sm font-medium text-gray-900">{{ $tx->description }}</p>
                         <p class="text-xs text-gray-400">{{ $tx->created_at->format('d M Y H:i') }}</p>

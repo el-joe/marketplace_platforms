@@ -18,6 +18,15 @@
         <p class="text-sm text-gray-500 mt-0.5">{{ __('marketing_fees.subtitle') }}</p>
     </div>
 
+    <div class="mb-6 flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800" data-fee-formula>
+        <x-heroicon name="information-circle" class="mt-0.5 h-4 w-4 shrink-0" />
+        <div>
+            <div class="font-semibold">{{ __('marketing_fees.campaign.formula_title') }}</div>
+            <p class="mt-1">{{ __('marketing_fees.campaign.formula') }}</p>
+            <p class="mt-1 text-blue-700">{{ __('marketing_fees.campaign.formula_example') }}</p>
+        </div>
+    </div>
+
     @if (session('success'))
         <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{{ session('success') }}</div>
     @endif
@@ -206,12 +215,12 @@
             </div>
         </div>
 
-        {{-- Report: read from the stored campaign snapshots / accrual ledger, never from current settings --}}
+        {{-- Report: read from the stored campaign snapshots and conversions, never from current settings --}}
         <div x-show="tab === 'report'" x-cloak class="space-y-6" data-marketing-fee-report>
             @if ($report)
                 @php
                     $fmtMoney = fn ($v) => \App\Support\Money::format($v);
-                    $reportQuery = array_filter(request()->only(['from', 'to', 'country_id', 'currency', 'type']));
+                    $reportQuery = array_filter(request()->only(['from', 'to', 'country_id', 'currency', 'vertical', 'marketer_type']));
                 @endphp
                 <form method="GET" action="{{ route('admin.marketing-fees.index') }}" class="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm" data-report-filters>
                     <input type="hidden" name="tab" value="report">
@@ -242,11 +251,20 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs text-gray-500 mb-1">{{ __('marketing_fees.type') }}</label>
-                        <select name="type" class="{{ $input }}">
-                            <option value="">{{ __('marketing_fees.reports.all_types') }}</option>
-                            @foreach ($types as $type)
-                                <option value="{{ $type->value }}" @selected(request('type') === $type->value)>{{ $type->label() }}</option>
+                        <label class="block text-xs text-gray-500 mb-1">{{ __('marketing_fees.reports.vertical') }}</label>
+                        <select name="vertical" class="{{ $input }}">
+                            <option value="">{{ __('marketing_fees.reports.all_verticals') }}</option>
+                            @foreach (\App\Enums\CommissionVertical::cases() as $vertical)
+                                <option value="{{ $vertical->value }}" @selected(request('vertical') === $vertical->value)>{{ $vertical->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ __('marketing_fees.reports.marketer_type') }}</label>
+                        <select name="marketer_type" class="{{ $input }}">
+                            <option value="">{{ __('marketing_fees.reports.all_marketer_types') }}</option>
+                            @foreach (\App\Enums\MarketerType::cases() as $mt)
+                                <option value="{{ $mt->value }}" @selected(request('marketer_type') === $mt->value)>{{ $mt->label() }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -254,77 +272,74 @@
                     <a href="{{ route('admin.marketing-fees.report.export', $reportQuery) }}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50" data-report-export>{{ __('marketing_fees.reports.export_csv') }}</a>
                 </form>
 
-                {{-- Influencer campaigns, per country + currency + type (campaign snapshot) --}}
+                {{-- Campaign fees per country + currency + vertical (campaign snapshot) --}}
                 <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                    <h2 class="text-base font-semibold text-gray-900">{{ __('marketing_fees.reports.influencer_title') }}</h2>
-                    <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.reports.influencer_hint') }}</p>
+                    <h2 class="text-base font-semibold text-gray-900">{{ __('marketing_fees.reports.campaign_fees_title') }}</h2>
+                    <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.reports.campaign_fees_hint') }}</p>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 text-sm" data-report-influencer>
+                        <table class="min-w-full divide-y divide-gray-200 text-sm" data-report-campaign-fees>
                             <thead class="bg-gray-50">
                                 <tr>
-                                    @foreach (['country', 'type', 'campaigns', 'influencers', 'subtotal', 'fixed', 'variable', 'marketing_fees', 'grand_total', 'collected', 'pending'] as $col)
+                                    @foreach (['country', 'vertical', 'campaigns', 'subtotal', 'fixed', 'variable', 'campaign_fee', 'grand_total', 'collected', 'pending'] as $col)
                                         <th class="px-3 py-2 text-start font-medium text-gray-500 whitespace-nowrap">{{ __('marketing_fees.reports.col_'.$col) }}</th>
                                     @endforeach
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 @forelse ($report['campaigns'] as $r)
-                                    <tr class="{{ $r['type'] === 'total' ? 'bg-gray-50 font-semibold' : '' }}" data-row-type="{{ $r['type'] }}" data-currency="{{ $r['currency'] }}">
+                                    <tr class="{{ $r['vertical'] === 'total' ? 'bg-gray-50 font-semibold' : '' }}" data-row-type="{{ $r['vertical'] }}" data-currency="{{ $r['currency'] }}">
                                         <td class="px-3 py-2 whitespace-nowrap">{{ $r['country_name'] }} <span class="text-xs text-gray-400">{{ $r['currency'] }}</span></td>
-                                        <td class="px-3 py-2 whitespace-nowrap">{{ $r['type_label'] }}</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">{{ $r['vertical_label'] }}</td>
                                         <td class="px-3 py-2 tabular-nums">{{ (int) $r['campaigns'] }}</td>
-                                        <td class="px-3 py-2 tabular-nums">{{ (int) $r['influencers'] }}</td>
                                         <td class="px-3 py-2 tabular-nums" data-col="subtotal">{{ $fmtMoney($r['subtotal']) }}</td>
                                         <td class="px-3 py-2 tabular-nums" data-col="fixed">{{ $fmtMoney($r['fixed_fee']) }}</td>
                                         <td class="px-3 py-2 tabular-nums" data-col="variable">{{ $fmtMoney($r['variable_fee']) }}</td>
-                                        <td class="px-3 py-2 tabular-nums" data-col="marketing">{{ $fmtMoney($r['marketing_fees']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums" data-col="campaign_fee">{{ $fmtMoney($r['campaign_fee']) }}</td>
                                         <td class="px-3 py-2 tabular-nums" data-col="grand_total">{{ $fmtMoney($r['grand_total']) }}</td>
                                         <td class="px-3 py-2 tabular-nums text-green-700" data-col="collected">{{ $fmtMoney($r['collected']) }}</td>
                                         <td class="px-3 py-2 tabular-nums text-amber-700" data-col="pending">{{ $fmtMoney($r['pending']) }}</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="11" class="px-3 py-6 text-center text-gray-500">{{ __('marketing_fees.reports.empty') }}</td></tr>
+                                    <tr><td colspan="10" class="px-3 py-6 text-center text-gray-500">{{ __('marketing_fees.reports.empty') }}</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                {{-- Affiliate accruals: accrued vs settled vs refunded --}}
+                {{-- Commissions per vertical and marketer type --}}
                 <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                    <h2 class="text-base font-semibold text-gray-900">{{ __('marketing_fees.reports.affiliate_title') }}</h2>
-                    <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.reports.affiliate_hint') }}</p>
+                    <h2 class="text-base font-semibold text-gray-900">{{ __('marketing_fees.reports.commissions_title') }}</h2>
+                    <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.reports.commissions_hint') }}</p>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 text-sm" data-report-affiliate>
+                        <table class="min-w-full divide-y divide-gray-200 text-sm" data-report-commissions>
                             <thead class="bg-gray-50">
                                 <tr>
-                                    @foreach (['country', 'type', 'orders', 'commission', 'accrued', 'refunded', 'settled', 'pending', 'settlement_refunds'] as $col)
-                                        <th class="px-3 py-2 text-start font-medium text-gray-500 whitespace-nowrap">{{ __('marketing_fees.reports.col_aff_'.$col) }}</th>
+                                    @foreach (['country', 'vertical', 'marketer_type', 'pending', 'approved', 'reversed', 'fee_earned', 'paid_net'] as $col)
+                                        <th class="px-3 py-2 text-start font-medium text-gray-500 whitespace-nowrap">{{ __('marketing_fees.reports.col_comm_'.$col) }}</th>
                                     @endforeach
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
-                                @forelse ($report['affiliate'] as $r)
-                                    <tr class="{{ $r['type'] === 'total' ? 'bg-gray-50 font-semibold' : '' }}" data-row-type="{{ $r['type'] }}" data-currency="{{ $r['currency'] }}">
+                                @forelse ($report['commissions'] as $r)
+                                    <tr class="{{ $r['vertical'] === 'total' ? 'bg-gray-50 font-semibold' : '' }}" data-row-type="{{ $r['vertical'] }}" data-currency="{{ $r['currency'] }}">
                                         <td class="px-3 py-2 whitespace-nowrap">{{ $r['country_name'] }} <span class="text-xs text-gray-400">{{ $r['currency'] }}</span></td>
-                                        <td class="px-3 py-2 whitespace-nowrap">{{ $r['type_label'] }}</td>
-                                        <td class="px-3 py-2 tabular-nums">{{ (int) $r['orders'] }}</td>
-                                        <td class="px-3 py-2 tabular-nums" data-col="commission">{{ $fmtMoney($r['commission']) }}</td>
-                                        <td class="px-3 py-2 tabular-nums" data-col="accrued">{{ $fmtMoney($r['accrued']) }}</td>
-                                        <td class="px-3 py-2 tabular-nums text-red-600" data-col="refunded">{{ $fmtMoney($r['refunded']) }}</td>
-                                        <td class="px-3 py-2 tabular-nums text-green-700" data-col="settled">{{ $fmtMoney($r['settled']) }}</td>
-                                        <td class="px-3 py-2 tabular-nums text-amber-700" data-col="pending">{{ $fmtMoney($r['pending']) }}</td>
-                                        <td class="px-3 py-2 tabular-nums" data-col="settlement_refunds">{{ $fmtMoney($r['settlement_refunds']) }}</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">{{ $r['vertical_label'] }}</td>
+                                        <td class="px-3 py-2 whitespace-nowrap">{{ $r['marketer_type_label'] }}</td>
+                                        <td class="px-3 py-2 tabular-nums text-amber-700" data-col="pending">{{ $fmtMoney($r['commission_pending']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums text-green-700" data-col="approved">{{ $fmtMoney($r['commission_approved']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums text-red-600" data-col="reversed">{{ $fmtMoney($r['commission_reversed']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums" data-col="fee_earned">{{ $fmtMoney($r['commission_fee_earned']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums" data-col="paid_net">{{ $fmtMoney($r['commission_paid_net']) }}</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="9" class="px-3 py-6 text-center text-gray-500">{{ __('marketing_fees.reports.empty') }}</td></tr>
+                                    <tr><td colspan="8" class="px-3 py-6 text-center text-gray-500">{{ __('marketing_fees.reports.empty') }}</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
                 </div>
             @endif
-        </div>
     </div>
 
     {{-- Live calculator --}}

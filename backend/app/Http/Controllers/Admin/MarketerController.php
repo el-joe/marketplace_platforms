@@ -17,7 +17,7 @@ use App\Models\MarketerMarketerJobCategory;
 use App\Models\MarketerSaleSettlement;
 use App\Models\TravelCategory;
 use App\Models\Wallet;
-use App\Http\Requests\Admin\StoreMarketerCategoryCommissionRequest;
+use App\Http\Requests\Admin\StoreMarketerCommissionRuleRequest;
 use App\Models\MarketerDefaultCommission;
 use App\Services\Marketer\MarketerDefaultCommissionResolver;
 use App\Services\Marketer\MarketerSaleSettlementService;
@@ -163,7 +163,7 @@ class MarketerController extends Controller
             ->whereIn('invitation_id', $marketer->invitations->pluck('id'))
             ->latest()->limit(25)->get()
             ->each(fn ($c) => $c->setAttribute('statement', $statement->breakdown($c)));
-        $statementTotals = collect(['gross', 'cut', 'vat', 'net'])->mapWithKeys(
+        $statementTotals = collect(['gross', 'fee', 'net'])->mapWithKeys(
             fn ($k) => [$k => round((float) $conversions->where('status', 'approved')->sum(fn ($c) => $c->statement[$k]), 2)]
         );
 
@@ -172,7 +172,7 @@ class MarketerController extends Controller
         $salesTotals = $salesService->totalsFor($marketer->id);
         $sales = MarketerSaleSettlement::with('order:id,order_number')->where('marketer_id', $marketer->id)->latest()->limit(25)->get();
 
-        // P8: fee-share earnings per campaign, affiliate totals and wallet balance(s), from the stored snapshots/ledgers.
+        // Earnings per campaign (gross, platform commission fee, net), influencer fixed amounts and wallet balance(s).
         $earnings = app(MarketingFeeReportService::class)->marketerEarnings($marketer->id);
         $marketerWallets = Wallet::where('owner_type', 'marketer')->where('owner_id', $marketer->id)->orderBy('currency')->get();
 
@@ -292,11 +292,11 @@ class MarketerController extends Controller
      * Store or update a marketer x category commission rule.
      * category_id = null means "default for all categories of that scope".
      *
-     * Type rules (enforced by StoreMarketerCategoryCommissionRequest): influencer = fixed amount per campaign only,
+     * Type rules (enforced by StoreMarketerCommissionRuleRequest): influencer = fixed amount per campaign only,
      * affiliate = percentage only, broker = fixed, percentage or both. The commission-fee override
      * (fee_percentage / fee_fixed) is optional; empty means "use the default from Marketer Settings".
      */
-    public function storeCategoryCommission(StoreMarketerCategoryCommissionRequest $request, Marketer $marketer)
+    public function storeCategoryCommission(StoreMarketerCommissionRuleRequest $request, Marketer $marketer)
     {
         $validated = $request->validated();
         $type = $request->marketerType();

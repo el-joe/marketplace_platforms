@@ -53,11 +53,14 @@ class WalletTransaction extends Model
 
     /** Source types with a readable label (key under marketer.finance.tx_source.*). */
     public const SOURCE_LABELS = [
-        'marketer_campaign_fee_share' => 'fee_share',
-        'marketer_campaign_fee_share_reversal' => 'fee_share_reversal',
+        'marketer_conversion' => 'commission',
+        'marketer_commission' => 'commission',
+        'marketer_commission_fee' => 'commission_fee',
+        'marketer_campaign_fixed' => 'fixed',
+        'marketer_campaign_fee' => 'campaign_fee',
     ];
 
-    /** Readable label of a known source_type (campaign fee share credit / reversal), else null. */
+    /** Readable label of a known source_type (commission, commission fee, influencer fixed amount, campaign fee), else null. */
     public function sourceLabel(): ?string
     {
         $key = self::SOURCE_LABELS[$this->source_type] ?? null;

@@ -101,11 +101,6 @@ class Marketer extends Model
         return $this->hasMany(FlashSaleMarketerInvitation::class);
     }
 
-    public function categoryCommissions(): HasMany
-    {
-        return $this->hasMany(MarketerCategoryCommission::class);
-    }
-
     public function classifiedListings(): MorphMany
     {
         return $this->morphMany(ClassifiedListing::class, 'seller');
@@ -162,6 +157,33 @@ class Marketer extends Model
     public function isBroker(): bool
     {
         return $this->marketerJobs()->where('key', 'broker')->exists();
+    }
+
+    /**
+     * The marketer's display type: influencer first, then broker, then affiliate (a marketer can hold several jobs).
+     * Null when he holds none of the three (legacy job keys only).
+     */
+    public function primaryType(): ?\App\Enums\MarketerType
+    {
+        return \App\Enums\MarketerType::heldBy($this)[0] ?? null;
+    }
+
+    /** Localized label of primaryType() ("Influencer", "Broker", "Affiliate"); empty string when there is none. */
+    public function typeLabel(): string
+    {
+        $type = $this->primaryType();
+
+        return $type ? $type->label() : '';
+    }
+
+    /** Tailwind colour classes of the type badge (light surfaces). */
+    public function typeBadgeClasses(): string
+    {
+        return match ($this->primaryType()) {
+            \App\Enums\MarketerType::Influencer => 'bg-purple-100 text-purple-700',
+            \App\Enums\MarketerType::Broker => 'bg-emerald-100 text-emerald-700',
+            default => 'bg-blue-100 text-blue-700',
+        };
     }
 
     /** Affiliates and brokers both earn commission on sales (percentage basis); influencers do not. */

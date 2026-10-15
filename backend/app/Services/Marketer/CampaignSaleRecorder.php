@@ -93,13 +93,11 @@ class CampaignSaleRecorder
                 'currency' => $campaign->currency,
                 'status' => 'pending',
                 'commissioned' => false,
-                'sale_number_in_campaign' => $invitation->total_conversions + 1,
                 'sale_amount' => $result->basis,
                 'commission_amount' => $result->gross,
                 'gross_commission_amount' => $result->gross,
                 'commission_fee_amount' => $result->fee,
                 'net_commission_amount' => $result->net,
-                'platform_commission_amount' => 0,
                 'marketer_type' => $result->marketerType->value,
                 'rule_source' => $result->ruleSource,
             ]);

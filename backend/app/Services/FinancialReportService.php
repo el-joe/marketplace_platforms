@@ -444,15 +444,15 @@ class FinancialReportService
     }
 
     /**
-     * P8: marketing-fee / marketer-payout lines per country + currency and per billing type (FBM (cross_dock) /
-     * FBN / FBP) with a `total` row, read from the stored snapshots and ledgers (see MarketingFeeReportService).
+     * Campaign-fee and marketer-commission lines per country + currency, vertical (product / classified / travel) and
+     * marketer type (influencer / affiliate / broker) with a `total` row, read from the stored snapshots (see
+     * MarketingFeeReportService): campaign fees earned (fixed / variable), commission fees earned, commissions
+     * pending / approved / reversed.
      *
-     * DECISION (decisions log): these figures are NOT folded into platformNetForPeriod()/summaryForPeriod(). That
-     * net is the ledger reconciliation anchor (ledger_entries) and influencer/marketing fees are wallet and
-     * statement movements that never post ledger entries, so adding them would break the "net == ledger" property
-     * and the existing totals. The figures live in this separate block, with their own platform_margin.
+     * DECISION: these figures are NOT folded into platformNetForPeriod()/summaryForPeriod(). That net is the ledger
+     * reconciliation anchor (ledger_entries); keeping this block separate keeps the "net == ledger" property.
      *
-     * @param  array{country_id?: ?string, currency?: ?string, type?: ?string}  $filters
+     * @param  array{country_id?: ?string, currency?: ?string, vertical?: ?string, marketer_type?: ?string}  $filters
      * @return array<int, array<string, mixed>>
      */
     public function marketingFeeLines(Carbon $from, Carbon $to, array $filters = []): array

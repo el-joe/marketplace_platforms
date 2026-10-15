@@ -24,8 +24,6 @@ class CampaignApprovedNotification extends BaseDatabaseBroadcastNotification
             'message'               => 'تم قبول حملتك! الماركترز سيتلقون الدعوات الآن.',
             'url'                   => route('partner.marketer-campaigns.show', $this->campaign->id),
             'campaign_id'           => $this->campaign->id,
-            'platform_commission'   => $this->campaign->platform_commission_amount,
-            'marketer_commission'   => $this->campaign->marketer_commission_amount,
             'invited_count'         => $this->invitedCount,
         ];
     }

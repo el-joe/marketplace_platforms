@@ -43,25 +43,20 @@ class FinanceController extends Controller
     }
 
     /**
-     * P8: same report figures as the web Reports page: fee-share earnings per campaign (+ totals per currency)
-     * and affiliate campaign totals. Marketing fees are vendor money and are never exposed to the marketer.
+     * Same report figures as the web Reports page: earnings per campaign (gross, platform commission fee, net, totals
+     * per currency) and the influencer's per-campaign fixed amount lines. Campaign fees are owner money and are never
+     * exposed to the marketer.
      */
     public function reports(): JsonResponse
     {
         $marketer = $this->marketer();
-        $report = app(MarketingFeeReportService::class);
-        $affiliate = $report->marketerAffiliateTotals($marketer->id);
-
-        $stripFees = fn (array $row) => collect($row)->except('marketing_fees')->all();
+        $earnings = app(MarketingFeeReportService::class)->marketerEarnings($marketer->id);
 
         return response()->json([
             'success' => true,
             'data' => [
-                'fee_share' => $report->marketerFeeShare($marketer->id),
-                'affiliate' => [
-                    'rows' => $affiliate['rows']->map($stripFees)->values(),
-                    'totals' => collect($affiliate['totals'])->map($stripFees)->all(),
-                ],
+                'campaigns' => $earnings['campaigns'],
+                'fixed_amounts' => $earnings['fixed']->values(),
                 'transaction_labels' => collect(WalletTransaction::SOURCE_LABELS)
                     ->mapWithKeys(fn ($key, $source) => [$source => __('marketer.finance.tx_source.'.$key)])->all(),
             ],
@@ -89,8 +84,7 @@ class FinanceController extends Controller
                 'transactions' => $wallet->transactions()->take(20)->get()->map(fn ($tx) => array_merge($tx->toArray(), [
                     'source_label' => $tx->sourceLabel(),
                 ]))->values(),
-                'fee_share' => app(MarketingFeeReportService::class)->marketerFeeShare($marketer->id)['totals'][$wallet->currency]
-                    ?? ['credited' => 0, 'reversed' => 0, 'clawback' => 0, 'net' => 0, 'pending' => 0],
+                'fixed_amounts' => app(\App\Services\Marketer\MarketerEarningsService::class)->fixedAmountLines($marketer->id)->values(),
                 'withdrawal_requests' => $wallet->withdrawalRequests()->take(10)->get(),
             ],
         ]);

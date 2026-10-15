@@ -2,7 +2,8 @@
 
 namespace App\Services\Vendor;
 
-use App\Models\MarketerCampaignFeeSettlement;
+use App\Models\MarketerCampaign;
+use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\Payout;
@@ -14,6 +15,7 @@ use App\Support\Money;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class TransactionFeedService
 {
@@ -48,12 +50,12 @@ class TransactionFeedService
                 $items = $items->merge($this->fetchPromotionSamples($vendor, $dateFrom, $dateTo));
             }
 
-            if (! $type || $type === 'influencer_fee') {
-                $items = $items->merge($this->fetchInfluencerFees($vendor, $dateFrom, $dateTo));
+            if (! $type || $type === 'campaign_fee') {
+                $items = $items->merge($this->fetchCampaignFees($vendor, $dateFrom, $dateTo));
             }
 
-            if (! $type || $type === 'affiliate_marketing_fee') {
-                $items = $items->merge($this->fetchAffiliateMarketingFees($vendor, $dateFrom, $dateTo));
+            if (! $type || $type === 'campaign_budget_commission') {
+                $items = $items->merge($this->fetchCampaignBudgetCommissions($vendor, $dateFrom, $dateTo));
             }
 
             return $items->sortByDesc('date')->values()->all();
@@ -140,96 +142,94 @@ class TransactionFeedService
     }
 
     /**
-     * Influencer platform fee lines (fee + VAT + marketing fees): settled from the wallet during the
-     * week, or deducted in a weekly statement (payout_items.invitation_id).
+     * Campaign fee lines (fixed + variable fee of a campaign): charged once when the campaign goes live, from the
+     * wallet or as a line of the next weekly statement (payout_items.campaign_id).
      */
-    private function fetchInfluencerFees(Vendor $vendor, ?string $dateFrom, ?string $dateTo): Collection
+    private function fetchCampaignFees(Vendor $vendor, ?string $dateFrom, ?string $dateTo): Collection
     {
-        $invitations = MarketerCampaignInvitation::whereIn('platform_fee_status', ['pending', 'paid', 'refunded'])
-            ->where('platform_fee_payer', 'vendor')
-            ->where('platform_fee_amount', '>', 0)
-            ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendor->id))
-            ->when($dateFrom, fn ($q) => $q->where('platform_fee_recorded_at', '>=', Carbon::parse($dateFrom)->startOfDay()))
-            ->when($dateTo, fn ($q) => $q->where('platform_fee_recorded_at', '<=', Carbon::parse($dateTo)->endOfDay()))
-            ->with(['campaign:id,title', 'marketer:id,name', 'payoutItems.payout:id,payout_number,status'])
+        $dateColumn = DB::raw('COALESCE(campaign_fee_paid_at, updated_at)');
+
+        $campaigns = MarketerCampaign::where('vendor_id', $vendor->id)
+            ->whereIn('campaign_fee_status', ['pending', 'paid'])
+            ->where('marketing_fee_total', '>', 0)
+            ->when($dateFrom, fn ($q) => $q->where($dateColumn, '>=', Carbon::parse($dateFrom)->startOfDay()))
+            ->when($dateTo, fn ($q) => $q->where($dateColumn, '<=', Carbon::parse($dateTo)->endOfDay()))
+            ->with('payoutItems.payout:id,payout_number,status')
             ->get();
 
-        return $invitations->flatMap(function ($inv) {
-            $payout = $inv->payoutItems->first()?->payout;
-            $total = $inv->platformFeeTotal();
-            $status = $payout
-                ? $payout->payout_number.' ('.$payout->status?->value.')'
-                : (in_array($inv->platform_fee_status, ['paid', 'refunded'], true) ? 'wallet' : 'unsettled');
+        return $campaigns->map(function (MarketerCampaign $c) {
+            $payout = $c->payoutItems->first()?->payout;
+            $fee = Money::number($c->marketing_fee_total);
 
-            $rows = [[
-                'type' => 'influencer_fee',
-                'date' => $inv->platform_fee_recorded_at?->toISOString(),
-                'reference' => $inv->campaign?->title,
-                'description' => 'رسوم مؤثر / Influencer fee — '.($inv->marketer?->name ?? '—')
-                    .((float) $inv->platform_fee_marketing_amount > 0 ? ' (+ رسوم تسويق / marketing fees '.Money::format($inv->platform_fee_marketing_amount).')' : ''),
+            return [
+                'type' => 'campaign_fee',
+                'date' => ($c->campaign_fee_paid_at ?? $c->updated_at)?->toISOString(),
+                'reference' => $c->title,
+                'description' => 'رسوم الحملة / Campaign fee (fixed '.Money::format($c->marketing_fee_fixed).' + variable '.Money::format($c->marketing_fee_variable).')',
                 'gross' => 0,
                 'commission' => 0,
-                'fee' => Money::number($inv->platform_fee_amount),
-                'vat' => Money::number($inv->platform_fee_vat_amount),
-                'marketing_fee' => Money::number($inv->platform_fee_marketing_amount),
-                'net' => Money::number(-$total),
-                'payout_status' => $status,
-            ]];
-
-            // P7: a refunded fee shows its own credit line (fee + VAT + marketing fees given back to the wallet).
-            if ($inv->platform_fee_refunded_at) {
-                $refund = Money::number($inv->platform_fee_refund_amount);
-                $rows[] = [
-                    'type' => 'influencer_fee_refund',
-                    'date' => $inv->platform_fee_refunded_at->toISOString(),
-                    'reference' => $inv->campaign?->title,
-                    'description' => 'استرداد رسوم مؤثر / Influencer fee refund — '.($inv->marketer?->name ?? '—'),
-                    'gross' => 0,
-                    'commission' => 0,
-                    'fee' => Money::number($inv->platform_fee_amount),
-                    'vat' => Money::number($inv->platform_fee_vat_amount),
-                    'marketing_fee' => Money::number($inv->platform_fee_marketing_amount),
-                    'net' => $refund,
-                    'payout_status' => 'wallet',
-                ];
-            }
-
-            return $rows;
+                'fee' => $fee,
+                'net' => -$fee,
+                'payout_status' => $payout
+                    ? $payout->payout_number.' ('.$payout->status?->value.')'
+                    : ($c->campaign_fee_status === 'paid' ? 'wallet' : 'unsettled'),
+            ];
         });
     }
 
     /**
-     * Affiliate marketing-fee settlements (D4/D10: only the marketing fees on affiliate commissions): debited from
-     * the wallet when the campaign finished / hit its budget, else deducted in a weekly statement.
+     * Commissions paid out of a campaign's Max Commission Budget: one line per approved affiliate / broker conversion
+     * and one per influencer fixed amount paid at campaign completion. The seller pays the gross commission; the
+     * platform commission fee is taken from the marketer's side and never charged to the seller.
      */
-    private function fetchAffiliateMarketingFees(Vendor $vendor, ?string $dateFrom, ?string $dateTo): Collection
+    private function fetchCampaignBudgetCommissions(Vendor $vendor, ?string $dateFrom, ?string $dateTo): Collection
     {
-        $settlements = MarketerCampaignFeeSettlement::where('vendor_id', $vendor->id)
-            ->when($dateFrom, fn ($q) => $q->where('created_at', '>=', Carbon::parse($dateFrom)->startOfDay()))
-            ->when($dateTo, fn ($q) => $q->where('created_at', '<=', Carbon::parse($dateTo)->endOfDay()))
+        $conversions = MarketerCampaignConversion::where('status', 'approved')
+            ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendor->id))
+            ->when($dateFrom, fn ($q) => $q->where('approved_at', '>=', Carbon::parse($dateFrom)->startOfDay()))
+            ->when($dateTo, fn ($q) => $q->where('approved_at', '<=', Carbon::parse($dateTo)->endOfDay()))
             ->with(['campaign:id,title', 'payoutItems.payout:id,payout_number,status'])
             ->get();
 
-        return $settlements->map(function ($settlement) {
-            $payout = $settlement->payoutItems->first()?->payout;
-            $status = $payout
-                ? $payout->payout_number.' ('.$payout->status?->value.')'
-                : ($settlement->status === 'paid' ? 'wallet' : 'unsettled');
-
-            $refund = $settlement->isRefund();
+        $rows = $conversions->map(function (MarketerCampaignConversion $c) {
+            $payout = $c->payoutItems->first()?->payout;
+            $gross = Money::number($c->gross_commission_amount ?? $c->commission_amount);
 
             return [
-                'type' => $refund ? 'affiliate_marketing_fee_refund' : 'affiliate_marketing_fee',
-                'date' => $settlement->created_at?->toISOString(),
-                'reference' => $settlement->campaign?->title,
-                'description' => $refund ? 'استرداد رسوم تسويق عمولة / Affiliate marketing fees refund' : 'رسوم تسويق عمولة / Affiliate marketing fees',
+                'type' => 'campaign_budget_commission',
+                'date' => $c->approved_at?->toISOString(),
+                'reference' => $c->campaign?->title,
+                'description' => 'عمولة مسوق / Marketer commission — '.($c->marketer_type ? (\App\Enums\MarketerType::tryFrom($c->marketer_type)?->label() ?? $c->marketer_type) : ''),
                 'gross' => 0,
-                'commission' => 0,
-                'marketing_fee' => Money::number($settlement->amount),
-                'net' => Money::number($refund ? (float) $settlement->amount : -(float) $settlement->amount),
-                'payout_status' => $status,
+                'commission' => $gross,
+                'net' => -$gross,
+                'payout_status' => $payout ? $payout->payout_number.' ('.$payout->status?->value.')' : 'unsettled',
             ];
         });
+
+        $fixed = MarketerCampaignInvitation::where('influencer_fixed_status', MarketerCampaignInvitation::FIXED_PAID)
+            ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendor->id))
+            ->when($dateFrom, fn ($q) => $q->where('influencer_fixed_paid_at', '>=', Carbon::parse($dateFrom)->startOfDay()))
+            ->when($dateTo, fn ($q) => $q->where('influencer_fixed_paid_at', '<=', Carbon::parse($dateTo)->endOfDay()))
+            ->with(['campaign:id,title', 'marketer:id,name', 'payoutItems.payout:id,payout_number,status'])
+            ->get()
+            ->map(function (MarketerCampaignInvitation $i) {
+                $payout = $i->payoutItems->first()?->payout;
+                $gross = Money::number($i->influencer_fixed_amount);
+
+                return [
+                    'type' => 'campaign_budget_commission',
+                    'date' => $i->influencer_fixed_paid_at?->toISOString(),
+                    'reference' => $i->campaign?->title,
+                    'description' => 'مبلغ ثابت لمؤثر / Influencer fixed amount — '.($i->marketer?->name ?? '—'),
+                    'gross' => 0,
+                    'commission' => $gross,
+                    'net' => -$gross,
+                    'payout_status' => $payout ? $payout->payout_number.' ('.$payout->status?->value.')' : 'unsettled',
+                ];
+            });
+
+        return $rows->merge($fixed);
     }
 
     private function fetchRefunds(Vendor $vendor, ?string $dateFrom, ?string $dateTo): Collection

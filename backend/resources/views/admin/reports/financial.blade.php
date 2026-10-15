@@ -127,7 +127,7 @@
     </div>
 </div>
 
-{{-- ─── Marketing fees & marketer payouts (per country + currency, per fulfillment type) ───────────── --}}
+{{-- ─── Campaign fees & marketer commissions (per country + currency, per vertical and marketer type) ───────────── --}}
 <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6" id="marketing-fees-section">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-3 border-b border-gray-100">
         <div>
@@ -142,8 +142,9 @@
             <thead>
                 <tr class="bg-gray-50 border-b border-gray-200">
                     <th class="px-4 py-2.5 text-start font-semibold text-gray-600 whitespace-nowrap">{{ __('marketing_fees.country') }}</th>
-                    <th class="px-4 py-2.5 text-start font-semibold text-gray-600 whitespace-nowrap">{{ __('marketing_fees.type') }}</th>
-                    @foreach (['influencer_fees', 'influencer_vat', 'marketing_influencer', 'marketing_affiliate', 'payouts', 'affiliate_commissions', 'refunds', 'platform_margin'] as $col)
+                    <th class="px-4 py-2.5 text-start font-semibold text-gray-600 whitespace-nowrap">{{ __('marketing_fees.reports.vertical') }}</th>
+                    <th class="px-4 py-2.5 text-start font-semibold text-gray-600 whitespace-nowrap">{{ __('marketing_fees.reports.marketer_type') }}</th>
+                    @foreach (['campaign_fee', 'commission_fee', 'commission_pending', 'commission_approved', 'commission_reversed', 'commission_net', 'platform_income'] as $col)
                         <th class="px-4 py-2.5 text-end font-semibold text-gray-600 whitespace-nowrap">{{ __('marketing_fees.reports.fin_'.$col) }}</th>
                     @endforeach
                 </tr>
@@ -389,18 +390,19 @@ Object.assign(window.TRANSLATIONS, {
 
         body.innerHTML = rows.map(r => {
             const ccy = r.currency;
-            const cls = r.type === 'total' ? 'bg-gray-50 font-semibold' : '';
-            return `<tr class="${cls}" data-type="${r.type}" data-currency="${ccy}">
+            const cls = r.vertical === 'total' ? 'bg-gray-50 font-semibold' : '';
+            const income = (parseFloat(r.campaign_fee_earned) || 0) + (parseFloat(r.commission_fee_earned) || 0);
+            return `<tr class="${cls}" data-type="${r.vertical}" data-marketer-type="${r.marketer_type}" data-currency="${ccy}">
                 <td class="px-4 py-2.5 whitespace-nowrap text-gray-900">${r.country_name} <span class="text-xs text-gray-400">${ccy}</span></td>
-                <td class="px-4 py-2.5 whitespace-nowrap text-gray-700">${r.type_label}</td>
-                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.influencer_fees)} ${ccy}</td>
-                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.influencer_vat)} ${ccy}</td>
-                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.influencer_marketing_fees)} ${ccy}</td>
-                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.affiliate_marketing_fees)} ${ccy}</td>
-                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.payouts_net)} ${ccy}</td>
-                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.affiliate_commissions)} ${ccy}</td>
-                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.refunds)} ${ccy}</td>
-                <td class="px-4 py-2.5 text-end tabular-nums font-medium text-green-700">${fmt(r.platform_margin)} ${ccy}</td>
+                <td class="px-4 py-2.5 whitespace-nowrap text-gray-700">${r.vertical_label}</td>
+                <td class="px-4 py-2.5 whitespace-nowrap text-gray-700">${r.marketer_type_label}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.campaign_fee_earned)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.commission_fee_earned)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.commission_pending)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.commission_approved)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.commission_reversed)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.commission_paid_net)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums font-medium text-green-700">${fmt(income)} ${ccy}</td>
             </tr>`;
         }).join('');
     }

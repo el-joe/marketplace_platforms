@@ -1460,7 +1460,7 @@ class ListingController extends Controller
         return response()->json(
             $marketers->map(fn ($m) => [
                 'id' => $m->id,
-                'text' => $m->name.' — '.($m->isInfluencer() ? 'مؤثر' : 'أفلييت'),
+                'text' => $m->name.' — '.$m->typeLabel(),
             ])
         );
     }

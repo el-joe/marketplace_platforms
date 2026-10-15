@@ -25,10 +25,6 @@ class MarketerCampaignInvitation extends Model
         'platform_fee_amount', 'platform_fee_currency',
         'platform_fee_vat_rate', 'platform_fee_vat_amount', 'platform_fee_paid_via', 'platform_fee_paid_at',
         'platform_fee_status', 'platform_fee_payer', 'platform_fee_recorded_at',
-        'platform_fee_marketing_amount', 'marketer_fee_share_pct', 'marketer_payout_amount',
-        'marketer_credited_at', 'marketer_payout_wallet_tx_id',
-        'platform_fee_refunded_at', 'platform_fee_refund_amount', 'platform_fee_refund_wallet_tx_id', 'platform_fee_voided_at',
-        'platform_fee_refund_reason', 'marketer_credit_reversed_at', 'marketer_credit_reversal_wallet_tx_id', 'marketer_clawback_amount',
         // v3: influencer fixed amount per campaign (snapshot, reserved from the campaign budget).
         'influencer_fixed_amount', 'influencer_fixed_status', 'influencer_fixed_source',
         'influencer_fixed_reserved_at', 'influencer_fixed_paid_at', 'influencer_fixed_released_at',
@@ -57,15 +53,6 @@ class MarketerCampaignInvitation extends Model
         'platform_fee_amount' => DecimalMoney::class,
         'platform_fee_vat_amount' => DecimalMoney::class,
         'total_commission_earned' => DecimalMoney::class,
-        'platform_fee_marketing_amount' => DecimalMoney::class,
-        'marketer_fee_share_pct' => 'decimal:4',
-        'marketer_payout_amount' => DecimalMoney::class,
-        'marketer_credited_at' => 'datetime',
-        'platform_fee_refunded_at' => 'datetime',
-        'platform_fee_voided_at' => 'datetime',
-        'platform_fee_refund_amount' => DecimalMoney::class,
-        'marketer_credit_reversed_at' => 'datetime',
-        'marketer_clawback_amount' => DecimalMoney::class,
         'influencer_fixed_amount' => DecimalMoney::class,
         'influencer_fixed_fee_amount' => DecimalMoney::class,
         'influencer_fixed_net_amount' => DecimalMoney::class,
@@ -109,15 +96,10 @@ class MarketerCampaignInvitation extends Model
         return $this->hasMany(PayoutItem::class, 'invitation_id');
     }
 
-    /** Fee + VAT + this invitation's marketing-fee share: what the payer is actually charged. */
+    /** Fee + VAT of the pre-v3 per-influencer fee (kept for the historical record; v3 charges a campaign fee instead). */
     public function platformFeeTotal(): float
     {
-        return round(
-            (float) $this->platform_fee_amount
-            + (float) $this->platform_fee_vat_amount
-            + (float) $this->platform_fee_marketing_amount,
-            2
-        );
+        return round((float) $this->platform_fee_amount + (float) $this->platform_fee_vat_amount, 2);
     }
 
     public function whatsappFailed(): bool
@@ -143,22 +125,6 @@ class MarketerCampaignInvitation extends Model
     public function isInfluencerType(): bool
     {
         return $this->marketer?->isInfluencer();
-    }
-
-    public function isFeeRefunded(): bool
-    {
-        return $this->platform_fee_refunded_at !== null;
-    }
-
-    public function isFeeVoided(): bool
-    {
-        return $this->platform_fee_voided_at !== null;
-    }
-
-    /** True while the marketer still owes a fee-share reversal (wallet was short or frozen). */
-    public function hasPendingClawback(): bool
-    {
-        return $this->marketer_credit_reversed_at === null && (float) $this->marketer_clawback_amount > 0;
     }
 
     public function hasPendingFee(): bool

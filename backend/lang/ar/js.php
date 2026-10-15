@@ -915,11 +915,6 @@ return [
             'expired_label'                 => 'منتهية الصلاحية.',
         ],
 
-        'vendor_campaign_offers' => [
-            'approve_offer_confirm'   => 'الموافقة على عرض الحملة هذا لـ {name}؟',
-            'rejection_reason_required' => 'سبب الرفض مطلوب.',
-        ],
-
         'vendor_change_requests_show' => [
             'approve_change_request_confirm' => 'الموافقة على طلب التغيير هذا؟ سيتم تطبيق التغييرات فورًا.',
             'reject_change_request_confirm'  => 'رفض طلب التغيير هذا؟',

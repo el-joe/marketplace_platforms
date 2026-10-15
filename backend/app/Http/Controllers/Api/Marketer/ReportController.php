@@ -21,10 +21,7 @@ class ReportController extends Controller
             'total_earnings' => MarketerCampaignConversion::whereIn('invitation_id', $invitationIds)->where('commissioned', true)->sum('commission_amount'),
             'pending_earnings' => MarketerCampaignConversion::whereIn('invitation_id', $invitationIds)->where('commissioned', false)->sum('commission_amount'),
         ];
-        $report = app(MarketingFeeReportService::class);
-        $affiliate = $report->marketerAffiliateTotals($marketer->id);
-        $stats['fee_share'] = $report->marketerFeeShare($marketer->id)['totals'];
-        $stats['affiliate'] = collect($affiliate['totals'])->map(fn ($t) => collect($t)->except('marketing_fees')->all())->all();
+        $stats['campaigns'] = app(MarketingFeeReportService::class)->marketerCampaignTotals($marketer->id)['totals'];
 
         return response()->json(['success' => true, 'stats' => $stats, 'data' => $conversions]);
     }

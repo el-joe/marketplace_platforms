@@ -49,7 +49,6 @@ export default defineConfig({
                 'resources/js/admin/ad-campaigns.js',
                 'resources/js/admin/ad-slots.js',
                 'resources/js/admin/vendor-applications.js',
-                'resources/js/admin/vendor-campaign-offers.js',
                 'resources/js/admin/vendor-change-requests.js',
                 'resources/js/admin/vendor-change-requests-show.js',
                 'resources/js/admin/reviews.js',
@@ -110,7 +109,6 @@ export default defineConfig({
                 'resources/js/partner/classifieds.js',
                 'resources/js/partner/city-surcharges.js',
                 'resources/js/partner/roles.js',
-                'resources/js/partner/campaign-offers.js',
                 'resources/js/partner/influencer-promotion.js',
                 'resources/js/vendor/coupons.js',
                 // Delivery Agent Panel (delivery.noon.loc)
@@ -121,7 +119,6 @@ export default defineConfig({
                 'resources/js/marketer/promote-bookings.js',
                 'resources/js/marketer/promote-booking-show.js',
                 // Travel Agency Portal (travel-agency subdomain)
-                'resources/js/travel_agency/campaigns.js',
                 'resources/js/travel_agency/team.js',
                 'resources/js/travel_agency/roles.js',
                 'resources/js/travel_agency/bank-accounts.js',

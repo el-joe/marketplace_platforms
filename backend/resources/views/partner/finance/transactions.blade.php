@@ -125,8 +125,7 @@
                         <option value="payouts" @selected($type === 'payouts')>{{ __('partner.finance.payouts') }}</option>
                         <option value="samples" @selected($type === 'samples')>{{ __('partner.finance.promotion_sample') }}</option>
                         <option value="campaign_fees" @selected($type === 'campaign_fees')>{{ __('marketer_campaigns.finance.campaign_fee') }}</option>
-                        <option value="influencer_fees" @selected($type === 'influencer_fees')>{{ __('partner.finance.influencer_fee') }}</option>
-                        <option value="affiliate_fees" @selected($type === 'affiliate_fees')>{{ __('marketing_fees.affiliate.finance_type') }}</option>
+                        <option value="campaign_commissions" @selected($type === 'campaign_commissions')>{{ __('partner.finance.campaign_commission') }}</option>
                     </select>
                 </div>
             </form>
@@ -164,10 +163,7 @@
                                     'payout' => ['bg-blue-100 text-blue-700', __('partner.finance.payout')],
                                     'promotion_sample' => ['bg-purple-100 text-purple-700', __('partner.finance.promotion_sample')],
                                     'campaign_fee' => ['bg-orange-100 text-orange-700', __('marketer_campaigns.finance.campaign_fee')],
-                                    'influencer_fee' => ['bg-orange-100 text-orange-700', __('partner.finance.influencer_fee')],
-                                    'affiliate_marketing_fee' => ['bg-orange-100 text-orange-700', __('marketing_fees.affiliate.finance_type')],
-                                    'influencer_fee_refund' => ['bg-green-100 text-green-700', __('partner.finance.influencer_fee_refund')],
-                                    'affiliate_marketing_fee_refund' => ['bg-green-100 text-green-700', __('marketing_fees.affiliate.finance_refund_type')],
+                                    'campaign_budget_commission' => ['bg-orange-100 text-orange-700', __('partner.finance.campaign_commission')],
                                     default  => ['bg-gray-100 text-gray-600', $txn['type']],
                                 };
 

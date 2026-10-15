@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
 use App\Models\MarketerCampaign;
-use App\Models\MarketerCampaignFeeSettlement;
+use App\Enums\MarketerType;
+use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\Payout;
@@ -162,7 +163,7 @@ class FinanceController extends Controller
         }
 
         // v3 campaign fee: charged once when the campaign goes live (wallet first, otherwise the next statement).
-        if (in_array($type, ['all', 'influencer_fees', 'campaign_fees'])) {
+        if (in_array($type, ['all', 'campaign_fees'])) {
             MarketerCampaign::where('vendor_id', $vendorId)
                 ->whereIn('campaign_fee_status', ['pending', 'paid'])
                 ->where('marketing_fee_total', '>', 0)
@@ -190,85 +191,50 @@ class FinanceController extends Controller
                 });
         }
 
-        // Influencer platform fees (+VAT): settled from the wallet during the week or
-        // deducted in the weekly statement; still-pending ones show as unsettled.
-        if (in_array($type, ['all', 'influencer_fees'])) {
-            MarketerCampaignInvitation::whereIn('platform_fee_status', ['pending', 'paid', 'refunded'])
-                ->where('platform_fee_payer', 'vendor')
-                ->where('platform_fee_amount', '>', 0)
+        // Commissions the campaign budget paid: approved affiliate / broker commissions and influencer fixed amounts.
+        // The platform commission fee is taken from the marketer's side, so the seller only ever pays the gross.
+        if (in_array($type, ['all', 'campaign_commissions'])) {
+            MarketerCampaignConversion::where('status', 'approved')
                 ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendorId))
-                ->whereBetween('platform_fee_recorded_at', [$dateFrom, $dateTo])
+                ->whereBetween('approved_at', [$dateFrom, $dateTo])
+                ->with('campaign:id,title', 'payoutItems.payout:id,payout_number')
+                ->get()
+                ->each(function ($conv) use (&$rows) {
+                    $gross = Money::number($conv->gross_commission_amount ?? $conv->commission_amount);
+                    $rows->push([
+                        'type' => 'campaign_budget_commission',
+                        'date' => $conv->approved_at,
+                        'reference' => $conv->campaign?->title ?: ('#'.substr((string) $conv->campaign_id, 0, 8)),
+                        'description' => __('partner.finance.campaign_commission_line', [
+                            'kind' => $conv->conversion_type ? __('marketer.finance.conversion_type_'.$conv->conversion_type) : '',
+                            'type' => $conv->marketer_type ? (MarketerType::tryFrom($conv->marketer_type)?->label() ?? $conv->marketer_type) : '',
+                        ]),
+                        'amount' => -$gross,
+                        'gross' => 0,
+                        'commission' => $gross,
+                        'net' => -$gross,
+                        'payout_number' => $conv->payoutItems->first()?->payout?->payout_number,
+                        'receipt_url' => null,
+                    ]);
+                });
+
+            MarketerCampaignInvitation::where('influencer_fixed_status', MarketerCampaignInvitation::FIXED_PAID)
+                ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendorId))
+                ->whereBetween('influencer_fixed_paid_at', [$dateFrom, $dateTo])
                 ->with('campaign:id,title', 'marketer:id,name', 'payoutItems.payout:id,payout_number')
                 ->get()
                 ->each(function ($inv) use (&$rows) {
-                    $total = $inv->platformFeeTotal();
+                    $gross = Money::number($inv->influencer_fixed_amount);
                     $rows->push([
-                        'type' => 'influencer_fee',
-                        'date' => $inv->platform_fee_recorded_at,
+                        'type' => 'campaign_budget_commission',
+                        'date' => $inv->influencer_fixed_paid_at,
                         'reference' => $inv->campaign?->title ?: ('#'.substr((string) $inv->campaign_id, 0, 8)),
-                        'description' => __($inv->platform_fee_marketing_amount > 0 ? 'partner.finance.influencer_fee_line_with_marketing' : 'partner.finance.influencer_fee_line', [
-                            'name' => $inv->marketer?->name ?? '—',
-                            'fee' => Money::format($inv->platform_fee_amount),
-                            'vat' => Money::format($inv->platform_fee_vat_amount),
-                            'marketing' => Money::format($inv->platform_fee_marketing_amount),
-                            'rate' => (float) $inv->platform_fee_vat_rate,
-                            'status' => in_array($inv->platform_fee_status, ['paid', 'refunded'], true)
-                                ? __('partner.finance.fee_settled_'.($inv->platform_fee_paid_via ?: 'wallet'))
-                                : __('partner.finance.fee_unsettled'),
-                        ]),
-                        'amount' => -$total,
+                        'description' => __('partner.finance.influencer_fixed_line', ['name' => $inv->marketer?->name ?? '—']),
+                        'amount' => -$gross,
                         'gross' => 0,
-                        'commission' => 0,
-                        'net' => -$total,
+                        'commission' => $gross,
+                        'net' => -$gross,
                         'payout_number' => $inv->payoutItems->first()?->payout?->payout_number,
-                        'receipt_url' => null,
-                    ]);
-
-                    // P7: the refund of a paid fee (wallet credit) is its own positive line.
-                    if ($inv->platform_fee_refunded_at) {
-                        $refund = Money::number($inv->platform_fee_refund_amount);
-                        $rows->push([
-                            'type' => 'influencer_fee_refund',
-                            'date' => $inv->platform_fee_refunded_at,
-                            'reference' => $inv->campaign?->title ?: ('#'.substr((string) $inv->campaign_id, 0, 8)),
-                            'description' => __('partner.finance.influencer_fee_refund_line', ['name' => $inv->marketer?->name ?? '—']),
-                            'amount' => $refund,
-                            'gross' => 0,
-                            'commission' => 0,
-                            'net' => $refund,
-                            'payout_number' => null,
-                            'receipt_url' => null,
-                        ]);
-                    }
-                });
-        }
-
-        // Affiliate marketing fees (settlements): paid from the wallet at once, or deducted in the weekly statement.
-        if (in_array($type, ['all', 'affiliate_fees'])) {
-            MarketerCampaignFeeSettlement::where('vendor_id', $vendorId)
-                ->whereBetween('created_at', [$dateFrom, $dateTo])
-                ->with('campaign:id,title', 'payoutItems.payout:id,payout_number')
-                ->get()
-                ->each(function ($settlement) use (&$rows) {
-                    $amount = Money::number($settlement->amount);
-                    $refund = $settlement->isRefund();
-                    $signed = $refund ? $amount : -$amount;
-                    $rows->push([
-                        'type' => $refund ? 'affiliate_marketing_fee_refund' : 'affiliate_marketing_fee',
-                        'date' => $settlement->created_at,
-                        'reference' => $settlement->campaign?->title ?: ('#'.substr((string) $settlement->campaign_id, 0, 8)),
-                        'description' => $refund
-                            ? __('marketing_fees.affiliate.finance_refund_line')
-                            : __('marketing_fees.affiliate.finance_line', [
-                                'status' => $settlement->status === 'paid'
-                                    ? __('partner.finance.fee_settled_'.($settlement->paid_via ?: 'wallet'))
-                                    : __('partner.finance.fee_unsettled'),
-                            ]),
-                        'amount' => $signed,
-                        'gross' => 0,
-                        'commission' => 0,
-                        'net' => $signed,
-                        'payout_number' => $settlement->payoutItems->first()?->payout?->payout_number,
                         'receipt_url' => null,
                     ]);
                 });

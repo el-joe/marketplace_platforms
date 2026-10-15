@@ -2,49 +2,51 @@
 
 namespace App\Services;
 
-use App\Enums\MarketingFeeType;
+use App\Enums\CommissionVertical;
+use App\Enums\MarketerType;
 use App\Models\Country;
 use App\Models\MarketerCampaign;
-use App\Models\MarketerCampaignFeeAccrual;
-use App\Models\MarketerCampaignFeeSettlement;
+use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
+use App\Services\Marketer\MarketerEarningsService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
- * P8: every marketing-fee / marketer-payout figure of the reports, read ONLY from stored snapshots and ledgers
- * (campaign fee snapshot, invitation fee/VAT/marketing/share columns, fee accrual rows, fee settlements) and never
- * recomputed from current settings. Money is grouped by country AND currency (the currency stored on the row) and by
- * billing type (FBM (cross_dock) / FBN / FBP, plus a `total` row per country+currency); currencies are never blended.
+ * Campaign-fee and marketer-commission figures of the v3 model, read from stored snapshots only (never recomputed
+ * from current settings). Money is grouped by country AND currency and never blended across currencies.
  *
- * Every figure is attributed to the date of its own event: fee collected = platform_fee_paid_at, refund =
- * platform_fee_refunded_at, credit = marketer_credited_at, reversal = marketer_credit_reversed_at, accrual row =
- * created_at, settlement = paid_at (pending ones: created_at).
+ * Two kinds of platform income:
+ *   campaign fee      charged to the campaign owner when the campaign goes live (fixed + variable part,
+ *                     marketer_campaigns.marketing_fee_*), per vertical (product / classified / travel);
+ *   commission fee    taken out of every commission before it reaches the marketer
+ *                     (conversions.commission_fee_amount, influencer fixed amounts: influencer_fixed_fee_amount),
+ *                     per vertical and marketer type (influencer / affiliate / broker).
+ *
+ * Commission states (gross amounts, each dated by its own event): pending = created and waiting for approval (or an
+ * influencer amount reserved from the budget), approved = approved / paid out, reversed = cancelled or returned
+ * (an influencer amount released back to the budget).
  */
 class MarketingFeeReportService
 {
     public const TOTAL = 'total';
 
-    /** @var array<string, array{country_id: ?string, currency: ?string, type: string}> */
-    private array $campaignMeta = [];
+    /** Metric keys of one platform report row (2-decimal money; `campaigns` is a count). */
+    public const PLATFORM_METRICS = [
+        'campaigns', 'campaign_fee_fixed', 'campaign_fee_variable', 'campaign_fee_earned', 'campaign_fee_pending',
+        'commission_pending', 'commission_approved', 'commission_reversed',
+        'commission_fee_earned', 'commission_paid_net',
+    ];
 
     /** @var array<string, string> */
     private array $countryNames = [];
 
-    /** Metric keys of one platform report row (all 2-decimal money, `campaigns_*` are counts). */
-    public const PLATFORM_METRICS = [
-        'influencer_fees', 'influencer_vat', 'influencer_marketing_fees', 'affiliate_marketing_fees', 'marketing_fees',
-        'payouts_credited', 'payouts_reversed', 'payouts_clawback', 'payouts_net',
-        'affiliate_commissions', 'refunds', 'refunds_vat', 'refunds_net_of_vat', 'platform_margin', 'vat_liability',
-    ];
-
     /**
-     * Admin finance report: per country + currency, per billing type and in total.
+     * Admin finance report: one row per country + currency + vertical + marketer type, plus a `total` row per
+     * country + currency. Campaign-fee metrics sit on the rows of marketer type '' (they do not depend on a type).
      *
-     * platform_margin = influencer fees - fee-share payouts (net of reversals/clawbacks) + marketing fees
-     *                   (influencer + affiliate) - refunds (refunded VAT excluded, it was never revenue).
-     *
-     * @param  array{country_id?: ?string, currency?: ?string, type?: ?string}  $filters
+     * @param  array{country_id?: ?string, currency?: ?string, vertical?: ?string, marketer_type?: ?string}  $filters
      * @return array{from: string, to: string, rows: array<int, array<string, mixed>>}
      */
     public function platformReport(Carbon $from, Carbon $to, array $filters = []): array
@@ -53,329 +55,231 @@ class MarketingFeeReportService
         $end = $to->copy()->endOfDay();
         $buckets = [];
 
-        // Influencer fees / VAT / marketing share collected from vendors (paid, and later refunded ones: gross).
-        $this->invitationSums('platform_fee_paid_at', $start, $end, ['paid', 'refunded'],
-            'SUM(platform_fee_amount) AS fee, SUM(platform_fee_vat_amount) AS vat, SUM(platform_fee_marketing_amount) AS mkt')
-            ->each(function ($r) use (&$buckets) {
-                $this->add($buckets, $r->campaign_id, $r->ccy, 'influencer_fees', $r->fee);
-                $this->add($buckets, $r->campaign_id, $r->ccy, 'influencer_vat', $r->vat);
-                $this->add($buckets, $r->campaign_id, $r->ccy, 'influencer_marketing_fees', $r->mkt);
+        // Campaign fees earned (paid in the period) and still pending (campaigns created in the period).
+        MarketerCampaign::withTrashed()
+            ->where('campaign_fee_status', 'paid')
+            ->whereBetween('campaign_fee_paid_at', [$start, $end])
+            ->get(['id', 'country_id', 'currency', 'campaign_category', 'marketing_fee_fixed', 'marketing_fee_variable', 'marketing_fee_total'])
+            ->each(function (MarketerCampaign $c) use (&$buckets) {
+                $this->add($buckets, $c->country_id, $c->currency, $c->campaign_category, '', 'campaigns', 1);
+                $this->add($buckets, $c->country_id, $c->currency, $c->campaign_category, '', 'campaign_fee_fixed', $c->marketing_fee_fixed);
+                $this->add($buckets, $c->country_id, $c->currency, $c->campaign_category, '', 'campaign_fee_variable', $c->marketing_fee_variable);
+                $this->add($buckets, $c->country_id, $c->currency, $c->campaign_category, '', 'campaign_fee_earned', $c->marketing_fee_total);
             });
 
-        // Refunds of fees to the vendor (the refund amount is fee + VAT + marketing; VAT kept apart).
-        $this->invitationSums('platform_fee_refunded_at', $start, $end, ['refunded'],
-            'SUM(platform_fee_refund_amount) AS refund, SUM(platform_fee_vat_amount) AS vat')
-            ->each(function ($r) use (&$buckets) {
-                $this->add($buckets, $r->campaign_id, $r->ccy, 'refunds', $r->refund);
-                $this->add($buckets, $r->campaign_id, $r->ccy, 'refunds_vat', $r->vat);
-            });
-
-        // Fee-share payouts to influencers: credits, reversals (wallet debit made), outstanding clawbacks.
-        $this->invitationSums('marketer_credited_at', $start, $end, null, 'SUM(marketer_payout_amount) AS payout', 'payouts_credit')
-            ->each(function ($r) use (&$buckets) {
-                $this->add($buckets, $r->campaign_id, $r->ccy, 'payouts_credited', $r->payout);
-            });
-        $this->invitationSums('marketer_credit_reversed_at', $start, $end, null, 'SUM(marketer_payout_amount) AS payout', 'payouts_reversal')
-            ->each(function ($r) use (&$buckets) {
-                $this->add($buckets, $r->campaign_id, $r->ccy, 'payouts_reversed', $r->payout);
-            });
-        $this->invitationSums('platform_fee_refunded_at', $start, $end, null, 'SUM(marketer_clawback_amount) AS payout', 'payouts_clawback')
-            ->each(function ($r) use (&$buckets) {
-                $this->add($buckets, $r->campaign_id, $r->ccy, 'payouts_clawback', $r->payout);
-            });
-
-        // Affiliate marketing fees collected from vendors (settlements) and refunded after settlement.
-        MarketerCampaignFeeSettlement::query()
-            ->where('status', MarketerCampaignFeeSettlement::STATUS_PAID)
-            ->whereBetween('paid_at', [$start, $end])
-            ->groupBy('campaign_id', 'currency', 'kind')
-            ->selectRaw('campaign_id, currency AS ccy, kind, SUM(amount) AS amount')
-            ->get()
-            ->each(function ($r) use (&$buckets) {
-                $metric = $r->kind === MarketerCampaignFeeSettlement::KIND_REFUND ? 'refunds' : 'affiliate_marketing_fees';
-                $this->add($buckets, $r->campaign_id, $r->ccy, $metric, $r->amount);
-            });
-
-        // Affiliate commissions earned (net of reversals) = commission base of the fee accrual rows.
-        MarketerCampaignFeeAccrual::query()
+        MarketerCampaign::withTrashed()
+            ->where('campaign_fee_status', 'pending')
             ->whereBetween('created_at', [$start, $end])
-            ->groupBy('campaign_id')
-            ->selectRaw('campaign_id, SUM(commission_base) AS base')
-            ->get()
-            ->each(function ($r) use (&$buckets) {
-                $this->add($buckets, $r->campaign_id, null, 'affiliate_commissions', $r->base);
-            });
+            ->get(['id', 'country_id', 'currency', 'campaign_category', 'marketing_fee_total'])
+            ->each(fn (MarketerCampaign $c) => $this->add($buckets, $c->country_id, $c->currency, $c->campaign_category, '', 'campaign_fee_pending', $c->marketing_fee_total));
+
+        // Affiliate / broker commissions, per state and event date.
+        $gross = 'COALESCE(c.gross_commission_amount, c.commission_amount)';
+        $fee = 'COALESCE(c.commission_fee_amount, 0)';
+        $net = 'COALESCE(c.net_commission_amount, '.$gross.' - '.$fee.')';
+
+        foreach ([
+            ['pending', 'c.created_at', 'commission_pending'],
+            ['approved', 'c.approved_at', 'commission_approved'],
+            ['reversed', 'c.reversed_at', 'commission_reversed'],
+        ] as [$status, $dateColumn, $metric]) {
+            $this->conversionSums($status, $dateColumn, $start, $end, "SUM({$gross}) AS gross, SUM({$fee}) AS fee, SUM({$net}) AS net")
+                ->each(function ($r) use (&$buckets, $metric, $status) {
+                    $this->add($buckets, $r->country_id, $r->ccy, $r->vertical, (string) $r->marketer_type, $metric, $r->gross);
+                    if ($status === 'approved') {
+                        $this->add($buckets, $r->country_id, $r->ccy, $r->vertical, (string) $r->marketer_type, 'commission_fee_earned', $r->fee);
+                        $this->add($buckets, $r->country_id, $r->ccy, $r->vertical, (string) $r->marketer_type, 'commission_paid_net', $r->net);
+                    }
+                });
+        }
+
+        // Influencer fixed amounts: reserved -> pending, paid -> approved (+ fee, net), released -> reversed.
+        foreach ([
+            ['reserved', 'influencer_fixed_reserved_at', 'commission_pending'],
+            ['paid', 'influencer_fixed_paid_at', 'commission_approved'],
+            ['released', 'influencer_fixed_released_at', 'commission_reversed'],
+        ] as [$status, $dateColumn, $metric]) {
+            MarketerCampaignInvitation::query()
+                ->join('marketer_campaigns as mc', 'mc.id', '=', 'marketer_campaign_invitations.campaign_id')
+                ->where('marketer_campaign_invitations.influencer_fixed_status', $status)
+                ->whereBetween('marketer_campaign_invitations.'.$dateColumn, [$start, $end])
+                ->groupBy('mc.country_id', 'mc.currency', 'mc.campaign_category')
+                ->selectRaw('mc.country_id AS country_id, mc.currency AS ccy, mc.campaign_category AS vertical,
+                    SUM(marketer_campaign_invitations.influencer_fixed_amount) AS gross,
+                    SUM(COALESCE(marketer_campaign_invitations.influencer_fixed_fee_amount, 0)) AS fee,
+                    SUM(COALESCE(marketer_campaign_invitations.influencer_fixed_net_amount, 0)) AS net')
+                ->get()
+                ->each(function ($r) use (&$buckets, $metric, $status) {
+                    $this->add($buckets, $r->country_id, $r->ccy, $r->vertical, MarketerType::Influencer->value, $metric, $r->gross);
+                    if ($status === 'paid') {
+                        $this->add($buckets, $r->country_id, $r->ccy, $r->vertical, MarketerType::Influencer->value, 'commission_fee_earned', $r->fee);
+                        $this->add($buckets, $r->country_id, $r->ccy, $r->vertical, MarketerType::Influencer->value, 'commission_paid_net', $r->net);
+                    }
+                });
+        }
 
         return [
             'from' => $start->toDateString(),
             'to' => $end->toDateString(),
-            'rows' => $this->finishRows($buckets, self::PLATFORM_METRICS, $filters, fn (array $m) => $this->derive($m)),
+            'rows' => $this->finishRows($buckets, self::PLATFORM_METRICS, $filters),
         ];
     }
 
     /**
-     * Marketing Fees "Report" tab, part 1: influencer campaigns from their creation-time snapshot, per country +
-     * currency + type: campaigns, influencers (accepted), subtotal, fixed, variable, marketing fees, grand total,
-     * collected vs pending (what the invitations were/are charged: fee + VAT + marketing).
+     * Marketing Fees "Report" tab, part 1: campaign fees from the creation-time snapshot, per country + currency +
+     * vertical: campaigns, subtotal (the commission budget the fee is based on), fixed part, variable part, total
+     * fee, grand total, collected (paid) vs pending.
      *
-     * @param  array{country_id?: ?string, currency?: ?string, type?: ?string}  $filters
+     * @param  array{country_id?: ?string, currency?: ?string, vertical?: ?string}  $filters
      * @return array<int, array<string, mixed>>
      */
-    public function campaignTypeReport(Carbon $from, Carbon $to, array $filters = []): array
+    public function campaignFeeReport(Carbon $from, Carbon $to, array $filters = []): array
     {
         $start = $from->copy()->startOfDay();
         $end = $to->copy()->endOfDay();
         $buckets = [];
-        $metrics = ['campaigns', 'influencers', 'subtotal', 'fixed_fee', 'variable_fee', 'marketing_fees', 'grand_total',
-            'collected', 'pending', 'marketing_collected', 'marketing_pending'];
+        $metrics = ['campaigns', 'subtotal', 'fixed_fee', 'variable_fee', 'campaign_fee', 'grand_total', 'collected', 'pending', 'voided'];
 
-        $campaigns = MarketerCampaign::withTrashed()
+        MarketerCampaign::withTrashed()
             ->whereNotNull('campaign_subtotal')
-            ->whereNotNull('vendor_id')
             ->whereBetween('created_at', [$start, $end])
-            ->get();
-
-        foreach ($campaigns as $c) {
-            $this->add($buckets, $c->id, $c->currency, 'campaigns', 1);
-            $this->add($buckets, $c->id, $c->currency, 'subtotal', $c->campaign_subtotal);
-            $this->add($buckets, $c->id, $c->currency, 'fixed_fee', $c->marketing_fee_fixed);
-            $this->add($buckets, $c->id, $c->currency, 'variable_fee', $c->marketing_fee_variable);
-            $this->add($buckets, $c->id, $c->currency, 'marketing_fees', $c->marketing_fee_total);
-            $this->add($buckets, $c->id, $c->currency, 'grand_total', $c->campaign_grand_total);
-        }
-
-        $ids = $campaigns->pluck('id')->all();
-        if ($ids !== []) {
-            MarketerCampaignInvitation::query()
-                ->whereIn('campaign_id', $ids)
-                ->where('platform_fee_payer', 'vendor')
-                ->whereIn('platform_fee_status', ['paid', 'pending'])
-                ->groupBy('campaign_id', 'platform_fee_currency', 'platform_fee_status')
-                ->selectRaw('campaign_id, platform_fee_currency AS ccy, platform_fee_status AS st, COUNT(*) AS n,
-                    SUM(platform_fee_amount + platform_fee_vat_amount + platform_fee_marketing_amount) AS total,
-                    SUM(platform_fee_marketing_amount) AS mkt')
-                ->get()
-                ->each(function ($r) use (&$buckets) {
-                    $paid = $r->st === 'paid';
-                    $this->add($buckets, $r->campaign_id, $r->ccy, $paid ? 'collected' : 'pending', $r->total);
-                    $this->add($buckets, $r->campaign_id, $r->ccy, $paid ? 'marketing_collected' : 'marketing_pending', $r->mkt);
-                    $this->add($buckets, $r->campaign_id, $r->ccy, 'influencers', $r->n);
-                });
-        }
+            ->get()
+            ->each(function (MarketerCampaign $c) use (&$buckets) {
+                $v = (string) $c->campaign_category;
+                $this->add($buckets, $c->country_id, $c->currency, $v, '', 'campaigns', 1);
+                $this->add($buckets, $c->country_id, $c->currency, $v, '', 'subtotal', $c->campaign_subtotal);
+                $this->add($buckets, $c->country_id, $c->currency, $v, '', 'fixed_fee', $c->marketing_fee_fixed);
+                $this->add($buckets, $c->country_id, $c->currency, $v, '', 'variable_fee', $c->marketing_fee_variable);
+                $this->add($buckets, $c->country_id, $c->currency, $v, '', 'campaign_fee', $c->marketing_fee_total);
+                $this->add($buckets, $c->country_id, $c->currency, $v, '', 'grand_total', $c->campaign_grand_total);
+                $bucket = match ($c->campaign_fee_status) {
+                    'paid' => 'collected',
+                    'pending' => 'pending',
+                    'voided' => 'voided',
+                    default => null,
+                };
+                if ($bucket) {
+                    $this->add($buckets, $c->country_id, $c->currency, $v, '', $bucket, $c->marketing_fee_total);
+                }
+            });
 
         return $this->finishRows($buckets, $metrics, $filters);
     }
 
     /**
-     * Marketing Fees "Report" tab, part 2: affiliate marketing-fee accruals per country + currency + type.
-     * accrued = positive accrual rows, refunded = reversal rows (shown positive), settled = charged to the vendor
-     * (paid settlements), pending = charged but not yet paid, settlement_refunds = credited back after settlement.
+     * Marketing Fees "Report" tab, part 2: commissions per country + currency + vertical + marketer type:
+     * counts and gross amounts by state (pending / approved / reversed), the commission fee the platform earned and
+     * the net paid to marketers. Influencer fixed amounts are included (one line per campaign).
      *
-     * @param  array{country_id?: ?string, currency?: ?string, type?: ?string}  $filters
+     * @param  array{country_id?: ?string, currency?: ?string, vertical?: ?string, marketer_type?: ?string}  $filters
      * @return array<int, array<string, mixed>>
      */
-    public function affiliateAccrualReport(Carbon $from, Carbon $to, array $filters = []): array
+    public function commissionReport(Carbon $from, Carbon $to, array $filters = []): array
     {
-        $start = $from->copy()->startOfDay();
-        $end = $to->copy()->endOfDay();
-        $buckets = [];
-        $metrics = ['orders', 'commission', 'accrued', 'refunded', 'net_accrued', 'settled', 'pending', 'settlement_refunds'];
+        $rows = $this->platformReport($from, $to, $filters)['rows'];
 
-        MarketerCampaignFeeAccrual::query()
-            ->whereBetween('created_at', [$start, $end])
-            ->groupBy('campaign_id', 'entry_type')
-            ->selectRaw('campaign_id, entry_type, COUNT(*) AS n, SUM(commission_base) AS base, SUM(marketing_total_delta) AS fee')
-            ->get()
-            ->each(function ($r) use (&$buckets) {
-                $this->add($buckets, $r->campaign_id, null, 'commission', $r->base);
-                if ($r->entry_type === MarketerCampaignFeeAccrual::ENTRY_REVERSAL) {
-                    $this->add($buckets, $r->campaign_id, null, 'refunded', abs((float) $r->fee));
-                } else {
-                    $this->add($buckets, $r->campaign_id, null, 'orders', $r->n);
-                    $this->add($buckets, $r->campaign_id, null, 'accrued', $r->fee);
-                }
-                $this->add($buckets, $r->campaign_id, null, 'net_accrued', $r->fee);
-            });
-
-        MarketerCampaignFeeSettlement::query()
-            ->whereBetween('created_at', [$start, $end])
-            ->groupBy('campaign_id', 'currency', 'kind', 'status')
-            ->selectRaw('campaign_id, currency AS ccy, kind, status, SUM(amount) AS amount')
-            ->get()
-            ->each(function ($r) use (&$buckets) {
-                if ($r->kind === MarketerCampaignFeeSettlement::KIND_REFUND) {
-                    if ($r->status === MarketerCampaignFeeSettlement::STATUS_PAID) {
-                        $this->add($buckets, $r->campaign_id, $r->ccy, 'settlement_refunds', $r->amount);
-                    }
-
-                    return;
-                }
-                $metric = $r->status === MarketerCampaignFeeSettlement::STATUS_PAID ? 'settled' : 'pending';
-                $this->add($buckets, $r->campaign_id, $r->ccy, $metric, $r->amount);
-            });
-
-        return $this->finishRows($buckets, $metrics, $filters);
+        return array_values(array_filter($rows, fn (array $r) => $r['marketer_type'] !== '' || $r['vertical'] === self::TOTAL));
     }
 
     /**
-     * Vendor totals per currency (all time unless a range is given): influencer fees (fee + VAT), marketing fees on
-     * influencer campaigns, affiliate marketing fees, refunds (influencer refunds + affiliate refunds after settlement).
+     * Vendor / agency totals per currency (all time unless a range is given):
+     *   campaign_fee              campaign fees already paid (wallet or payout statement);
+     *   campaign_fee_pending      campaign fees waiting to be deducted from the wallet or the next statement;
+     *   campaign_budget_commission commissions that came out of the campaigns' Max Commission Budget (approved
+     *                              affiliate / broker commissions + influencer fixed amounts paid);
+     *   total_charged             campaign_fee + campaign_budget_commission.
      *
      * @return array<string, array<string, float>> keyed by currency
      */
     public function vendorTotals(string $vendorId, ?Carbon $from = null, ?Carbon $to = null): array
     {
         $totals = [];
-        $bump = function (string $currency, string $key, mixed $value) use (&$totals) {
-            $totals[$currency] ??= ['influencer_fees' => 0.0, 'influencer_vat' => 0.0, 'marketing_fees' => 0.0, 'affiliate_marketing_fees' => 0.0, 'refunds' => 0.0, 'total_charged' => 0.0];
+        $bump = function (?string $currency, string $key, mixed $value) use (&$totals) {
+            $currency = (string) $currency;
+            $totals[$currency] ??= ['campaign_fee' => 0.0, 'campaign_fee_pending' => 0.0, 'campaign_budget_commission' => 0.0, 'total_charged' => 0.0];
             $totals[$currency][$key] = round($totals[$currency][$key] + (float) $value, 2);
         };
+        $start = $from?->copy()->startOfDay();
+        $end = $to?->copy()->endOfDay();
 
-        $invitations = MarketerCampaignInvitation::query()
-            ->where('platform_fee_payer', 'vendor')
-            ->join('marketer_campaigns', 'marketer_campaigns.id', '=', 'marketer_campaign_invitations.campaign_id')
-            ->where('marketer_campaigns.vendor_id', $vendorId);
-
-        (clone $invitations)->whereIn('platform_fee_status', ['paid', 'refunded'])
-            ->when($from, fn ($q) => $q->where('platform_fee_paid_at', '>=', $from->copy()->startOfDay()))
-            ->when($to, fn ($q) => $q->where('platform_fee_paid_at', '<=', $to->copy()->endOfDay()))
-            ->groupBy('ccy')
-            ->selectRaw('COALESCE(platform_fee_currency, marketer_campaigns.currency) AS ccy, SUM(platform_fee_amount) AS fee, SUM(platform_fee_vat_amount) AS vat, SUM(platform_fee_marketing_amount) AS mkt')
-            ->get()
-            ->each(function ($r) use ($bump) {
-                $bump($r->ccy, 'influencer_fees', (float) $r->fee + (float) $r->vat);
-                $bump($r->ccy, 'influencer_vat', $r->vat);
-                $bump($r->ccy, 'marketing_fees', $r->mkt);
+        MarketerCampaign::withTrashed()->where('vendor_id', $vendorId)
+            ->whereIn('campaign_fee_status', ['paid', 'pending'])
+            ->get(['id', 'currency', 'campaign_fee_status', 'campaign_fee_paid_at', 'created_at', 'marketing_fee_total'])
+            ->each(function (MarketerCampaign $c) use ($bump, $start, $end) {
+                $date = $c->campaign_fee_status === 'paid' ? ($c->campaign_fee_paid_at ?? $c->created_at) : $c->created_at;
+                if (($start && $date < $start) || ($end && $date > $end)) {
+                    return;
+                }
+                $bump($c->currency, $c->campaign_fee_status === 'paid' ? 'campaign_fee' : 'campaign_fee_pending', $c->marketing_fee_total);
             });
 
-        (clone $invitations)->where('platform_fee_status', 'refunded')
-            ->when($from, fn ($q) => $q->where('platform_fee_refunded_at', '>=', $from->copy()->startOfDay()))
-            ->when($to, fn ($q) => $q->where('platform_fee_refunded_at', '<=', $to->copy()->endOfDay()))
-            ->groupBy('ccy')
-            ->selectRaw('COALESCE(platform_fee_currency, marketer_campaigns.currency) AS ccy, SUM(platform_fee_refund_amount) AS refund')
+        MarketerCampaignConversion::query()
+            ->join('marketer_campaigns as mc', 'mc.id', '=', 'marketer_campaign_conversions.campaign_id')
+            ->where('mc.vendor_id', $vendorId)
+            ->where('marketer_campaign_conversions.status', 'approved')
+            ->when($start, fn ($q) => $q->where('marketer_campaign_conversions.approved_at', '>=', $start))
+            ->when($end, fn ($q) => $q->where('marketer_campaign_conversions.approved_at', '<=', $end))
+            ->groupBy('mc.currency')
+            ->selectRaw('mc.currency AS ccy, SUM(COALESCE(marketer_campaign_conversions.gross_commission_amount, marketer_campaign_conversions.commission_amount)) AS gross')
             ->get()
-            ->each(fn ($r) => $bump($r->ccy, 'refunds', $r->refund));
+            ->each(fn ($r) => $bump($r->ccy, 'campaign_budget_commission', $r->gross));
 
-        MarketerCampaignFeeSettlement::query()
-            ->where('vendor_id', $vendorId)
-            ->where('status', MarketerCampaignFeeSettlement::STATUS_PAID)
-            ->when($from, fn ($q) => $q->where('paid_at', '>=', $from->copy()->startOfDay()))
-            ->when($to, fn ($q) => $q->where('paid_at', '<=', $to->copy()->endOfDay()))
-            ->groupBy('currency', 'kind')
-            ->selectRaw('currency AS ccy, kind, SUM(amount) AS amount')
+        MarketerCampaignInvitation::query()
+            ->join('marketer_campaigns as mc', 'mc.id', '=', 'marketer_campaign_invitations.campaign_id')
+            ->where('mc.vendor_id', $vendorId)
+            ->where('marketer_campaign_invitations.influencer_fixed_status', MarketerCampaignInvitation::FIXED_PAID)
+            ->when($start, fn ($q) => $q->where('marketer_campaign_invitations.influencer_fixed_paid_at', '>=', $start))
+            ->when($end, fn ($q) => $q->where('marketer_campaign_invitations.influencer_fixed_paid_at', '<=', $end))
+            ->groupBy('mc.currency')
+            ->selectRaw('mc.currency AS ccy, SUM(marketer_campaign_invitations.influencer_fixed_amount) AS gross')
             ->get()
-            ->each(function ($r) use ($bump) {
-                $bump($r->ccy, $r->kind === MarketerCampaignFeeSettlement::KIND_REFUND ? 'refunds' : 'affiliate_marketing_fees', $r->amount);
-            });
+            ->each(fn ($r) => $bump($r->ccy, 'campaign_budget_commission', $r->gross));
 
         foreach ($totals as $currency => $t) {
-            $totals[$currency]['total_charged'] = round($t['influencer_fees'] + $t['marketing_fees'] + $t['affiliate_marketing_fees'], 2);
+            $totals[$currency]['total_charged'] = round($t['campaign_fee'] + $t['campaign_budget_commission'], 2);
         }
 
         return $totals;
     }
 
     /**
-     * Fee-share earnings of one marketer: one row per accepted influencer invitation with its snapshot state, plus
-     * totals per currency (credited, reversed, outstanding clawback, net).
+     * Earnings of one marketer per campaign (conversions that are not reversed): orders, gross commission, platform
+     * commission fee and net, with totals per currency.
      *
-     * @return array{rows: Collection<int, array<string, mixed>>, totals: array<string, array<string, float>>}
+     * @return array{rows: Collection<int, array<string, mixed>>, totals: array<string, array<string, float|int>>}
      */
-    public function marketerFeeShare(string $marketerId): array
+    public function marketerCampaignTotals(string $marketerId): array
     {
-        $invitations = MarketerCampaignInvitation::query()
-            ->where('marketer_id', $marketerId)
-            ->where('status', 'accepted')
-            ->where('platform_fee_payer', 'vendor')
-            ->where('marketer_payout_amount', '>', 0)
-            ->with(['campaign' => fn ($q) => $q->withTrashed()->select('id', 'title', 'currency', 'status', 'fulfillment_type')])
-            ->orderByDesc('responded_at')
-            ->get();
-
-        $totals = [];
-        $rows = $invitations->map(function (MarketerCampaignInvitation $i) use (&$totals) {
-            $currency = $i->platform_fee_currency ?? $i->campaign?->currency ?? '';
-            $credited = $i->marketer_credited_at !== null;
-            $reversed = $i->marketer_credit_reversal_wallet_tx_id !== null;
-            $clawback = ! $reversed && (float) $i->marketer_clawback_amount > 0;
-            $amount = round((float) $i->marketer_payout_amount, 2);
-
-            $state = match (true) {
-                $reversed => 'reversed',
-                $clawback => 'clawback',
-                $i->marketer_credit_reversed_at !== null => 'never_credited',
-                $credited => 'credited',
-                default => 'pending',
-            };
-
-            $t = &$totals[$currency];
-            $t ??= ['credited' => 0.0, 'reversed' => 0.0, 'clawback' => 0.0, 'net' => 0.0, 'pending' => 0.0];
-            if ($credited) {
-                $t['credited'] = round($t['credited'] + $amount, 2);
-            } elseif ($state === 'pending') {
-                $t['pending'] = round($t['pending'] + $amount, 2);
-            }
-            if ($reversed) {
-                $t['reversed'] = round($t['reversed'] + $amount, 2);
-            }
-            if ($clawback) {
-                $t['clawback'] = round($t['clawback'] + (float) $i->marketer_clawback_amount, 2);
-            }
-            $t['net'] = round($t['credited'] - $t['reversed'] - $t['clawback'], 2);
-            unset($t);
-
-            return [
-                'invitation_id' => $i->id,
-                'campaign_id' => $i->campaign_id,
-                'campaign_title' => $i->campaign?->title ?: '#'.substr((string) $i->campaign_id, 0, 8),
-                'currency' => $currency,
-                'fee' => round((float) $i->platform_fee_amount, 2),
-                'share_pct' => (float) $i->marketer_fee_share_pct,
-                'amount' => $amount,
-                'credited_at' => $i->marketer_credited_at,
-                'reversed_at' => $reversed ? $i->marketer_credit_reversed_at : null,
-                'clawback_amount' => $clawback ? round((float) $i->marketer_clawback_amount, 2) : 0.0,
-                'state' => $state,
-            ];
-        });
-
-        return ['rows' => $rows->values(), 'totals' => $totals];
-    }
-
-    /**
-     * Affiliate totals of one marketer per campaign (net of reversed sales): orders, commission, and the marketing
-     * fees those sales generated for the seller.
-     *
-     * @return array{rows: Collection<int, array<string, mixed>>, totals: array<string, array<string, float>>}
-     */
-    public function marketerAffiliateTotals(string $marketerId): array
-    {
-        $rows = MarketerCampaignFeeAccrual::query()
-            ->join('marketer_campaign_invitations', 'marketer_campaign_invitations.id', '=', 'marketer_campaign_fee_accruals.invitation_id')
-            ->join('marketer_campaigns', 'marketer_campaigns.id', '=', 'marketer_campaign_fee_accruals.campaign_id')
-            ->where('marketer_campaign_invitations.marketer_id', $marketerId)
-            ->groupBy('marketer_campaign_fee_accruals.campaign_id', 'marketer_campaigns.title', 'marketer_campaigns.currency')
-            ->selectRaw('marketer_campaign_fee_accruals.campaign_id AS campaign_id, marketer_campaigns.title AS title, marketer_campaigns.currency AS currency,
-                SUM(CASE WHEN entry_type = \'accrual\' THEN 1 ELSE 0 END) AS orders,
-                SUM(commission_base) AS commission, SUM(marketing_total_delta) AS marketing_fees')
+        $rows = MarketerCampaignConversion::query()
+            ->join('marketer_campaign_invitations as i', 'i.id', '=', 'marketer_campaign_conversions.invitation_id')
+            ->join('marketer_campaigns as mc', 'mc.id', '=', 'marketer_campaign_conversions.campaign_id')
+            ->where('i.marketer_id', $marketerId)
+            ->where('marketer_campaign_conversions.status', '!=', 'reversed')
+            ->groupBy('mc.id', 'mc.title', 'mc.currency')
+            ->selectRaw('mc.id AS campaign_id, mc.title AS title, mc.currency AS currency, COUNT(*) AS orders,
+                SUM(COALESCE(marketer_campaign_conversions.gross_commission_amount, marketer_campaign_conversions.commission_amount)) AS gross,
+                SUM(COALESCE(marketer_campaign_conversions.commission_fee_amount, 0)) AS fee,
+                SUM(COALESCE(marketer_campaign_conversions.net_commission_amount, COALESCE(marketer_campaign_conversions.gross_commission_amount, marketer_campaign_conversions.commission_amount) - COALESCE(marketer_campaign_conversions.commission_fee_amount, 0))) AS net')
             ->get()
             ->map(fn ($r) => [
                 'campaign_id' => $r->campaign_id,
                 'campaign_title' => $r->title ?: '#'.substr((string) $r->campaign_id, 0, 8),
                 'currency' => $r->currency,
                 'orders' => (int) $r->orders,
-                'commission' => round((float) $r->commission, 2),
-                'marketing_fees' => round((float) $r->marketing_fees, 2),
+                'gross' => round((float) $r->gross, 2),
+                'fee' => round((float) $r->fee, 2),
+                'net' => round((float) $r->net, 2),
             ]);
 
         $totals = [];
         foreach ($rows as $r) {
             $t = &$totals[$r['currency']];
-            $t ??= ['campaigns' => 0, 'orders' => 0, 'commission' => 0.0, 'marketing_fees' => 0.0];
+            $t ??= ['campaigns' => 0, 'orders' => 0, 'gross' => 0.0, 'fee' => 0.0, 'net' => 0.0];
             $t['campaigns']++;
             $t['orders'] += $r['orders'];
-            $t['commission'] = round($t['commission'] + $r['commission'], 2);
-            $t['marketing_fees'] = round($t['marketing_fees'] + $r['marketing_fees'], 2);
+            foreach (['gross', 'fee', 'net'] as $k) {
+                $t[$k] = round($t[$k] + $r[$k], 2);
+            }
             unset($t);
         }
 
@@ -383,62 +287,44 @@ class MarketingFeeReportService
     }
 
     /**
-     * Fee-share + affiliate figures of one admin-visible marketer profile (same data as the marketer panel).
+     * Everything the admin marketer profile and the marketer panel show: conversions per campaign + the influencer's
+     * per-campaign fixed amount lines.
      *
-     * @return array{fee_share: array, affiliate: array}
+     * @return array{campaigns: array, fixed: Collection}
      */
     public function marketerEarnings(string $marketerId): array
     {
-        return ['fee_share' => $this->marketerFeeShare($marketerId), 'affiliate' => $this->marketerAffiliateTotals($marketerId)];
+        return [
+            'campaigns' => $this->marketerCampaignTotals($marketerId),
+            'fixed' => app(MarketerEarningsService::class)->fixedAmountLines($marketerId),
+        ];
     }
 
     // ── internals ───────────────────────────────────────────────────────────
 
-    /**
-     * Invitation sums per campaign + currency for one event-date column. `$kind` selects extra conditions:
-     * payouts_credit (credited only), payouts_reversal (a reversal wallet debit was made), payouts_clawback
-     * (reversal still outstanding).
-     */
-    private function invitationSums(string $dateColumn, Carbon $start, Carbon $end, ?array $statuses, string $selects, ?string $kind = null): Collection
+    /** Conversion sums per campaign country + currency + vertical + marketer type for one status / event date. */
+    private function conversionSums(string $status, string $dateColumn, Carbon $start, Carbon $end, string $selects): Collection
     {
-        return MarketerCampaignInvitation::query()
-            ->where('marketer_campaign_invitations.platform_fee_payer', 'vendor')
-            ->join('marketer_campaigns', 'marketer_campaigns.id', '=', 'marketer_campaign_invitations.campaign_id')
-            ->whereBetween('marketer_campaign_invitations.'.$dateColumn, [$start, $end])
-            ->when($statuses, fn ($q) => $q->whereIn('marketer_campaign_invitations.platform_fee_status', $statuses))
-            ->when($kind === 'payouts_reversal', fn ($q) => $q->whereNotNull('marketer_campaign_invitations.marketer_credit_reversal_wallet_tx_id'))
-            ->when($kind === 'payouts_clawback', fn ($q) => $q->whereNull('marketer_campaign_invitations.marketer_credit_reversed_at')->where('marketer_campaign_invitations.marketer_clawback_amount', '>', 0))
-            ->groupBy('marketer_campaign_invitations.campaign_id', 'ccy')
-            ->selectRaw('marketer_campaign_invitations.campaign_id AS campaign_id, COALESCE(marketer_campaign_invitations.platform_fee_currency, marketer_campaigns.currency) AS ccy, '.$selects)
+        return DB::table('marketer_campaign_conversions as c')
+            ->join('marketer_campaigns as mc', 'mc.id', '=', 'c.campaign_id')
+            ->where('c.status', $status)
+            ->whereBetween($dateColumn, [$start, $end])
+            ->groupBy('mc.country_id', 'mc.currency', 'mc.campaign_category', 'c.marketer_type')
+            ->selectRaw('mc.country_id AS country_id, mc.currency AS ccy, mc.campaign_category AS vertical, COALESCE(c.marketer_type, \'affiliate\') AS marketer_type, '.$selects)
             ->get();
     }
 
     /** @param array<string, array<string, mixed>> $buckets */
-    private function add(array &$buckets, string $campaignId, ?string $currency, string $metric, mixed $value): void
+    private function add(array &$buckets, ?string $countryId, ?string $currency, ?string $vertical, string $marketerType, string $metric, mixed $value): void
     {
-        $meta = $this->meta($campaignId);
-        $ccy = $currency ?: $meta['currency'];
-        $key = ($meta['country_id'] ?? '').'|'.$ccy.'|'.$meta['type'];
+        $vertical = (string) ($vertical ?: CommissionVertical::Product->value);
+        $key = ($countryId ?? '').'|'.$currency.'|'.$vertical.'|'.$marketerType;
 
-        $buckets[$key]['country_id'] = $meta['country_id'];
-        $buckets[$key]['currency'] = $ccy;
-        $buckets[$key]['type'] = $meta['type'];
+        $buckets[$key]['country_id'] = $countryId;
+        $buckets[$key]['currency'] = $currency;
+        $buckets[$key]['vertical'] = $vertical;
+        $buckets[$key]['marketer_type'] = $marketerType;
         $buckets[$key]['m'][$metric] = round(($buckets[$key]['m'][$metric] ?? 0) + (float) $value, 4);
-    }
-
-    /** @return array{country_id: ?string, currency: ?string, type: string} */
-    private function meta(string $campaignId): array
-    {
-        if (! isset($this->campaignMeta[$campaignId])) {
-            $c = MarketerCampaign::withTrashed()->with(['vendorListing', 'adminListing'])->find($campaignId);
-            $type = $c?->fulfillment_type instanceof MarketingFeeType
-                ? $c->fulfillment_type
-                : MarketingFeeType::fromListingModel($c?->vendorListing?->fulfillment_model ?? $c?->adminListing?->fulfillment_type);
-
-            $this->campaignMeta[$campaignId] = ['country_id' => $c?->country_id, 'currency' => $c?->currency, 'type' => $type->value];
-        }
-
-        return $this->campaignMeta[$campaignId];
     }
 
     /**
@@ -446,12 +332,13 @@ class MarketingFeeReportService
      *
      * @param  array<string, array<string, mixed>>  $buckets
      * @param  array<int, string>  $metricKeys
-     * @param  array{country_id?: ?string, currency?: ?string, type?: ?string}  $filters
+     * @param  array<string, mixed>  $filters
      * @return array<int, array<string, mixed>>
      */
-    private function finishRows(array $buckets, array $metricKeys, array $filters, ?callable $derive = null): array
+    private function finishRows(array $buckets, array $metricKeys, array $filters): array
     {
-        $grouped = [];
+        $groups = [];
+
         foreach ($buckets as $b) {
             if (! empty($filters['country_id']) && $b['country_id'] !== $filters['country_id']) {
                 continue;
@@ -459,65 +346,70 @@ class MarketingFeeReportService
             if (! empty($filters['currency']) && $b['currency'] !== $filters['currency']) {
                 continue;
             }
-            if (! empty($filters['type']) && $b['type'] !== $filters['type']) {
+            if (! empty($filters['vertical']) && $b['vertical'] !== $filters['vertical']) {
+                continue;
+            }
+            if (! empty($filters['marketer_type']) && $b['marketer_type'] !== $filters['marketer_type']) {
                 continue;
             }
 
             $gk = ($b['country_id'] ?? '').'|'.$b['currency'];
-            $grouped[$gk]['country_id'] = $b['country_id'];
-            $grouped[$gk]['currency'] = $b['currency'];
-            $grouped[$gk]['types'][$b['type']] = $b['m'];
+            $groups[$gk]['country_id'] = $b['country_id'];
+            $groups[$gk]['currency'] = $b['currency'];
+            $groups[$gk]['lines'][$b['vertical'].'|'.$b['marketer_type']] = $b;
         }
 
-        $this->loadCountryNames(array_filter(array_column($grouped, 'country_id')));
-        $order = [MarketingFeeType::Fbm->value, MarketingFeeType::Fbn->value, MarketingFeeType::Fbp->value];
+        $this->loadCountryNames(array_filter(array_column($groups, 'country_id')));
+        $blank = array_fill_keys($metricKeys, 0.0);
+        $verticalOrder = CommissionVertical::values();
+        $typeOrder = ['', ...MarketerType::values()];
         $rows = [];
 
-        foreach ($grouped as $g) {
-            $total = array_fill_keys($metricKeys, 0.0);
-            $typeRows = [];
-            foreach ($order as $type) {
-                if (! isset($g['types'][$type])) {
-                    continue;
-                }
-                $m = array_merge(array_fill_keys($metricKeys, 0.0), $g['types'][$type]);
-                foreach ($metricKeys as $k) {
-                    $total[$k] += $m[$k] ?? 0;
-                }
-                $typeRows[$type] = $m;
-            }
+        foreach ($groups as $g) {
+            $lines = $g['lines'];
+            uksort($lines, function ($a, $b) use ($verticalOrder, $typeOrder) {
+                [$va, $ta] = explode('|', $a);
+                [$vb, $tb] = explode('|', $b);
 
-            foreach ($typeRows + [self::TOTAL => $total] as $type => $m) {
-                $m = $derive ? $derive($m) : $m;
-                $row = [
-                    'country_id' => $g['country_id'],
-                    'country_name' => $this->countryNames[$g['country_id']] ?? '—',
-                    'currency' => $g['currency'],
-                    'type' => $type,
-                    'type_label' => $type === self::TOTAL ? __('common.total') : MarketingFeeType::from($type)->label(),
-                ];
-                foreach ($m as $k => $v) {
-                    $row[$k] = round((float) $v, 2);
+                return [array_search($va, $verticalOrder), array_search($ta, $typeOrder)] <=> [array_search($vb, $verticalOrder), array_search($tb, $typeOrder)];
+            });
+
+            $total = $blank;
+            foreach ($lines as $line) {
+                $m = array_merge($blank, $line['m']);
+                foreach ($metricKeys as $k) {
+                    $total[$k] += $m[$k];
                 }
-                $rows[] = $row;
+                $rows[] = $this->row($g, $line['vertical'], $line['marketer_type'], $m);
             }
+            $rows[] = $this->row($g, self::TOTAL, '', $total);
         }
 
-        usort($rows, fn ($a, $b) => [$a['country_name'], $a['currency']] <=> [$b['country_name'], $b['currency']]);
+        usort($rows, fn ($a, $b) => [$a['country_name'], $a['currency'], $a['vertical'] === self::TOTAL] <=> [$b['country_name'], $b['currency'], $b['vertical'] === self::TOTAL]);
 
         return $rows;
     }
 
     /** @param array<string, float> $m */
-    private function derive(array $m): array
+    private function row(array $group, string $vertical, string $marketerType, array $m): array
     {
-        $m['marketing_fees'] = round($m['influencer_marketing_fees'] + $m['affiliate_marketing_fees'], 2);
-        $m['payouts_net'] = round($m['payouts_credited'] - $m['payouts_reversed'] - $m['payouts_clawback'], 2);
-        $m['refunds_net_of_vat'] = round($m['refunds'] - $m['refunds_vat'], 2);
-        $m['platform_margin'] = round($m['influencer_fees'] - $m['payouts_net'] + $m['marketing_fees'] - $m['refunds_net_of_vat'], 2);
-        $m['vat_liability'] = round($m['influencer_vat'] - $m['refunds_vat'], 2);
+        $row = [
+            'country_id' => $group['country_id'],
+            'country_name' => $this->countryNames[$group['country_id']] ?? '—',
+            'currency' => $group['currency'],
+            'vertical' => $vertical,
+            'vertical_label' => $vertical === self::TOTAL ? __('common.total') : (CommissionVertical::tryFrom($vertical)?->label() ?? $vertical),
+            'marketer_type' => $marketerType,
+            'marketer_type_label' => $marketerType === '' ? '—' : (MarketerType::tryFrom($marketerType)?->label() ?? $marketerType),
+            // Back-compat alias used by the report views: the row "type" is the vertical.
+            'type' => $vertical,
+            'type_label' => $vertical === self::TOTAL ? __('common.total') : (CommissionVertical::tryFrom($vertical)?->label() ?? $vertical),
+        ];
+        foreach ($m as $k => $v) {
+            $row[$k] = round((float) $v, 2);
+        }
 
-        return $m;
+        return $row;
     }
 
     /** @param array<int, string> $ids */

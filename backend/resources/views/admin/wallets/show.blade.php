@@ -109,7 +109,7 @@
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">− {{ __('admin.wallets.debit') }}</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-gray-600 text-xs">{{ str_replace('_',' ', $tx->source_type) }}</td>
+                        <td class="px-4 py-3 text-gray-600 text-xs">{{ $tx->sourceLabel() ?? str_replace('_',' ', $tx->source_type) }}</td>
                         <td class="px-4 py-3 text-gray-700">{{ $tx->description }}</td>
                         <td class="px-4 py-3 text-end font-semibold {{ (($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit') ? 'text-green-700' : 'text-red-600' }}">
                             {{ (($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit') ? '+' : '−' }}{{ number_format($tx->amount, 2) }}

@@ -930,11 +930,6 @@ return [
             'expired_label'                 => 'Expired.',
         ],
 
-        'vendor_campaign_offers' => [
-            'approve_offer_confirm'   => 'Approve this campaign offer for {name}?',
-            'rejection_reason_required' => 'Rejection reason is required.',
-        ],
-
         'vendor_change_requests_show' => [
             'approve_change_request_confirm' => 'Approve this change request? The changes will be applied immediately.',
             'reject_change_request_confirm'  => 'Reject this change request?',

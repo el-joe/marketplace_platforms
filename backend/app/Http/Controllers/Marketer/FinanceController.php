@@ -12,7 +12,6 @@ use App\Models\MarketerSaleSettlement;
 use App\Notifications\Marketer\PayoutScheduled;
 use App\Services\Marketer\MarketerSaleSettlementService;
 use App\Services\Marketer\MarketerEarningsService;
-use App\Services\MarketingFeeReportService;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -61,15 +60,17 @@ class FinanceController extends Controller
         $sales = MarketerSaleSettlement::with('order:id,order_number')
             ->where('marketer_id', $marketer->id)->latest()->paginate(15, ['*'], 'sales_page')->withQueryString();
 
-        return view('marketer.finance.commissions', compact('conversions', 'totalEarned', 'pendingEarnings', 'commissionRules', 'statements', 'totals', 'salesTotals', 'sales'));
+        $fixedLines = app(MarketerEarningsService::class)->fixedAmountLines($marketer);
+
+        return view('marketer.finance.commissions', compact('conversions', 'totalEarned', 'pendingEarnings', 'commissionRules', 'statements', 'totals', 'salesTotals', 'sales', 'fixedLines', 'marketer'));
     }
 
-    /** @return array{0: array<string, array>, 1: array{gross: float, cut: float, vat: float, net: float}} */
+    /** @return array{0: array<string, array>, 1: array{gross: float, fee: float, net: float}} */
     private function statementFor($conversions): array
     {
         $service = app(MarketerEarningsService::class);
         $rows = [];
-        $totals = ['gross' => 0.0, 'cut' => 0.0, 'vat' => 0.0, 'net' => 0.0];
+        $totals = ['gross' => 0.0, 'fee' => 0.0, 'net' => 0.0];
         foreach ($conversions as $c) {
             $rows[$c->id] = $b = $service->breakdown($c);
             if (in_array($c->status, ['pending', 'approved'], true)) {
@@ -101,7 +102,7 @@ class FinanceController extends Controller
         $transactions = $wallet->transactions()->paginate(20);
         $withdrawalRequests = $wallet->withdrawalRequests()->latest()->take(10)->get();
 
-        // Lifetime statement of approved (non-reversed) conversions: gross -> cut -> VAT -> net.
+        // Lifetime statement of approved (non-reversed) conversions: gross -> platform commission fee -> net.
         $approved = MarketerCampaignConversion::with(['campaign', 'invitation.marketer.marketerProfile'])
             ->whereIn('invitation_id', MarketerCampaignInvitation::where('marketer_id', $marketer->id)->pluck('id'))
             ->where('status', 'approved')->get();
@@ -109,16 +110,10 @@ class FinanceController extends Controller
 
         $salesTotals = app(MarketerSaleSettlementService::class)->totalsFor($marketer->id);
 
-        // P7: fee-share credits taken back from a cancelled campaign that the wallet could not cover yet.
-        $pendingClawbacks = MarketerCampaignInvitation::with('campaign:id,title')
-            ->where('marketer_id', $marketer->id)
-            ->whereNull('marketer_credit_reversed_at')
-            ->where('marketer_clawback_amount', '>', 0)
-            ->get();
+        // Influencer fixed amounts, one line per campaign (reserved / paid / released).
+        $fixedLines = app(MarketerEarningsService::class)->fixedAmountLines($marketer);
 
-        $feeShare = app(MarketingFeeReportService::class)->marketerFeeShare($marketer->id);
-
-        return view('marketer.finance.wallet', compact('wallet', 'transactions', 'withdrawalRequests', 'statementTotals', 'salesTotals', 'pendingClawbacks', 'feeShare'));
+        return view('marketer.finance.wallet', compact('wallet', 'transactions', 'withdrawalRequests', 'statementTotals', 'salesTotals', 'fixedLines', 'marketer'));
     }
 
     public function requestWithdrawal(Request $request)

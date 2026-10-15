@@ -173,6 +173,8 @@ return [
         'title' => 'Marketer campaign charges',
         'campaign_fee' => 'Campaign fee',
         'campaign_budget_commission' => 'Marketer commission',
+        'influencer_fee' => 'Earlier campaign fee (statement before the new fee model)',
+        'affiliate_marketing_fee' => 'Earlier affiliate marketing fee (statement before the new fee model)',
     ],
 
     'finance' => [

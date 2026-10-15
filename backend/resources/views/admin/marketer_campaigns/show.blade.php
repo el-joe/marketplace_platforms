@@ -186,8 +186,8 @@
                     <div>
                         <span class="font-medium text-gray-800">{{ $inv->marketer?->name ?? '—' }}</span>
                         <span class="text-xs ml-2 px-2 py-0.5 rounded-full
-                            {{ $inv->marketer?->isInfluencer() ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
-                            {{ $inv->marketer?->isInfluencer() ? __('admin.marketer_campaigns.influencer_label') : __('admin.marketer_campaigns.affiliate_label') }}
+                            {{ $inv->marketer?->typeBadgeClasses() }}">
+                            {{ $inv->marketer?->typeLabel() }}
                         </span>
                     </div>
                     <div class="flex items-center gap-3 text-sm">

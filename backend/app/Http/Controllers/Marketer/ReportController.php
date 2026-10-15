@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Marketer;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
+use App\Services\Marketer\MarketerEarningsService;
 use App\Services\MarketingFeeReportService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -69,13 +70,12 @@ class ReportController extends Controller
             ->limit(12)
             ->get();
 
-        $report = app(MarketingFeeReportService::class);
-        $feeShare = $report->marketerFeeShare($marketer->id);
-        $affiliate = $report->marketerAffiliateTotals($marketer->id);
+        $earnings = app(MarketingFeeReportService::class)->marketerCampaignTotals($marketer->id);
+        $fixedLines = app(MarketerEarningsService::class)->fixedAmountLines($marketer);
 
         return view('marketer.reports.index', compact(
-            'feeShare',
-            'affiliate',
+            'earnings',
+            'fixedLines',
             'marketer',
             'conversions',
             'stats',

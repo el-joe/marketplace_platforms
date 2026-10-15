@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Partner;
 use App\Http\Controllers\Controller;
 use App\Models\Payout;
 use App\Models\SubOrder;
-use App\Services\MarketingFeeReportService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Database\Eloquent\Builder;
@@ -123,15 +122,13 @@ class PayoutController extends Controller
             ])
             ->firstOrFail();
 
-        // P8: this statement's marketer-campaign charges as separate figures (+ fee refunds credited in its period).
-        $influencerItems = $payout->items->where('item_type', 'influencer_fee');
+        // This statement's marketer-campaign charges as separate figures: the campaign fee lines and the
+        // commissions the campaign budgets paid. Older statements may still carry the pre-v3 fee lines.
+        $campaignItems = $payout->items->whereIn('item_type', ['campaign_fee', 'influencer_fee', 'affiliate_marketing_fee']);
         $statementMarketing = [$payout->currency => [
-            'influencer_fees' => round($influencerItems->sum(fn ($i) => abs((float) $i->net) - (float) $i->marketing_fee_amount), 2),
-            'marketing_fees' => round((float) $influencerItems->sum('marketing_fee_amount'), 2),
-            'affiliate_marketing_fees' => round($payout->items->where('item_type', 'affiliate_marketing_fee')->sum(fn ($i) => abs((float) $i->net)), 2),
-            'refunds' => $payout->period_start && $payout->period_end
-                ? (app(MarketingFeeReportService::class)->vendorTotals($this->vendorId(), $payout->period_start, $payout->period_end)[$payout->currency]['refunds'] ?? 0.0)
-                : 0.0,
+            'campaign_fee' => round($campaignItems->sum(fn ($i) => abs((float) $i->net)), 2),
+            'campaign_fee_pending' => 0.0,
+            'campaign_budget_commission' => round($payout->items->where('item_type', 'campaign_budget_commission')->sum(fn ($i) => abs((float) $i->net)), 2),
         ]];
 
         return view('partner.payouts.show', compact('payout', 'statementMarketing'));

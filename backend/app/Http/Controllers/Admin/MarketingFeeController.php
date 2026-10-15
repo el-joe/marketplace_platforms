@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\CommissionVertical;
+use App\Enums\MarketerType;
 use App\Enums\MarketingFeeType;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
@@ -49,7 +51,7 @@ class MarketingFeeController extends Controller
         return view('admin.marketing_fees.index', compact('countries', 'countrySettings', 'variableSettings', 'verticalSettings', 'verticals', 'types', 'tab', 'report', 'currencies'));
     }
 
-    /** Report tab CSV: the per-type campaign table, then the affiliate accrual table. */
+    /** Report tab CSV: the per-vertical campaign-fee table, then the commission table per vertical and marketer type. */
     public function exportReport(Request $request): StreamedResponse
     {
         $data = $this->reportData($request);
@@ -59,51 +61,52 @@ class MarketingFeeController extends Controller
 
         foreach ($data['campaigns'] as $r) {
             $rows->push([
-                __('marketing_fees.reports.section_influencer'), $r['country_name'], $r['currency'], $r['type_label'],
-                (int) $r['campaigns'], (int) $r['influencers'], $m($r['subtotal']), $m($r['fixed_fee']), $m($r['variable_fee']), $m($r['marketing_fees']),
+                __('marketing_fees.reports.section_campaign_fees'), $r['country_name'], $r['currency'], $r['vertical_label'], '',
+                (int) $r['campaigns'], $m($r['subtotal']), $m($r['fixed_fee']), $m($r['variable_fee']), $m($r['campaign_fee']),
                 $m($r['grand_total']), $m($r['collected']), $m($r['pending']), '', '', '', '', '',
             ]);
         }
-        foreach ($data['affiliate'] as $r) {
+        foreach ($data['commissions'] as $r) {
             $rows->push([
-                __('marketing_fees.reports.section_affiliate'), $r['country_name'], $r['currency'], $r['type_label'],
-                '', '', '', '', '', '', '', '', '',
-                $m($r['accrued']), $m($r['refunded']), $m($r['settled']), $m($r['pending']), $m($r['settlement_refunds']),
+                __('marketing_fees.reports.section_commissions'), $r['country_name'], $r['currency'], $r['vertical_label'], $r['marketer_type_label'],
+                '', '', '', '', '', '', '', '',
+                $m($r['commission_pending']), $m($r['commission_approved']), $m($r['commission_reversed']), $m($r['commission_fee_earned']), $m($r['commission_paid_net']),
             ]);
         }
 
         $headers = [
-            'Section', 'Country', 'Currency', 'Type',
-            'Campaigns', 'Influencers', 'Subtotal', 'Fixed fee', 'Variable fee', 'Marketing fees',
+            'Section', 'Country', 'Currency', 'Vertical', 'Marketer type',
+            'Campaigns', 'Commission budget (subtotal)', 'Fixed fee', 'Variable fee', 'Campaign fee',
             'Grand total', 'Collected', 'Pending',
-            'Affiliate accrued', 'Affiliate refunded (reversed)', 'Affiliate settled', 'Affiliate pending settlement', 'Refunded after settlement',
+            'Commissions pending', 'Commissions approved / paid', 'Commissions reversed', 'Commission fees earned', 'Net paid to marketers',
         ];
 
         return $this->exportCsv('marketing-fees-report-'.$data['from']->toDateString().'-to-'.$data['to']->toDateString(), $headers, $rows);
     }
 
-    /** @return array{from: Carbon, to: Carbon, campaigns: array, affiliate: array} */
+    /** @return array{from: Carbon, to: Carbon, campaigns: array, commissions: array} */
     private function reportData(Request $request): array
     {
         $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
-            'type' => ['nullable', Rule::enum(MarketingFeeType::class)],
+            'vertical' => ['nullable', Rule::enum(CommissionVertical::class)],
+            'marketer_type' => ['nullable', Rule::enum(MarketerType::class)],
             'country_id' => ['nullable', 'uuid'],
             'currency' => ['nullable', 'string', 'size:3'],
         ]);
 
         $from = $request->filled('from') ? Carbon::parse($request->query('from')) : now()->startOfMonth();
         $to = $request->filled('to') ? Carbon::parse($request->query('to')) : now();
-        $filters = array_filter($request->only(['country_id', 'currency', 'type']));
+        $filters = array_filter($request->only(['country_id', 'currency', 'vertical', 'marketer_type']));
 
         $service = app(MarketingFeeReportService::class);
 
         return [
             'from' => $from,
             'to' => $to,
-            'campaigns' => $service->campaignTypeReport($from, $to, $filters),
-            'affiliate' => $service->affiliateAccrualReport($from, $to, $filters),
+            'campaigns' => $service->campaignFeeReport($from, $to, array_diff_key($filters, ['marketer_type' => 1])),
+            'commissions' => $service->commissionReport($from, $to, $filters),
         ];
     }
 
