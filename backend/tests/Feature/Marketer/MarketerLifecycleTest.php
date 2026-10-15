@@ -169,6 +169,11 @@ class MarketerLifecycleTest extends TestCase
         $marketer = Marketer::where('email', $email)->firstOrFail();
         $this->assertSame('pending', $marketer->global_status->value);
 
+        // v3: an affiliate earns a percentage of the item price by his profile rule.
+        \App\Models\MarketerCommissionRule::create([
+            'marketer_id' => $marketer->id, 'scope' => 'products', 'commission_mode' => 'percentage', 'commission_rate' => 10,
+        ]);
+
         // ── 2. Admin approve ─────────────────────────────────────────────
         $admin = $this->approvedAdmin();
         $approveResponse = $this->actingAs($admin, 'admin')
@@ -310,8 +315,8 @@ class MarketerLifecycleTest extends TestCase
         $this->assertNotNull($conversion->wallet_credited_at);
 
         $wallet = Wallet::where('owner_type', 'marketer')->where('owner_id', $marketer->id)->firstOrFail();
-        $totalCommission = (int) $conversion->commission_amount + (int) ($conversion->flash_sale_bonus_amount ?? 0);
-        $this->assertSame($totalCommission, $wallet->pending_balance);
+        $totalCommission = (float) $conversion->net_commission_amount;
+        $this->assertEquals($totalCommission, $wallet->pending_balance);
         $this->assertSame(0, $wallet->balance);
 
         // ── 10. ReleaseMarketerPendingCommissionJob after clearing days ──
@@ -321,7 +326,7 @@ class MarketerLifecycleTest extends TestCase
         $wallet->refresh();
         $conversion->refresh();
         $this->assertSame(0, $wallet->pending_balance);
-        $this->assertSame($totalCommission, $wallet->balance);
+        $this->assertEquals($totalCommission, $wallet->balance);
         $this->assertNotNull($conversion->wallet_released_at);
 
         // ── 11. Marketer requests a withdrawal ────────────────────────────
@@ -335,11 +340,11 @@ class MarketerLifecycleTest extends TestCase
 
         $wallet->refresh();
         $this->assertSame(0, $wallet->balance);
-        $this->assertSame($totalCommission, $wallet->pending_balance);
+        $this->assertEquals($totalCommission, $wallet->pending_balance);
 
         $withdrawal = WalletWithdrawalRequest::where('wallet_id', $wallet->id)->latest()->firstOrFail();
         $this->assertSame('pending', $withdrawal->status->value);
-        $this->assertSame($totalCommission, $withdrawal->amount);
+        $this->assertEquals($totalCommission, $withdrawal->amount);
 
         // ── 12. Admin pays the withdrawal ─────────────────────────────────
         $payResponse = $this->actingAs($admin, 'admin')

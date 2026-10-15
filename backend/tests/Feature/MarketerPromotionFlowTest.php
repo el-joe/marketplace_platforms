@@ -3,12 +3,10 @@
 namespace Tests\Feature;
 
 use App\Contracts\WhatsAppGateway;
-use App\Jobs\CollectPendingInfluencerFeesJob;
 use App\Jobs\SendCampaignWhatsAppNotificationJob;
 use App\Models\Admin;
 use App\Models\Marketer;
 use App\Models\MarketerCampaignInvitation;
-use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\MarketerJob;
 use App\Models\MarketerMarketerJob;
 use App\Models\Setting;
@@ -143,57 +141,5 @@ class MarketerPromotionFlowTest extends TestCase
         app()->call([new SendCampaignWhatsAppNotificationJob($inv->id), 'handle']);
         $this->assertTrue($inv->fresh()->whatsapp_sent);
         $this->assertStringContainsString('/invitations/'.$inv->id.'/whatsapp/accept', $fake->last);
-    }
-
-    private function influencerInvitation(int $fee): MarketerCampaignInvitation
-    {
-        $job = MarketerJob::firstOrCreate(['key' => 'influencer'], ['name_ar' => 'x', 'name_en' => 'x', 'is_active' => true, 'sort_order' => 1]);
-        MarketerMarketerJob::firstOrCreate(['marketer_id' => $this->s->marketer->id, 'marketer_job_id' => $job->id]);
-        MarketerInfluencerFeeCountrySetting::create([
-            'country_id' => $this->s->marketerCampaign->country_id, 'fee_per_influencer' => $fee,
-            'currency' => 'AED', 'updated_by_admin_id' => null,
-        ]);
-
-        return MarketerCampaignInvitation::create([
-            'campaign_id' => $this->s->marketerCampaign->id, 'marketer_id' => $this->s->marketer->id,
-            'status' => 'pending', 'acceptance_window_hours' => 12, 'expires_at' => now()->addHours(12), 'referral_code' => 'I'.Str::random(8),
-        ]);
-    }
-
-    public function test_seller_paid_fee_is_collected_now_when_balance_allows_and_retried_later_when_short(): void
-    {
-        $this->setting('marketer_influencer_fee_payer', 'vendor');
-        $wallets = app(WalletService::class);
-        $vendorWallet = $wallets->getOrCreateWallet('vendor', $this->s->vendor->id, 'AED');
-        $inv = $this->influencerInvitation(900);
-
-        // seller wallet is empty -> acceptance still succeeds, fee stays pending against the seller
-        app(MarketerCampaignService::class)->acceptInvitation($inv);
-        $inv->refresh();
-        $this->assertSame('accepted', $inv->status);
-        $this->assertSame('vendor', $inv->platform_fee_payer);
-        $this->assertSame('pending', $inv->platform_fee_status);
-
-        $wallets->credit($vendorWallet, 2000, 'test', null, 'topup');
-        (new CollectPendingInfluencerFeesJob)->handle(app(MarketerCampaignService::class));
-
-        $this->assertSame('paid', $inv->fresh()->platform_fee_status);
-        $this->assertSame(2000 - 945, $vendorWallet->fresh()->balance, 'fee 900 + 5% VAT 45');
-    }
-
-    public function test_marketer_paid_fee_keeps_current_behaviour_for_campaigns_without_a_vendor(): void
-    {
-        $this->setting('marketer_influencer_fee_payer', 'marketer');
-        $this->s->marketerCampaign->update(['vendor_id' => null]); // D7: a vendor campaign is always vendor-paid
-        $wallets = app(WalletService::class);
-        $wallet = $wallets->getOrCreateWallet('marketer', $this->s->marketer->id, 'AED');
-        $wallets->credit($wallet, 1000, 'test', null, 'topup');
-        $inv = $this->influencerInvitation(900);
-
-        app(MarketerCampaignService::class)->acceptInvitation($inv);
-
-        $this->assertSame('paid', $inv->fresh()->platform_fee_status);
-        $this->assertSame('marketer', $inv->fresh()->platform_fee_payer);
-        $this->assertSame(1000 - 945, $wallet->fresh()->balance, 'fee 900 + 5% VAT 45');
     }
 }

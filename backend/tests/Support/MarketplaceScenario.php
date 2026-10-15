@@ -16,6 +16,7 @@ use App\Models\DeliveryAgent;
 use App\Models\Marketer;
 use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignInvitation;
+use App\Models\MarketerCommissionRule;
 use App\Models\MarketerListing;
 use App\Models\MarketerProfile;
 use App\Models\PaymentGateway;
@@ -367,6 +368,15 @@ class MarketplaceScenario
 
         $this->marketerProfile = MarketerProfile::create([
             'marketer_id' => $this->marketer->id,
+        ]);
+
+        // v3: an affiliate earns a percentage of the item price by his profile rule (10 % on every product category).
+        MarketerCommissionRule::create([
+            'marketer_id'     => $this->marketer->id,
+            'scope'           => 'products',
+            'marketer_type'   => 'affiliate',
+            'commission_mode' => 'percentage',
+            'commission_rate' => 10,
         ]);
 
         $this->marketerCampaign = MarketerCampaign::create([

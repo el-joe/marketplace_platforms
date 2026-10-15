@@ -4,7 +4,6 @@ namespace Tests\Feature\Campaigns;
 
 use App\Exceptions\PeerPromotionException;
 use App\Models\MarketerCampaign;
-use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerListing;
 use App\Services\MarketerCampaignService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -160,13 +159,9 @@ class PeerPromotionServiceTest extends TestCase
         $this->assertSame('active', P::request($promoter, $first)->status);
     }
 
-    public function test_peer_commission_is_the_promoters_profile_rule_and_zero_without_one_even_with_a_category_default(): void
+    public function test_peer_commission_is_the_promoters_profile_rule_and_zero_without_one(): void
     {
-        // D11/D12: the category-tab affiliate default and fee share never give an influencer a per-sale commission.
-        MarketerCommissionCountrySetting::create([
-            'category_id' => $this->s->category->id, 'country_id' => $this->s->country->id,
-            'influencer_fee_share_pct' => 20, 'affiliate_commission_mode' => 'fixed', 'affiliate_commission_flat' => 1000, 'currency' => 'AED',
-        ]);
+        // v3: platform defaults never give an influencer a per-sale commission; only the promoter's own profile rule does.
         $owner = F::influencer($this->s);
         $withoutRule = F::influencer($this->s);
         $withRule = F::influencer($this->s);

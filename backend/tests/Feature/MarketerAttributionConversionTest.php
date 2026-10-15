@@ -7,13 +7,17 @@ use App\Jobs\ApproveMarketerConversionsJob;
 use App\Jobs\ReleaseMarketerPendingCommissionJob;
 use App\Models\CartItem;
 use App\Models\MarketerCampaignConversion;
+use App\Models\MarketerJob;
+use App\Models\MarketerMarketerJob;
 use App\Models\Order;
 use App\Models\Wallet;
+use App\Services\LastClickAttributionService;
 use App\Services\OrderCancellationService;
 use App\Services\OrderStateMachine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Tests\Support\MarketerV3Fixtures;
 use Tests\Support\MarketplaceScenario;
 use Tests\TestCase;
 
@@ -130,14 +134,14 @@ class MarketerAttributionConversionTest extends TestCase
 
         $wallet = Wallet::where('owner_type', 'marketer')->where('owner_id', $scenario->marketer->id)->first();
         $this->assertNotNull($wallet);
-        $totalCommission = (int) $conversion->commission_amount + (int) ($conversion->flash_sale_bonus_amount ?? 0);
-        $this->assertSame($totalCommission, $wallet->pending_balance);
+        $totalCommission = (float) $conversion->net_commission_amount;
+        $this->assertEquals($totalCommission, $wallet->pending_balance);
         $this->assertSame(0, $wallet->balance);
 
         // Clearing window not passed yet — still pending_balance.
         (new ReleaseMarketerPendingCommissionJob())->handle();
         $wallet->refresh();
-        $this->assertSame($totalCommission, $wallet->pending_balance);
+        $this->assertEquals($totalCommission, $wallet->pending_balance);
         $this->assertSame(0, $wallet->balance);
 
         // After the clearing window, it moves into the spendable balance.
@@ -147,7 +151,7 @@ class MarketerAttributionConversionTest extends TestCase
         $wallet->refresh();
         $conversion->refresh();
         $this->assertSame(0, $wallet->pending_balance);
-        $this->assertSame($totalCommission, $wallet->balance);
+        $this->assertEquals($totalCommission, $wallet->balance);
         $this->assertNotNull($conversion->wallet_released_at);
     }
 
@@ -181,21 +185,69 @@ class MarketerAttributionConversionTest extends TestCase
         $this->assertSame(0, $wallet->pending_balance);
     }
 
-    public function test_campaign_auto_pauses_when_commission_budget_is_exhausted(): void
+    public function test_the_conversion_snapshots_gross_fee_and_net_and_the_wallet_gets_the_net(): void
     {
         $scenario = $this->buildScenario();
-        $scenario->marketerCampaign->update(['max_commission_budget' => $scenario->marketerCampaign->marketer_commission_amount]);
+        MarketerV3Fixtures::defaults($scenario->country, 'product', feePct: 10, feeFixed: 2);
+
+        $order = $this->placeMarketerListingOrder($scenario);
+        $this->deliverAllSubOrders($order);
+        $item = $order->fresh('items')->items->firstWhere('marketer_listing_id', $scenario->marketerListing->id);
+        $conversion = MarketerCampaignConversion::where('order_item_id', $item->id)->firstOrFail();
+
+        $this->assertSame('product_sale', $conversion->conversion_type);
+        $this->assertEquals(round((float) $conversion->sale_amount * 0.10, 2), $conversion->gross_commission_amount);
+        $this->assertEquals(round($conversion->gross_commission_amount * 0.10 + 2, 2), $conversion->commission_fee_amount);
+        $this->assertEquals(round($conversion->gross_commission_amount - $conversion->commission_fee_amount, 2), $conversion->net_commission_amount);
+
+        $item->update(['return_eligible_until' => now()->subDay()->toDateString()]);
+        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
+
+        $wallet = Wallet::where('owner_type', 'marketer')->where('owner_id', $scenario->marketer->id)->firstOrFail();
+        $this->assertEquals($conversion->fresh()->net_commission_amount, $wallet->pending_balance);
+    }
+
+    public function test_an_order_is_converted_once_even_if_attribution_runs_again(): void
+    {
+        $scenario = $this->buildScenario();
+        $order = $this->placeMarketerListingOrder($scenario);
+
+        app(LastClickAttributionService::class)->resolveAndRecordConversion($order->fresh(), null);
+
+        $this->assertSame(1, MarketerCampaignConversion::where('order_id', $order->id)->count());
+        $this->assertEquals(
+            MarketerCampaignConversion::where('order_id', $order->id)->value('commission_amount'),
+            $scenario->marketerCampaign->fresh()->commission_budget_spent
+        );
+    }
+
+    public function test_an_influencer_gets_no_per_sale_conversion(): void
+    {
+        $scenario = $this->buildScenario();
+        $job = MarketerJob::firstOrCreate(['key' => 'influencer'], ['name_ar' => 'influencer', 'name_en' => 'influencer', 'is_active' => true, 'sort_order' => 1]);
+        MarketerMarketerJob::create(['marketer_id' => $scenario->marketer->id, 'marketer_job_id' => $job->id]);
+
+        $order = $this->placeMarketerListingOrder($scenario);
+
+        $this->assertSame(0, MarketerCampaignConversion::where('order_id', $order->id)->count());
+        $this->assertEquals(0, $scenario->marketerCampaign->fresh()->commission_budget_spent);
+    }
+
+    public function test_campaign_is_done_when_commission_budget_is_exhausted_and_the_last_commission_is_capped(): void
+    {
+        $scenario = $this->buildScenario();
+        // The affiliate's 10 % rule would pay about 100; only 40 of the budget is left.
+        $scenario->marketerCampaign->update(['max_commission_budget' => 40]);
 
         $order = $this->placeMarketerListingOrder($scenario);
         $order->load('items');
         $item = $order->items->firstWhere('marketer_listing_id', $scenario->marketerListing->id);
-        $this->assertNotNull(MarketerCampaignConversion::where('order_item_id', $item->id)->first());
+        $conversion = MarketerCampaignConversion::where('order_item_id', $item->id)->first();
+        $this->assertNotNull($conversion);
+        $this->assertEquals(40, $conversion->commission_amount);
 
         $scenario->marketerCampaign->refresh();
-        $this->assertSame('paused', $scenario->marketerCampaign->status);
-        $this->assertGreaterThanOrEqual(
-            $scenario->marketerCampaign->max_commission_budget,
-            $scenario->marketerCampaign->commission_budget_spent
-        );
+        $this->assertSame('done', $scenario->marketerCampaign->status);
+        $this->assertEquals(40, $scenario->marketerCampaign->commission_budget_spent);
     }
 }
