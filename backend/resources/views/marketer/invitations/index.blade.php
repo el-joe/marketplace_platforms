@@ -32,7 +32,7 @@
                         <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ $status['cls'] }}">{{ $status['label'] }}</span>
                         <span class="text-xs text-gray-400">{{ $invitation->created_at->format('Y-m-d') }}</span>
                     </div>
-                    <h4 class="font-bold text-gray-900">{{ $product?->name_ar ?? $invitation->campaign->title ?? __('marketer.invitations.campaign_default_label') }}</h4>
+                    <h4 class="font-bold text-gray-900">{{ $product?->name_ar ?? $invitation->campaign->getPromotedTitle() }}</h4>
                     <div class="text-sm text-gray-500 mt-1">
                         {{ $invitation->campaign->vendor->name ?? 'ناوي' }} •
                         {{ $invitation->campaign->country->name_ar ?? '' }} •
@@ -44,6 +44,7 @@
                         {{ __('marketer.invitations.commission_label') }} {{ \App\Support\Money::format($invitation->influencer_fixed_amount) }} {{ $invitation->campaign->currency }}
                     </div>
                     @endif
+                    <div class="mt-2 max-w-xl"><x-marketer-campaign-commission-preview :invitation="$invitation" compact /></div>
                     @if($invitation->isPending() && $invitation->expires_at)
                     <div class="text-xs text-red-500 mt-1">{{ __('marketer.invitations.expires_label') }} {{ $invitation->expires_at->diffForHumans() }}</div>
                     @endif

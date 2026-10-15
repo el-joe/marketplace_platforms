@@ -14,6 +14,7 @@ use App\Jobs\FlashSaleSchedulerJob;
 use App\Jobs\GenerateCodSettlementsJob;
 use App\Jobs\GenerateFbnStorageFeesJob;
 use App\Jobs\CompleteEndedMarketerCampaignsJob;
+use App\Jobs\CompleteTravelBookingsJob;
 use App\Jobs\GenerateVendorPayoutsJob;
 use App\Jobs\MonitorCampaignStockJob;
 use App\Jobs\PageSchedulerJob;
@@ -160,3 +161,5 @@ Schedule::call(function () {
 // Campaigns past their end date are completed: fulfilled influencers are paid, the rest released.
 Schedule::job(new CompleteEndedMarketerCampaignsJob)->dailyAt('04:00')->withoutOverlapping()->name('complete-ended-marketer-campaigns');
 
+// Confirmed trip bookings whose trip is over become completed (releases marketer commissions); retries agency campaign fees.
+Schedule::job(new CompleteTravelBookingsJob)->dailyAt('03:45')->withoutOverlapping()->name('complete-travel-bookings');

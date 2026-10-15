@@ -821,6 +821,36 @@ class MarketerCampaignService
     }
 
     /**
+     * The owner pauses a live campaign on purpose (no new attributions, marketer listings paused). Unlike a pause for
+     * availability it is never lifted by the availability sweep: only resumeByOwner() reopens it.
+     */
+    public function pauseByOwner(MarketerCampaign $campaign): void
+    {
+        if (! in_array($campaign->status, ['active', 'auto_approved'], true)) {
+            throw new \RuntimeException(__('marketer_campaigns.errors.cannot_pause'));
+        }
+
+        $this->pauseCampaignForLowStock($campaign);
+        $campaign->update(['owner_paused_at' => now()]);
+    }
+
+    /** Reopen a campaign its owner paused, unless it has meanwhile used up its budget or reached its end date. */
+    public function resumeByOwner(MarketerCampaign $campaign): void
+    {
+        if ($campaign->status !== 'paused' || ! $campaign->owner_paused_at) {
+            throw new \RuntimeException(__('marketer_campaigns.errors.cannot_resume'));
+        }
+
+        $campaign->update(['owner_paused_at' => null]);
+
+        if (! $this->mayResume($campaign)) {
+            throw new \RuntimeException(__('marketer_campaigns.errors.cannot_resume'));
+        }
+
+        $this->resumeCampaignAfterRestock($campaign);
+    }
+
+    /**
      * enhancement.md P-14 task 4: resumes a campaign paused by
      * pauseCampaignForLowStock() once stock recovers above
      * min_stock_for_campaign.
@@ -1490,7 +1520,9 @@ class MarketerCampaignService
     /** A budget-exhausted or past-its-end-date campaign is over: availability coming back never reopens it. */
     private function mayResume(MarketerCampaign $campaign): bool
     {
-        return ! $campaign->isBudgetExhausted() && ! ($campaign->ends_at && $campaign->ends_at->isPast());
+        return ! $campaign->owner_paused_at
+            && ! $campaign->isBudgetExhausted()
+            && ! ($campaign->ends_at && $campaign->ends_at->isPast());
     }
 
     /**

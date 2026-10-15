@@ -42,6 +42,9 @@ class CampaignController extends Controller
                 'campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
                 'campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
                 'campaign.country',
+                'campaign.classifiedListing',
+                'campaign.travelPackage',
+                'marketer',
                 'samples',
             ])
             ->withCount('conversions')
@@ -70,6 +73,9 @@ class CampaignController extends Controller
                 'campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
                 'campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
                 'campaign.country',
+                'campaign.classifiedListing',
+                'campaign.travelPackage',
+                'marketer',
             ])
             ->withCount('conversions')
             ->withSum('conversions', 'commission_amount')
@@ -93,6 +99,9 @@ class CampaignController extends Controller
             ->with([
                 'campaign.vendor',
                 'campaign.country',
+                'campaign.classifiedListing',
+                'campaign.travelPackage',
+                'marketer',
                 'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
                 'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
                 'campaign.adminListing' => fn ($q) => $q->withTrashed(),

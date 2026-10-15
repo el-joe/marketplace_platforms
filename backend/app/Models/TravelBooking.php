@@ -49,6 +49,13 @@ class TravelBooking extends Model
                 $booking->booking_number = 'TRV-'.strtoupper(Str::random(8));
             }
         });
+
+        // Marketer commission follows the booking: credited when confirmed, reversed when cancelled (v3 R8).
+        static::saved(function (TravelBooking $booking) {
+            if ($booking->marketer_campaign_id && ($booking->wasRecentlyCreated || $booking->wasChanged('status'))) {
+                app(\App\Services\Marketer\TravelBookingCommissionService::class)->sync($booking);
+            }
+        });
     }
 
     // ── Relationships ─────────────────────────────────────────────────────────

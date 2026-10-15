@@ -100,7 +100,7 @@ class ListingController extends Controller
 
         /** @var Customer $customer */
         $customer = auth('customer')->user();
-        $booking = $this->bookingService->book($package, $customer, $request->validated());
+        $booking = $this->bookingService->book($package, $customer, $request->validated(), ListingReferralService::sessionIdFrom($request));
 
         $resource = new TravelBookingSubmittedResource($booking);
         $resource->currency = $package->currency;

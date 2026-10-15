@@ -1134,6 +1134,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::middleware('admin.permission:marketer_fee_settings.edit')->group(function () {
             Route::post('/fixed', [MarketingFeeController::class, 'updateFixed'])->name('update-fixed');
             Route::post('/variable', [MarketingFeeController::class, 'updateVariable'])->name('update-variable');
+            Route::post('/vertical', [MarketingFeeController::class, 'updateVertical'])->name('update-vertical');
             Route::delete('/variable/{setting}', [MarketingFeeController::class, 'destroyVariable'])->name('destroy-variable');
         });
     });

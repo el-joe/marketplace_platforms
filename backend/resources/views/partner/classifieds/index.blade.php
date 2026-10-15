@@ -216,14 +216,13 @@
                         <input type="checkbox" id="cl-negotiable" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
                         <span class="text-sm text-gray-700">{{ __('partner.classifieds_extra.wizard.negotiable') }}</span>
                     </label>
-                    <div class="border border-gray-200 rounded-xl p-4 bg-gray-50/60">
-                        <label class="flex items-start gap-3 cursor-pointer">
-                            <input type="checkbox" id="cl-marketer-promo" class="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
-                            <div>
-                                <span class="block text-sm font-medium text-gray-800">{{ __('partner.classifieds_extra.wizard.allow_marketer_promo') }}</span>
-                                <span class="block text-xs text-gray-500 mt-0.5">{{ __('partner.classifieds_extra.wizard.allow_marketer_promo_desc') }}</span>
-                            </div>
-                        </label>
+                    {{-- Marketer campaigns are created from the active listing's page (they need an approved, live listing). --}}
+                    <div class="border border-purple-200 rounded-xl p-4 bg-purple-50/60" data-testid="classified-campaign-entry">
+                        <span class="block text-sm font-medium text-purple-900">{{ __('marketer_campaigns.classified.form_note_title') }}</span>
+                        <span class="block text-xs text-purple-800 mt-0.5">{{ __('marketer_campaigns.classified.form_note_body') }}</span>
+                        @if (auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.view'))
+                            <a href="{{ route('partner.marketer-campaigns.index') }}" class="mt-2 inline-block text-xs font-semibold text-purple-700 hover:underline">{{ __('partner.nav.vendor_campaigns_created') }}</a>
+                        @endif
                     </div>
                 </div>
 

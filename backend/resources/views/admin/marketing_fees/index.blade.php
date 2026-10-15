@@ -34,7 +34,7 @@
 
     <div x-data="{ tab: '{{ $tab }}' }" data-marketing-fees>
         <div class="mb-4 flex gap-2 border-b border-gray-200">
-            @foreach (['fixed', 'variable', 'report'] as $t)
+            @foreach (['fixed', 'variable', 'verticals', 'report'] as $t)
                 <button type="button" @click="tab = '{{ $t }}'"
                     :class="tab === '{{ $t }}' ? 'border-primary-600 text-primary-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
                     class="-mb-px border-b-2 px-4 py-2 text-sm font-medium">{{ __('marketing_fees.tab_'.$t) }}</button>
@@ -166,6 +166,43 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        {{-- Classified / travel campaign fees: variable fee per country and vertical (the fixed tab still applies on top) --}}
+        <div x-show="tab === 'verticals'" x-cloak class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.verticals_hint') }}</p>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-3 py-2 text-start font-medium text-gray-500">{{ __('marketing_fees.country') }}</th>
+                            <th class="px-3 py-2 text-start font-medium text-gray-500">{{ __('marketing_fees.vertical') }}</th>
+                            <th class="px-3 py-2 text-start font-medium text-gray-500">{{ __('marketing_fees.fixed_amount') }}</th>
+                            <th class="px-3 py-2 text-start font-medium text-gray-500">{{ __('marketing_fees.percentage') }}</th>
+                            <th class="px-3 py-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach ($countries as $country)
+                            @foreach ($verticals as $vertical)
+                                @php $row = $verticalSettings->get($country->id.'|'.$vertical->value); @endphp
+                                <tr>
+                                    <form method="POST" action="{{ route('admin.marketing-fees.update-vertical') }}" class="contents">
+                                        @csrf
+                                        <input type="hidden" name="country_id" value="{{ $country->id }}">
+                                        <input type="hidden" name="vertical" value="{{ $vertical->value }}">
+                                        <td class="px-3 py-2 text-gray-900">{{ app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en }} <span class="text-xs text-gray-400">{{ $country->currency_code }}</span></td>
+                                        <td class="px-3 py-2 text-gray-700">{{ $vertical->label() }}</td>
+                                        <td class="px-3 py-2"><input type="number" min="0" step="0.0001" name="fixed_amount" value="{{ $row?->fixed_amount ?? 0 }}" class="w-28 {{ $input }}" @disabled(! $canEdit)></td>
+                                        <td class="px-3 py-2"><input type="number" min="0" max="100" step="0.0001" name="percentage" value="{{ $row?->percentage ?? 0 }}" class="w-28 {{ $input }}" @disabled(! $canEdit)></td>
+                                        <td class="px-3 py-2">@if ($canEdit)<button type="submit" class="{{ $btn }}">{{ __('common.save') }}</button>@endif</td>
+                                    </form>
+                                </tr>
+                            @endforeach
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
 

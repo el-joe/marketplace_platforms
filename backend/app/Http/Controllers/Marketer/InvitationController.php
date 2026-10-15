@@ -35,6 +35,9 @@ class InvitationController extends Controller
                 'campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
                 'campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
                 'campaign.country',
+                'campaign.classifiedListing',
+                'campaign.travelPackage',
+                'marketer',
             ])
             ->latest()
             ->paginate(20);

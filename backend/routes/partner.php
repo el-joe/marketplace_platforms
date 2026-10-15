@@ -531,6 +531,8 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         Route::post('/{id}/pause', [ClassifiedListingController::class, 'pause'])->name('pause');
         Route::post('/{id}/resume', [ClassifiedListingController::class, 'resume'])->name('resume');
         Route::post('/{id}/mark-sold', [ClassifiedListingController::class, 'markSold'])->name('mark-sold');
+        Route::post('/{id}/unmark-sold', [ClassifiedListingController::class, 'unmarkSold'])->name('unmark-sold');
+        Route::get('/{id}/sale-context', [ClassifiedListingController::class, 'saleContext'])->name('sale-context');
 
         Route::prefix('{id}/inquiries')->name('inquiries.')->group(function () {
             Route::get('/', [ClassifiedListingController::class, 'inquiriesIndex'])->name('index');

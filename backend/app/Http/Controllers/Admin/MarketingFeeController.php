@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Country;
 use App\Models\MarketingFeeCategorySetting;
 use App\Models\MarketingFeeCountrySetting;
+use App\Models\MarketingFeeVerticalSetting;
 use App\Services\MarketingFeeReportService;
 use App\Services\MarketingFeeService;
 use App\Traits\HasExport;
@@ -35,13 +36,17 @@ class MarketingFeeController extends Controller
         }
         $variableSettings = $variableQuery->get();
 
+        // Classified and travel campaign fees: one variable fee per country and vertical.
+        $verticalSettings = MarketingFeeVerticalSetting::get()->keyBy(fn ($row) => $row->country_id.'|'.$row->vertical);
+        $verticals = MarketingFeeVerticalSetting::VERTICALS;
+
         $types = MarketingFeeType::cases();
-        $tab = in_array($request->query('tab'), ['fixed', 'variable', 'report'], true) ? $request->query('tab') : 'fixed';
+        $tab = in_array($request->query('tab'), ['fixed', 'variable', 'verticals', 'report'], true) ? $request->query('tab') : 'fixed';
 
         $report = $this->reportData($request);
         $currencies = Country::where('is_active', true)->whereNotNull('currency_code')->distinct()->orderBy('currency_code')->pluck('currency_code');
 
-        return view('admin.marketing_fees.index', compact('countries', 'countrySettings', 'variableSettings', 'types', 'tab', 'report', 'currencies'));
+        return view('admin.marketing_fees.index', compact('countries', 'countrySettings', 'variableSettings', 'verticalSettings', 'verticals', 'types', 'tab', 'report', 'currencies'));
     }
 
     /** Report tab CSV: the per-type campaign table, then the affiliate accrual table. */
@@ -159,6 +164,29 @@ class MarketingFeeController extends Controller
 
         return redirect()->route('admin.marketing-fees.index', ['tab' => 'variable'])
             ->with('success', __('marketing_fees.variable_saved'));
+    }
+
+    /** Variable campaign fee of the classified / travel verticals for one country (fixed amount + % of the budget). */
+    public function updateVertical(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'country_id' => ['required', 'uuid', 'exists:countries,id'],
+            'vertical' => ['required', Rule::in(array_map(fn ($v) => $v->value, MarketingFeeVerticalSetting::VERTICALS))],
+            'fixed_amount' => $this->amountRules(),
+            'percentage' => $this->percentRules(),
+        ]);
+
+        MarketingFeeVerticalSetting::updateOrCreate(
+            ['country_id' => $validated['country_id'], 'vertical' => $validated['vertical']],
+            [
+                'fixed_amount' => $validated['fixed_amount'],
+                'percentage' => $validated['percentage'],
+                'updated_by_admin_id' => auth('admin')->id(),
+            ]
+        );
+
+        return redirect()->route('admin.marketing-fees.index', ['tab' => 'verticals'])
+            ->with('success', __('marketing_fees.vertical_saved'));
     }
 
     public function destroyVariable(MarketingFeeCategorySetting $setting): RedirectResponse

@@ -226,7 +226,6 @@ class ClassifiedListingController extends Controller
             'attachments' => 'nullable|array',
             'attachments.*' => 'file|max:10240',
             'vendor_listing_reference' => 'nullable|uuid|exists:vendor_listings,id',
-            'marketer_promotion_enabled' => 'boolean',
         ]);
 
         // Derive currency from the selected country server-side, regardless of what was submitted
@@ -338,17 +337,82 @@ class ClassifiedListingController extends Controller
         return response()->json(['success' => true, 'message' => 'تم استئناف الإعلان.']);
     }
 
-    public function markSold(string $id): JsonResponse
+    /**
+     * Mark the listing sold. When a marketer campaign is live on it the final sold price is required (it is the
+     * commission basis); the seller may also say which marketer's buyer it was.
+     */
+    public function markSold(Request $request, string $id): JsonResponse
     {
         $listing = $this->ownedListing($id);
 
-        if (! in_array($listing->status, [ClassifiedListingStatus::Active, ClassifiedListingStatus::Paused], true)) {
-            return response()->json(['success' => false, 'message' => 'لا يمكن تحديد هذا الإعلان كمباع.'], 422);
+        $data = $request->validate([
+            'sold_price' => ['nullable', 'numeric', 'min:0.01', 'max:999999999'],
+            'marketer_id' => ['nullable', 'uuid'],
+            'buyer_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            app(ClassifiedListingService::class)->markSold(
+                $listing,
+                isset($data['sold_price']) ? (float) $data['sold_price'] : null,
+                $data['buyer_note'] ?? null,
+                $data['marketer_id'] ?? null,
+            );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => collect($e->errors())->flatten()->first(), 'errors' => $e->errors()], 422);
         }
 
-        app(ClassifiedListingService::class)->markSold($listing);
+        return response()->json(['success' => true, 'message' => __('marketer_campaigns.classified.marked_sold')]);
+    }
 
-        return response()->json(['success' => true, 'message' => 'تم تحديد الإعلان كمباع/مؤجر.']);
+    /** Take a sale back (reverses a commission that was earned on it). */
+    public function unmarkSold(string $id): JsonResponse
+    {
+        $listing = $this->ownedListing($id);
+
+        try {
+            app(ClassifiedListingService::class)->unmarkSold($listing);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => collect($e->errors())->flatten()->first(), 'errors' => $e->errors()], 422);
+        }
+
+        return response()->json(['success' => true, 'message' => __('marketer_campaigns.classified.unmarked_sold')]);
+    }
+
+    /**
+     * What the "Mark sold" dialog and the campaign card need: the live campaign (if any), which marketers can be
+     * credited with the sale and how the commission is calculated.
+     */
+    public function saleContext(string $id): JsonResponse
+    {
+        $listing = $this->ownedListing($id);
+        $sales = app(\App\Services\Marketer\ClassifiedSaleService::class);
+        $live = $sales->liveCampaign($listing);
+        $latest = $live ?? \App\Models\MarketerCampaign::where('classified_listing_id', $listing->id)->latest()->first();
+        $canCreate = auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.create');
+
+        return response()->json(['data' => [
+            'status' => $listing->status?->value,
+            'currency' => $listing->currency,
+            'price' => (float) $listing->price,
+            'sold_price' => $listing->sold_price !== null ? (float) $listing->sold_price : null,
+            'sold_at' => $listing->sold_at?->toIso8601String(),
+            'has_live_campaign' => (bool) $live,
+            'campaign' => $latest ? [
+                'id' => $latest->id,
+                'status' => $latest->status,
+                'status_label' => __('partner.marketer_campaigns_my.status.'.$latest->status),
+                'url' => route('partner.marketer-campaigns.show', $latest->id),
+                'budget' => (float) $latest->max_commission_budget,
+                'used' => $latest->budgetUsed(),
+            ] : null,
+            'marketers' => $live ? $sales->creditableMarketers($live)->all() : [],
+            'can_create_campaign' => (bool) $canCreate
+                && $listing->status === ClassifiedListingStatus::Active
+                && ! $listing->isExpired()
+                && ! $live,
+            'create_url' => route('partner.marketer-campaigns.create-classified', $listing->id),
+        ]]);
     }
 
     // ── Inquiries ─────────────────────────────────────────────────────────────

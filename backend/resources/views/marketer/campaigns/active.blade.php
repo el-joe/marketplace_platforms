@@ -20,9 +20,9 @@
         <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
             <div class="flex items-start justify-between">
                 <div>
-                    <h4 class="font-bold text-gray-900">{{ $product?->name_ar ?? $inv->campaign->title }}</h4>
+                    <h4 class="font-bold text-gray-900">{{ $product?->name_ar ?? $inv->campaign->getPromotedTitle() }}</h4>
                     <div class="text-sm text-gray-500 mt-0.5">
-                        {{ $inv->campaign->vendor->name ?? 'ناوي' }} • {{ $inv->campaign->country->name_ar ?? '' }}
+                        {{ __('marketer_campaigns.preview.vertical_badge.'.($inv->campaign->campaign_category ?: 'product')) }} • {{ $inv->campaign->vendor->name ?? 'ناوي' }} • {{ $inv->campaign->country->name_ar ?? '' }}
                     </div>
                 </div>
                 <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded">{{ __('marketer.campaigns.status_badge_active') }}</span>
@@ -45,6 +45,8 @@
                     @endif
                 </div>
             </div>
+
+            <x-marketer-campaign-commission-preview :invitation="$inv" compact />
 
             @if($inv->referral_link)
             <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-100">

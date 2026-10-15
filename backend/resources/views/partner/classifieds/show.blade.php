@@ -11,6 +11,23 @@
             pauseUrl: "{{ route('partner.classifieds.pause', $listingId) }}",
             resumeUrl: "{{ route('partner.classifieds.resume', $listingId) }}",
             markSoldUrl: "{{ route('partner.classifieds.mark-sold', $listingId) }}",
+            unmarkSoldUrl: "{{ route('partner.classifieds.unmark-sold', $listingId) }}",
+            saleContextUrl: "{{ route('partner.classifieds.sale-context', $listingId) }}",
+            i18n: @js([
+                'mark_sold_title' => __('marketer_campaigns.classified.mark_sold_title'),
+                'mark_sold_plain' => __('marketer_campaigns.classified.mark_sold_plain'),
+                'mark_sold_campaign' => __('marketer_campaigns.classified.mark_sold_campaign'),
+                'marketer_none' => __('marketer_campaigns.classified.marketer_none'),
+                'unmark_sold_title' => __('marketer_campaigns.classified.unmark_sold'),
+                'sold_price_help' => __('marketer_campaigns.classified.sold_price_help'),
+                'marketer_option' => __('marketer_campaigns.classified.marketer_option'),
+                'unmark_confirm' => __('marketer_campaigns.classified.unmark_confirm'),
+                'sold_summary' => __('marketer_campaigns.classified.sold_summary'),
+                'card_budget' => __('marketer_campaigns.classified.card_budget'),
+                'sold_price_label' => __('marketer_campaigns.classified.sold_price_label'),
+                'confirm' => __('common.confirm'),
+                'cancel' => __('common.cancel'),
+            ]),
             inquiriesUrl: "{{ route('partner.classifieds.inquiries.index', $listingId) }}",
             inquiryStatusBaseUrl: "{{ rtrim(route('partner.classifieds.inquiries.status', ['id' => $listingId, 'inquiryId' => '__ID__']), '') }}",
             contractUrl: "{{ route('partner.classifieds.contract.show', $listingId) }}",
@@ -112,6 +129,10 @@
                     </svg>
                     {{ __('partner.classifieds_extra.mark_sold') }}
                 </button>
+                <button id="sh-btn-unsold"
+                    class="hidden items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                    {{ __('marketer_campaigns.classified.unmark_sold') }}
+                </button>
                 {{-- Contract accept button (pending_contract status) --}}
                 <button id="sh-btn-contract"
                     class="hidden items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-sm font-semibold text-white hover:bg-amber-600 transition-colors">
@@ -136,6 +157,27 @@
                         <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{{ __('partner.classifieds_extra.wizard.additional_attributes') }}</p>
                         <dl id="sh-attributes" class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm"></dl>
                     </div>
+                </div>
+
+                {{-- Marketer campaign card (filled from the sale-context endpoint) --}}
+                <div id="sh-campaign-card" class="hidden bg-white rounded-2xl border border-purple-200 p-5" data-testid="classified-campaign-card">
+                    <div class="flex items-start justify-between gap-3 flex-wrap">
+                        <div class="min-w-0">
+                            <h2 class="text-sm font-semibold text-gray-800">{{ __('marketer_campaigns.classified.card_title') }}</h2>
+                            <p class="mt-1 text-xs text-gray-500">{{ __('marketer_campaigns.classified.card_intro') }}</p>
+                        </div>
+                        <a id="sh-campaign-create" href="#" class="hidden inline-flex items-center rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white hover:bg-purple-700">{{ __('marketer_campaigns.classified.card_create') }}</a>
+                    </div>
+                    <div id="sh-campaign-none" class="hidden mt-3 text-xs text-gray-400">{{ __('marketer_campaigns.classified.card_none') }}</div>
+                    <div id="sh-campaign-info" class="hidden mt-3 rounded-lg bg-purple-50 px-4 py-3 text-sm">
+                        <div class="flex items-center justify-between gap-3 flex-wrap">
+                            <span id="sh-campaign-status" class="font-semibold text-purple-800"></span>
+                            <a id="sh-campaign-view" href="#" class="text-xs font-semibold text-purple-700 hover:underline">{{ __('marketer_campaigns.classified.card_view') }}</a>
+                        </div>
+                        <div id="sh-campaign-budget" class="mt-1 text-xs text-purple-700"></div>
+                        <p class="mt-2 text-xs text-gray-600">{{ __('marketer_campaigns.classified.card_sold_hint') }}</p>
+                    </div>
+                    <div id="sh-sold-summary" class="hidden mt-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"></div>
                 </div>
 
                 {{-- Inquiries tab --}}
@@ -191,6 +233,43 @@
                     <h2 class="text-sm font-semibold text-gray-800 mb-3">{{ __('partner.classifieds_extra.attachments_title') }}</h2>
                     <div id="sh-attachments-list" class="space-y-2"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Mark-sold modal: asks for the final sold price (and the marketer) while a campaign is running --}}
+    <div id="sh-sold-modal" class="hidden fixed inset-0 z-50 items-center justify-center p-4" style="display:none">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" id="sh-sold-backdrop"></div>
+        <div class="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <h3 class="text-base font-bold text-gray-900">{{ __('marketer_campaigns.classified.mark_sold_title') }}</h3>
+                <button type="button" id="sh-sold-close" class="text-gray-400 hover:text-gray-600" aria-label="{{ __('common.close') }}">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="px-6 py-4 space-y-4 text-sm">
+                <p id="sh-sold-text" class="text-gray-600"></p>
+                <div id="sh-sold-campaign-fields" class="hidden space-y-4">
+                    <div>
+                        <label id="sh-sold-price-label" for="sh-sold-price" class="block text-xs font-medium text-gray-700 mb-1"></label>
+                        <input id="sh-sold-price" type="number" min="0.01" step="0.01" class="w-full rounded-lg border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500">
+                        <p id="sh-sold-price-help" class="mt-1 text-xs text-gray-400"></p>
+                    </div>
+                    <div>
+                        <label for="sh-sold-marketer" class="block text-xs font-medium text-gray-700 mb-1">{{ __('marketer_campaigns.classified.marketer_label') }}</label>
+                        <select id="sh-sold-marketer" class="w-full rounded-lg border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500"></select>
+                        <p class="mt-1 text-xs text-gray-400">{{ __('marketer_campaigns.classified.marketer_help') }}</p>
+                    </div>
+                    <div>
+                        <label for="sh-sold-note" class="block text-xs font-medium text-gray-700 mb-1">{{ __('marketer_campaigns.classified.buyer_note_label') }}</label>
+                        <textarea id="sh-sold-note" rows="2" maxlength="1000" class="w-full rounded-lg border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500"></textarea>
+                    </div>
+                </div>
+                <p id="sh-sold-error" class="hidden rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700"></p>
+            </div>
+            <div class="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                <button type="button" id="sh-sold-cancel" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">{{ __('common.cancel') }}</button>
+                <button type="button" id="sh-sold-confirm" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">{{ __('marketer_campaigns.classified.confirm_sold') }}</button>
             </div>
         </div>
     </div>

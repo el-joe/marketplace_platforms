@@ -25,11 +25,9 @@ class MonitorCampaignStockJob implements ShouldQueue
      */
     public function handle(MarketerCampaignService $service): void
     {
+        // Every vertical: product stock, classified listing state, trip seats / departure (see the service).
         MarketerCampaign::whereIn('status', ['active', 'auto_approved', 'paused'])
-            ->where(function ($q) {
-                $q->whereNotNull('vendor_listing_id')->orWhereNotNull('admin_listing_id');
-            })
-            ->with(['vendorListing.warehouseInventories', 'adminListing.warehouseInventories'])
+            ->with(['vendorListing.warehouseInventories', 'adminListing.warehouseInventories', 'classifiedListing', 'travelPackage'])
             ->get()
             ->each(fn (MarketerCampaign $campaign) => $service->checkStockAndUpdateStatus($campaign));
     }

@@ -120,20 +120,18 @@ Route::name('travel-agency.')
                 Route::get('/{booking}/passport/download', [BookingController::class, 'downloadPassport'])->name('passport.download')->middleware('travel_agency.can:bookings.view');
             });
 
-            // Campaign Offers
+            // Campaigns: the agency promotes its trips through marketers (shared campaign engine + wizard)
             Route::prefix('campaigns')->name('campaigns.')->group(function () {
                 Route::get('/', [CampaignController::class, 'index'])->name('index')->middleware('travel_agency.can:campaigns.view');
                 Route::get('/export', [CampaignController::class, 'export'])->name('export')->middleware('travel_agency.can:campaigns.view');
                 Route::get('/create', [CampaignController::class, 'create'])->name('create')->middleware('travel_agency.can:campaigns.create');
+                Route::get('/create/{package}', [CampaignController::class, 'createForTrip'])->name('create-trip')->middleware('travel_agency.can:campaigns.create');
+                Route::get('/quote', [CampaignController::class, 'quote'])->name('quote')->middleware('travel_agency.can:campaigns.create');
                 Route::post('/', [CampaignController::class, 'store'])->name('store')->middleware('travel_agency.can:campaigns.create');
-                Route::get('/packages/search', [CampaignController::class, 'searchPackages'])->name('packages.search')->middleware('travel_agency.can:campaigns.create');
-                Route::get('/{offer}', [CampaignController::class, 'show'])->name('show')->middleware('travel_agency.can:campaigns.view');
-                Route::post('/{offer}/submit', [CampaignController::class, 'submitForReview'])->name('submit')->middleware('travel_agency.can:campaigns.edit');
-                Route::post('/{offer}/pause', [CampaignController::class, 'pauseOffer'])->name('pause')->middleware('travel_agency.can:campaigns.manage');
-                Route::post('/{offer}/resume', [CampaignController::class, 'resumeOffer'])->name('resume')->middleware('travel_agency.can:campaigns.manage');
-                Route::delete('/{offer}', [CampaignController::class, 'destroy'])->name('destroy')->middleware('travel_agency.can:campaigns.manage');
-                Route::post('/{offer}/invite', [CampaignController::class, 'invite'])->name('invite')->middleware('travel_agency.can:campaigns.manage');
-                Route::delete('/invitations/{invitation}/revoke', [CampaignController::class, 'revokeInvitation'])->name('invitations.revoke')->middleware('travel_agency.can:campaigns.manage');
+                Route::get('/{id}', [CampaignController::class, 'show'])->name('show')->middleware('travel_agency.can:campaigns.view');
+                Route::post('/{id}/pause', [CampaignController::class, 'pause'])->name('pause')->middleware('travel_agency.can:campaigns.manage');
+                Route::post('/{id}/resume', [CampaignController::class, 'resume'])->name('resume')->middleware('travel_agency.can:campaigns.manage');
+                Route::post('/{id}/cancel', [CampaignController::class, 'cancel'])->name('cancel')->middleware('travel_agency.can:campaigns.manage');
             });
 
             // Package Inquiries (lead management)

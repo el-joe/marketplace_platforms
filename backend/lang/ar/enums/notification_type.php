@@ -78,8 +78,6 @@ return [
     'send_otp_notification' => 'إرسال رمز التحقق',
     'strike_issued' => 'إصدار إنذار',
     'tier_upgraded' => 'ترقية المستوى',
-    'travel_agency_campaign_invitation_received' => 'استلام دعوة حملة',
-    'travel_agency_campaign_offer_submitted' => 'تقديم عرض حملة وكالة السفر',
     'travel_agency_change_request_submitted' => 'تقديم طلب تعديل وكالة السفر',
     'travel_booking_cancelled' => 'إلغاء حجز الرحلة',
     'travel_booking_confirmed' => 'تأكيد حجز الرحلة',

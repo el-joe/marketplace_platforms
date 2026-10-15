@@ -270,6 +270,7 @@ Route::prefix('v1')->group(function (): void {
                 Route::put('{id}/pause', [ClassifiedListingController::class, 'pause'])->name('pause');
                 Route::put('{id}/resume', [ClassifiedListingController::class, 'resume'])->name('resume');
                 Route::put('{id}/mark-sold', [ClassifiedListingController::class, 'markSold'])->name('mark-sold');
+                Route::put('{id}/unmark-sold', [ClassifiedListingController::class, 'unmarkSold'])->name('unmark-sold');
                 Route::get('{id}/inquiries', [ClassifiedListingController::class, 'inquiries'])->name('inquiries.index');
                 Route::put('inquiries/{inquiryId}/status', [ClassifiedListingController::class, 'updateInquiryStatus'])->name('inquiries.status');
             });

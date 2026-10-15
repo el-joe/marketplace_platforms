@@ -33,7 +33,7 @@ class MarketerCampaign extends Model
         'affiliate_fee_accrued', 'affiliate_fee_settled_at', 'marketing_fee_fixed_accrued',
         'open_to_affiliates', 'influencer_fixed_reserved',
         'ends_at', 'influencer_fixed_snapshot', 'campaign_fee_status', 'campaign_fee_paid_at', 'campaign_fee_paid_via',
-        'influencers_settled_at',
+        'influencers_settled_at', 'owner_paused_at',
     ];
 
     /** The only commission_type written by v3: every marketer is paid according to his own type. */
@@ -69,6 +69,7 @@ class MarketerCampaign extends Model
         'influencer_fixed_snapshot' => 'array',
         'campaign_fee_paid_at' => 'datetime',
         'influencers_settled_at' => 'datetime',
+        'owner_paused_at' => 'datetime',
     ];
 
     public const OWNER_TRAVEL_AGENCY = 'travel_agency';

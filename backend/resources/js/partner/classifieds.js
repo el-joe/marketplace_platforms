@@ -657,7 +657,6 @@ function wizRenderReview() {
         ['الغرض',              el('cl-purpose')?.value === 'sale' ? 'بيع' : 'إيجار'],
         ['السعر',              `${el('cl-price')?.value || 0} ${el('cl-currency')?.value || 'SAR'}`],
         ['قابل للتفاوض',      el('cl-negotiable')?.checked ? 'نعم' : 'لا'],
-        ['ترويج المسوّقين',   el('cl-marketer-promo')?.checked ? 'مسموح' : 'غير مسموح'],
         ['عدد الصور',         wizImageFiles.length],
         wizNeedsSketch()      ? ['مخطط',          wizSketchFile ? wizSketchFile.name : 'لم يُرفع']                      : null,
         wizNeedsLocation()    ? ['إحداثيات',      `${el('cl-latitude')?.value  || '—'} / ${el('cl-longitude')?.value || '—'}`] : null,
@@ -718,7 +717,6 @@ async function wizSubmit() {
     fd.append('price',                   el('cl-price')?.value || 0);
     fd.append('currency',               el('cl-currency')?.value || 'SAR');
     fd.append('price_negotiable',            el('cl-negotiable')?.checked ? '1' : '0');
-    fd.append('marketer_promotion_enabled',  el('cl-marketer-promo')?.checked ? '1' : '0');
 
     if (wizNeedsLocation()) {
         const lat = el('cl-latitude')?.value;
@@ -785,7 +783,6 @@ function wizOpen() {
         const e = el(id); if (e) e.value = '';
     });
     const neg     = el('cl-negotiable');     if (neg)     neg.checked  = false;
-    const mktPromo = el('cl-marketer-promo'); if (mktPromo) mktPromo.checked = false;
     const agree   = el('cl-contract-agree'); if (agree)   agree.checked = false;
     const purpose  = el('cl-purpose');        if (purpose)  purpose.value = 'sale';
     const currency = el('cl-currency');       if (currency) currency.value = '';
@@ -986,6 +983,7 @@ async function loadShowData() {
         renderShowDescription(currentListing);
         renderShowAttachments(currentListing.attachments || [], currentListing.sketch_file_url);
         updateShowButtons(currentListing.status, currentListing.expires_at);
+        loadSaleContext();
     } catch {
         if (loadingEl) loadingEl.classList.add('hidden');
         if (errorEl)   errorEl.classList.remove('hidden');
@@ -1121,9 +1119,10 @@ function updateShowButtons(status, expiresAt) {
     const resumeBtn   = el('sh-btn-resume');
     const soldBtn     = el('sh-btn-sold');
     const contractBtn = el('sh-btn-contract');
+    const unsoldBtn   = el('sh-btn-unsold');
 
     // Reset all to hidden
-    [pauseBtn, resumeBtn, soldBtn, contractBtn].forEach(b => {
+    [pauseBtn, resumeBtn, soldBtn, contractBtn, unsoldBtn].forEach(b => {
         if (b) b.style.display = 'none';
     });
 
@@ -1142,6 +1141,9 @@ function updateShowButtons(status, expiresAt) {
     if (status === 'pending_contract') {
         contractBtn?.style.setProperty('display', 'inline-flex');
     }
+    if (status === 'sold') {
+        unsoldBtn?.style.setProperty('display', 'inline-flex');
+    }
 }
 
 function setupShowActions() {
@@ -1154,7 +1156,7 @@ function setupShowActions() {
         const ok = await confirmDialog('إيقاف مؤقت؟', 'هل تريد إيقاف الإعلان مؤقتاً؟');
         if (!ok) return;
         try {
-            await apiFetch(cfg().pauseUrl, { method: 'PUT' });
+            await apiFetch(cfg().pauseUrl, { method: 'POST' });
             toast('تم إيقاف الإعلان مؤقتاً.');
             await loadShowData();
         } catch (e) {
@@ -1166,7 +1168,7 @@ function setupShowActions() {
         const ok = await confirmDialog('استئناف الإعلان؟', 'هل تريد استئناف الإعلان؟');
         if (!ok) return;
         try {
-            await apiFetch(cfg().resumeUrl, { method: 'PUT' });
+            await apiFetch(cfg().resumeUrl, { method: 'POST' });
             toast('تم استئناف الإعلان.');
             await loadShowData();
         } catch (e) {
@@ -1174,19 +1176,126 @@ function setupShowActions() {
         }
     });
 
-    soldBtn?.addEventListener('click', async () => {
-        const ok = await confirmDialog('تمييز كـ "تم البيع"؟', 'هل تريد تمييز الإعلان كـ "تم البيع / الإيجار"؟');
+    soldBtn?.addEventListener('click', () => openSoldModal());
+
+    el('sh-btn-unsold')?.addEventListener('click', async () => {
+        const ok = await confirmDialog(cfg().i18n.unmark_sold_title || '', cfg().i18n.unmark_confirm);
         if (!ok) return;
         try {
-            await apiFetch(cfg().markSoldUrl, { method: 'PUT' });
-            toast('تم تمييز الإعلان كـ "تم البيع".');
+            const res = await apiFetch(cfg().unmarkSoldUrl, { method: 'POST' });
+            toast(res.message);
             await loadShowData();
         } catch (e) {
-            toast(e.message || 'تعذّرت العملية.', 'error');
+            toast(e.message || e.errors?.status?.[0] || 'Error', 'error');
         }
     });
 
     contractBtn?.addEventListener('click', () => openContractModal());
+}
+
+// ─── Marketer campaign card + mark-sold modal ──────────────────────────────────
+let saleContext = null;
+
+const fill = (tpl, vars) => Object.entries(vars).reduce((t, [k, v]) => t.replaceAll(`:${k}`, v), tpl || '');
+
+async function loadSaleContext() {
+    const card = el('sh-campaign-card');
+    if (!card || !cfg().saleContextUrl) return;
+    try {
+        saleContext = (await apiFetch(cfg().saleContextUrl)).data;
+    } catch {
+        card.classList.add('hidden');
+        return;
+    }
+    const c = saleContext;
+    const i18n = cfg().i18n || {};
+    const toggle = (id, show) => el(id)?.classList.toggle('hidden', !show);
+
+    toggle('sh-campaign-create', c.can_create_campaign);
+    if (c.can_create_campaign) el('sh-campaign-create').href = c.create_url;
+
+    toggle('sh-campaign-info', !!c.campaign);
+    toggle('sh-campaign-none', !c.campaign && c.status !== 'sold');
+    if (c.campaign) {
+        el('sh-campaign-status').textContent = c.campaign.status_label;
+        el('sh-campaign-view').href = c.campaign.url;
+        el('sh-campaign-budget').textContent = fill(i18n.card_budget, {
+            used: formatPlain(c.campaign.used), budget: formatPlain(c.campaign.budget), currency: c.currency,
+        });
+    }
+
+    const sold = el('sh-sold-summary');
+    toggle('sh-sold-summary', c.status === 'sold' && c.sold_price !== null);
+    if (sold && c.sold_price !== null) {
+        sold.textContent = fill(i18n.sold_summary, { price: formatMoney(c.sold_price, c.currency), date: formatDate(c.sold_at) });
+    }
+
+    // Nothing to show for a listing that cannot have a campaign and never had one.
+    card.classList.toggle('hidden', !(c.campaign || c.can_create_campaign || (c.status === 'sold' && c.sold_price !== null)));
+}
+
+const formatPlain = (n) => new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
+
+async function openSoldModal() {
+    const modal = el('sh-sold-modal');
+    if (!modal) return;
+    const i18n = cfg().i18n || {};
+
+    // Always ask the server: a campaign may have started since the page loaded.
+    try { saleContext = (await apiFetch(cfg().saleContextUrl)).data; } catch { /* keep the last known context */ }
+    const c = saleContext || { has_live_campaign: false, marketers: [], currency: '', price: 0 };
+
+    el('sh-sold-error').classList.add('hidden');
+    el('sh-sold-text').textContent = c.has_live_campaign ? i18n.mark_sold_campaign : i18n.mark_sold_plain;
+    el('sh-sold-campaign-fields').classList.toggle('hidden', !c.has_live_campaign);
+
+    if (c.has_live_campaign) {
+        el('sh-sold-price-label').textContent = fill(i18n.sold_price_label, { currency: c.currency });
+        el('sh-sold-price-help').textContent = fill(i18n.sold_price_help, { price: formatMoney(c.price, c.currency) });
+        el('sh-sold-price').value = c.price || '';
+        const select = el('sh-sold-marketer');
+        select.innerHTML = '';
+        select.add(new Option(cfg().i18n.marketer_none, ''));
+        c.marketers.forEach(m => select.add(new Option(fill(i18n.marketer_option, { name: m.name, count: m.inquiries }), m.id)));
+        el('sh-sold-note').value = '';
+    }
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSoldModal() {
+    const modal = el('sh-sold-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function setupSoldModal() {
+    ['sh-sold-close', 'sh-sold-cancel', 'sh-sold-backdrop'].forEach(id => el(id)?.addEventListener('click', closeSoldModal));
+
+    el('sh-sold-confirm')?.addEventListener('click', async () => {
+        const errorEl = el('sh-sold-error');
+        errorEl.classList.add('hidden');
+        const body = {};
+        if (saleContext?.has_live_campaign) {
+            body.sold_price = el('sh-sold-price').value;
+            if (el('sh-sold-marketer').value) body.marketer_id = el('sh-sold-marketer').value;
+            if (el('sh-sold-note').value.trim()) body.buyer_note = el('sh-sold-note').value.trim();
+        }
+        const btn = el('sh-sold-confirm');
+        btn.disabled = true;
+        try {
+            const res = await apiFetch(cfg().markSoldUrl, { method: 'POST', body: JSON.stringify(body) });
+            closeSoldModal();
+            toast(res.message);
+            await loadShowData();
+        } catch (e) {
+            errorEl.textContent = e.message || Object.values(e.errors || {}).flat()[0] || 'Error';
+            errorEl.classList.remove('hidden');
+        } finally {
+            btn.disabled = false;
+        }
+    });
 }
 
 // ─── Contract modal ───────────────────────────────────────────────────────────
@@ -1393,6 +1502,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadShowData();
         loadInquiries();
         setupShowActions();
+        setupSoldModal();
 
         // Contract modal wiring
         el('sh-contract-close')?.addEventListener('click', closeContractModal);

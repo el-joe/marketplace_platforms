@@ -2,113 +2,122 @@
 
 namespace App\Http\Controllers\TravelAgencyPortal;
 
-use App\Enums\CampaignType;
-use App\Enums\CommissionType;
-use App\Enums\VendorCampaignInvitationStatus;
-use App\Enums\VendorCampaignOfferStatus;
+use App\Enums\TravelPackageStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\TravelAgencyPortal\Concerns\ResolvesTravelAgency;
-use App\Models\Admin;
-use App\Models\Marketer;
 use App\Models\MarketerCampaign;
-use App\Models\TravelAgencyCampaignInvitation;
-use App\Models\TravelAgencyCampaignOffer;
-use App\Models\TravelAgencyCampaignOfferPackage;
 use App\Models\TravelPackage;
-use App\Notifications\Admin\TravelAgencyCampaignOfferSubmitted;
-use App\Notifications\Marketer\TravelAgencyCampaignInvitationReceived;
+use App\Services\Marketer\CampaignWizardService;
+use App\Services\Marketer\MarketerCommissionCalculator;
+use App\Services\MarketerCampaignQuoteService;
+use App\Services\MarketerCampaignService;
+use App\Support\Marketer\CampaignOwner;
+use App\Support\Marketer\CampaignSubject;
+use App\Support\Money;
 use App\Traits\HasExport;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * Travel agency "Campaigns": the agency promotes its own trips through the same MarketerCampaign engine, wizard and
+ * money rules as a product or classified vendor (owner_type travel_agency, owner_id = the agency, no vendor).
+ * Affiliates and brokers earn on confirmed bookings; influencers are paid their fixed amount when the campaign completes.
+ */
 class CampaignController extends Controller
 {
     use HasExport;
     use ResolvesTravelAgency;
 
-    private function filteredOffersQuery(Request $request)
+    public function __construct(
+        private readonly MarketerCampaignService $campaigns,
+        private readonly CampaignWizardService $wizard,
+        private readonly MarketerCampaignQuoteService $quotes,
+    ) {}
+
+    private function ownCampaigns()
     {
-        $query = TravelAgencyCampaignOffer::where('travel_agency_id', $this->agencyId());
+        return MarketerCampaign::where('owner_type', MarketerCampaign::OWNER_TRAVEL_AGENCY)
+            ->where('owner_id', $this->agencyId());
+    }
 
-        if ($search = $request->query('search')) {
-            $query->where('name', 'like', "%{$search}%");
-        }
+    private function ownCampaign(string $id): MarketerCampaign
+    {
+        return $this->ownCampaigns()->findOrFail($id);
+    }
 
-        if ($status = $request->query('status')) {
-            $query->where('status', $status);
-        }
+    /** The agency's trips that can be promoted right now (same rule MarketerCampaignService enforces on submit). */
+    private function eligibleTrips()
+    {
+        return TravelPackage::where('travel_agency_id', $this->agencyId())
+            ->where('status', TravelPackageStatus::Active)
+            ->where(fn ($q) => $q->whereNull('departure_date')->orWhereDate('departure_date', '>=', today()))
+            ->where(fn ($q) => $q->whereNull('available_seats')->orWhereColumn('available_seats', '>', 'seats_booked'))
+            ->orderBy('departure_date')
+            ->get();
+    }
 
-        if ($dateFrom = $request->query('date_from')) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        }
+    private function ownTrip(string $id): CampaignSubject
+    {
+        $trip = TravelPackage::where('travel_agency_id', $this->agencyId())->with(['agency', 'media'])->find($id);
+        abort_if(! $trip, 404, __('travel.campaigns.errors.trip_not_found'));
 
-        if ($dateTo = $request->query('date_to')) {
-            $query->whereDate('created_at', '<=', $dateTo);
-        }
+        return CampaignSubject::of($trip);
+    }
 
-        return $query;
+    private function filtered(Request $request)
+    {
+        return $this->ownCampaigns()
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')))
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $term = '%'.$request->query('search').'%';
+                $q->where(fn ($w) => $w->where('title', 'like', $term)
+                    ->orWhereHas('travelPackage', fn ($t) => $t->where('title_en', 'like', $term)->orWhere('title_ar', 'like', $term)));
+            });
     }
 
     public function index(Request $request): View
     {
-        $agencyId = $this->agencyId();
-
-        $offers = $this->filteredOffersQuery($request)
-            ->withCount(['invitations', 'invitations as accepted_count' => fn ($q) => $q->where('status', VendorCampaignInvitationStatus::Accepted->value)])
+        $campaigns = $this->filtered($request)
+            ->with(['travelPackage:id,title_ar,title_en,slug,currency', 'country'])
+            ->withCount('invitations')
             ->latest()
-            ->get();
+            ->paginate(15)
+            ->withQueryString();
 
+        $all = $this->ownCampaigns();
         $stats = [
-            'draft' => $offers->where('status', VendorCampaignOfferStatus::Draft)->count(),
-            'active' => $offers->where('status', VendorCampaignOfferStatus::Active)->count(),
-            'invited' => $offers->sum('invitations_count'),
-            'accepted' => $offers->sum('accepted_count'),
-            'conversions' => TravelAgencyCampaignOffer::where('travel_agency_id', $agencyId)
-                ->join('travel_agency_campaign_invitations', 'travel_agency_campaign_offers.id', '=', 'travel_agency_campaign_invitations.travel_agency_campaign_offer_id')
-                ->join('marketer_campaigns', 'travel_agency_campaign_invitations.resulting_campaign_id', '=', 'marketer_campaigns.id')
-                ->join('marketer_campaign_conversions', 'marketer_campaigns.id', '=', 'marketer_campaign_conversions.campaign_id')
-                ->count('marketer_campaign_conversions.id'),
+            'total' => (clone $all)->count(),
+            'active' => (clone $all)->whereIn('status', ['active', 'auto_approved'])->count(),
+            'conversions' => (int) (clone $all)->withCount('conversions')->get()->sum('conversions_count'),
+            'spent' => (clone $all)->sum('commission_budget_spent'),
         ];
 
-        return view('travel-agency.campaigns.index', compact('offers', 'stats'));
+        return view('travel-agency.campaigns.index', compact('campaigns', 'stats'));
     }
 
     public function export(Request $request): Response|StreamedResponse
     {
-        $offers = $this->filteredOffersQuery($request)
-            ->withCount('invitations')
-            ->latest()
-            ->get();
+        $campaigns = $this->filtered($request)->with('travelPackage:id,title_ar,title_en')->withCount('invitations')->latest()->get();
 
-        $headers = [
-            __('travel.campaigns.export.campaign'),
-            __('travel.campaigns.export.type'),
-            __('travel.campaigns.export.marketers'),
-            __('travel.campaigns.export.status'),
-            __('travel.campaigns.export.start'),
-            __('travel.campaigns.export.end'),
-        ];
-
-        $rows = $offers->map(fn (TravelAgencyCampaignOffer $offer) => [
-            $offer->name,
-            $offer->campaign_type->value ?? $offer->campaign_type,
-            $offer->invitations_count,
-            $offer->status->value ?? $offer->status,
-            $offer->starts_at?->toDateString(),
-            $offer->ends_at?->toDateString(),
+        $headers = array_map(fn ($k) => __("travel.campaigns.export.$k"), ['campaign', 'trip', 'budget', 'used', 'marketers', 'status', 'created']);
+        $rows = $campaigns->map(fn (MarketerCampaign $c) => [
+            $c->title ?: '#'.substr($c->id, 0, 8),
+            $c->travelPackage?->title_ar ?: $c->travelPackage?->title_en,
+            Money::format($c->max_commission_budget).' '.$c->currency,
+            Money::format($c->budgetUsed()).' '.$c->currency,
+            $c->invitations_count,
+            $c->status,
+            $c->created_at?->toDateString(),
         ]);
 
         $filename = 'campaigns-'.now()->toDateString();
-        $format = $request->input('format', 'csv');
 
-        return match ($format) {
+        return match ($request->input('format', 'csv')) {
             'excel' => $this->exportExcel($filename, $headers, $rows),
             'word' => $this->exportWord($filename, __('travel.campaigns.export.sheet_title'), $rows),
             'csv' => $this->exportCsv($filename, $headers, $rows),
@@ -116,278 +125,133 @@ class CampaignController extends Controller
         };
     }
 
+    /** Step 0: pick the trip to promote. */
     public function create(): View
     {
-        return view('travel-agency.campaigns.create');
+        return view('travel-agency.campaigns.select-trip', ['trips' => $this->eligibleTrips()]);
     }
 
-    public function store(Request $request): RedirectResponse|JsonResponse
+    /** The shared wizard, filled for one trip. */
+    public function createForTrip(string $package): View|RedirectResponse
     {
-        $agencyId = $this->agencyId();
+        $subject = $this->ownTrip($package);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:2000',
-            'requirements' => 'nullable|string|max:2000',
-            'campaign_type' => ['required', Rule::enum(CampaignType::class)],
-            'offered_commission_rate' => 'required|numeric|min:0|max:100',
-            'commission_type' => ['required', Rule::enum(CommissionType::class)],
-            'budget_per_marketer_display' => 'nullable|numeric|min:0',
-            'total_budget_display' => 'nullable|numeric|min:0',
-            'starts_at' => 'required|date|after_or_equal:today',
-            'ends_at' => 'required|date|after:starts_at',
-            'invitation_deadline' => 'nullable|date|before:starts_at',
-            'attribution_model' => 'required|in:last_click,first_click,linear',
-            'whatsapp_sharing_enabled' => 'boolean',
-            'package_ids' => 'required|array|min:1',
-            'package_ids.*' => 'uuid',
-            'commission_overrides' => 'nullable|array',
-            'commission_overrides.*.package_id' => 'uuid',
-            'commission_overrides.*.rate' => 'numeric|min:0|max:100',
+        try {
+            $this->campaigns->assertEligibleSubject(CampaignOwner::travelAgency($this->agencyId()), $subject->source());
+        } catch (\RuntimeException $e) {
+            return redirect()->route('travel-agency.campaigns.create')->with('error', $e->getMessage());
+        }
+
+        $influencers = $this->quotes->influencerOptions($subject);
+        $affiliateCount = $this->quotes->openAudienceCount($subject);
+        $quote = $this->quotes->withWallet($this->quotes->quote($subject, []), $this->agencyId(), $subject->currency, 'travel_agency');
+
+        return view('travel-agency.campaigns.create', compact('subject', 'influencers', 'affiliateCount', 'quote'));
+    }
+
+    /** Live cost summary of the wizard: everything is computed server-side. */
+    public function quote(Request $request): JsonResponse
+    {
+        $request->validate([
+            'trip_id' => ['required', 'uuid'],
+            'marketer_ids' => ['nullable', 'array'],
+            'marketer_ids.*' => ['uuid'],
+            'budget' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
+            'open_to_affiliates' => ['nullable', 'boolean'],
         ]);
 
-        // Validate all package_ids belong to this travel agency
-        $packageCount = TravelPackage::where('travel_agency_id', $agencyId)
-            ->whereIn('id', $validated['package_ids'])
-            ->count();
+        $subject = $this->ownTrip($request->input('trip_id'));
 
-        if ($packageCount !== count($validated['package_ids'])) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => __('travel.campaigns.package_not_owned')], 422);
-            }
-
-            return back()->withErrors(['package_ids' => __('travel.campaigns.package_not_owned')])->withInput();
-        }
-
-        $overridesMap = collect($validated['commission_overrides'] ?? [])
-            ->keyBy('package_id');
-
-        $offer = null;
-
-        DB::transaction(function () use ($validated, $agencyId, $overridesMap, &$offer) {
-            $offer = TravelAgencyCampaignOffer::create([
-                'travel_agency_id' => $agencyId,
-                'name' => $validated['name'],
-                'description' => $validated['description'] ?? null,
-                'requirements' => $validated['requirements'] ?? null,
-                'campaign_type' => $validated['campaign_type'],
-                'offered_commission_rate' => $validated['offered_commission_rate'],
-                'commission_type' => $validated['commission_type'],
-                'budget_per_marketer' => isset($validated['budget_per_marketer_display'])
-                    ? \App\Support\Money::number($validated['budget_per_marketer_display']) : null,
-                'total_budget' => isset($validated['total_budget_display'])
-                    ? \App\Support\Money::number($validated['total_budget_display']) : null,
-                'starts_at' => $validated['starts_at'],
-                'ends_at' => $validated['ends_at'],
-                'invitation_deadline' => $validated['invitation_deadline'] ?? null,
-                'attribution_model' => $validated['attribution_model'],
-                'whatsapp_sharing_enabled' => $validated['whatsapp_sharing_enabled'] ?? false,
-                'status' => VendorCampaignOfferStatus::Draft,
-            ]);
-
-            foreach ($validated['package_ids'] as $i => $packageId) {
-                TravelAgencyCampaignOfferPackage::create([
-                    'travel_agency_campaign_offer_id' => $offer->id,
-                    'travel_package_id' => $packageId,
-                    'position' => $i + 1,
-                    'commission_override' => $overridesMap->get($packageId)['rate'] ?? null,
-                ]);
-            }
-        });
-
-        return redirect()->route('travel-agency.campaigns.show', $offer->id)
-            ->with('success', __('travel.campaigns.offer_created'));
+        return response()->json($this->quotes->withWallet(
+            $this->quotes->quote(
+                $subject,
+                array_values(array_filter((array) $request->input('marketer_ids', []), 'is_string')),
+                (float) $request->input('budget', 0),
+                $request->boolean('open_to_affiliates'),
+            ),
+            $this->agencyId(),
+            $subject->currency,
+            'travel_agency',
+        ));
     }
 
-    public function show(TravelAgencyCampaignOffer $offer): View
+    public function store(Request $request): RedirectResponse
     {
-        abort_if($offer->travel_agency_id !== $this->agencyId(), 404);
-
-        $offer->load([
-            'packages.package',
-            'invitations.marketer',
-            'invitations.resultingCampaign',
+        $request->validate([
+            'travel_package_id' => ['required', 'uuid'],
+            'marketer_ids' => ['nullable', 'array'],
+            'marketer_ids.*' => ['uuid'],
+            'max_commission_budget' => ['required', 'numeric', 'min:0.01', 'max:999999999', 'decimal:0,2'],
+            'open_to_affiliates' => ['nullable', 'boolean'],
+            'ends_at' => ['nullable', 'date', 'after:today'],
+            'selected_ad_types' => ['nullable', 'array'],
+            'selected_ad_types.*' => ['string', 'in:story,post,video'],
+            'vendor_ad_notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $invitationStats = [
-            'invited' => $offer->invitations->count(),
-            'accepted' => $offer->invitations->where('status', VendorCampaignInvitationStatus::Accepted)->count(),
-            'declined' => $offer->invitations->whereIn('status', [VendorCampaignInvitationStatus::Declined, VendorCampaignInvitationStatus::Expired, VendorCampaignInvitationStatus::Revoked])->count(),
-        ];
+        $subject = $this->ownTrip($request->input('travel_package_id'));
 
-        return view('travel-agency.campaigns.show', compact('offer', 'invitationStats'));
-    }
-
-    public function submitForReview(TravelAgencyCampaignOffer $offer): JsonResponse
-    {
-        abort_if($offer->travel_agency_id !== $this->agencyId(), 404);
-
-        if ($offer->status !== VendorCampaignOfferStatus::Draft) {
-            return response()->json(['success' => false, 'message' => __('travel.campaigns.submit_only_draft')], 422);
+        try {
+            ['campaign' => $campaign, 'quote' => $quote] = $this->wizard->submit(CampaignOwner::travelAgency($this->agencyId()), $subject, $request->all());
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            return back()->withInput()->with('error', __('travel.campaigns.flash.create_failed', ['error' => $e->getMessage()]));
         }
 
-        $offer->update(['status' => VendorCampaignOfferStatus::PendingAdmin]);
-
-        Notification::send(Admin::permission('campaign_offers.view')->get(), new TravelAgencyCampaignOfferSubmitted($offer));
-
-        return response()->json(['success' => true, 'message' => __('travel.campaigns.submitted_success'), 'status' => VendorCampaignOfferStatus::PendingAdmin->value]);
+        return redirect()->route('travel-agency.campaigns.show', $campaign->id)
+            ->with('success', __('travel.campaigns.flash.created', [
+                'total' => Money::format($quote['campaign_grand_total']), 'currency' => $quote['currency'],
+            ]));
     }
 
-    public function pauseOffer(TravelAgencyCampaignOffer $offer): JsonResponse
+    public function show(string $id): View
     {
-        abort_if($offer->travel_agency_id !== $this->agencyId(), 404);
+        $campaign = $this->ownCampaign($id);
+        $campaign->load(['country', 'travelPackage', 'invitations.marketer.marketerProfile', 'conversions.travelBooking']);
 
-        if ($offer->status !== VendorCampaignOfferStatus::Active) {
-            return response()->json(['success' => false, 'message' => __('travel.campaigns.not_active')], 422);
+        // How each marketer is paid, with the trip's current price as the worked example (read-only, from the calculator).
+        $calculator = app(MarketerCommissionCalculator::class);
+        $examplePrice = (float) ($campaign->travelPackage?->price ?? 0);
+        $calculations = $campaign->invitations
+            ->filter(fn ($i) => $i->marketer && in_array($i->status, ['pending', 'accepted'], true))
+            ->mapWithKeys(fn ($i) => [$i->id => $calculator->compute($i->marketer, $campaign, $examplePrice, 1, $i)]);
+
+        return view('travel-agency.campaigns.show', compact('campaign', 'calculations', 'examplePrice'));
+    }
+
+    public function pause(string $id): RedirectResponse
+    {
+        try {
+            $this->campaigns->pauseByOwner($this->ownCampaign($id));
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        $offer->update(['status' => VendorCampaignOfferStatus::Paused]);
-
-        MarketerCampaign::whereIn('id', $offer->invitations()
-            ->where('status', VendorCampaignInvitationStatus::Accepted->value)
-            ->pluck('resulting_campaign_id'))
-            ->update(['status' => 'paused']);
-
-        return response()->json(['success' => true, 'message' => __('travel.campaigns.paused_success'), 'status' => VendorCampaignOfferStatus::Paused->value]);
+        return back()->with('success', __('travel.campaigns.flash.paused'));
     }
 
-    public function resumeOffer(TravelAgencyCampaignOffer $offer): JsonResponse
+    public function resume(string $id): RedirectResponse
     {
-        abort_if($offer->travel_agency_id !== $this->agencyId(), 404);
-
-        if ($offer->status !== VendorCampaignOfferStatus::Paused) {
-            return response()->json(['success' => false, 'message' => __('travel.campaigns.not_paused')], 422);
+        try {
+            $this->campaigns->resumeByOwner($this->ownCampaign($id));
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        $offer->update(['status' => VendorCampaignOfferStatus::Active]);
-
-        MarketerCampaign::whereIn('id', $offer->invitations()
-            ->where('status', VendorCampaignInvitationStatus::Accepted->value)
-            ->pluck('resulting_campaign_id'))
-            ->update(['status' => 'active']);
-
-        return response()->json(['success' => true, 'message' => __('travel.campaigns.resumed_success'), 'status' => VendorCampaignOfferStatus::Active->value]);
+        return back()->with('success', __('travel.campaigns.flash.resumed'));
     }
 
-    public function destroy(TravelAgencyCampaignOffer $offer): JsonResponse
+    public function cancel(string $id): RedirectResponse
     {
-        abort_if($offer->travel_agency_id !== $this->agencyId(), 404);
+        $campaign = $this->ownCampaign($id);
 
-        if ($offer->status !== VendorCampaignOfferStatus::Draft) {
-            return response()->json(['success' => false, 'message' => __('travel.campaigns.delete_only_draft')], 422);
+        if (in_array($campaign->status, MarketerCampaignService::TERMINAL_STATUSES, true)) {
+            return back()->with('error', __('travel.campaigns.errors.cannot_cancel'));
         }
 
-        $offer->delete();
+        $this->campaigns->cancelCampaign($campaign);
 
-        return response()->json(['success' => true, 'message' => __('travel.campaigns.deleted_success')]);
-    }
-
-    public function invite(Request $request, TravelAgencyCampaignOffer $offer): JsonResponse
-    {
-        abort_if($offer->travel_agency_id !== $this->agencyId(), 404);
-
-        if (! in_array($offer->status, [VendorCampaignOfferStatus::Active, VendorCampaignOfferStatus::Draft, VendorCampaignOfferStatus::PendingAdmin], true)) {
-            return response()->json(['success' => false, 'message' => __('travel.campaigns.invite_forbidden_status')], 422);
-        }
-
-        $validated = $request->validate([
-            'marketer_ids' => 'required|array|min:1|max:50',
-            'marketer_ids.*' => 'uuid|exists:marketers,id',
-            'vendor_note' => 'nullable|string|max:1000',
-        ]);
-
-        $activeMarketers = Marketer::whereIn('id', $validated['marketer_ids'])
-            ->where('global_status', 'active')
-            ->pluck('id')
-            ->all();
-
-        $skipped = array_diff($validated['marketer_ids'], $activeMarketers);
-        $created = 0;
-
-        foreach ($activeMarketers as $marketerId) {
-            $invitation = TravelAgencyCampaignInvitation::firstOrCreate(
-                ['travel_agency_campaign_offer_id' => $offer->id, 'marketer_id' => $marketerId],
-                [
-                    'status' => VendorCampaignInvitationStatus::Pending,
-                    'vendor_note' => $validated['vendor_note'] ?? null,
-                    'expires_at' => $offer->invitation_deadline,
-                ]
-            );
-
-            if ($invitation->wasRecentlyCreated) {
-                $created++;
-                // Only fan-out immediately when the offer is already active;
-                // pending_admin offers send invitations on approval instead.
-                if ($offer->status === VendorCampaignOfferStatus::Active) {
-                    Notification::send($invitation->marketer, new TravelAgencyCampaignInvitationReceived($invitation));
-                }
-            }
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => __('travel.campaigns.invited_success', ['count' => $created]),
-            'skipped' => count($skipped),
-        ]);
-    }
-
-    public function revokeInvitation(TravelAgencyCampaignInvitation $invitation): JsonResponse
-    {
-        abort_if($invitation->offer->travel_agency_id !== $this->agencyId(), 404);
-
-        if ($invitation->status !== VendorCampaignInvitationStatus::Pending) {
-            return response()->json(['success' => false, 'message' => __('travel.campaigns.withdraw_forbidden_responded')], 422);
-        }
-
-        $invitation->update(['status' => VendorCampaignInvitationStatus::Revoked]);
-
-        return response()->json(['success' => true, 'message' => __('travel.campaigns.invite_withdrawn')]);
-    }
-
-    public function searchMarketers(Request $request): JsonResponse
-    {
-        $q = $request->input('q', '');
-        $type = $request->input('type');
-
-        return response()->json(
-            Marketer::where('global_status', 'active')
-                ->where(fn ($query) => $query
-                    ->where('name', 'like', "%{$q}%")
-                    ->orWhere('email', 'like', "%{$q}%"))
-                ->when($type, fn ($query, $t) => $query->whereHas('marketerJobs', fn ($j) => $j->where('key', $t)))
-                ->select(['id', 'name', 'email'])
-                ->with('marketerJobs')
-                ->limit(20)
-                ->get()
-                ->map(fn ($m) => [
-                    'id' => $m->id,
-                    'name' => $m->name,
-                    'type' => $m->isInfluencer() ? 'مؤثر' : 'أفيليت',
-                    'avatar_initial' => mb_substr($m->name, 0, 1),
-                ])
-        );
-    }
-
-    public function searchPackages(Request $request): JsonResponse
-    {
-        $q = trim((string) $request->input('q', ''));
-
-        $packages = TravelPackage::where('travel_agency_id', $this->agencyId())
-            ->when($q !== '', fn ($query) => $query->where(fn ($sub) => $sub
-                ->where('title_en', 'like', "%{$q}%")
-                ->orWhere('title_ar', 'like', "%{$q}%")
-                ->orWhere('destination_country', 'like', "%{$q}%")
-                ->orWhere('destination_city', 'like', "%{$q}%")))
-            ->whereIn('status', ['active', 'pending_review'])
-            ->limit(20)
-            ->get(['id', 'title_ar', 'title_en', 'destination_country', 'destination_city', 'price', 'currency', 'departure_date', 'return_date']);
-
-        return response()->json($packages->map(fn ($p) => [
-            'id' => $p->id,
-            'name' => $p->title_ar ?: $p->title_en,
-            'destination' => trim(($p->destination_city ? $p->destination_city.'، ' : '').$p->destination_country),
-            'price' => $p->priceFormatted(),
-            'dates' => $p->departure_date?->format('d M Y').' — '.$p->return_date?->format('d M Y'),
-        ]));
+        return back()->with('success', __('travel.campaigns.flash.cancelled'));
     }
 }

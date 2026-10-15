@@ -2,7 +2,7 @@
 @php
     $campaign = $invitation->campaign;
     $product = $campaign->vendorListing?->productVariant?->product ?? $campaign->adminListing?->productVariant?->product;
-    $title = $product?->name_ar ?? $campaign->title;
+    $title = $product?->name_ar ?? $campaign->getPromotedTitle();
 @endphp
 @section('title', $title)
 @section('page-title', $title)
@@ -26,6 +26,8 @@
             </div>
         </div>
     </div>
+
+    <x-marketer-campaign-commission-preview :invitation="$invitation" />
 
     {{-- Your earnings on this campaign (phase F redesigns the marketer finance screens) --}}
     <div class="bg-white rounded-xl border border-gray-200 p-5 text-sm space-y-2" data-testid="marketer-campaign-earnings">

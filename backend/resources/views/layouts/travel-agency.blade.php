@@ -227,13 +227,15 @@
                 @endif
             </a>
 
-            <a href="{{ route('travel-agency.campaigns.index') }}"
-                class="{{ request()->routeIs('travel-agency.campaigns.*') ? 'active' : '' }}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18a23.848 23.848 0 0 0 8.835 2.535M10.34 6.66a23.847 23.847 0 0 1 8.835-2.535" />
-                </svg>
-                {{ __('travel.nav.campaigns') }}
-            </a>
+            @if (auth()->guard('travel_agency')->user()?->can('campaigns.view'))
+                <a href="{{ route('travel-agency.campaigns.index') }}"
+                    class="{{ request()->routeIs('travel-agency.campaigns.*') ? 'active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18a23.848 23.848 0 0 0 8.835 2.535M10.34 6.66a23.847 23.847 0 0 1 8.835-2.535" />
+                    </svg>
+                    {{ __('travel.nav.campaigns') }}
+                </a>
+            @endif
 
             @if (auth()->guard('travel_agency')->user()?->can('reports.view'))
                 <a href="{{ route('travel-agency.reports.revenue') }}"

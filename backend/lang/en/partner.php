@@ -1939,8 +1939,6 @@ return [
             'price' => 'Price',
             'currency' => 'Currency',
             'negotiable' => 'Price is negotiable',
-            'allow_marketer_promo' => 'Allow marketers to promote this listing',
-            'allow_marketer_promo_desc' => 'Marketers can create promotional campaigns for this listing and earn a commission on resulting sales or inquiries.',
             'country' => 'Country',
             'select_country' => '— Select country —',
             'select_country_first' => 'Select a country…',

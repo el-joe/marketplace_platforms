@@ -21,6 +21,7 @@ use App\Services\Vendor\CategoryContractService;
 use App\Services\Vendor\ClassifiedInquiryService;
 use App\Services\Vendor\ClassifiedListingService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class ClassifiedListingController extends Controller
@@ -139,15 +140,38 @@ class ClassifiedListingController extends Controller
         return ApiResponse::success(['status' => $listing->status?->value], 'Listing resumed.');
     }
 
-    public function markSold(string $id): JsonResponse
+    public function markSold(Request $request, string $id): JsonResponse
     {
         $listing = $this->findOwnedListing($id);
 
         Gate::authorize('markSold', $listing);
 
-        $listing = $this->listingService->markSold($listing);
+        $data = $request->validate([
+            'sold_price' => ['nullable', 'numeric', 'min:0.01', 'max:999999999'],
+            'marketer_id' => ['nullable', 'uuid'],
+            'buyer_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        // sold_price is required (422) while a marketer campaign is live on the listing.
+        $listing = $this->listingService->markSold(
+            $listing,
+            isset($data['sold_price']) ? (float) $data['sold_price'] : null,
+            $data['buyer_note'] ?? null,
+            $data['marketer_id'] ?? null,
+        );
 
         return ApiResponse::success(['status' => $listing->status?->value], 'Listing marked as sold.');
+    }
+
+    public function unmarkSold(string $id): JsonResponse
+    {
+        $listing = $this->findOwnedListing($id);
+
+        Gate::authorize('markSold', $listing);
+
+        $listing = $this->listingService->unmarkSold($listing);
+
+        return ApiResponse::success(['status' => $listing->status?->value], 'Listing is active again.');
     }
 
     public function destroy(string $id): JsonResponse

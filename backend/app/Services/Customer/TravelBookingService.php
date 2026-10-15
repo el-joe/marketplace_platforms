@@ -76,7 +76,7 @@ class TravelBookingService
 
     // ── Booking creation (called from storefront) ─────────────────────────────
 
-    public function book(TravelPackage $package, Customer $customer, array $data): TravelBooking
+    public function book(TravelPackage $package, Customer $customer, array $data, ?string $sessionId = null): TravelBooking
     {
         $travelersCount = (int) $data['travelers_count'];
         $unitId = $data['unit_id'] ?? null;
@@ -95,7 +95,7 @@ class TravelBookingService
             }
         }
 
-        $booking = DB::transaction(function () use ($package, $customer, $data, $travelersCount, $unitId, $unitDays) {
+        $booking = DB::transaction(function () use ($package, $customer, $data, $travelersCount, $unitId, $unitDays, $sessionId) {
             $pkg = TravelPackage::lockForUpdate()->findOrFail($package->id);
             if ($pkg->available_seats !== null
                 && ($pkg->seats_booked + $travelersCount) > $pkg->available_seats
@@ -118,7 +118,8 @@ class TravelBookingService
                 $totalCents = \App\Support\Money::number(round((float) $totalCents + (float) $unitTotal, 2));
             }
 
-            $booking = TravelBooking::create([
+            // The marketer whose link brought the traveller here (only when it promotes THIS trip) earns on confirmation.
+            $booking = TravelBooking::create(app(\App\Services\Marketer\ListingReferralService::class)->attributes('travel', (string) $package->id, $sessionId) + [
                 'travel_package_id' => $package->id,
                 'bookable_unit_id' => $unitId ?: null,
                 'customer_id' => $customer->id,

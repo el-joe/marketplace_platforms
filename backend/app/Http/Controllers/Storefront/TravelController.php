@@ -89,7 +89,10 @@ class TravelController extends Controller
         $passportPath = $request->file('passport_file')
             ->store("travel-bookings/passports", 'public');
 
-        $booking = DB::transaction(function () use ($package, $request, $count, $passportPath) {
+        $referral = app(\App\Services\Marketer\ListingReferralService::class)
+            ->attributes('travel', (string) $package->id, \App\Services\Marketer\ListingReferralService::sessionIdFrom($request));
+
+        $booking = DB::transaction(function () use ($package, $request, $count, $passportPath, $referral) {
             $pkg = TravelPackage::lockForUpdate()->findOrFail($package->id);
 
             if ($pkg->available_seats !== null
@@ -100,7 +103,7 @@ class TravelController extends Controller
                 ]);
             }
 
-            $booking = TravelBooking::create([
+            $booking = TravelBooking::create($referral + [
                 'travel_package_id'       => $pkg->id,
                 'customer_id'             => Auth::guard('web')->id(),
                 'travelers_count'         => $count,

@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api\TravelAgencyPortal;
 
-use App\Enums\VendorCampaignInvitationStatus;
-use App\Enums\VendorCampaignOfferStatus;
 use App\Http\Controllers\Controller;
-use App\Models\TravelAgencyCampaignOffer;
+use App\Models\MarketerCampaign;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/** Read-only view of the trip campaigns (MarketerCampaign, owner_type travel_agency) the agency owns. */
 class CampaignController extends Controller
 {
     private function agencyId(): string
@@ -16,65 +15,36 @@ class CampaignController extends Controller
         return auth()->guard('travel_agencies')->user()->id;
     }
 
+    private function agencyCampaigns()
+    {
+        return MarketerCampaign::where('owner_type', MarketerCampaign::OWNER_TRAVEL_AGENCY)
+            ->where('owner_id', $this->agencyId());
+    }
+
     /** GET /api/travel-agency/v1/campaigns */
     public function index(Request $request): JsonResponse
     {
-        $agencyId = $this->agencyId();
-
-        $query = TravelAgencyCampaignOffer::where('travel_agency_id', $agencyId)
-            ->withCount([
-                'invitations',
-                'invitations as accepted_count' => fn ($q) => $q->where('status', VendorCampaignInvitationStatus::Accepted->value),
-            ])
-            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%'.$request->search.'%'))
+        $campaigns = $this->agencyCampaigns()
+            ->with('travelPackage:id,title_ar,title_en,currency,price')
+            ->withCount(['invitations', 'invitations as accepted_count' => fn ($q) => $q->where('status', 'accepted')])
+            ->when($request->filled('search'), fn ($q) => $q->where('title', 'like', '%'.$request->search.'%'))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
-            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
-            ->latest();
+            ->latest()
+            ->paginate(20);
 
-        $offers = $query->paginate(20);
-
-        // Summary stats across all offers (not just current page)
-        $allOffers = TravelAgencyCampaignOffer::where('travel_agency_id', $agencyId)
-            ->withCount([
-                'invitations',
-                'invitations as accepted_count' => fn ($q) => $q->where('status', VendorCampaignInvitationStatus::Accepted->value),
-            ])
-            ->get();
-
-        $conversions = TravelAgencyCampaignOffer::where('travel_agency_id', $agencyId)
-            ->join('travel_agency_campaign_invitations', 'travel_agency_campaign_offers.id', '=', 'travel_agency_campaign_invitations.travel_agency_campaign_offer_id')
-            ->join('marketer_campaigns', 'travel_agency_campaign_invitations.resulting_campaign_id', '=', 'marketer_campaigns.id')
-            ->join('marketer_campaign_conversions', 'marketer_campaigns.id', '=', 'marketer_campaign_conversions.campaign_id')
-            ->count('marketer_campaign_conversions.id');
-
-        $stats = [
-            'draft' => $allOffers->where('status', VendorCampaignOfferStatus::Draft)->count(),
-            'active' => $allOffers->where('status', VendorCampaignOfferStatus::Active)->count(),
-            'invited' => $allOffers->sum('invitations_count'),
-            'accepted' => $allOffers->sum('accepted_count'),
-            'conversions' => $conversions,
-        ];
+        $all = $this->agencyCampaigns();
 
         return response()->json([
-            'stats' => $stats,
-            'campaigns' => $offers->map(fn ($o) => [
-                'id' => $o->id,
-                'name' => $o->name,
-                'status' => $o->status,
-                'campaign_type' => $o->campaign_type,
-                'commission_type' => $o->commission_type,
-                'offered_commission_rate' => $o->offered_commission_rate,
-                'starts_at' => $o->starts_at?->toDateString(),
-                'ends_at' => $o->ends_at?->toDateString(),
-                'invitations_count' => $o->invitations_count,
-                'accepted_count' => $o->accepted_count,
-                'created_at' => $o->created_at?->toIso8601String(),
-            ]),
+            'stats' => [
+                'total' => (clone $all)->count(),
+                'active' => (clone $all)->whereIn('status', ['active', 'auto_approved'])->count(),
+                'commission_spent' => round((float) (clone $all)->sum('commission_budget_spent'), 2),
+            ],
+            'campaigns' => $campaigns->map(fn (MarketerCampaign $c) => $this->summary($c)),
             'meta' => [
-                'current_page' => $offers->currentPage(),
-                'last_page' => $offers->lastPage(),
-                'total' => $offers->total(),
+                'current_page' => $campaigns->currentPage(),
+                'last_page' => $campaigns->lastPage(),
+                'total' => $campaigns->total(),
             ],
         ]);
     }
@@ -82,59 +52,39 @@ class CampaignController extends Controller
     /** GET /api/travel-agency/v1/campaigns/{id} */
     public function show(string $id): JsonResponse
     {
-        $offer = TravelAgencyCampaignOffer::where('id', $id)
-            ->where('travel_agency_id', $this->agencyId())
-            ->with([
-                'packages.package:id,title_ar,title_en,destination_country,destination_city,currency,price',
-                'invitations.marketer:id,name,email',
-                'invitations.marketer.marketerJobs',
-                'invitations.resultingCampaign:id,status',
-            ])
-            ->firstOrFail();
-
-        $invitationStats = [
-            'invited' => $offer->invitations->count(),
-            'accepted' => $offer->invitations->where('status', VendorCampaignInvitationStatus::Accepted)->count(),
-            'declined' => $offer->invitations->whereIn('status', [
-                VendorCampaignInvitationStatus::Declined,
-                VendorCampaignInvitationStatus::Expired,
-                VendorCampaignInvitationStatus::Revoked,
-            ])->count(),
-        ];
+        $campaign = $this->agencyCampaigns()
+            ->with(['travelPackage:id,title_ar,title_en,currency,price', 'invitations.marketer:id,name'])
+            ->findOrFail($id);
 
         return response()->json([
-            'campaign' => [
-                'id' => $offer->id,
-                'name' => $offer->name,
-                'description' => $offer->description,
-                'requirements' => $offer->requirements,
-                'status' => $offer->status,
-                'campaign_type' => $offer->campaign_type,
-                'commission_type' => $offer->commission_type,
-                'offered_commission_rate' => $offer->offered_commission_rate,
-                'attribution_model' => $offer->attribution_model,
-                'starts_at' => $offer->starts_at?->toDateString(),
-                'ends_at' => $offer->ends_at?->toDateString(),
-                'invitation_deadline' => $offer->invitation_deadline?->toDateString(),
-                'packages' => $offer->packages->map(fn ($p) => [
-                    'id' => $p->package?->id,
-                    'title' => $p->package?->title_ar ?: $p->package?->title_en,
-                    'destination' => trim(($p->package?->destination_city ?? '').' '.($p->package?->destination_country ?? '')),
-                    'price' => $p->package?->price,
-                    'currency' => $p->package?->currency,
-                    'commission_override' => $p->commission_override,
-                ]),
-                'invitation_stats' => $invitationStats,
-                'invitations' => $offer->invitations->map(fn ($i) => [
+            'campaign' => $this->summary($campaign) + [
+                'open_to_affiliates' => (bool) $campaign->open_to_affiliates,
+                'influencer_fixed_reserved' => (float) $campaign->influencer_fixed_reserved,
+                'invitations' => $campaign->invitations->map(fn ($i) => [
                     'id' => $i->id,
                     'status' => $i->status,
                     'marketer_name' => $i->marketer?->name,
-                    'marketer_type' => $i->marketer?->marketerJobs->first()?->key,
+                    'total_conversions' => (int) $i->total_conversions,
                     'responded_at' => $i->responded_at?->toIso8601String(),
-                    'campaign_status' => $i->resultingCampaign?->status,
                 ]),
-                'created_at' => $offer->created_at?->toIso8601String(),
             ],
         ]);
+    }
+
+    private function summary(MarketerCampaign $c): array
+    {
+        return [
+            'id' => $c->id,
+            'title' => $c->title,
+            'status' => $c->status,
+            'trip' => $c->travelPackage?->title_ar ?: $c->travelPackage?->title_en,
+            'currency' => $c->currency,
+            'max_commission_budget' => (float) $c->max_commission_budget,
+            'commission_budget_spent' => (float) $c->commission_budget_spent,
+            'ends_at' => $c->ends_at?->toDateString(),
+            'invitations_count' => $c->invitations_count ?? null,
+            'accepted_count' => $c->accepted_count ?? null,
+            'created_at' => $c->created_at?->toIso8601String(),
+        ];
     }
 }

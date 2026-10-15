@@ -13,6 +13,7 @@ use App\Models\VendorListing;
 use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
 use App\Services\MarketerCampaignQuoteService;
+use App\Services\Marketer\CampaignWizardService;
 use App\Services\Marketer\MarketerCommissionCalculator;
 use App\Services\MarketerCampaignService;
 use App\Services\MarketingFeeReportService;
@@ -26,12 +27,16 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class MarketerCampaignController extends Controller
 {
     use AuthorizesRequests;
 
-    public function __construct(private readonly MarketerCampaignService $marketerCampaignService) {}
+    public function __construct(
+        private readonly MarketerCampaignService $marketerCampaignService,
+        private readonly CampaignWizardService $wizard,
+    ) {}
 
     private function vendorId(): string
     {
@@ -43,52 +48,9 @@ class MarketerCampaignController extends Controller
         return Auth::guard('vendor')->user()->vendor;
     }
 
-    /**
-     * Marketers already tied to another non-terminal campaign of the same
-     * listing: either a pending/accepted invitation, or (for campaigns still
-     * awaiting review, which have no invitations yet) a requested marketer.
-     *
-     * @return array<string, string> marketer id => name
-     */
     private function conflictingMarketers(string $itemColumn, string $itemId, array $marketerIds, ?string $exceptCampaignId = null): array
     {
-        if (empty($marketerIds)) {
-            return [];
-        }
-
-        $campaigns = MarketerCampaign::where($itemColumn, $itemId)
-            ->whereNotIn('status', MarketerCampaignService::TERMINAL_STATUSES)
-            ->when($exceptCampaignId, fn ($q) => $q->where('id', '!=', $exceptCampaignId))
-            ->with(['invitations' => fn ($q) => $q->whereIn('status', ['pending', 'accepted'])])
-            ->get();
-
-        $taken = [];
-        foreach ($campaigns as $campaign) {
-            foreach ($campaign->invitations as $invitation) {
-                $taken[$invitation->marketer_id] = true;
-            }
-            if (in_array($campaign->status, ['pending_admin', 'marketer_requested'], true)) {
-                foreach ((array) $campaign->requested_marketer_vendor_ids as $id) {
-                    $taken[$id] = true;
-                }
-            }
-        }
-
-        $conflictIds = array_values(array_intersect($marketerIds, array_keys($taken)));
-
-        return $conflictIds
-            ? Marketer::whereIn('id', $conflictIds)->pluck('name', 'id')->all()
-            : [];
-    }
-
-    /** Column of marketer_campaigns holding the promoted item for a subject. */
-    private function itemColumn(CampaignSubject $subject): string
-    {
-        return match ($subject->vertical) {
-            CommissionVertical::Classified => 'classified_listing_id',
-            CommissionVertical::Travel => 'travel_package_id',
-            default => 'vendor_listing_id',
-        };
+        return $this->wizard->conflictingMarketers($itemColumn, $itemId, $marketerIds, $exceptCampaignId);
     }
 
     /**
@@ -116,7 +78,7 @@ class MarketerCampaignController extends Controller
 
     private function conflictMessage(array $conflicts): string
     {
-        return 'الماركتر التالي لديه دعوة قائمة في حملة أخرى لنفس القائمة: '.implode('، ', $conflicts);
+        return $this->wizard->conflictMessage($conflicts);
     }
 
     private function authorizeCampaign(MarketerCampaign $campaign, string $permission): void
@@ -221,74 +183,22 @@ class MarketerCampaignController extends Controller
         ]);
 
         $subject = $this->ownedSubject($request->input('vendor_listing_id'), $request->input('classified_listing_id'));
-        $listing = $subject->model;
-        $itemColumn = $this->itemColumn($subject);
 
         if ($subject->isProduct()) {
             $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', MarketerCampaignService::DEFAULT_ALLOWED_FULFILMENT_MODELS);
-            abort_unless(in_array($listing->fulfillment_model?->value, $allowedModels, true), 403, __('partner.marketer_campaigns.fulfilment_not_allowed'));
-        }
-
-        $quoteService = app(MarketerCampaignQuoteService::class);
-        $eligible = $quoteService->eligibleMarketers($subject)->keyBy('id');
-        $influencerOptions = $quoteService->influencerOptions($subject)->keyBy('id');
-
-        // Picked marketers must be eligible influencers of the listing's country.
-        $picked = array_values(array_unique((array) $request->input('marketer_ids', [])));
-        if (array_diff($picked, $influencerOptions->keys()->all())) {
-            return back()->withInput()->withErrors(['marketer_ids' => __('partner.marketer_campaigns.marketer_not_eligible')]);
-        }
-
-        $conflicts = $this->conflictingMarketers($itemColumn, $listing->id, $picked);
-        if ($conflicts) {
-            return back()->withInput()->withErrors(['marketer_ids' => $this->conflictMessage($conflicts)]);
-        }
-
-        // "Open to all" reaches every eligible affiliate / broker of the country (never an influencer slot).
-        $marketerIds = $picked;
-        if ($request->boolean('open_to_affiliates')) {
-            $openIds = $eligible
-                ->filter(fn ($m) => array_intersect([MarketerType::Affiliate, MarketerType::Broker], MarketerType::heldBy($m)) !== []
-                    && ! in_array($m->id, $picked, true))
-                ->keys()->all();
-            $openIds = array_values(array_diff($openIds, array_keys($this->conflictingMarketers($itemColumn, $listing->id, $openIds))));
-            $marketerIds = array_values(array_unique(array_merge($marketerIds, $openIds)));
-        }
-
-        if (empty($marketerIds)) {
-            return back()->withInput()->withErrors(['marketer_ids' => __('partner.marketer_campaigns.select_at_least_one')]);
-        }
-
-        $budget = round((float) $request->input('max_commission_budget'), 2);
-        $quote = $quoteService->quote($subject, $picked, $budget, $request->boolean('open_to_affiliates'));
-        if (! $quote['fits_budget']) {
-            return back()->withInput()->withErrors(['max_commission_budget' => __('marketer_campaigns.errors.fixed_exceeds_budget', [
-                'fixed' => Money::format($quote['influencer_fixed_total']), 'budget' => Money::format($budget),
-            ])]);
+            abort_unless(in_array($subject->model->fulfillment_model?->value, $allowedModels, true), 403, __('partner.marketer_campaigns.fulfilment_not_allowed'));
         }
 
         try {
-            $this->marketerCampaignService->createCampaign(
-                CampaignOwner::vendor($vendor),
-                $subject->source(),
-                [
-                    'max_commission_budget' => $budget,
-                    'country_id' => $subject->countryId,
-                    'currency' => $subject->currency,
-                    'marketer_ids' => $marketerIds,
-                    'influencer_ids' => $picked,
-                    'open_to_affiliates' => $request->boolean('open_to_affiliates'),
-                    'ends_at' => $request->filled('ends_at') ? Carbon::parse($request->input('ends_at'))->endOfDay() : null,
-                    'selected_ad_types' => $request->input('selected_ad_types') ?: null,
-                    'vendor_ad_notes' => $request->input('vendor_ad_notes') ?: null,
-                ]
-            );
+            ['quote' => $quote] = $this->wizard->submit(CampaignOwner::vendor($vendor), $subject, $request->all());
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return back()->withInput()->with('error', __('partner.marketer_campaigns.create_failed', ['error' => $e->getMessage()]));
         }
 
         return redirect()
-            ->to($this->listingUrl($subject->isProduct() ? 'product' : 'classified', $listing->id))
+            ->to($this->listingUrl($subject->isProduct() ? 'product' : 'classified', $subject->model->id))
             ->with('success', __('marketer_campaigns.wizard.created', [
                 'total' => Money::format($quote['campaign_grand_total']), 'currency' => $quote['currency'],
             ]));

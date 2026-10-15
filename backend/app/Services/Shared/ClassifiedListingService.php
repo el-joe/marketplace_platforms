@@ -46,7 +46,6 @@ class ClassifiedListingService
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
             'vendor_listing_reference' => $data['vendor_listing_reference'] ?? null,
-            'marketer_promotion_enabled' => $data['marketer_promotion_enabled'] ?? false,
             'status' => $status,
             'contract_template_id' => $contractAccepted ? $category->contract_template_id : null,
             'contract_accepted_at' => $contractAccepted && $category->contract_template_id ? now() : null,
@@ -146,11 +145,21 @@ class ClassifiedListingService
         return $listing->fresh();
     }
 
-    public function markSold(ClassifiedListing $listing): ClassifiedListing
+    /**
+     * Mark the listing sold. While a marketer campaign is live on it the final sold price is required and decides the
+     * affiliate / broker commission (see ClassifiedSaleService).
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function markSold(ClassifiedListing $listing, ?float $soldPrice = null, ?string $buyerNote = null, ?string $marketerId = null): ClassifiedListing
     {
-        $listing->update(['status' => 'sold']);
+        return app(\App\Services\Marketer\ClassifiedSaleService::class)->markSold($listing, $soldPrice, $buyerNote, $marketerId);
+    }
 
-        return $listing->fresh();
+    /** Take a sale back: the listing is active again and a commission earned on the sale is reversed. */
+    public function unmarkSold(ClassifiedListing $listing): ClassifiedListing
+    {
+        return app(\App\Services\Marketer\ClassifiedSaleService::class)->unmarkSold($listing);
     }
 
     public function delete(ClassifiedListing $listing): void

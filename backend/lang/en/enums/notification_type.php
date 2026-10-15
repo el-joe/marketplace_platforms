@@ -81,8 +81,6 @@ return [
     'send_otp_notification' => 'OTP Sent',
     'strike_issued' => 'Strike Issued',
     'tier_upgraded' => 'Tier Upgraded',
-    'travel_agency_campaign_invitation_received' => 'Campaign Invitation Received',
-    'travel_agency_campaign_offer_submitted' => 'Travel Agency Campaign Offer Submitted',
     'travel_agency_change_request_submitted' => 'Travel Agency Change Request Submitted',
     'travel_booking_cancelled' => 'Travel Booking Cancelled',
     'travel_booking_confirmed' => 'Travel Booking Confirmed',
