@@ -53,15 +53,19 @@ return new class extends Migration
         }
 
         if ($this->isMysql()) {
-            DB::statement("ALTER TABLE `".self::TABLE."` MODIFY `conversion_type` ENUM('product_sale','travel_booking','classified_inquiry','classified_sale') NOT NULL DEFAULT 'product_sale'");
+            if (Schema::hasColumn(self::TABLE, 'conversion_type')) {
+                DB::statement('ALTER TABLE `'.self::TABLE."` MODIFY `conversion_type` ENUM('product_sale','travel_booking','classified_inquiry','classified_sale') NOT NULL DEFAULT 'product_sale'");
+            } else {
+                DB::statement('ALTER TABLE `'.self::TABLE."` ADD `conversion_type` ENUM('product_sale','travel_booking','classified_inquiry','classified_sale') NOT NULL DEFAULT 'product_sale'");
+            }
         }
     }
 
     public function down(): void
     {
         if ($this->isMysql() && Schema::hasColumn(self::TABLE, 'conversion_type')) {
-            DB::statement("UPDATE `".self::TABLE."` SET `conversion_type` = 'classified_inquiry' WHERE `conversion_type` = 'classified_sale'");
-            DB::statement("ALTER TABLE `".self::TABLE."` MODIFY `conversion_type` ENUM('product_sale','travel_booking','classified_inquiry') NOT NULL DEFAULT 'product_sale'");
+            DB::statement('UPDATE `'.self::TABLE."` SET `conversion_type` = 'classified_inquiry' WHERE `conversion_type` = 'classified_sale'");
+            DB::statement('ALTER TABLE `'.self::TABLE."` MODIFY `conversion_type` ENUM('product_sale','travel_booking','classified_inquiry') NOT NULL DEFAULT 'product_sale'");
         }
 
         if (Schema::hasColumn(self::TABLE, 'classified_listing_id')) {
