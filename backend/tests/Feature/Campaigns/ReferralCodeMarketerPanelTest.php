@@ -44,6 +44,18 @@ class ReferralCodeMarketerPanelTest extends TestCase
             ->assertSee(__('marketer.invitations.code_inactive_expired'));
     }
 
+    public function test_invitation_pages_survive_an_invitation_whose_campaign_was_deleted(): void
+    {
+        $a = F::influencer($this->s);
+        $login = F::marketerLogin($a);
+        $campaign = R::pendingCampaign($this->s, $a);
+        R::invitationOf($campaign, $a);
+        $campaign->delete();
+
+        $this->actingAs($login, 'marketer')->get(route('marketer.invitations.index'))->assertOk();
+        $this->actingAs($login, 'marketer')->get(route('marketer.dashboard'))->assertOk();
+    }
+
     public function test_pending_and_accepted_invitations_show_no_inactive_notice(): void
     {
         $a = F::influencer($this->s);

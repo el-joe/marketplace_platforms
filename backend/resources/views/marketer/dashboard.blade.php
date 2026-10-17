@@ -59,8 +59,8 @@
         <div class="space-y-3">
             @foreach($recentInvitations as $invitation)
             @php
-                $product = $invitation->campaign->vendorListing?->productVariant?->product
-                         ?? $invitation->campaign->adminListing?->productVariant?->product;
+                $product = $invitation->campaign?->vendorListing?->productVariant?->product
+                         ?? $invitation->campaign?->adminListing?->productVariant?->product;
             @endphp
             <div class="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
                 <div>

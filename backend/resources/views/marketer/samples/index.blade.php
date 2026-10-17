@@ -30,8 +30,8 @@
     @else
         @foreach($samples as $sample)
         @php
-            $product = $sample->campaign->vendorListing?->productVariant?->product
-                     ?? $sample->campaign->adminListing?->productVariant?->product;
+            $product = $sample->campaign?->vendorListing?->productVariant?->product
+                     ?? $sample->campaign?->adminListing?->productVariant?->product;
             $statusMap = [
                 'pending'    => ['label' => __('marketer.samples.status_pending'),    'cls' => 'bg-yellow-100 text-yellow-700'],
                 'dispatched' => ['label' => __('marketer.samples.status_dispatched'), 'cls' => 'bg-blue-100 text-blue-700'],

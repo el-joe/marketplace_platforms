@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Marketer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Marketer;
 use App\Models\MarketerCampaignInvitation;
 use App\Services\MarketerCampaignService;
 use Illuminate\Http\RedirectResponse;
@@ -14,7 +15,7 @@ class InvitationController extends Controller
 {
     public function __construct(private MarketerCampaignService $service) {}
 
-    private function marketer(): \App\Models\Marketer
+    private function marketer(): Marketer
     {
         return Auth::guard('marketer')->user()->marketer;
     }
@@ -27,6 +28,7 @@ class InvitationController extends Controller
         $marketer = $this->marketer();
 
         $invitations = MarketerCampaignInvitation::where('marketer_id', $marketer->id)
+            ->whereHas('campaign') // hide invitations whose campaign was deleted
             ->with([
                 'campaign.vendor',
                 'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),

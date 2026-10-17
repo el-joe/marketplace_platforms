@@ -54,8 +54,8 @@
                 <tbody>
                     @foreach($campaignBreakdown as $inv)
                     @php
-                        $product = $inv->campaign->vendorListing?->productVariant?->product
-                                 ?? $inv->campaign->adminListing?->productVariant?->product;
+                        $product = $inv->campaign?->vendorListing?->productVariant?->product
+                                 ?? $inv->campaign?->adminListing?->productVariant?->product;
                     @endphp
                     <tr class="border-b border-gray-50">
                         <td class="py-2 font-semibold text-gray-800">{{ $product?->name_ar ?? $inv->campaign->title ?? __('marketer.reports.campaign_default') }}</td>
@@ -142,8 +142,8 @@
                     <tbody>
                         @foreach($conversions as $conversion)
                         @php
-                            $product = $conversion->campaign->vendorListing?->productVariant?->product
-                                     ?? $conversion->campaign->adminListing?->productVariant?->product;
+                            $product = $conversion->campaign?->vendorListing?->productVariant?->product
+                                     ?? $conversion->campaign?->adminListing?->productVariant?->product;
                         @endphp
                         <tr class="border-b border-gray-50">
                             <td class="py-2 text-gray-500">{{ $conversion->created_at->format('Y-m-d') }}</td>
