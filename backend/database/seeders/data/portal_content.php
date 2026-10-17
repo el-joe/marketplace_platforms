@@ -289,7 +289,7 @@ return [
     ['cta_footer', 'main', 'eyebrow', 'text', 'Get Started', 'ابدأ الآن', null, 1],
     ['cta_footer', 'main', 'title', 'text', 'Ready to Sell?', 'جاهز للبيع؟', null, 2],
     ['cta_footer', 'main', 'subtitle', 'text', 'Join thousands of sellers across the region who are growing with Nawy.', 'انضم إلى آلاف البائعين في جميع أنحاء المنطقة الذين ينمون ويكبرون مع ناوي.', null, 3],
-    ['cta_footer', 'main', 'button', 'link', 'Sign Up Now', 'سجل الآن', '/register', 4],
+    ['cta_footer', 'main', 'button', 'link', 'Sign Up Now', 'سجل الآن', '/join', 4],
     ['cta_footer', 'main', 'copyright', 'text', 'Nawy. All rights reserved', 'ناوي. جميع الحقوق محفوظة', null, 5],
 
     // ─── page_key = 'faq' ─────────────────────────────────────────────────────────
@@ -383,7 +383,7 @@ return [
     ['home', 'hero', 'title_line1', 'text', 'Start selling on', 'ابدأ البيع على', null, 1],
     ['home', 'testimonials', 'heading', 'text', 'Testimonials', 'شهادات', null, 1],
     ['home', 'hero', 'title_line2', 'text', 'Nawy today!', 'ناوي اليوم!', null, 2],
-    ['home', 'hero', 'cta_button', 'link', 'Sign Up Now', 'سجل الآن', '/register', 2],
+    ['home', 'hero', 'cta_button', 'link', 'Sign Up Now', 'سجل الآن', '/join', 2],
     ['home', 'hero', 'photo', 'image', 'A Nawy delivery agent carrying a box', 'مندوب توصيل ناوي يحمل طرداً', '/images/nawy_hero.jpg', 3],
     ['home', 'testimonials', 'eyebrow', 'text', 'Seller success story', 'قصة نجاح بائع', null, 3],
     ['home', 'testimonials', 'featured_title', 'text', 'PAN Home chose Nawy\'s Fulfilled by Partner (FBP) model — and became the #1 furniture seller in the region.', 'اختارت بان هوم نموذج التوصيل عن طريق البائع (FBP) من ناوي — وأصبحت البائع رقم 1 للأثاث في المنطقة.', null, 4],
@@ -522,6 +522,7 @@ return [
     ['nav', 'link_smart_tools', 'sub_fees', 'text', 'Nawy\'s Fee Structure', 'هيكل رسوم ناوي', null, 6],
     ['nav', 'link_smart_tools', 'sub_insights', 'text', 'Scale with Insights', 'النمو باستخدام التحليلات', null, 7],
     ['nav', 'link_blog', 'label', 'text', 'Blog', 'المدونة', null, 5],
+    ['nav', 'link_join', 'label', 'text', 'Join Us', 'انضم إلينا', null, 6],
     ['nav', 'language_toggle', 'label', 'text', 'English', 'العربية', null, 6],
     ['nav', 'advertise_nav', 'sellers', 'text', 'Sellers', 'البائعين', null, 10],
     ['nav', 'advertise_nav', 'brands', 'text', 'Brands', 'العلامات التجارية', null, 11],
@@ -537,7 +538,7 @@ return [
     ['nav', 'logo', 'aria_label', 'text', 'Home', 'الصفحة الرئيسية', null, 17],
     ['nav', 'mobile', 'menu_aria', 'text', 'Menu', 'القائمة', null, 17],
     ['nav', 'mobile', 'close_aria', 'text', 'Close menu', 'إغلاق القائمة', null, 18],
-    ['nav', 'mobile', 'cta_button', 'link', 'Sign Up Now', 'سجل الآن', '/register', 19],
+    ['nav', 'mobile', 'cta_button', 'link', 'Sign Up Now', 'سجل الآن', '/join', 19],
     ['nav', 'lang_option_en', 'label', 'text', 'English', 'English', null, 18],
     ['nav', 'lang_option_ar', 'label', 'text', 'العربية', 'العربية', null, 19],
     ['nav', 'country_toggle', 'mobile_aria_label', 'text', 'Select country', 'اختر الدولة', null, 20],
@@ -757,6 +758,19 @@ return [
     ['smart-tools', 'vantage', 'title', 'text', 'Vantage Analytics - your growth command centre', 'فانتج للتحليلات – مركز القيادة لنموك', null, 70],
     ['smart-tools', 'vantage', 'description', 'text', 'Vantage is Nawy\'s advanced analytics and growth platform, built for sellers who want to scale smart. Think of it as your premium intelligence and analytics platform, with a set of free insights available to all sellers.', 'فانتج هو منصة ناوي المتقدمة للتحليلات والنمو، مصممة للبائعين الذين يرغبون في التوسع بذكاء. تخيّله كمنصتك المميزة للذكاء والتحليلات، مع مجموعة من الرؤى المجانية المتاحة لجميع البائعين.', null, 71],
     ['smart-tools', 'meta', 'title', 'text', 'Smart Tools', 'الأدوات الذكية', null, 72],
+
+    // ─── page_key = 'join' ────────────────────────────────────────────────────────
+    ['join', 'meta', 'title', 'text', 'Join Nawy', 'انضم إلى ناوي', null, 1],
+    ['join', 'hero', 'title', 'text', 'Join Nawy', 'انضم إلى ناوي', null, 1],
+    ['join', 'hero', 'subtitle', 'text', 'Choose your country and the account type that fits you, and we will take you to the right registration flow.', 'اختر دولتك ونوع الحساب المناسب لك، وسنوجهك إلى مسار التسجيل الصحيح.', null, 2],
+    ['join', 'form', 'country_label', 'text', 'Country', 'الدولة', null, 10],
+    ['join', 'form', 'country_placeholder', 'text', '— Select Country —', '— اختر الدولة —', null, 11],
+    ['join', 'form', 'section_label', 'text', 'How would you like to join?', 'كيف تريد الانضمام؟', null, 12],
+    ['join', 'form', 'specialization_label', 'text', 'Specialization', 'التخصص', null, 13],
+    ['join', 'form', 'specialization_placeholder', 'text', '— Select Specialization —', '— اختر التخصص —', null, 14],
+    ['join', 'form', 'marketer_type_label', 'text', 'Registration type', 'نوع التسجيل', null, 15],
+    ['join', 'form', 'submit', 'text', 'Continue', 'متابعة', null, 16],
+    ['join', 'form', 'note', 'text', 'You can change your country, section and specialization before completing registration.', 'يمكنك تغيير الدولة والقسم والتخصص قبل إكمال التسجيل.', null, 17],
 
     // ─── page_key = 'layout' ──────────────────────────────────────────────────────
     ['layout', 'portal', 'default_title', 'text', 'Sell on Nawy', 'بيع على ناوي', null, 1],

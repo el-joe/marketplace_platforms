@@ -3,8 +3,11 @@
 use App\Http\Controllers\Portal\AdSupportController;
 use App\Http\Controllers\Portal\AdvertiseRequestController;
 use App\Http\Controllers\Portal\BlogController;
+use App\Http\Controllers\Portal\CompaniesController;
 use App\Http\Controllers\Portal\HelpCenterController;
+use App\Http\Controllers\Portal\JoinController;
 use App\Http\Controllers\Portal\LandingController;
+use App\Http\Controllers\Portal\MarketersController;
 use App\Http\Controllers\Portal\RegistrationController;
 use App\Models\Country;
 use Illuminate\Support\Facades\Route;
@@ -16,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', [LandingController::class, 'index'])->name('home');
+Route::get('/', fn () => redirect()->route('portal.join'))->name('home');
 Route::get('/faq', [LandingController::class, 'faq'])->name('faq');
 Route::get('/how-it-works', [LandingController::class, 'howItWorks'])->name('how-it-works');
 Route::get('/fulfillment', [LandingController::class, 'fulfillment'])->name('fulfillment');
@@ -87,6 +90,20 @@ Route::prefix('helpcenter')->group(function () use ($resolvedCountry) {
     Route::get('/article/{article}', fn ($article) => redirect()->route('portal.helpcenter.article.show', [$resolvedCountry(), $article]));
 });
 
+// Join landing page — pick the account section first (product seller,
+// specialized companies & brokers, or influencers/creators/affiliates).
+// Country and specialization are chosen inside each section's own journey.
+Route::get('/join', [JoinController::class, 'index'])->name('join');
+Route::post('/join/select', [JoinController::class, 'select'])->name('join.select');
+Route::get('/join/options', [JoinController::class, 'options'])->name('join.options');
+Route::post('/join/continue', [JoinController::class, 'continue'])->name('join.continue');
+
+// Section landing pages reached after a validated section choice.
+// /vendors reuses the legacy product-seller portal content unchanged.
+Route::get('/vendors', [LandingController::class, 'vendors'])->name('vendors');
+Route::get('/companies', [CompaniesController::class, 'index'])->name('companies');
+Route::get('/marketers', [MarketersController::class, 'index'])->name('marketers');
+
 // Multi-step vendor registration
 Route::get('/register', [RegistrationController::class, 'show'])->name('register');
 Route::get('/register/success', [RegistrationController::class, 'success'])->name('register.success');
@@ -109,6 +126,7 @@ Route::prefix('blog')->name('blog.')->group(function () {
 Route::get('/language/{locale}', function (string $locale) {
     abort_unless(in_array($locale, ['ar', 'en'], true), 404);
     session(['locale' => $locale]);
+
     return redirect()->back()->withFragment('');
 })->name('language');
 
@@ -118,5 +136,6 @@ Route::get('/country/{country}', function (string $country) {
     $exists = Country::where('site_code', $country)->where('is_active', true)->exists();
     abort_unless($exists, 404);
     session(['portal_country' => $country]);
+
     return redirect()->back()->withFragment('');
 })->name('country');

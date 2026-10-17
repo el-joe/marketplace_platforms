@@ -235,7 +235,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Portal header country dropdown: shares the active/launched country list plus
         // the currently selected one (URL {country} segment, then session, then default).
-        View::composer('portal.partials.nav', function ($view): void {
+        View::composer(['portal.partials.nav', 'portal.partials.section-nav'], function ($view): void {
             $countries = Country::where('is_active', true)
                 ->where('is_launched', true)
                 ->orderBy('name_en')
