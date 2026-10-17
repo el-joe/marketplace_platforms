@@ -40,7 +40,11 @@
 <body class="bg-black text-white antialiased" style="font-family: 'Cairo', 'Figtree', sans-serif;">
 
     @unless(View::hasSection('hide_nav'))
-        @include('portal.partials.nav')
+        @hasSection('nav')
+            @yield('nav')
+        @else
+            @include('portal.partials.nav')
+        @endif
     @endunless
 
     <main>

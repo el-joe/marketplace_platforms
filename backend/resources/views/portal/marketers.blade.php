@@ -21,6 +21,16 @@
 
 @section('title', portal_content('marketers', 'meta', 'title', 'Influencers, Creators & Affiliates', 'المشاهير والمؤثرون والمسوقون بالعمولة'))
 
+@section('nav')
+    @include('portal.partials.section-nav', [
+        'section' => 'marketer',
+        'links' => [
+            ['key' => 'types', 'href' => route('portal.marketers') . '#types', 'label_en' => 'Types', 'label_ar' => 'الأنواع'],
+            ['key' => 'register', 'href' => route('portal.marketers') . '#register', 'label_en' => 'Join now', 'label_ar' => 'انضم الآن'],
+        ],
+    ])
+@endsection
+
 @section('content')
     <div class="bg-gray-950 pt-[104px] pb-16 lg:pb-24 min-h-screen" dir="{{ $isAr ? 'rtl' : 'ltr' }}">
         <div class="max-w-[1080px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -32,7 +42,7 @@
                 {{ portal_content('marketers', 'hero', 'back', 'Back to join options', 'الرجوع لاختيار نوع الانضمام') }}
             </a>
 
-            <div class="mt-8 max-w-3xl">
+            <div id="types" class="mt-8 max-w-3xl">
                 <h1 class="text-white font-extrabold text-3xl sm:text-4xl lg:text-[42px] leading-tight">
                     {{ portal_content('marketers', 'hero', 'title', 'Join as an influencer, creator or affiliate', 'انضم كمشهور أو مؤثر أو مسوق بالعمولة') }}
                 </h1>
@@ -51,7 +61,7 @@
                 </div>
             @endif
 
-            <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div id="register" class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($marketerTypes as $key => $label)
                     @php($meta = $typeMeta[$key] ?? ['accent' => '#0F807E', 'desc' => ''])
                     <div class="flex h-full flex-col rounded-3xl border border-gray-800 bg-gray-900 p-7">

@@ -37,6 +37,21 @@ class JoinService
     }
 
     /**
+     * Countries offered in the portal country switcher (active and launched),
+     * mirroring the header list. Detection and switching share this set so a
+     * visitor is never shown a country that cannot be selected.
+     *
+     * @return Collection<int, Country>
+     */
+    public function selectableCountries(): Collection
+    {
+        return Country::where('is_active', true)
+            ->where('is_launched', true)
+            ->orderBy('name_en')
+            ->get();
+    }
+
+    /**
      * Selectable sections, keyed by {@see JoinSection} value.
      *
      * @return array<string, string>

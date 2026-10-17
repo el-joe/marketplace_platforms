@@ -197,6 +197,75 @@ class JoinPageTest extends TestCase
         $unknown->assertSessionHasErrors('marketer_type');
     }
 
+    // ── Country auto-detection & switcher ────────────────────────────────
+
+    public function test_join_page_offers_launched_countries_and_marks_the_detected_one(): void
+    {
+        Country::factory()->create([
+            'name_ar' => 'الإمارات',
+            'name_en' => 'United Arab Emirates',
+            'site_code' => 'ae',
+            'iso_code_2' => 'AE',
+            'is_active' => true,
+            'is_launched' => true,
+        ]);
+        Country::factory()->create([
+            'name_ar' => 'غير مُطلقة',
+            'name_en' => 'Not Launched',
+            'site_code' => 'xx',
+            'is_active' => true,
+            'is_launched' => false,
+        ]);
+
+        $response = $this->get(route('portal.join'));
+
+        $response->assertOk();
+        $response->assertSee('الإمارات');
+        $response->assertSee(route('portal.country', 'ae'), false);
+        $response->assertSee('تم تحديدها تلقائيًا');
+        $response->assertDontSee('غير مُطلقة');
+    }
+
+    public function test_join_page_does_not_claim_auto_detection_after_a_manual_pick(): void
+    {
+        Country::factory()->create([
+            'name_ar' => 'مصر',
+            'name_en' => 'Egypt',
+            'site_code' => 'eg',
+            'iso_code_2' => 'EG',
+            'is_active' => true,
+            'is_launched' => true,
+        ]);
+
+        $response = $this->withSession(['locale' => 'ar', 'portal_country' => 'eg'])
+            ->get(route('portal.join'));
+
+        $response->assertOk();
+        $response->assertSee('مصر');
+        $response->assertDontSee('تم تحديدها تلقائيًا');
+    }
+
+    // ── Section-specific navigation ──────────────────────────────────────
+
+    public function test_companies_page_shows_its_own_section_navigation(): void
+    {
+        $response = $this->get(route('portal.companies'));
+
+        $response->assertOk();
+        $response->assertSee(route('portal.companies') . '#how', false);
+        $response->assertSee(route('portal.companies') . '#specializations', false);
+        $response->assertSee(route('portal.companies') . '#register', false);
+    }
+
+    public function test_marketers_page_shows_its_own_section_navigation(): void
+    {
+        $response = $this->get(route('portal.marketers'));
+
+        $response->assertOk();
+        $response->assertSee(route('portal.marketers') . '#types', false);
+        $response->assertSee(route('portal.marketers') . '#register', false);
+    }
+
     // ── Backward compatibility ────────────────────────────────────────────
 
     public function test_existing_register_route_still_works(): void

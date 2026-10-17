@@ -16,6 +16,18 @@
 
 @section('title', portal_content('companies', 'meta', 'title', 'Specialized Companies & Brokers', 'الشركات التخصصية والوسطاء'))
 
+@section('nav')
+    @include('portal.partials.section-nav', [
+        'section' => 'classified_vendor',
+        'links' => [
+            ['key' => 'how', 'href' => route('portal.companies') . '#how', 'label_en' => 'How to join', 'label_ar' => 'كيف تنضم'],
+            ['key' => 'benefits', 'href' => route('portal.companies') . '#benefits', 'label_en' => 'Benefits', 'label_ar' => 'المزايا'],
+            ['key' => 'specializations', 'href' => route('portal.companies') . '#specializations', 'label_en' => 'Specializations', 'label_ar' => 'التخصصات'],
+            ['key' => 'register', 'href' => route('portal.companies') . '#register', 'label_en' => 'Join now', 'label_ar' => 'انضم الآن'],
+        ],
+    ])
+@endsection
+
 @section('content')
     <div class="bg-gray-950 pt-[104px] pb-16 lg:pb-24 min-h-screen" dir="{{ $isAr ? 'rtl' : 'ltr' }}">
         <div class="max-w-[1080px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -36,7 +48,7 @@
                 </p>
             </div>
 
-            <div class="mt-10 grid gap-6 sm:grid-cols-3">
+            <div id="benefits" class="mt-10 grid gap-6 sm:grid-cols-3">
                 @foreach ([
                     ['title' => portal_content('companies', 'benefit_reach', 'title', 'Wider reach', 'انتشار أوسع'), 'desc' => portal_content('companies', 'benefit_reach', 'description', 'Show your services to clients actively searching in your specialization.', 'اعرض خدماتك لعملاء يبحثون فعلياً في تخصصك.')],
                     ['title' => portal_content('companies', 'benefit_control', 'title', 'Full control', 'تحكم كامل'), 'desc' => portal_content('companies', 'benefit_control', 'description', 'Manage your listings, inquiries and profile from your own dashboard.', 'أدر إعلاناتك واستفساراتك وملفك من لوحة تحكم خاصة.')],
@@ -65,7 +77,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('portal.join.continue') }}" class="mt-12"
+            <form method="POST" action="{{ route('portal.join.continue') }}" class="mt-12" id="register"
                 x-data="{
                     entity: @js(old('entity_type', $selection['entity_type'] ?? '')),
                     category: @js(old('classified_category_id', $selection['classified_category_id'] ?? '')),
@@ -74,7 +86,7 @@
                 <input type="hidden" name="section" value="classified_vendor">
 
                 {{-- Company vs broker --}}
-                <fieldset>
+                <fieldset id="how">
                     <legend class="text-white font-bold text-lg mb-4">{{ portal_content('companies', 'form', 'entity_label', 'How would you like to join?', 'كيف تريد الانضمام؟') }}</legend>
                     <div class="grid gap-4 sm:grid-cols-2">
                         @foreach ($entityTypes as $value => $entity)
@@ -90,7 +102,7 @@
                 </fieldset>
 
                 {{-- Specialization --}}
-                <fieldset class="mt-10">
+                <fieldset id="specializations" class="mt-10">
                     <legend class="text-white font-bold text-lg mb-4">{{ portal_content('companies', 'form', 'category_label', 'Your specialization', 'التخصص') }}</legend>
                     @if ($categories->isEmpty())
                         <p class="text-sm text-gray-400">{{ portal_content('companies', 'form', 'category_empty', 'Specializations are being updated, please check back soon.', 'يتم تحديث التخصصات حالياً، يرجى المحاولة قريباً.') }}</p>

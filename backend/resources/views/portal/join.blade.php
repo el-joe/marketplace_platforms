@@ -36,9 +36,16 @@
         <div class="flex-1 w-full max-w-[1080px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-16 lg:pb-24">
 
             @php($joinLogo = portal_image('join', 'logo', 'image', asset('images/nawy_logo_transparent.png'), 'Nawy', 'ناوي'))
-            <a href="{{ route('portal.home') }}" class="flex justify-center mb-10" aria-label="{{ portal_content('join', 'logo', 'aria_label', 'Nawy', 'ناوي') }}">
-                <img src="{{ $joinLogo['src'] }}" alt="{{ $joinLogo['alt'] }}" class="h-[48px] sm:h-[56px] w-auto">
-            </a>
+            <div class="flex flex-col items-center gap-6 mb-10">
+                <a href="{{ route('portal.home') }}" aria-label="{{ portal_content('join', 'logo', 'aria_label', 'Nawy', 'ناوي') }}">
+                    <img src="{{ $joinLogo['src'] }}" alt="{{ $joinLogo['alt'] }}" class="h-[48px] sm:h-[56px] w-auto">
+                </a>
+                @include('portal.partials.country-selector', [
+                    'countries' => $countries,
+                    'currentCountry' => $currentCountry,
+                    'countryAutoDetected' => $countryAutoDetected,
+                ])
+            </div>
 
             <div class="text-center max-w-3xl mx-auto">
                 <h1 class="text-white font-extrabold text-3xl sm:text-4xl lg:text-[44px] leading-tight">

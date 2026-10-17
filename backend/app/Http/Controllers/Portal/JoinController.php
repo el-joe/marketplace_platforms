@@ -25,9 +25,16 @@ class JoinController extends Controller
      */
     public function index(): View
     {
+        $countries = $this->joinService->selectableCountries();
+        $currentCountry = $countries->firstWhere('site_code', Country::resolveSiteCode(null))
+            ?? $countries->first();
+
         return view('portal.join', [
             'sections' => $this->joinService->sections(),
             'selection' => $this->joinService->currentSelection(),
+            'countries' => $countries,
+            'currentCountry' => $currentCountry,
+            'countryAutoDetected' => ! session()->has('portal_country') && $currentCountry !== null,
         ]);
     }
 
