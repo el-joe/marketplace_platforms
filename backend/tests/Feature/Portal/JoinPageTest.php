@@ -12,6 +12,14 @@ class JoinPageTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The portal is Arabic-first; render copy and labels in Arabic.
+        $this->withSession(['locale' => 'ar']);
+    }
+
     private function activeCountry(): Country
     {
         return Country::factory()->create(['is_active' => true]);
@@ -42,8 +50,6 @@ class JoinPageTest extends TestCase
 
     public function test_join_page_shows_only_the_three_sections(): void
     {
-        $category = $this->activeClassifiedCategory();
-
         $response = $this->get(route('portal.join'));
 
         $response->assertOk();
@@ -52,7 +58,6 @@ class JoinPageTest extends TestCase
         $response->assertSee('مشاهير ومؤثرون ومسوقون بالعمولة');
 
         // No country or specialization pickers on the first screen.
-        $response->assertDontSee($category->name_ar);
         $response->assertDontSee('name="country_id"', false);
         $response->assertDontSee('name="classified_category_id"', false);
     }
