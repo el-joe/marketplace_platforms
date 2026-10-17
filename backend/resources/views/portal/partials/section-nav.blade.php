@@ -47,7 +47,39 @@
                 </div>
 
                 <div class="flex lg:hidden items-center gap-4">
-                    @include('portal.partials.country-selector')
+                    <div class="relative" x-data="{ mobileCountryOpen: false }" @click.outside="mobileCountryOpen = false">
+                        <button type="button" @click="mobileCountryOpen = ! mobileCountryOpen"
+                            aria-label="{{ portal_content('nav', 'country_toggle', 'mobile_aria_label', 'Select country', 'اختر الدولة') }}">
+                            @if ($currentCountry)
+                                <img src="https://f.nooncdn.com/s/app/com/common/images/flags/{{ strtolower($currentCountry->iso_code_2) }}.svg"
+                                    alt="{{ $isAr ? $currentCountry->name_ar : $currentCountry->name_en }}"
+                                    width="20" height="20" class="rounded-sm">
+                            @endif
+                        </button>
+
+                        <div x-show="mobileCountryOpen" x-cloak x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 -translate-y-1"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            class="absolute end-0 top-full mt-3 w-48 rounded-xl bg-[#1c1c1c] border border-white/10 shadow-2xl py-2 z-50">
+                            @foreach ($countries as $country)
+                                <a href="{{ route('portal.country', $country->site_code) }}"
+                                    class="flex items-center gap-[10px] px-4 py-2 text-[14px] font-bold transition-colors
+                                          {{ $currentCountry && $currentCountry->id === $country->id ? 'text-[#0F807E]' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
+                                    <img src="https://f.nooncdn.com/s/app/com/common/images/flags/{{ strtolower($country->iso_code_2) }}.svg"
+                                        alt="{{ $isAr ? $country->name_ar : $country->name_en }}" width="18"
+                                        height="18" class="rounded-sm">
+                                    <span>{{ $isAr ? $country->name_ar : $country->name_en }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                    <a href="{{ $langToggleUrl }}" class="text-white hover:opacity-80 transition-opacity">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" width="20" height="20">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="m10.5 21 5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 0 1 6-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 0 1-3.827-5.802" />
+                        </svg>
+                    </a>
                     <button @click="mobileOpen = true" class="text-white p-1" aria-label="{{ $navMenuAria }}">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" width="24" height="24">
@@ -88,10 +120,6 @@
                     {{ $link['label'] }}
                 </a>
             @endforeach
-
-            <div class="mt-2">
-                @include('portal.partials.country-selector')
-            </div>
         </nav>
 
         <div class="mt-auto px-6 pb-10 shrink-0">
