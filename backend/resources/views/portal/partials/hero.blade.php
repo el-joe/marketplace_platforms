@@ -54,7 +54,7 @@
                             <span x-text="displayed2"></span>
                         </div>
                     </h1>
-                    @php($heroCta = portal_link('home', 'hero', 'cta_button', 'Sign Up Now', 'سجل الآن', route('portal.register')))
+                    @php($heroCta = portal_link('home', 'hero', 'cta_button', 'Sign Up Now', 'سجل الآن', route('portal.join')))
                     <a href="{{ $heroCta['url'] }}"
                         class="group inline-flex items-center justify-center gap-3 mt-6 bg-[#0F807E] hover:opacity-90 text-white
                               font-bold text-base min-w-[260px] py-[10px] rounded-full transition-all duration-300 capitalize">

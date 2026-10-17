@@ -162,4 +162,14 @@ return [
         'invalid_country'         => 'The selected country is invalid.',
         'documents_required'      => 'The following documents are required: :documents',
     ],
+
+    'join' => [
+        'country_unavailable'     => 'The selected country is not available for joining right now.',
+        'section_invalid'         => 'The selected section is invalid.',
+        'category_unavailable'    => 'The selected specialization is not available right now.',
+        'category_required'       => 'Please select a specialization.',
+        'marketer_type_invalid'   => 'The selected marketer type is invalid.',
+        'marketer_type_required'  => 'Please select a registration type.',
+        'classified_pending'      => 'Registration for specialized companies and brokers is being prepared and will be available soon.',
+    ],
 ];

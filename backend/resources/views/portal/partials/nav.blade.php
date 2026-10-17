@@ -77,6 +77,7 @@
             ],
         ],
         ['block' => 'link_blog', 'label_ar' => 'المدونة', 'label_en' => 'Blog', 'route' => 'portal.blog.index'],
+        ['block' => 'link_join', 'label_ar' => 'انضم إلينا', 'label_en' => 'Join Us', 'route' => 'portal.join'],
     ];
     foreach ($navLinks as $i => $l) {
         $navLinks[$i]['label'] = portal_content('nav', $l['block'], 'label', $l['label_en'], $l['label_ar']);
@@ -88,7 +89,7 @@
     $navLogoAria = portal_content('nav', 'logo', 'aria_label', 'Home', 'الصفحة الرئيسية');
     $navMenuAria = portal_content('nav', 'mobile', 'menu_aria', 'Menu', 'القائمة');
     $navCloseAria = portal_content('nav', 'mobile', 'close_aria', 'Close menu', 'إغلاق القائمة');
-    $navMobileCta = portal_link('nav', 'mobile', 'cta_button', 'Sign Up Now', 'سجل الآن', route('portal.register'));
+    $navMobileCta = portal_link('nav', 'mobile', 'cta_button', 'Sign Up Now', 'سجل الآن', route('portal.join'));
 @endphp
 
 <div x-data="{ mobileOpen: false, scrolled: false }"

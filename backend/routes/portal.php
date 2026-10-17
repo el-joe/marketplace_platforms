@@ -4,6 +4,7 @@ use App\Http\Controllers\Portal\AdSupportController;
 use App\Http\Controllers\Portal\AdvertiseRequestController;
 use App\Http\Controllers\Portal\BlogController;
 use App\Http\Controllers\Portal\HelpCenterController;
+use App\Http\Controllers\Portal\JoinController;
 use App\Http\Controllers\Portal\LandingController;
 use App\Http\Controllers\Portal\RegistrationController;
 use App\Models\Country;
@@ -87,6 +88,13 @@ Route::prefix('helpcenter')->group(function () use ($resolvedCountry) {
     Route::get('/article/{article}', fn ($article) => redirect()->route('portal.helpcenter.article.show', [$resolvedCountry(), $article]));
 });
 
+// Join landing page — pick a country, section and specialization before
+// being routed to the matching existing registration flow. /register stays
+// untouched for backward compatibility with existing links.
+Route::get('/join', [JoinController::class, 'index'])->name('join');
+Route::get('/join/options', [JoinController::class, 'options'])->name('join.options');
+Route::post('/join/continue', [JoinController::class, 'continue'])->name('join.continue');
+
 // Multi-step vendor registration
 Route::get('/register', [RegistrationController::class, 'show'])->name('register');
 Route::get('/register/success', [RegistrationController::class, 'success'])->name('register.success');
@@ -109,6 +117,7 @@ Route::prefix('blog')->name('blog.')->group(function () {
 Route::get('/language/{locale}', function (string $locale) {
     abort_unless(in_array($locale, ['ar', 'en'], true), 404);
     session(['locale' => $locale]);
+
     return redirect()->back()->withFragment('');
 })->name('language');
 
@@ -118,5 +127,6 @@ Route::get('/country/{country}', function (string $country) {
     $exists = Country::where('site_code', $country)->where('is_active', true)->exists();
     abort_unless($exists, 404);
     session(['portal_country' => $country]);
+
     return redirect()->back()->withFragment('');
 })->name('country');

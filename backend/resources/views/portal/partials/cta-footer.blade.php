@@ -11,7 +11,7 @@
                 <p class="text-[15px] font-medium max-w-[60ch] mx-auto text-[#1f1f1f]">
                     {{ portal_content('cta_footer', 'main', 'subtitle', 'Join thousands of sellers across the region who are growing with Nawy.', 'انضم إلى آلاف البائعين في جميع أنحاء المنطقة الذين ينمون ويكبرون مع ناوي.') }}
                 </p>
-                @php($registerCta = portal_link('cta_footer', 'main', 'button', 'Sign Up Now', 'سجل الآن', route('portal.register')))
+                @php($registerCta = portal_link('cta_footer', 'main', 'button', 'Sign Up Now', 'سجل الآن', route('portal.join')))
                 <a href="{{ $registerCta['url'] }}"
                    class="mt-8 inline-flex items-center justify-center gap-3 bg-black hover:bg-gray-900 text-white
                           font-black text-base min-w-[260px] py-[10px] rounded-full transition-colors">

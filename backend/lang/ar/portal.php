@@ -162,4 +162,14 @@ return [
         'invalid_country'         => 'الدولة المحددة غير صالحة.',
         'documents_required'      => 'الوثائق التالية مطلوبة: :documents',
     ],
+
+    'join' => [
+        'country_unavailable'     => 'الدولة المحددة غير متاحة للانضمام حالياً.',
+        'section_invalid'         => 'القسم المحدد غير صالح.',
+        'category_unavailable'    => 'التخصص المحدد غير متاح حالياً.',
+        'category_required'       => 'يرجى اختيار التخصص.',
+        'marketer_type_invalid'   => 'نوع المسوّق المحدد غير صالح.',
+        'marketer_type_required'  => 'يرجى اختيار نوع التسجيل.',
+        'classified_pending'      => 'تسجيل الشركات التخصصية والوسطاء قيد التجهيز وسيتم إتاحته قريباً.',
+    ],
 ];

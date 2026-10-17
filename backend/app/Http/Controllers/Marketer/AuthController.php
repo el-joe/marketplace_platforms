@@ -17,8 +17,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -30,11 +30,23 @@ class AuthController extends Controller
 
     // ── Registration ──────────────────────────────────────────────────────
 
-    public function showRegister(): View
+    public function showRegister(Request $request): View
     {
         $countries = Country::where('is_active', true)->orderBy('name_ar')->get();
 
-        return view('marketer.auth.register', compact('countries'));
+        // Optional preselection handed over from the public portal /join page.
+        // Unknown values are ignored rather than trusted.
+        $selectedType = $request->query('type');
+        if (! is_string($selectedType) || ! in_array($selectedType, MarketerType::values(), true)) {
+            $selectedType = null;
+        }
+
+        $selectedCountryId = $request->query('country_id');
+        if (! is_string($selectedCountryId) || ! Country::where('id', $selectedCountryId)->where('is_active', true)->exists()) {
+            $selectedCountryId = null;
+        }
+
+        return view('marketer.auth.register', compact('countries', 'selectedType', 'selectedCountryId'));
     }
 
     public function register(Request $request): RedirectResponse
