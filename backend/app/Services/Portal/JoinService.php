@@ -52,6 +52,19 @@ class JoinService
     }
 
     /**
+     * The country currently effective for the portal journey: the home-page
+     * selection (session `portal_country`), the auto-detected country, or the
+     * first launched country. Mirrors the dialog shown on the join landing.
+     */
+    public function currentCountry(): ?Country
+    {
+        $countries = $this->selectableCountries();
+
+        return $countries->firstWhere('site_code', Country::resolveSiteCode(null))
+            ?? $countries->first();
+    }
+
+    /**
      * Selectable sections, keyed by {@see JoinSection} value.
      *
      * @return array<string, string>
