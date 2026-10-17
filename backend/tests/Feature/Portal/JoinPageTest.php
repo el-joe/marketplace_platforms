@@ -218,7 +218,7 @@ class JoinPageTest extends TestCase
 
     // ── Country auto-detection & switcher ────────────────────────────────
 
-    public function test_join_page_offers_launched_countries_and_marks_the_detected_one(): void
+    public function test_join_page_offers_launched_countries_and_language_options(): void
     {
         Country::factory()->create([
             'name_ar' => 'الإمارات',
@@ -241,7 +241,9 @@ class JoinPageTest extends TestCase
         $response->assertOk();
         $response->assertSee('الإمارات');
         $response->assertSee(route('portal.country', 'ae'), false);
-        $response->assertSee('تم تحديدها تلقائيًا');
+        $response->assertSee(route('portal.language', 'en'), false);
+        $response->assertSee(route('portal.language', 'ar'), false);
+        $response->assertDontSee('تم تحديدها تلقائيًا');
         $response->assertDontSee('غير مُطلقة');
     }
 

@@ -2,10 +2,10 @@
     $isAr = session('locale', 'ar') === 'ar';
     $selectorCountries = $countries ?? collect();
     $selectorCurrent = $currentCountry ?? $selectorCountries->first();
-    $selectorAuto = $countryAutoDetected ?? ! session()->has('portal_country');
     $selectorLabel = portal_content('country_selector', 'main', 'label', 'Your country', 'دولتك');
-    $selectorAutoLabel = portal_content('country_selector', 'main', 'auto', 'Detected automatically', 'تم تحديدها تلقائيًا');
     $selectorChoose = portal_content('country_selector', 'main', 'choose', 'Choose your country', 'اختر دولتك');
+    $showLanguage = $showLanguage ?? false;
+    $languageChoose = portal_content('language_selector', 'main', 'choose', 'Choose your language', 'اختر لغتك');
     $flagUrl = fn ($country) => filled($country?->iso_code_2)
         ? 'https://f.nooncdn.com/s/app/com/common/images/flags/'.strtolower($country->iso_code_2).'.svg'
         : null;
@@ -26,11 +26,6 @@
                 <span class="flex flex-col items-start leading-tight">
                     <span class="flex items-center gap-1.5 text-[13px] font-bold text-white">
                         {{ $isAr ? $selectorCurrent->name_ar : ($selectorCurrent->name_en ?? $selectorCurrent->name_ar) }}
-                        @if ($selectorAuto)
-                            <span class="inline-flex items-center gap-1 rounded-full bg-[#0F807E]/15 px-2 py-0.5 text-[10px] font-bold text-[#3fd1cf]">
-                                <span class="h-1.5 w-1.5 rounded-full bg-[#0F807E]"></span>{{ $selectorAutoLabel }}
-                            </span>
-                        @endif
                     </span>
                     <span class="text-[11px] text-gray-400">{{ $selectorLabel }}</span>
                 </span>
@@ -70,6 +65,44 @@
                         </a>
                     @endforeach
                 </div>
+                @if ($showLanguage)
+                    <div class="border-t border-white/10"></div>
+                    <p class="px-4 pb-1 pt-3 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+                        {{ $languageChoose }}
+                    </p>
+                    <div class="py-1">
+                        <a href="{{ route('portal.language', 'ar') }}"
+                            class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-colors {{ $isAr ? 'text-[#0F807E]' : 'text-gray-300 hover:bg-white/5 hover:text-white' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8"
+                                stroke="currentColor" width="20" height="20" class="shrink-0">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0a8.949 8.949 0 0 0 4.951-1.488A3.987 3.987 0 0 0 13 16h-2a3.987 3.987 0 0 0-3.951 3.512A8.949 8.949 0 0 0 12 21Zm3-11a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                            <span class="flex-1">{{ portal_content('nav', 'lang_option_ar', 'label', 'العربية', 'العربية') }}</span>
+                            @if ($isAr)
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                    stroke="currentColor" width="16" height="16">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                            @endif
+                        </a>
+                        <a href="{{ route('portal.language', 'en') }}"
+                            class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-colors {{ ! $isAr ? 'text-[#0F807E]' : 'text-gray-300 hover:bg-white/5 hover:text-white' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8"
+                                stroke="currentColor" width="20" height="20" class="shrink-0">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0a8.949 8.949 0 0 0 4.951-1.488A3.987 3.987 0 0 0 13 16h-2a3.987 3.987 0 0 0-3.951 3.512A8.949 8.949 0 0 0 12 21Zm3-11a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                            <span class="flex-1">{{ portal_content('nav', 'lang_option_en', 'label', 'English', 'English') }}</span>
+                            @if (! $isAr)
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                    stroke="currentColor" width="16" height="16">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                            @endif
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

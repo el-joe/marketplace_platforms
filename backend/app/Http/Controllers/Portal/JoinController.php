@@ -33,7 +33,6 @@ class JoinController extends Controller
             'selection' => $this->joinService->currentSelection(),
             'countries' => $countries,
             'currentCountry' => $currentCountry,
-            'countryAutoDetected' => ! session()->has('portal_country') && $currentCountry !== null,
         ]);
     }
 

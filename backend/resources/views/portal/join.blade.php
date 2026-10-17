@@ -43,7 +43,7 @@
                 @include('portal.partials.country-selector', [
                     'countries' => $countries,
                     'currentCountry' => $currentCountry,
-                    'countryAutoDetected' => $countryAutoDetected,
+                    'showLanguage' => true,
                 ])
             </div>
 
