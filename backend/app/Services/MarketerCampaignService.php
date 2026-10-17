@@ -42,6 +42,7 @@ use App\Services\Inventory\InventoryService;
 use App\Services\Marketer\CampaignFeeService;
 use App\Services\Marketer\InfluencerFixedService;
 use App\Services\Marketer\MarketerCommissionCalculator;
+use App\Support\Marketer\CampaignBudgetRules;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
 use App\Support\Marketer\CampaignSubject;
@@ -54,6 +55,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class MarketerCampaignService
 {
@@ -125,9 +127,10 @@ class MarketerCampaignService
      * accept an invitation and get a live referral link for a campaign
      * that was later rejected.
      *
-     * v3 money model ($data keys): max_commission_budget (required > 0 for vendor campaigns), marketer_ids (everyone
-     * invited), influencer_ids (the influencers among them whose fixed amount is snapshotted and reserved from the
-     * budget; rejected when their total exceeds it), open_to_affiliates, ends_at (optional), title, notes, ad fields.
+     * v3 money model ($data keys): max_commission_budget (optional: blank / 0 = unlimited, which needs ends_at; a given
+     * budget must be strictly greater than the influencers' fixed total), marketer_ids (everyone invited),
+     * influencer_ids (the influencers among them whose fixed amount is snapshotted and reserved from the budget),
+     * open_to_affiliates, ends_at (required when unlimited), title, notes, ad fields.
      * Commission is never typed: affiliates / brokers earn per sale by their own rule, influencers a fixed amount.
      */
     public function createCampaign(CampaignOwner $owner, CampaignSource $source, array $data): MarketerCampaign
@@ -223,13 +226,16 @@ class MarketerCampaignService
 
             $budget = round((float) ($data['max_commission_budget'] ?? 0), 2);
             $ownerFunded = ($listing instanceof VendorListing || $subject) && $owner->isOwnerFunded();
-            if ($ownerFunded && $budget <= 0) {
-                throw new \RuntimeException(__('marketer_campaigns.errors.budget_required'));
+            // No budget = unlimited: only an end date stops such a campaign, so an owner-funded one must carry it.
+            $unlimited = CampaignBudgetRules::isUnlimited($budget);
+            if ($ownerFunded && $unlimited) {
+                CampaignBudgetRules::assertEndDateForUnlimited($budget, $data['ends_at'] ?? null);
             }
 
             // Owner-funded campaigns (vendor listings, classified listings, trips) snapshot the server-side campaign
             // fee (never client numbers) so later setting changes do not rewrite what the owner was shown;
-            // platform/marketer-owned ones carry no charge.
+            // platform/marketer-owned ones carry no charge. An unlimited campaign is re-priced on the influencers'
+            // fixed total once that is reserved (below).
             $feeSnapshot = $ownerFunded ? $this->feeSnapshot($listing ?? $subject->model, $budget) : [];
             $feeSnapshot['campaign_fee_status'] = $this->campaignFees->initialStatus((float) ($feeSnapshot['marketing_fee_total'] ?? 0), $ownerFunded);
 
@@ -274,8 +280,16 @@ class MarketerCampaignService
             if (! $isPeer && $influencerIds !== []) {
                 $this->influencerFixed->reserve(
                     $campaign,
-                    $this->influencerFixed->snapshot($marketerVendors->whereIn('id', $influencerIds), $campaign->country_id, $campaign)
+                    $this->influencerFixed->snapshot($marketerVendors->whereIn('id', $influencerIds), $campaign->country_id, $campaign),
+                    strict: true
                 );
+            }
+
+            if ($ownerFunded && $unlimited) {
+                $fee = $this->feeSnapshot($listing ?? $subject->model, (float) $campaign->influencer_fixed_reserved);
+                $campaign->update($fee + [
+                    'campaign_fee_status' => $this->campaignFees->initialStatus((float) $fee['marketing_fee_total'], true),
+                ]);
             }
 
             if ($listing) {
@@ -325,14 +339,17 @@ class MarketerCampaignService
     }
 
     /**
-     * Campaign fee snapshot columns: the fixed + variable fee on the Max Commission Budget (the campaign total).
+     * Campaign fee snapshot columns: the fixed + variable fee on the campaign total (the Max Commission Budget, or the
+     * influencers' fixed total of an unlimited campaign).
      *
      * @return array<string, mixed>
      */
-    private function feeSnapshot(VendorListing|ClassifiedListing|TravelPackage $listing, float $budget): array
+    private function feeSnapshot(VendorListing|ClassifiedListing|TravelPackage $listing, float $base): array
     {
         $subject = CampaignSubject::of($listing);
-        $quote = app(MarketerCampaignQuoteService::class)->quote($subject, [], $budget);
+        // The quote prices an unlimited (0) budget on the influencers' fixed total; none are passed here, so the
+        // campaign fee base is given explicitly through the budget argument.
+        $quote = app(MarketerCampaignQuoteService::class)->quote($subject, [], $base);
 
         return [
             'fulfillment_type' => $subject->feeType()?->value,
@@ -741,22 +758,25 @@ class MarketerCampaignService
                 'ends_at' => $data['ends_at'] ?? null,
             ];
 
-            if (isset($data['max_commission_budget']) && $campaign->status === 'pending_admin') {
+            // A blank budget is "unlimited" (0); the field is absent when the form could not edit it.
+            if (array_key_exists('max_commission_budget', $data) && $campaign->status === 'pending_admin') {
                 $budget = round((float) $data['max_commission_budget'], 2);
-                if ($budget <= 0) {
-                    throw new \RuntimeException(__('marketer_campaigns.errors.budget_required'));
+                $reserved = (float) $campaign->influencer_fixed_reserved;
+                if (CampaignBudgetRules::budgetTooSmall($budget, $reserved)) {
+                    throw ValidationException::withMessages([
+                        'max_commission_budget' => CampaignBudgetRules::mustExceedMessage($budget, $reserved),
+                    ]);
                 }
-                if ($budget + 0.004 < (float) $campaign->influencer_fixed_reserved) {
-                    throw new \RuntimeException(__('marketer_campaigns.errors.fixed_exceeds_budget', [
-                        'fixed' => Money::format($campaign->influencer_fixed_reserved), 'budget' => Money::format($budget),
-                    ]));
+
+                $ownerFunded = $campaign->vendor_id || $campaign->owner_type === MarketerCampaign::OWNER_TRAVEL_AGENCY;
+                if ($ownerFunded) {
+                    CampaignBudgetRules::assertEndDateForUnlimited($budget, $data['ends_at'] ?? null);
                 }
 
                 $attributes['max_commission_budget'] = $budget;
                 $subject = CampaignSubject::fromCampaign($campaign);
-                $ownerFunded = $campaign->vendor_id || $campaign->owner_type === MarketerCampaign::OWNER_TRAVEL_AGENCY;
                 if ($subject && $ownerFunded) {
-                    $fee = $this->feeSnapshot($subject->model, $budget);
+                    $fee = $this->feeSnapshot($subject->model, $budget > 0 ? $budget : $reserved);
                     $attributes += $fee + ['campaign_fee_status' => $this->campaignFees->initialStatus((float) $fee['marketing_fee_total'], true)];
                 }
             }

@@ -65,26 +65,35 @@
                 </div>
 
                 <div class="space-y-1">
-                    <label for="max_commission_budget" class="block text-sm font-medium text-gray-700">{{ __('admin.marketer_campaigns.max_commission_budget') }} <span class="text-danger-500">*</span></label>
-                    <input type="number" name="max_commission_budget" id="max_commission_budget" min="0" step="0.01" required value="{{ old('max_commission_budget') }}"
+                    <label for="max_commission_budget" class="block text-sm font-medium text-gray-700">{{ __('admin.marketer_campaigns.max_commission_budget') }} <span class="text-xs font-normal text-gray-500">{{ __('marketer_campaigns.wizard.budget_label_hint') }}</span></label>
+                    <input type="number" name="max_commission_budget" id="max_commission_budget" min="0" step="0.01" value="{{ old('max_commission_budget') }}"
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
                     <p class="text-xs text-gray-500 mt-1">{{ __('marketer_campaigns.admin.budget_help') }}</p>
+                    @error('max_commission_budget')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    <p id="budget-unlimited-hint" class="hidden text-xs text-blue-700 mt-1">{{ __('marketer_campaigns.wizard.budget_unlimited_hint') }}</p>
                 </div>
 
                 <div class="space-y-1">
-                    <label for="ends_at" class="block text-sm font-medium text-gray-700">{{ __('marketer_campaigns.wizard.ends_at_label') }}</label>
+                    <label for="ends_at" class="block text-sm font-medium text-gray-700">
+                        <span id="ends-at-label-optional">{{ __('marketer_campaigns.wizard.ends_at_label') }}</span>
+                        <span id="ends-at-label-required" class="hidden">{{ __('marketer_campaigns.wizard.ends_at_label_required') }} <span class="text-danger-500">*</span></span>
+                    </label>
                     <input type="date" name="ends_at" id="ends_at" value="{{ old('ends_at') }}" min="{{ now()->addDay()->toDateString() }}"
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
                     <p class="text-xs text-gray-500 mt-1">{{ __('marketer_campaigns.wizard.ends_at_help') }}</p>
+                    @error('ends_at')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <label class="sm:col-span-2 flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 cursor-pointer">
-                    <input type="checkbox" name="open_to_affiliates" value="1" class="mt-1 rounded border-gray-300 text-blue-600" @checked(old('open_to_affiliates'))>
+                    <input type="checkbox" name="open_to_affiliates" id="open_to_affiliates" value="1" class="mt-1 rounded border-gray-300 text-blue-600" @checked(old('open_to_affiliates'))>
                     <span class="text-sm text-blue-900">
                         <span class="font-semibold">{{ __('marketer_campaigns.wizard.open_title') }}</span>
                         <span class="block text-xs mt-1">{{ __('marketer_campaigns.admin.open_help') }}</span>
                     </span>
                 </label>
+                <p id="unlimited-affiliates-warning" class="hidden sm:col-span-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+                    <i class="fas fa-triangle-exclamation me-1"></i>{{ __('marketer_campaigns.wizard.unlimited_affiliates_warning') }}
+                </p>
                 <p class="sm:col-span-2 rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-800">
                     <i class="fas fa-lock me-1"></i>{{ __('marketer_campaigns.wizard.commission_set_by_platform') }}
                 </p>
@@ -114,6 +123,26 @@
 </form>
 
 @push('scripts')
+<script>
+    // Blank / 0 budget = unlimited: the end date becomes required and affiliates' commissions are uncapped until then.
+    (function () {
+        const budget = document.getElementById('max_commission_budget');
+        const endsAt = document.getElementById('ends_at');
+        const open = document.getElementById('open_to_affiliates');
+        if (!budget || !endsAt) return;
+        const sync = () => {
+            const unlimited = !(parseFloat(budget.value) > 0);
+            endsAt.required = unlimited;
+            document.getElementById('ends-at-label-optional').classList.toggle('hidden', unlimited);
+            document.getElementById('ends-at-label-required').classList.toggle('hidden', !unlimited);
+            document.getElementById('budget-unlimited-hint').classList.toggle('hidden', !unlimited);
+            document.getElementById('unlimited-affiliates-warning').classList.toggle('hidden', !(unlimited && open && open.checked));
+        };
+        budget.addEventListener('input', sync);
+        open && open.addEventListener('change', sync);
+        sync();
+    })();
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var vendorSelect = document.getElementById('vendor_id');

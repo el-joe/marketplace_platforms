@@ -34,7 +34,7 @@
             <div>
                 <div class="flex items-center justify-between gap-2">
                     <dt class="font-medium text-gray-800">{{ __('marketer_campaigns.cost.budget') }}</dt>
-                    <dd class="font-semibold text-gray-900" data-testid="cost-budget">{{ $budget > 0 ? Money::format($budget).' '.$ccy : __('marketer_campaigns.cost.unlimited') }}</dd>
+                    <dd class="font-semibold text-gray-900" data-testid="cost-budget">{{ $campaign->budgetLabel() }}</dd>
                 </div>
                 <p class="mt-1 text-[11px] text-gray-400">{{ __('marketer_campaigns.cost.budget_help') }}</p>
                 @if($budget > 0)
@@ -69,7 +69,7 @@
             <div>
                 <div class="flex items-center justify-between gap-2">
                     <dt class="font-medium text-gray-800">{{ __('marketer_campaigns.cost.remaining') }}</dt>
-                    <dd class="font-semibold text-gray-900" data-testid="cost-remaining">{{ $remaining === null ? '—' : Money::format($remaining).' '.$ccy }}</dd>
+                    <dd class="font-semibold text-gray-900" data-testid="cost-remaining">{{ $remaining === null ? __('marketer_campaigns.cost.unlimited') : Money::format(max(0, $remaining)).' '.$ccy }}</dd>
                 </div>
                 <p class="mt-1 text-[11px] text-gray-400">{{ __('marketer_campaigns.cost.remaining_help') }}</p>
             </div>

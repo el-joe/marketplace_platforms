@@ -126,7 +126,7 @@
                     __('admin.marketer_campaigns.product')                    => $promotedLabel ?? '—',
                     __('admin.marketer_campaigns.country')                    => $marketerCampaign->country?->name_en ?? '—',
                     __('admin.marketer_campaigns.currency')                   => $marketerCampaign->currency ?? '—',
-                    __('admin.marketer_campaigns.max_commission_budget')      => $marketerCampaign->max_commission_budget !== null ? \App\Support\Money::format($marketerCampaign->max_commission_budget) : '—',
+                    __('admin.marketer_campaigns.max_commission_budget')      => $marketerCampaign->budgetLabel(false),
                     __('marketer_campaigns.cost.ends_at')                     => $marketerCampaign->ends_at?->format('d M Y') ?? __('marketer_campaigns.cost.no_end_date'),
                     __('marketer_campaigns.wizard.audience')                  => $marketerCampaign->open_to_affiliates ? __('marketer_campaigns.wizard.audience_open') : __('marketer_campaigns.wizard.audience_picked'),
                     __('admin.marketer_campaigns.platform_sample_qty')        => $marketerCampaign->platform_sample_qty_snapshot ?? 0,

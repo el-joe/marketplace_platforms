@@ -150,6 +150,28 @@ class TravelAgencyCampaignPagesTest extends TestCase
         $this->assertSame(0, MarketerCampaign::where('travel_package_id', $this->package->id)->count());
     }
 
+    public function test_the_budget_is_optional_but_an_unlimited_campaign_needs_an_end_date_and_a_budget_must_exceed_the_influencers(): void
+    {
+        V::defaults($this->s->country, 'travel', influencerFixed: 150);
+        $influencer = F::influencer($this->s);
+        $this->actingAs($this->owner, 'travel_agency');
+        $payload = ['travel_package_id' => $this->package->id, 'marketer_ids' => [$influencer->id]];
+
+        $this->post(route('travel-agency.campaigns.store'), $payload + ['max_commission_budget' => ''])->assertSessionHasErrors('ends_at');
+        $this->post(route('travel-agency.campaigns.store'), $payload + ['max_commission_budget' => 150])->assertSessionHasErrors('max_commission_budget');
+        $this->assertSame(0, MarketerCampaign::where('travel_package_id', $this->package->id)->count());
+
+        $this->post(route('travel-agency.campaigns.store'), $payload + ['max_commission_budget' => '', 'ends_at' => now()->addDays(4)->toDateString()])
+            ->assertSessionHasNoErrors();
+        $campaign = MarketerCampaign::where('travel_package_id', $this->package->id)->sole();
+        $this->assertEquals(0, $campaign->max_commission_budget);
+        $this->assertEquals(150, $campaign->influencer_fixed_reserved);
+        $this->assertEquals(150, $campaign->campaign_subtotal);
+
+        $this->get(route('travel-agency.campaigns.show', $campaign->id))->assertOk()
+            ->assertSee(__('marketer_campaigns.cost.unlimited_until', ['date' => $campaign->ends_at->format('Y/m/d')]));
+    }
+
     public function test_cancelling_releases_the_reservation(): void
     {
         V::defaults($this->s->country, 'travel', influencerFixed: 150);

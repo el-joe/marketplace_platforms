@@ -8,9 +8,9 @@ use App\Models\Marketer;
 use App\Models\MarketerCampaign;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
+use App\Support\Marketer\CampaignBudgetRules;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSubject;
-use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
 
@@ -22,7 +22,8 @@ use Illuminate\Validation\ValidationException;
  *   - picked marketers must be influencers of the item's country (the wizard only offers those);
  *   - nobody may already be tied to another live campaign of the same item;
  *   - "open to all" reaches every eligible affiliate / broker of the country (never an influencer slot);
- *   - the influencers' fixed amounts must fit inside the Max Commission Budget.
+ *   - the Max Commission Budget is optional (blank / 0 = unlimited, which needs an end date);
+ *   - a given budget must be strictly greater than the influencers' fixed amounts.
  *
  * Panels only differ in how they authorise the request and where they redirect afterwards.
  */
@@ -125,12 +126,14 @@ class CampaignWizardService
         }
 
         $budget = round((float) ($input['max_commission_budget'] ?? 0), 2);
+        $endsAt = ! empty($input['ends_at']) ? Carbon::parse($input['ends_at'])->endOfDay() : null;
+
+        // Only the hand-picked influencers carry a fixed amount (open affiliates / brokers never take an influencer slot).
         $quote = $this->quotes->quote($subject, $picked, $budget, $openToAffiliates);
         if (! $quote['fits_budget']) {
-            throw ValidationException::withMessages(['max_commission_budget' => __('marketer_campaigns.errors.fixed_exceeds_budget', [
-                'fixed' => Money::format($quote['influencer_fixed_total']), 'budget' => Money::format($budget),
-            ])]);
+            throw ValidationException::withMessages(['max_commission_budget' => CampaignBudgetRules::mustExceedMessage($budget, $quote['influencer_fixed_total'])]);
         }
+        CampaignBudgetRules::assertEndDateForUnlimited($budget, $endsAt);
 
         $campaign = $this->campaigns->createCampaign($owner, $subject->source(), [
             'max_commission_budget' => $budget,
@@ -139,7 +142,7 @@ class CampaignWizardService
             'marketer_ids' => $marketerIds,
             'influencer_ids' => $picked,
             'open_to_affiliates' => $openToAffiliates,
-            'ends_at' => ! empty($input['ends_at']) ? Carbon::parse($input['ends_at'])->endOfDay() : null,
+            'ends_at' => $endsAt,
             'selected_ad_types' => ($input['selected_ad_types'] ?? null) ?: null,
             'vendor_ad_notes' => ($input['vendor_ad_notes'] ?? null) ?: null,
         ]);

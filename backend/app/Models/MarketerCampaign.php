@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\DecimalMoney;
 use App\Enums\MarketingFeeType;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -256,6 +257,24 @@ class MarketerCampaign extends Model
         }
 
         return max(0.0, round((float) $this->max_commission_budget - $this->budgetUsed(), 2));
+    }
+
+    /** No Max Commission Budget (blank / 0): affiliate and broker commissions are uncapped until the end date. */
+    public function isUnlimitedBudget(): bool
+    {
+        return (float) $this->max_commission_budget <= 0;
+    }
+
+    /** Budget for display: the amount, or "Unlimited" (with the end date when there is one). Never a bare 0. */
+    public function budgetLabel(bool $withCurrency = true): string
+    {
+        if ($this->isUnlimitedBudget()) {
+            return $this->ends_at
+                ? __('marketer_campaigns.cost.unlimited_until', ['date' => $this->ends_at->format('Y/m/d')])
+                : __('marketer_campaigns.cost.unlimited');
+        }
+
+        return Money::format($this->max_commission_budget).($withCurrency ? ' '.$this->currency : '');
     }
 
     public function isBudgetExhausted(): bool

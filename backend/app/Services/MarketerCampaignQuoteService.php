@@ -13,6 +13,7 @@ use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
 use App\Services\Marketer\InfluencerFixedService;
 use App\Services\Marketer\MarketerCommissionCalculator;
+use App\Support\Marketer\CampaignBudgetRules;
 use App\Support\Marketer\CampaignSubject;
 use Illuminate\Support\Collection;
 
@@ -22,14 +23,17 @@ use Illuminate\Support\Collection;
  * TravelPackage (trip), or the CampaignSubject wrapping one. The owner types only the Max Commission Budget;
  * everything else comes from admin settings:
  *
- *   campaign fee (fixed + variable)      MarketingFeeService on the budget (the campaign total); the variable part is
- *                                        per category and fulfilment type for products, per country and vertical
- *                                        for classified and travel
+ *   campaign fee (fixed + variable)      MarketingFeeService on the base (the budget; for an UNLIMITED campaign the
+ *                                        influencers' fixed total); the variable part is per category and fulfilment
+ *                                        type for products, per country and vertical for classified and travel
  *   influencers' fixed total             sum of each picked influencer's fixed amount for this product category,
  *                                        reserved from the budget when the campaign is created
- *   remaining for affiliates / brokers   budget - influencers' fixed total; their percentage commissions are paid
- *                                        from it per sold item until it is used up, then the campaign is done
- *   grand total                          budget + campaign fee
+ *   remaining for affiliates / brokers   budget - influencers' fixed total (null = unlimited); their percentage
+ *                                        commissions are paid from it per sold item until it is used up, then the campaign is done
+ *   grand total                          base + campaign fee
+ *
+ * The budget is optional: blank / 0 is UNLIMITED (an end date is then required, flag requires_end_date) and a given
+ * budget must be strictly greater than the influencers' fixed total (fits_budget, shortfall).
  *
  * Amounts are DECIMAL(19,4) base-currency units (floats here, rounded to 2 dp for display and charging).
  */
@@ -142,7 +146,8 @@ class MarketerCampaignQuoteService
      * @param  array<int, string>  $marketerIds  picked influencer ids (other ids are ignored here)
      * @return array{
      *   vertical: string, currency: string, budget: float, influencer_count: int, affiliate_count: int,
-     *   influencer_fixed_total: float, remaining_budget: float, fits_budget: bool, open_to_affiliates: bool,
+     *   influencer_fixed_total: float, remaining_budget: ?float, fits_budget: bool, shortfall: float, unlimited: bool,
+     *   requires_end_date: bool, open_to_affiliates: bool,
      *   rows: array<int, array{id: string, name: string, type: string, fixed: float, source: string}>,
      *   fulfillment_type: string, fulfillment_type_label: string,
      *   marketing: array{fixed_fee: float, variable_fee: float, total: float},
@@ -180,7 +185,12 @@ class MarketerCampaignQuoteService
 
         $affiliates = $openToAffiliates ? $this->openAudienceCount($subject) : 0;
 
-        $marketing = $this->feeFor($subject, $budget);
+        // Unlimited (no budget): the campaign is priced on what is certain, the influencers' fixed total.
+        $unlimited = CampaignBudgetRules::isUnlimited($budget);
+        $base = $unlimited ? $fixedTotal : $budget;
+        $fits = $unlimited || ! CampaignBudgetRules::budgetTooSmall($budget, $fixedTotal);
+
+        $marketing = $this->feeFor($subject, $base);
 
         // Samples and stock only exist for products; the other verticals carry no physical stock.
         $samples = ['influencer_each' => 0, 'admin' => 0, 'total' => 0, 'count' => 0];
@@ -207,8 +217,11 @@ class MarketerCampaignQuoteService
             'influencer_count' => $influencers->count(),
             'affiliate_count' => $affiliates,
             'influencer_fixed_total' => $fixedTotal,
-            'remaining_budget' => round($budget - $fixedTotal, 2),
-            'fits_budget' => $fixedTotal <= $budget + 0.004,
+            'remaining_budget' => $unlimited ? null : round($budget - $fixedTotal, 2),
+            'fits_budget' => $fits,
+            'shortfall' => $fits ? 0.0 : CampaignBudgetRules::shortfall($budget, $fixedTotal),
+            'unlimited' => $unlimited,
+            'requires_end_date' => $unlimited,
             'open_to_affiliates' => $openToAffiliates,
             'rows' => $rows,
             'fulfillment_type' => $feeType?->value ?? $subject->vertical->value,
@@ -218,8 +231,8 @@ class MarketerCampaignQuoteService
                 'variable_fee' => $marketing['variable_fee'],
                 'total' => $marketing['total_fee'],
             ],
-            'campaign_subtotal' => $budget,
-            'campaign_grand_total' => round($budget + $marketing['total_fee'], 2),
+            'campaign_subtotal' => round($base, 2),
+            'campaign_grand_total' => round($base + $marketing['total_fee'], 2),
             // Effective quantities (admin minimums applied), see CampaignSampleService.
             'influencer_sample_qty' => $samples['influencer_each'],
             'affiliate_sample_qty' => $affiliateSampleQty,

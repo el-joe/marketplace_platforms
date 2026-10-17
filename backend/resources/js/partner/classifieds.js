@@ -1220,7 +1220,7 @@ async function loadSaleContext() {
         el('sh-campaign-status').textContent = c.campaign.status_label;
         el('sh-campaign-view').href = c.campaign.url;
         el('sh-campaign-budget').textContent = fill(i18n.card_budget, {
-            used: formatPlain(c.campaign.used), budget: formatPlain(c.campaign.budget), currency: c.currency,
+            used: formatPlain(c.campaign.used), budget: c.campaign.budget > 0 ? formatPlain(c.campaign.budget) : (c.campaign.budget_label || formatPlain(c.campaign.budget)), currency: c.currency,
         });
     }
 

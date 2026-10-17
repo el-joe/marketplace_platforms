@@ -11,6 +11,7 @@ use App\Services\Marketer\CampaignWizardService;
 use App\Services\Marketer\MarketerCommissionCalculator;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
+use App\Support\Marketer\CampaignBudgetRules;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSubject;
 use App\Support\Money;
@@ -108,7 +109,7 @@ class CampaignController extends Controller
         $rows = $campaigns->map(fn (MarketerCampaign $c) => [
             $c->title ?: '#'.substr($c->id, 0, 8),
             $c->travelPackage?->title_ar ?: $c->travelPackage?->title_en,
-            Money::format($c->max_commission_budget).' '.$c->currency,
+            $c->budgetLabel(),
             Money::format($c->budgetUsed()).' '.$c->currency,
             $c->invitations_count,
             $c->status,
@@ -181,13 +182,13 @@ class CampaignController extends Controller
             'travel_package_id' => ['required', 'uuid'],
             'marketer_ids' => ['nullable', 'array'],
             'marketer_ids.*' => ['uuid'],
-            'max_commission_budget' => ['required', 'numeric', 'min:0.01', 'max:999999999', 'decimal:0,2'],
+            'max_commission_budget' => CampaignBudgetRules::budgetRules(),
             'open_to_affiliates' => ['nullable', 'boolean'],
-            'ends_at' => ['nullable', 'date', 'after:today'],
+            'ends_at' => CampaignBudgetRules::endsAtRules($request),
             'selected_ad_types' => ['nullable', 'array'],
             'selected_ad_types.*' => ['string', 'in:story,post,video'],
             'vendor_ad_notes' => ['nullable', 'string', 'max:2000'],
-        ]);
+        ], CampaignBudgetRules::endsAtMessages());
 
         $subject = $this->ownTrip($request->input('travel_package_id'));
 

@@ -5,6 +5,7 @@ namespace App\Services\Marketer;
 use App\Models\Marketer;
 use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignInvitation;
+use App\Support\Marketer\CampaignBudgetRules;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 
@@ -67,13 +68,18 @@ class InfluencerFixedService
      * Store the snapshot on the campaign and hold its total back from the budget.
      *
      * @param  array<string, array{amount: float, source: string}>  $snapshot
+     * @param  bool  $strict  campaign creation: the budget must be STRICTLY greater than the total (a budget equal to it
+     *                        would leave nothing for affiliates / brokers); flows that fill an existing budget stay lenient
      *
-     * @throws \RuntimeException when the influencers' fixed amounts exceed the Max Commission Budget
+     * @throws \RuntimeException when the influencers' fixed amounts do not fit the Max Commission Budget
      */
-    public function reserve(MarketerCampaign $campaign, array $snapshot): void
+    public function reserve(MarketerCampaign $campaign, array $snapshot, bool $strict = false): void
     {
         $total = $this->total($snapshot);
         $budget = round((float) $campaign->max_commission_budget, 2);
+        if ($strict && CampaignBudgetRules::budgetTooSmall($budget, $total)) {
+            throw new \RuntimeException(CampaignBudgetRules::mustExceedMessage($budget, $total));
+        }
         if ($budget > 0 && $total > $budget + 0.004) {
             throw new \RuntimeException(__('marketer_campaigns.errors.fixed_exceeds_budget', [
                 'fixed' => Money::format($total), 'budget' => Money::format($campaign->max_commission_budget),

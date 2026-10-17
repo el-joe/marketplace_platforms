@@ -20,7 +20,7 @@
             __('partner.marketer_campaigns_my.field.item') => $promotedTitle,
             __('partner.marketer_campaigns_my.field.country') => $marketerCampaign->country?->name_ar ?? $marketerCampaign->country?->name_en ?? '—',
             __('partner.marketer_campaigns_my.field.currency') => $marketerCampaign->currency ?? '—',
-            __('partner.marketer_campaigns_my.field.max_commission_budget') => $marketerCampaign->max_commission_budget !== null ? \App\Support\Money::format($marketerCampaign->max_commission_budget) : '—',
+            __('partner.marketer_campaigns_my.field.max_commission_budget') => $marketerCampaign->budgetLabel(false),
             __('marketer_campaigns.cost.ends_at') => $marketerCampaign->ends_at?->format('Y/m/d') ?? __('marketer_campaigns.cost.no_end_date'),
             __('marketer_campaigns.wizard.audience') => $marketerCampaign->open_to_affiliates ? __('marketer_campaigns.wizard.audience_open') : __('marketer_campaigns.wizard.audience_picked'),
             __('partner.marketer_campaigns_my.field.platform_sample_qty') => $isProductCampaign ? ($marketerCampaign->platform_sample_qty_snapshot ?? 0) : null,

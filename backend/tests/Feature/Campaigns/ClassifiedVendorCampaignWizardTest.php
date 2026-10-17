@@ -93,6 +93,25 @@ class ClassifiedVendorCampaignWizardTest extends TestCase
         $this->assertSame(0, MarketerCampaign::where('classified_listing_id', $listing->id)->count());
     }
 
+    public function test_the_classified_budget_is_optional_with_an_end_date_and_must_exceed_the_influencers(): void
+    {
+        V::defaults($this->s->country, 'classified', influencerFixed: 500);
+        $listing = V::classifiedListing($this->s);
+        $influencer = F::influencer($this->s);
+        $this->actingAs($this->vendorAdmin, 'vendor');
+        $payload = ['classified_listing_id' => $listing->id, 'marketer_ids' => [$influencer->id]];
+
+        $this->post(route('partner.marketer-campaigns.store'), $payload + ['max_commission_budget' => 500])->assertSessionHasErrors('max_commission_budget');
+        $this->post(route('partner.marketer-campaigns.store'), $payload)->assertSessionHasErrors('ends_at');
+        $this->assertSame(0, MarketerCampaign::where('classified_listing_id', $listing->id)->count());
+
+        $this->post(route('partner.marketer-campaigns.store'), $payload + ['ends_at' => now()->addWeek()->toDateString()])->assertSessionHasNoErrors();
+        $campaign = MarketerCampaign::where('classified_listing_id', $listing->id)->sole();
+        $this->assertEquals(0, $campaign->max_commission_budget);
+        $this->assertEquals(500, $campaign->campaign_subtotal);
+        $this->assertNull($campaign->budgetRemaining());
+    }
+
     public function test_mark_sold_endpoint_requires_a_price_when_a_campaign_is_live_then_records_the_sale(): void
     {
         $listing = V::classifiedListing($this->s);

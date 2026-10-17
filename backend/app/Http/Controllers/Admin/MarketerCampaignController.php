@@ -17,6 +17,7 @@ use App\Services\Marketer\MarketerCommissionCalculator;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
 use App\Services\ReferralCodeResolver;
+use App\Support\Marketer\CampaignBudgetRules;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -268,13 +269,14 @@ class MarketerCampaignController extends Controller
             'country_id' => 'required|uuid|exists:countries,id',
             'currency' => 'required|string|size:3|exists:currencies,code',
             // Max Commission Budget: affiliates / brokers are paid from it per sale, influencers' fixed amounts are
-            // reserved from it. Zero = unlimited (platform-owned campaigns only; a vendor campaign needs a budget).
-            'max_commission_budget' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
+            // reserved from it. Optional: blank / 0 = unlimited, which needs an end date.
+            'max_commission_budget' => CampaignBudgetRules::budgetRules(),
             'open_to_affiliates' => 'nullable|boolean',
-            'ends_at' => 'nullable|date|after:now',
+            'ends_at' => CampaignBudgetRules::endsAtRules($request, after: 'after:now'),
             'title' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
-        ]);
+        ], CampaignBudgetRules::endsAtMessages());
+        $data['max_commission_budget'] = (float) ($data['max_commission_budget'] ?? 0);
 
         try {
             if (! empty($data['admin_listing_id'])) {

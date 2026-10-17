@@ -40,7 +40,11 @@
     </div>
 </div>
 
-<form method="POST" action="{{ $action }}" x-data="campaignCreateForm(@js(['vertical' => $v, 'quote' => $quote, 'quoteUrl' => $quoteUrl, 'quoteParams' => $quoteParams, 'openAffiliates' => (bool) old('open_to_affiliates'), 'budget' => old('max_commission_budget', '')]))">
+<form method="POST" action="{{ $action }}" x-data="campaignCreateForm(@js(['vertical' => $v, 'quote' => $quote, 'quoteUrl' => $quoteUrl, 'quoteParams' => $quoteParams, 'openAffiliates' => (bool) old('open_to_affiliates'), 'budget' => old('max_commission_budget', ''), 'endsAt' => old('ends_at', ''), 'today' => now()->toDateString(),
+    'i18n' => [
+        'tooSmall' => __('marketer_campaigns.wizard.budget_must_exceed', ['fixed' => ':fixed', 'budget' => ':budget', 'shortfall' => ':shortfall']),
+        'unlimitedUntil' => __('marketer_campaigns.summary.unlimited_until', ['date' => ':date']),
+    ]]))" @submit="guardSubmit($event)">
     @csrf
     @foreach($itemInputs as $name => $value)
         <input type="hidden" name="{{ $name }}" value="{{ $value }}">
@@ -107,7 +111,7 @@
             <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
                 <label class="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" name="open_to_affiliates" value="1" class="mt-1 rounded border-gray-300 text-blue-600"
-                           x-model="openAffiliates" @change="refreshQuote()" @checked(old('open_to_affiliates'))>
+                           x-model="openAffiliates" @change="pending = true; refreshQuote()" @checked(old('open_to_affiliates'))>
                     <span class="text-sm text-blue-900">
                         <span class="font-semibold">{{ __('marketer_campaigns.wizard.open_title') }}</span>
                         <span class="block text-xs mt-1">{{ __('marketer_campaigns.vertical.'.$v.'.open_desc', ['count' => $affiliateCount]) }}</span>
@@ -134,22 +138,42 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1" for="max_commission_budget">
                     {{ __('partner.marketer_campaigns.max_commission_budget_label') }}
                     <span class="text-xs text-gray-400">({{ $ccy }})</span>
+                    <span class="text-xs font-normal text-gray-500">{{ __('marketer_campaigns.wizard.budget_label_hint') }}</span>
                 </label>
-                <input type="number" id="max_commission_budget" name="max_commission_budget" min="0.01" step="0.01" required
-                       x-model.debounce.400ms="budget" @input.debounce.400ms="refreshQuote()"
+                <input type="number" id="max_commission_budget" name="max_commission_budget" min="0" step="0.01"
+                       x-model.debounce.400ms="budget" @input="pending = true" @input.debounce.400ms="refreshQuote()"
                        value="{{ old('max_commission_budget') }}"
-                       class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40"
+                       :class="budgetTooSmall ? 'border-red-400 focus:ring-red-300/50' : 'border-gray-200 focus:ring-purple-400/40'"
+                       class="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2"
                        placeholder="{{ __('marketer_campaigns.wizard.budget_placeholder') }}">
                 <p class="mt-1 text-xs text-gray-500">{{ __('marketer_campaigns.wizard.budget_help') }}</p>
+                @error('max_commission_budget')
+                    <p class="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{{ $message }}</p>
+                @enderror
+                <p x-show="budgetTooSmall" x-cloak class="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" data-testid="budget-must-exceed" x-text="tooSmallMessage"></p>
+                <p x-show="unlimited" x-cloak class="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800" data-testid="budget-unlimited-hint">
+                    <i class="fas fa-infinity me-1"></i>{{ __('marketer_campaigns.wizard.budget_unlimited_hint') }}
+                </p>
+                <p x-show="unlimited && openAffiliates" x-cloak class="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900" data-testid="unlimited-affiliates-warning">
+                    <i class="fas fa-triangle-exclamation me-1"></i>{{ __('marketer_campaigns.wizard.unlimited_affiliates_warning') }}
+                </p>
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1" for="ends_at">
-                    {{ __('marketer_campaigns.wizard.ends_at_label') }}
+                    <span x-show="!unlimited">{{ __('marketer_campaigns.wizard.ends_at_label') }}</span>
+                    <span x-show="unlimited" x-cloak>{{ __('marketer_campaigns.wizard.ends_at_label_required') }} <span class="text-red-500">*</span></span>
                 </label>
                 <input type="date" id="ends_at" name="ends_at" min="{{ now()->addDay()->toDateString() }}" value="{{ old('ends_at') }}"
-                       class="w-full sm:w-64 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40">
-                <p class="mt-1 text-xs text-gray-500">{{ __('marketer_campaigns.wizard.ends_at_help') }}</p>
+                       x-model="endsAt" :required="unlimited"
+                       :class="unlimited && !endsAtValid ? 'border-red-400' : 'border-gray-200'"
+                       class="w-full sm:w-64 border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40">
+                <p class="mt-1 text-xs text-gray-500" x-show="!unlimited">{{ __('marketer_campaigns.wizard.ends_at_help') }}</p>
+                <p class="mt-1 text-xs text-blue-700" x-show="unlimited" x-cloak>{{ __('marketer_campaigns.wizard.ends_at_required_hint') }}</p>
+                <p class="mt-1 text-xs text-red-600" x-show="unlimited && !endsAtValid" x-cloak data-testid="end-date-required">{{ __('marketer_campaigns.wizard.ends_at_required_inline') }}</p>
+                @error('ends_at')
+                    <p class="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-800">
@@ -255,22 +279,25 @@
                 <div class="py-3">
                     <div class="flex items-center justify-between gap-2">
                         <dt class="font-medium text-gray-800">{{ __('marketer_campaigns.summary.remaining') }}</dt>
-                        <dd class="font-semibold" :class="quote.fits_budget ? 'text-blue-700' : 'text-red-600'" data-testid="quote-remaining" x-text="money(quote.remaining_budget)"></dd>
+                        <dd class="font-semibold" :class="budgetTooSmall ? 'text-red-600' : 'text-blue-700'" data-testid="quote-remaining" x-text="remainingText"></dd>
                     </div>
-                    <div class="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden" x-show="Number(quote.budget) > 0">
+                    <p x-show="unlimited" x-cloak class="mt-1 text-xs font-medium text-blue-700" data-testid="quote-unlimited-until" x-text="unlimitedUntilText"></p>
+                    <div class="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden" x-show="!unlimited">
                         <div class="h-full bg-purple-500" :style="'width:' + fixedPct + '%'"></div>
                     </div>
                     <p class="mt-1.5 text-[11px] text-gray-400">{{ __('marketer_campaigns.summary.remaining_help_'.$v) }}</p>
-                    <p x-show="!quote.fits_budget" x-cloak class="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" data-testid="budget-too-small">
-                        {{ __('marketer_campaigns.summary.exceeds_budget') }}
-                    </p>
+                    <p x-show="budgetTooSmall" x-cloak class="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" data-testid="budget-too-small" x-text="tooSmallMessage"></p>
                 </div>
 
                 <div class="py-3">
                     <div class="flex items-center justify-between gap-2">
-                        <dt class="font-medium text-gray-800">{{ __('marketer_campaigns.summary.budget') }}</dt>
+                        <dt class="font-medium text-gray-800">
+                            <span x-show="!unlimited">{{ __('marketer_campaigns.summary.budget') }}</span>
+                            <span x-show="unlimited" x-cloak>{{ __('marketer_campaigns.summary.budget_unlimited') }}</span>
+                        </dt>
                         <dd class="font-semibold text-gray-900" data-testid="quote-subtotal" x-text="money(quote.campaign_subtotal)"></dd>
                     </div>
+                    <p x-show="unlimited" x-cloak class="mt-1.5 text-[11px] text-gray-400">{{ __('marketer_campaigns.summary.unlimited_base_note') }}</p>
                 </div>
 
                 <div class="py-3 bg-orange-50/40 -mx-5 px-5">
@@ -303,7 +330,7 @@
         </div>
 
         <div class="flex gap-3">
-            <button type="submit" x-bind:disabled="stockBlocked || !quote.fits_budget" class="flex-1 disabled:opacity-50 disabled:cursor-not-allowed bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
+            <button type="submit" x-bind:disabled="!canSubmit" data-testid="campaign-submit" class="flex-1 disabled:opacity-50 disabled:cursor-not-allowed bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
                 {{ $submitLabel ?? __('partner.marketer_campaigns.create_btn') }}
             </button>
             <a href="{{ $cancelUrl }}" class="border border-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-xl text-sm hover:bg-gray-50">
@@ -324,6 +351,8 @@
                 selectedMarketers: [],
                 openAffiliates: cfg.openAffiliates,
                 budget: cfg.budget,
+                endsAt: cfg.endsAt || '',
+                pending: false,
                 quote: cfg.quote,
                 selectedAdTypes: [],
                 get isProduct() { return this.vertical === 'product'; },
@@ -347,6 +376,41 @@
                     return this.isProduct && this.stockLeft < Number(this.quote.stock_min || 0);
                 },
                 get currency() { return this.quote.currency || ''; },
+                // Blank or 0 = unlimited: only the end date stops the campaign.
+                get unlimited() { return !(Number(this.budget) > 0); },
+                get fixedTotal() { return Number(this.quote.influencer_fixed_total || 0); },
+                // The budget must be STRICTLY greater than the influencers' fixed total.
+                get budgetTooSmall() {
+                    return !this.unlimited && Math.round((Number(this.budget) - this.fixedTotal) * 100) <= 0;
+                },
+                get shortfall() {
+                    return Math.round((Math.max(0, this.fixedTotal - Number(this.budget)) + 0.01) * 100) / 100;
+                },
+                get tooSmallMessage() {
+                    return cfg.i18n.tooSmall
+                        .replace(':fixed', this.money(this.fixedTotal))
+                        .replace(':budget', this.money(this.budget))
+                        .replace(':shortfall', this.money(this.shortfall));
+                },
+                get endsAtValid() { return !!this.endsAt && this.endsAt > cfg.today; },
+                get remainingText() {
+                    if (this.unlimited) { return @js(__('marketer_campaigns.summary.unlimited')); }
+                    return this.money(Math.max(0, Number(this.quote.remaining_budget || 0)));
+                },
+                get unlimitedUntilText() {
+                    return this.endsAtValid
+                        ? cfg.i18n.unlimitedUntil.replace(':date', this.endsAt.replaceAll('-', '/'))
+                        : @js(__('marketer_campaigns.summary.unlimited_no_date'));
+                },
+                get canSubmit() {
+                    return !this.stockBlocked && !this.pending && !this.budgetTooSmall && !(this.unlimited && !this.endsAtValid);
+                },
+                // Enter-key submits bypass the disabled button, so the form itself is guarded too.
+                guardSubmit(event) {
+                    if (!this.canSubmit) {
+                        event.preventDefault();
+                    }
+                },
                 get hasInfluencers() {
                     return this.selectedMarketers.some(m => m.type === 'influencer');
                 },
@@ -388,6 +452,7 @@
                     }
                 },
                 updateSelectedMarketers(event) {
+                    this.pending = true;
                     const select = event.target;
                     this.selectedMarketers = Array.from(select.selectedOptions || []).map(opt => ({
                         id: opt.value,
@@ -418,6 +483,8 @@
                         }
                     } catch (e) {
                         console.error('Failed to fetch campaign quote', e);
+                    } finally {
+                        this.pending = false;
                     }
                 },
                 init() {

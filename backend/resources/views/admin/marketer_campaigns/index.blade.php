@@ -116,7 +116,7 @@
                         <td class="py-2 pr-4">{{ $marketerName }}</td>
                         <td class="py-2 pr-4">{{ $productName }}</td>
                         <td class="py-2 pr-4">{{ $campaign->country?->name_en ?? '—' }}</td>
-                        <td class="py-2 pr-4">{{ (float) $campaign->max_commission_budget > 0 ? \App\Support\Money::format($campaign->max_commission_budget).' '.$campaign->currency : __('marketer_campaigns.cost.unlimited') }}</td>
+                        <td class="py-2 pr-4">{{ $campaign->budgetLabel() }}</td>
                         <td class="py-2 pr-4">
                             <x-badge :color="$statusColors[$campaign->status] ?? 'gray'">
                                 {{ __('admin.marketer_campaigns.status_' . $campaign->status) }}

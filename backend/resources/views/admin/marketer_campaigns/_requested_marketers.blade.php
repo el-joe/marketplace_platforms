@@ -24,7 +24,7 @@
                 <div class="rounded-lg border border-gray-200 p-3">
                     <div class="text-xs text-gray-500 mb-1">{{ __('marketer_campaigns.summary.influencers_fixed') }}</div>
                     <div class="font-semibold text-purple-700">{{ \App\Support\Money::format($requestedQuote['influencer_fixed_total']) }} {{ $currency }}</div>
-                    <div class="text-[11px] text-gray-500">{{ __('marketer_campaigns.summary.remaining') }}: {{ \App\Support\Money::format($requestedQuote['remaining_budget']) }}</div>
+                    <div class="text-[11px] text-gray-500">{{ __('marketer_campaigns.summary.remaining') }}: {{ $requestedQuote['remaining_budget'] === null ? __('marketer_campaigns.summary.unlimited') : \App\Support\Money::format(max(0, $requestedQuote['remaining_budget'])) }}</div>
                 </div>
                 <div class="rounded-lg border border-gray-200 p-3" data-testid="requested-grand-total">
                     <div class="text-xs text-gray-500 mb-1">{{ __('marketer_campaigns.summary.grand_total') }}</div>

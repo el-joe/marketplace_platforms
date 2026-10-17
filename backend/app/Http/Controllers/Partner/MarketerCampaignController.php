@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Partner;
 
+use App\Enums\ClassifiedListingStatus;
+use App\Enums\MarketerType;
 use App\Http\Controllers\Controller;
 use App\Models\ClassifiedListing;
 use App\Models\Marketer;
@@ -12,15 +14,14 @@ use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
-use App\Services\MarketerCampaignQuoteService;
 use App\Services\Marketer\CampaignWizardService;
 use App\Services\Marketer\MarketerCommissionCalculator;
+use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
 use App\Services\MarketingFeeReportService;
+use App\Support\Marketer\CampaignBudgetRules;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSubject;
-use App\Enums\MarketerType;
-use App\Enums\CommissionVertical;
 use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -120,7 +121,7 @@ class MarketerCampaignController extends Controller
     public function createClassified(ClassifiedListing $classifiedListing)
     {
         abort_unless((string) $classifiedListing->seller_id === (string) $this->vendorId() && $classifiedListing->is_vendor_listing, 403);
-        abort_unless($classifiedListing->status === \App\Enums\ClassifiedListingStatus::Active && ! $classifiedListing->isExpired(), 403, __('marketer_campaigns.errors.classified_not_active'));
+        abort_unless($classifiedListing->status === ClassifiedListingStatus::Active && ! $classifiedListing->isExpired(), 403, __('marketer_campaigns.errors.classified_not_active'));
 
         $classifiedListing->load('images');
         $subject = CampaignSubject::of($classifiedListing);
@@ -172,15 +173,16 @@ class MarketerCampaignController extends Controller
         $request->validate([
             'vendor_listing_id' => ['nullable', 'required_without:classified_listing_id', 'uuid', 'exists:vendor_listings,id'],
             'classified_listing_id' => ['nullable', 'required_without:vendor_listing_id', 'uuid', 'exists:classified_listings,id'],
-            'max_commission_budget' => ['required', 'numeric', 'min:0.01', 'max:999999999', 'decimal:0,2'],
-            'ends_at' => ['nullable', 'date', 'after:today'],
+            // Optional: blank / 0 = unlimited (then the end date is required); a given budget must exceed the influencers' total.
+            'max_commission_budget' => CampaignBudgetRules::budgetRules(),
+            'ends_at' => CampaignBudgetRules::endsAtRules($request),
             'marketer_ids' => ['nullable', 'array'],
             'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
             'open_to_affiliates' => ['nullable', 'boolean'],
             'selected_ad_types' => ['nullable', 'array'],
             'selected_ad_types.*' => ['string', 'in:story,post,video'],
             'vendor_ad_notes' => ['nullable', 'string', 'max:2000'],
-        ]);
+        ], CampaignBudgetRules::endsAtMessages());
 
         $subject = $this->ownedSubject($request->input('vendor_listing_id'), $request->input('classified_listing_id'));
 
@@ -287,16 +289,20 @@ class MarketerCampaignController extends Controller
         $data = $request->validate([
             'title' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'max_commission_budget' => ['nullable', 'numeric', 'min:0.01', 'max:999999999', 'decimal:0,2'],
-            'ends_at' => ['nullable', 'date', 'after:today'],
+            'max_commission_budget' => CampaignBudgetRules::budgetRules(),
+            'ends_at' => $request->has('max_commission_budget')
+                ? CampaignBudgetRules::endsAtRules($request)
+                : ['nullable', 'date', 'after:today'],
             'selected_ad_types' => ['nullable', 'array'],
             'selected_ad_types.*' => ['string', 'in:story,post,video'],
             'vendor_ad_notes' => ['nullable', 'string', 'max:2000'],
-        ]);
+        ], CampaignBudgetRules::endsAtMessages());
         $data['ends_at'] = $request->filled('ends_at') ? Carbon::parse($data['ends_at'])->endOfDay() : null;
 
         try {
             $this->marketerCampaignService->updateCampaign($marketerCampaign, $data);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return back()->withInput()->with('error', __('partner.marketer_campaigns.update_failed', ['error' => $e->getMessage()]));
         }
@@ -465,7 +471,7 @@ class MarketerCampaignController extends Controller
             'name' => $m->name,
             'email' => $m->email,
             'marketer_type' => $m->marketerJobs->first()?->key,
-            'type_label' => $m->marketerJobs->first() ? \App\Enums\MarketerType::tryFrom($m->marketerJobs->first()->key)?->labelBilingual()['ar'] : null,
+            'type_label' => $m->marketerJobs->first() ? MarketerType::tryFrom($m->marketerJobs->first()->key)?->labelBilingual()['ar'] : null,
         ]));
     }
 

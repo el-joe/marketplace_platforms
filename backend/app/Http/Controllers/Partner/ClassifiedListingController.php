@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers\Partner;
 
-use App\Support\Money;
 use App\Enums\ClassifiedListingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
 use App\Models\Country;
+use App\Models\MarketerCampaign;
 use App\Models\Vendor;
 use App\Notifications\Admin\NewClassifiedListingPendingReview;
+use App\Services\Marketer\ClassifiedSaleService;
 use App\Services\Shared\ClassifiedListingService;
 use App\Services\Vendor\CategoryContractService;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -358,7 +361,7 @@ class ClassifiedListingController extends Controller
                 $data['buyer_note'] ?? null,
                 $data['marketer_id'] ?? null,
             );
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => collect($e->errors())->flatten()->first(), 'errors' => $e->errors()], 422);
         }
 
@@ -372,7 +375,7 @@ class ClassifiedListingController extends Controller
 
         try {
             app(ClassifiedListingService::class)->unmarkSold($listing);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => collect($e->errors())->flatten()->first(), 'errors' => $e->errors()], 422);
         }
 
@@ -386,9 +389,9 @@ class ClassifiedListingController extends Controller
     public function saleContext(string $id): JsonResponse
     {
         $listing = $this->ownedListing($id);
-        $sales = app(\App\Services\Marketer\ClassifiedSaleService::class);
+        $sales = app(ClassifiedSaleService::class);
         $live = $sales->liveCampaign($listing);
-        $latest = $live ?? \App\Models\MarketerCampaign::where('classified_listing_id', $listing->id)->latest()->first();
+        $latest = $live ?? MarketerCampaign::where('classified_listing_id', $listing->id)->latest()->first();
         $canCreate = auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.create');
 
         return response()->json(['data' => [
@@ -404,6 +407,7 @@ class ClassifiedListingController extends Controller
                 'status_label' => __('partner.marketer_campaigns_my.status.'.$latest->status),
                 'url' => route('partner.marketer-campaigns.show', $latest->id),
                 'budget' => (float) $latest->max_commission_budget,
+                'budget_label' => $latest->budgetLabel(false),
                 'used' => $latest->budgetUsed(),
             ] : null,
             'marketers' => $live ? $sales->creditableMarketers($live)->all() : [],

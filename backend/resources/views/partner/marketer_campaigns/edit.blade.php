@@ -55,11 +55,13 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     {{ __('partner.marketer_campaigns.max_commission_budget_label') }}
                     <span class="text-xs text-gray-400">({{ $marketerCampaign->currency }})</span>
+                    <span class="text-xs font-normal text-gray-500">{{ __('marketer_campaigns.wizard.budget_label_hint') }}</span>
                 </label>
-                <input type="number" name="max_commission_budget" min="0.01" step="0.01" value="{{ old('max_commission_budget', $marketerCampaign->max_commission_budget) }}"
+                <input type="number" name="max_commission_budget" min="0" step="0.01" value="{{ old('max_commission_budget', (float) $marketerCampaign->max_commission_budget > 0 ? $marketerCampaign->max_commission_budget : '') }}"
                        @disabled($marketerCampaign->status !== 'pending_admin')
                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40 disabled:bg-gray-50 disabled:text-gray-400"
-                       placeholder="0">
+                       placeholder="{{ __('marketer_campaigns.summary.unlimited') }}">
+                @error('max_commission_budget')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 <p class="mt-1 text-xs text-gray-500">{{ __('marketer_campaigns.wizard.budget_edit_help', ['fixed' => \App\Support\Money::format($marketerCampaign->influencer_fixed_reserved).' '.$marketerCampaign->currency]) }}</p>
             </div>
 
@@ -71,6 +73,7 @@
                 <input type="date" id="ends_at" name="ends_at" min="{{ now()->addDay()->toDateString() }}" value="{{ old('ends_at', $marketerCampaign->ends_at?->toDateString()) }}"
                        class="w-full sm:w-64 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40">
                 <p class="mt-1 text-xs text-gray-500">{{ __('marketer_campaigns.wizard.ends_at_help') }}</p>
+                @error('ends_at')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 
             <div class="space-y-4">

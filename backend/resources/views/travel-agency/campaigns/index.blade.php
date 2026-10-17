@@ -92,7 +92,7 @@
                         <tr>
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $campaign->title ?: __('travel.campaigns.untitled', ['trip' => $tripTitle]) }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $tripTitle ?: '—' }}</td>
-                            <td class="px-4 py-3 text-gray-700">{{ \App\Support\Money::format($campaign->max_commission_budget) }} {{ $campaign->currency }}</td>
+                            <td class="px-4 py-3 text-gray-700">{{ $campaign->budgetLabel() }}</td>
                             <td class="px-4 py-3 text-gray-700">{{ \App\Support\Money::format($campaign->budgetUsed()) }} {{ $campaign->currency }}</td>
                             <td class="px-4 py-3 text-gray-700">{{ $campaign->invitations_count }}</td>
                             <td class="px-4 py-3">

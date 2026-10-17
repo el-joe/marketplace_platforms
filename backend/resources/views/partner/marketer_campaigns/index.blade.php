@@ -98,7 +98,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $campaign->getPromotedTitle() }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $campaign->country?->name_ar ?? $campaign->country?->name_en ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ \App\Support\Money::format($campaign->max_commission_budget) }} {{ $campaign->currency }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $campaign->budgetLabel() }}</td>
                             <td class="px-4 py-3 text-gray-600" data-testid="campaign-grand-total">
                                 @if ($campaign->campaign_grand_total !== null)
                                     {{ \App\Support\Money::format($campaign->campaign_grand_total) }} {{ $campaign->currency }}
