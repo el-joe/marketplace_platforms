@@ -47,6 +47,21 @@ class JoinService
     }
 
     /**
+     * The landing page a chosen section opens after being validated.
+     *
+     * @return string named route
+     */
+    public function sectionLandingRoute(string $section): string
+    {
+        return match ($section) {
+            JoinSection::ProductVendor->value => 'portal.vendors',
+            JoinSection::ClassifiedVendor->value => 'portal.companies',
+            JoinSection::Marketer->value => 'portal.marketers',
+            default => 'portal.join',
+        };
+    }
+
+    /**
      * Active classified specializations a company/broker may operate under.
      *
      * Classified categories are not country-scoped in the current data model
@@ -90,7 +105,7 @@ class JoinService
      * shape. Throws a ValidationException for any invalid or unavailable choice.
      *
      * @param  array<string, mixed>  $input
-     * @return array{country_id: string, section: string, classified_category_id: ?string, marketer_type: ?string}
+     * @return array{country_id: string, section: string, classified_category_id: ?string, marketer_type: ?string, entity_type: ?string}
      */
     public function validate(array $input): array
     {
@@ -106,6 +121,11 @@ class JoinService
                 'string',
                 Rule::exists('classified_categories', 'id')->where('is_active', true),
             ],
+            'entity_type' => [
+                'nullable',
+                'string',
+                Rule::in(['company', 'broker']),
+            ],
             'marketer_type' => [
                 'nullable',
                 'string',
@@ -115,6 +135,7 @@ class JoinService
             'country_id.exists' => __('portal.join.country_unavailable'),
             'section.in' => __('portal.join.section_invalid'),
             'classified_category_id.exists' => __('portal.join.category_unavailable'),
+            'entity_type.in' => __('portal.join.entity_type_invalid'),
             'marketer_type.in' => __('portal.join.marketer_type_invalid'),
         ]);
 
@@ -123,6 +144,10 @@ class JoinService
 
             if ($section === JoinSection::ClassifiedVendor->value && empty($input['classified_category_id'])) {
                 $validator->errors()->add('classified_category_id', __('portal.join.category_required'));
+            }
+
+            if ($section === JoinSection::ClassifiedVendor->value && empty($input['entity_type'])) {
+                $validator->errors()->add('entity_type', __('portal.join.entity_type_required'));
             }
 
             if ($section === JoinSection::Marketer->value && empty($input['marketer_type'])) {
@@ -136,6 +161,7 @@ class JoinService
             'country_id' => $validated['country_id'],
             'section' => $validated['section'],
             'classified_category_id' => $validated['classified_category_id'] ?? null,
+            'entity_type' => $validated['entity_type'] ?? null,
             'marketer_type' => $validated['marketer_type'] ?? null,
         ];
     }
@@ -179,6 +205,15 @@ class JoinService
     }
 
     /**
+     * Persist just the section chosen on the first screen, keeping any other
+     * previously stored join fields intact.
+     */
+    public function storeSection(string $section): void
+    {
+        session([self::SESSION_KEY => array_merge($this->currentSelection(), ['section' => $section])]);
+    }
+
+    /**
      * Persist the validated selection in the session, both as the join
      * selection and as a non-destructive prefill for the product vendor wizard.
      *
@@ -186,7 +221,7 @@ class JoinService
      */
     public function storeSelection(array $validated): void
     {
-        session([self::SESSION_KEY => $validated]);
+        session([self::SESSION_KEY => array_merge($this->currentSelection(), $validated)]);
 
         if ($validated['section'] !== JoinSection::ProductVendor->value) {
             return;

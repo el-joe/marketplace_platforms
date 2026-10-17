@@ -41,7 +41,10 @@
             :class="errors.country_id ? 'border-red-500 focus:border-red-400' : 'border-gray-700 focus:border-[#feee00]'">
             <option value="">{{ portal_content('register', 'step_1', 'country_placeholder', '— Select Country —', '— اختر الدولة —') }}</option>
             @foreach($countries as $country)
-                <option value="{{ $country->id }}">{{ $country->flag_emoji }} {{ $isAr ? $country->name_ar : ($country->name_en ?? $country->name_ar) }}</option>
+                <option value="{{ $country->id }}"
+                    @selected(old('country_id', $savedData['step1']['country_id'] ?? '') === $country->id)>
+                    {{ $country->flag_emoji }} {{ $isAr ? $country->name_ar : ($country->name_en ?? $country->name_ar) }}
+                </option>
             @endforeach
         </select>
         <p x-show="errors.country_id" x-text="errors.country_id?.[0]" class="mt-1 text-xs text-red-400" x-cloak></p>

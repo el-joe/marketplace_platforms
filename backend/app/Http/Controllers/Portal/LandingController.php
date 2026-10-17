@@ -13,6 +13,15 @@ class LandingController extends Controller
         return view('portal.home');
     }
 
+    /**
+     * Product-seller section landing page. Reuses the legacy portal home
+     * content untouched; reached only after choosing the product seller section.
+     */
+    public function vendors(): View
+    {
+        return view('portal.home');
+    }
+
     public function faq(): View
     {
         return view('portal.faq');

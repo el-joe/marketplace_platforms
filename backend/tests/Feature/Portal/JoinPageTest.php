@@ -38,56 +38,57 @@ class JoinPageTest extends TestCase
         ]);
     }
 
-    public function test_join_page_renders_live_countries_and_sections(): void
+    // ── First screen: section choice only ─────────────────────────────────
+
+    public function test_join_page_shows_only_the_three_sections(): void
     {
-        $country = $this->activeCountry();
+        $category = $this->activeClassifiedCategory();
 
         $response = $this->get(route('portal.join'));
 
         $response->assertOk();
-        $response->assertSee($country->name_ar);
         $response->assertSee('بائع منتجات');
         $response->assertSee('شركات تخصصية ووسطاء');
         $response->assertSee('مشاهير ومؤثرون ومسوقون بالعمولة');
+
+        // No country or specialization pickers on the first screen.
+        $response->assertDontSee($category->name_ar);
+        $response->assertDontSee('name="country_id"', false);
+        $response->assertDontSee('name="classified_category_id"', false);
     }
 
-    public function test_product_vendor_is_routed_to_existing_register_wizard(): void
+    public function test_home_redirects_to_the_section_selection_page(): void
     {
-        $country = $this->activeCountry();
+        $this->get(route('portal.home'))->assertRedirect(route('portal.join'));
+    }
 
-        $response = $this->post(route('portal.join.continue'), [
-            'country_id' => $country->id,
-            'section' => 'product_vendor',
-        ]);
+    public function test_product_vendor_section_opens_the_legacy_seller_landing(): void
+    {
+        $response = $this->post(route('portal.join.select'), ['section' => 'product_vendor']);
 
-        $response->assertRedirect(route('portal.register'));
+        $response->assertRedirect(route('portal.vendors'));
         $response->assertSessionHas('join.selection.section', 'product_vendor');
-        $response->assertSessionHas('reg_data.step1.country_id', $country->id);
     }
 
-    public function test_marketer_is_routed_to_marketer_register_with_type_and_country(): void
+    public function test_classified_vendor_section_opens_the_companies_landing(): void
     {
-        $country = $this->activeCountry();
-        $this->activeMarketerJob('affiliate');
+        $response = $this->post(route('portal.join.select'), ['section' => 'classified_vendor']);
 
-        $response = $this->post(route('portal.join.continue'), [
-            'country_id' => $country->id,
-            'section' => 'marketer',
-            'marketer_type' => 'affiliate',
-        ]);
+        $response->assertRedirect(route('portal.companies'));
+        $response->assertSessionHas('join.selection.section', 'classified_vendor');
+    }
 
-        $response->assertRedirect(route('marketer.register', [
-            'type' => 'affiliate',
-            'country_id' => $country->id,
-        ]));
+    public function test_marketer_section_opens_the_marketers_landing(): void
+    {
+        $response = $this->post(route('portal.join.select'), ['section' => 'marketer']);
+
+        $response->assertRedirect(route('portal.marketers'));
+        $response->assertSessionHas('join.selection.section', 'marketer');
     }
 
     public function test_invalid_section_is_rejected_server_side(): void
     {
-        $country = $this->activeCountry();
-
-        $response = $this->from(route('portal.join'))->post(route('portal.join.continue'), [
-            'country_id' => $country->id,
+        $response = $this->from(route('portal.join'))->post(route('portal.join.select'), [
             'section' => 'not_a_section',
         ]);
 
@@ -95,56 +96,87 @@ class JoinPageTest extends TestCase
         $response->assertSessionHasErrors('section');
     }
 
-    public function test_inactive_country_is_rejected(): void
+    // ── Product vendor landing ────────────────────────────────────────────
+
+    public function test_vendors_landing_reuses_legacy_content_and_links_to_register(): void
     {
-        $country = Country::factory()->create(['is_active' => false]);
+        $response = $this->get(route('portal.vendors'));
 
-        $response = $this->from(route('portal.join'))->post(route('portal.join.continue'), [
-            'country_id' => $country->id,
-            'section' => 'product_vendor',
-        ]);
-
-        $response->assertSessionHasErrors('country_id');
+        $response->assertOk();
+        $response->assertSee('بيع على ناوي');
+        $response->assertSee(route('portal.register'), false);
     }
 
-    public function test_classified_vendor_requires_an_active_specialization(): void
+    // ── Companies & brokers landing ───────────────────────────────────────
+
+    public function test_companies_landing_lists_active_specializations_only(): void
     {
-        $country = $this->activeCountry();
-
-        $missing = $this->from(route('portal.join'))->post(route('portal.join.continue'), [
-            'country_id' => $country->id,
-            'section' => 'classified_vendor',
-        ]);
-        $missing->assertSessionHasErrors('classified_category_id');
-
-        $inactive = ClassifiedCategory::create([
+        $active = $this->activeClassifiedCategory();
+        ClassifiedCategory::create([
             'name_ar' => 'غير متاح',
             'name_en' => 'Inactive',
             'slug' => 'inactive',
             'is_active' => false,
         ]);
-        $rejected = $this->from(route('portal.join'))->post(route('portal.join.continue'), [
-            'country_id' => $country->id,
-            'section' => 'classified_vendor',
-            'classified_category_id' => $inactive->id,
-        ]);
-        $rejected->assertSessionHasErrors('classified_category_id');
+
+        $response = $this->get(route('portal.companies'));
+
+        $response->assertOk();
+        $response->assertSee($active->name_ar);
+        $response->assertDontSee('غير متاح');
+        // Not the seller wizard.
+        $response->assertSee('شركة تخصصية');
+        $response->assertSee('وسيط');
     }
 
-    public function test_classified_vendor_is_held_until_its_flow_is_ready(): void
+    public function test_classified_vendor_requires_specialization_and_entity_type(): void
     {
         $country = $this->activeCountry();
-        $category = $this->activeClassifiedCategory();
 
-        $response = $this->post(route('portal.join.continue'), [
+        $missing = $this->from(route('portal.companies'))->post(route('portal.join.continue'), [
+            'country_id' => $country->id,
+            'section' => 'classified_vendor',
+        ]);
+        $missing->assertSessionHasErrors(['classified_category_id', 'entity_type']);
+
+        $category = $this->activeClassifiedCategory();
+        $ok = $this->post(route('portal.join.continue'), [
             'country_id' => $country->id,
             'section' => 'classified_vendor',
             'classified_category_id' => $category->id,
+            'entity_type' => 'broker',
+        ]);
+        $ok->assertRedirect(route('portal.companies'));
+        $ok->assertSessionHas('join_status');
+        $ok->assertSessionHas('join.selection.classified_category_id', $category->id);
+        $ok->assertSessionHas('join.selection.entity_type', 'broker');
+    }
+
+    public function test_inactive_country_is_rejected(): void
+    {
+        $country = Country::factory()->create(['is_active' => false]);
+
+        $response = $this->from(route('portal.companies'))->post(route('portal.join.continue'), [
+            'country_id' => $country->id,
+            'section' => 'classified_vendor',
+            'entity_type' => 'company',
         ]);
 
-        $response->assertRedirect(route('portal.join'));
-        $response->assertSessionHas('join_status');
-        $response->assertSessionHas('join.selection.classified_category_id', $category->id);
+        $response->assertSessionHasErrors('country_id');
+    }
+
+    // ── Marketers landing ─────────────────────────────────────────────────
+
+    public function test_marketers_landing_links_each_active_type_to_marketer_register(): void
+    {
+        $this->activeMarketerJob('affiliate');
+        $this->activeMarketerJob('influencer', 2);
+
+        $response = $this->get(route('portal.marketers'));
+
+        $response->assertOk();
+        $response->assertSee(route('marketer.register', ['type' => 'affiliate']), false);
+        $response->assertSee(route('marketer.register', ['type' => 'influencer']), false);
     }
 
     public function test_marketer_type_must_be_an_active_job_key(): void
@@ -152,38 +184,23 @@ class JoinPageTest extends TestCase
         $country = $this->activeCountry();
         $this->activeMarketerJob('affiliate');
 
-        $unknown = $this->from(route('portal.join'))->post(route('portal.join.continue'), [
+        $unknown = $this->from(route('portal.companies'))->post(route('portal.join.continue'), [
             'country_id' => $country->id,
             'section' => 'marketer',
             'marketer_type' => 'does_not_exist',
         ]);
         $unknown->assertSessionHasErrors('marketer_type');
-
-        // Valid enum value, but no active marketer_jobs row backs it.
-        $inactiveJob = $this->from(route('portal.join'))->post(route('portal.join.continue'), [
-            'country_id' => $country->id,
-            'section' => 'marketer',
-            'marketer_type' => 'broker',
-        ]);
-        $inactiveJob->assertSessionHasErrors('marketer_type');
     }
 
-    public function test_options_endpoint_returns_marketer_types_and_rejects_inactive_country(): void
-    {
-        $country = $this->activeCountry();
-        $this->activeMarketerJob('influencer');
-
-        $response = $this->getJson(route('portal.join.options', ['country_id' => $country->id]));
-        $response->assertOk()->assertJsonPath('success', true);
-        $this->assertArrayHasKey('influencer', $response->json('marketer_types'));
-
-        $inactive = Country::factory()->create(['is_active' => false]);
-        $this->getJson(route('portal.join.options', ['country_id' => $inactive->id]))
-            ->assertNotFound();
-    }
+    // ── Backward compatibility ────────────────────────────────────────────
 
     public function test_existing_register_route_still_works(): void
     {
         $this->get(route('portal.register'))->assertOk();
+    }
+
+    public function test_existing_marketer_register_route_still_works(): void
+    {
+        $this->get(route('marketer.register'))->assertOk();
     }
 }

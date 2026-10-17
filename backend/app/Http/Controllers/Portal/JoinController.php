@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Portal;
 
+use App\Enums\JoinSection;
 use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Services\Portal\JoinService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class JoinController extends Controller
@@ -15,17 +17,35 @@ class JoinController extends Controller
     public function __construct(private JoinService $joinService) {}
 
     /**
-     * GET /join — the account-type landing page.
+     * GET /join — the first screen: pick the account section only.
+     *
+     * No country, specialization or registration form is shown here; those
+     * belong to each section's own journey. The cards are plain POST forms so
+     * the choice is validated server-side before the visitor is routed on.
      */
-    public function index(Request $request): View
+    public function index(): View
     {
         return view('portal.join', [
-            'countries' => $this->joinService->countries(),
             'sections' => $this->joinService->sections(),
-            'classifiedCategories' => $this->joinService->classifiedCategories(),
-            'marketerTypes' => $this->joinService->marketerTypes(),
             'selection' => $this->joinService->currentSelection(),
         ]);
+    }
+
+    /**
+     * POST /join/select — validate the section choice server-side, remember it
+     * for the rest of the journey, and hand off to that section's landing page.
+     */
+    public function select(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'section' => ['required', 'string', Rule::in(JoinSection::values())],
+        ], [
+            'section.in' => __('portal.join.section_invalid'),
+        ]);
+
+        $this->joinService->storeSection($validated['section']);
+
+        return redirect()->route($this->joinService->sectionLandingRoute($validated['section']));
     }
 
     /**
@@ -73,7 +93,7 @@ class JoinController extends Controller
         }
 
         return redirect()
-            ->route('portal.join')
+            ->route($this->joinService->sectionLandingRoute($validated['section']))
             ->with('join_status', $destination['message']);
     }
 }
