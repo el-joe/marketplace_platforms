@@ -13,14 +13,15 @@ class CompaniesController extends Controller
     /**
      * GET /companies — landing page for specialized companies and brokers.
      *
-     * Specializations come from the existing classified_categories table and
-     * countries from the existing countries table; no new settings are added.
+     * Specializations come from the existing classified_categories table; the
+     * country is inherited from the portal home page selection rather than
+     * being asked for again here.
      */
     public function index(): View
     {
         return view('portal.companies', [
             'categories' => $this->joinService->classifiedCategories(),
-            'countries' => $this->joinService->countries(),
+            'currentCountry' => $this->joinService->currentCountry(),
             'selection' => $this->joinService->currentSelection(),
         ]);
     }

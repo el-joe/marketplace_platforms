@@ -26,8 +26,7 @@ class JoinController extends Controller
     public function index(): View
     {
         $countries = $this->joinService->selectableCountries();
-        $currentCountry = $countries->firstWhere('site_code', Country::resolveSiteCode(null))
-            ?? $countries->first();
+        $currentCountry = $this->joinService->currentCountry();
 
         return view('portal.join', [
             'sections' => $this->joinService->sections(),

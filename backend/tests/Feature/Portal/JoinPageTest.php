@@ -134,6 +134,25 @@ class JoinPageTest extends TestCase
         $response->assertSee('وسيط');
     }
 
+    public function test_companies_page_inherits_the_home_page_country_without_a_picker(): void
+    {
+        $country = Country::factory()->create([
+            'name_ar' => 'مصر',
+            'name_en' => 'Egypt',
+            'site_code' => 'eg',
+            'iso_code_2' => 'EG',
+            'is_active' => true,
+            'is_launched' => true,
+        ]);
+
+        $response = $this->withSession(['locale' => 'ar', 'portal_country' => 'eg'])
+            ->get(route('portal.companies'));
+
+        $response->assertOk();
+        $response->assertDontSee('companies-country', false);
+        $response->assertSee('name="country_id" value="'.$country->id.'"', false);
+    }
+
     public function test_classified_vendor_requires_specialization_and_entity_type(): void
     {
         $country = $this->activeCountry();
@@ -252,9 +271,9 @@ class JoinPageTest extends TestCase
         $response = $this->get(route('portal.companies'));
 
         $response->assertOk();
-        $response->assertSee(route('portal.companies') . '#how', false);
-        $response->assertSee(route('portal.companies') . '#specializations', false);
-        $response->assertSee(route('portal.companies') . '#register', false);
+        $response->assertSee(route('portal.companies').'#how', false);
+        $response->assertSee(route('portal.companies').'#specializations', false);
+        $response->assertSee(route('portal.companies').'#register', false);
     }
 
     public function test_marketers_page_shows_its_own_section_navigation(): void
@@ -262,8 +281,8 @@ class JoinPageTest extends TestCase
         $response = $this->get(route('portal.marketers'));
 
         $response->assertOk();
-        $response->assertSee(route('portal.marketers') . '#types', false);
-        $response->assertSee(route('portal.marketers') . '#register', false);
+        $response->assertSee(route('portal.marketers').'#types', false);
+        $response->assertSee(route('portal.marketers').'#register', false);
     }
 
     // ── Backward compatibility ────────────────────────────────────────────

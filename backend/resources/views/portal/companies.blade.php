@@ -84,6 +84,7 @@
                 }">
                 @csrf
                 <input type="hidden" name="section" value="classified_vendor">
+                <input type="hidden" name="country_id" value="{{ $currentCountry?->id }}">
 
                 {{-- Company vs broker --}}
                 <fieldset id="how">
@@ -118,22 +119,6 @@
                         </div>
                     @endif
                 </fieldset>
-
-                {{-- Country --}}
-                <div class="mt-10 max-w-2xl">
-                    <label for="companies-country" class="block text-sm font-bold text-white mb-2">
-                        {{ portal_content('companies', 'form', 'country_label', 'Country', 'الدولة') }}
-                    </label>
-                    <select id="companies-country" name="country_id" required
-                        class="w-full bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#feee00]">
-                        <option value="">{{ portal_content('companies', 'form', 'country_placeholder', '— Select Country —', '— اختر الدولة —') }}</option>
-                        @foreach ($countries as $country)
-                            <option value="{{ $country->id }}" @selected(old('country_id', $selection['country_id'] ?? '') === $country->id)>
-                                {{ $country->flag_emoji }} {{ $isAr ? $country->name_ar : ($country->name_en ?? $country->name_ar) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
 
                 <div class="mt-10 max-w-2xl">
                     <button type="submit"
