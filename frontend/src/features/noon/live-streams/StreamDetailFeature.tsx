@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { getStream, postComment, postLike } from './api';
 import { ensureEcho, useLiveStreamViewer, type ConnectionState } from './useLiveStreamViewer';
 import type { LiveStreamDetail, StreamComment } from './types';
+import { getImageURL } from '@/src/helpers/get-image-url';
 
 function getGuestToken(): string {
   if (typeof window === 'undefined') return '';
@@ -234,6 +235,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
   );
 
   const title = stream.title[locale] || stream.title.en;
+  const thumbUrl = stream.thumbnail_url ? getImageURL(stream.thumbnail_url) : null;
 
   return (
     <div className="container py-6 space-y-4">
@@ -271,11 +273,11 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
                   muted
                   playsInline
                   className={hasVideo ? 'w-full h-full object-contain bg-black' : 'absolute h-px w-px opacity-0 pointer-events-none'}
-                  poster={stream.thumbnail_url ?? undefined}
+                  poster={thumbUrl ?? undefined}
                 />
                 {!hasVideo && (
                   <AudioCard
-                    thumbnail={stream.thumbnail_url}
+                    thumbnail={thumbUrl}
                     title={title}
                     connection={connection}
                     viewer={viewer}
@@ -303,8 +305,8 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
                 </Link>
               </div>
             )}
-            {!isLive && !viewerEnded && (stream.thumbnail_url ? (
-              <Image src={stream.thumbnail_url} alt={title} fill className="object-cover" sizes="100vw" />
+            {!isLive && !viewerEnded && (thumbUrl ? (
+              <Image src={thumbUrl} alt={title} fill className="object-cover" sizes="100vw" />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-3">
                 <span className="text-6xl">📹</span>
