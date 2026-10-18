@@ -49,9 +49,9 @@
                 min-height: 0;
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
-                padding-top: 1rem;
-                padding-bottom: 0.25rem;
+                justify-content: space-evenly;
+                padding-top: 1.5rem;
+                padding-bottom: 1.5rem;
             }
 
             #join-page .join-header > div {
@@ -74,8 +74,10 @@
                 margin-top: 0.75rem;
             }
 
+            /* Promote the form's children (cards + button) to direct flex items so
+               space-evenly distributes title, cards and button evenly. */
             #join-page .join-form {
-                margin-top: 1rem;
+                display: contents;
             }
 
             #join-page .join-cards {
@@ -108,7 +110,7 @@
             }
 
             #join-page .join-actions {
-                margin-top: 0.75rem;
+                margin-top: 0;
                 gap: 0.5rem;
             }
 
