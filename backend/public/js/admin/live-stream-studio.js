@@ -359,7 +359,7 @@
   function createPeer(peerId) {
     closePeer(peerId, false);
     const pc = new RTCPeerConnection({ iceServers: ICE.servers });
-    const peer = { pc, pendingIce: [], makingOffer: false, senders: { audio: null, video: null }, disconnectTimer: null };
+    const peer = { pc, pendingIce: [], makingOffer: false, senders: { audio: null, video: null }, stream: new MediaStream(), disconnectTimer: null };
     peers.set(peerId, peer);
 
     pc.onicecandidate = ({ candidate }) => {
@@ -409,15 +409,24 @@
     updateViewerCount();
   }
 
-  /** Make a peer's senders reflect the current tracks. replaceTrack where possible. */
+  /**
+   * Make a peer's senders reflect the current tracks. replaceTrack where possible;
+   * if it fails (or the sender is dead) drop the sender and add a fresh one (renegotiates).
+   * All tracks share ONE MediaStream so the viewer receives audio+video in a single stream.
+   */
   function syncPeer(peer) {
     [['audio', audioTrack], ['video', videoTrack]].forEach(([kind, track]) => {
       const sender = peer.senders[kind];
       if (sender) {
-        if (sender.track !== track) sender.replaceTrack(track || null).catch(() => {});
+        if (sender.track === track) return;
+        sender.replaceTrack(track || null).catch((e) => {
+          console.warn('[studio] replaceTrack failed, renegotiating', kind, e);
+          try { peer.pc.removeTrack(sender); } catch (_) { /* noop */ }
+          peer.senders[kind] = null;
+          if (track) peer.senders[kind] = peer.pc.addTrack(track, peer.stream);
+        });
       } else if (track) {
-        const stream = new MediaStream([track]);
-        peer.senders[kind] = peer.pc.addTrack(track, stream);   // fires negotiationneeded
+        peer.senders[kind] = peer.pc.addTrack(track, peer.stream);   // fires negotiationneeded
       }
     });
   }

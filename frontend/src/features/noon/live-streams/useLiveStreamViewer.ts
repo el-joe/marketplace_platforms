@@ -109,6 +109,7 @@ export function useLiveStreamViewer({ streamId, streamKey, enabled, initialMode 
   const peerId       = useRef('');
   const pcRef        = useRef<RTCPeerConnection | null>(null);
   const remoteIce    = useRef<RTCIceCandidateInit[]>([]);
+  const remoteTracks = useRef<Map<string, MediaStreamTrack>>(new Map()); // kind -> track
   const localIce     = useRef<RTCIceCandidateInit[] | null>(null); // null = offer already sent
   const attempts     = useRef(0);
   const retryTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -133,6 +134,7 @@ export function useLiveStreamViewer({ streamId, streamKey, enabled, initialMode 
     }
     remoteIce.current = [];
     localIce.current = [];
+    remoteTracks.current.clear();
   };
 
   useEffect(() => { setMode(initialMode ?? null); }, [initialMode]);
@@ -154,6 +156,18 @@ export function useLiveStreamViewer({ streamId, streamKey, enabled, initialMode 
     el.volume = volume;
     if (stream) tryPlay();
   }, [stream, muted, volume, tryPlay, mode]);
+
+  // Broadcaster switched mode (e.g. both -> audio): re-attach and restart playback so audio resumes.
+  useEffect(() => {
+    const el = mediaRef.current;
+    if (!el || !el.srcObject) return;
+    const current = el.srcObject;
+    el.srcObject = null;
+    el.srcObject = current;
+    el.muted = muted;
+    tryPlay();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   /** Must be called from a user gesture. Unmutes and starts audio playback. */
   const listen = useCallback(async () => {
@@ -248,8 +262,10 @@ export function useLiveStreamViewer({ streamId, streamKey, enabled, initialMode 
 
       pc.ontrack = (ev) => {
         if (pcRef.current !== pc) return;
-        const ms = ev.streams[0] ?? new MediaStream([ev.track]);
-        setStream(ms);
+        // Audio and video can arrive in separate remote streams; merge them so the
+        // element always carries every live track.
+        remoteTracks.current.set(ev.track.kind, ev.track);
+        setStream(new MediaStream([...remoteTracks.current.values()]));
         if (ev.track.kind === 'video') {
           setVideoActive(!ev.track.muted);
           ev.track.onunmute = () => setVideoActive(true);

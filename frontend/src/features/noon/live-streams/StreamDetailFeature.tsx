@@ -56,6 +56,67 @@ function ConnectionOverlay({
   );
 }
 
+function VolumeIcon({ muted, volume }: { muted: boolean; volume: number }) {
+  const off = muted || volume === 0;
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" />
+      {off ? (
+        <>
+          <line x1="17" y1="9" x2="23" y2="15" />
+          <line x1="23" y1="9" x2="17" y2="15" />
+        </>
+      ) : (
+        <>
+          <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+          {volume > 0.5 && <path d="M18.5 5.5a9 9 0 0 1 0 13" />}
+        </>
+      )}
+    </svg>
+  );
+}
+
+function PlayerControls({
+  viewer, t, onFullscreen, showFullscreen, className = '',
+}: { viewer: Viewer; t: T; onFullscreen?: () => void; showFullscreen?: boolean; className?: string }) {
+  const silent = viewer.muted || viewer.volume === 0;
+  const toggle = () => (viewer.muted ? viewer.listen() : viewer.setMuted(true));
+  const shown = silent ? 0 : viewer.volume;
+  return (
+    <div className={`flex items-center gap-2 rounded-full bg-black/60 backdrop-blur px-2 py-1.5 text-white ${className}`} dir="ltr">
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={silent ? t('unmute') : t('mute')}
+        title={silent ? t('unmute') : t('mute')}
+        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
+      >
+        <VolumeIcon muted={viewer.muted} volume={viewer.volume} />
+      </button>
+      <input
+        type="range" min={0} max={1} step={0.05}
+        value={shown}
+        onChange={e => viewer.setVolume(parseFloat(e.target.value))}
+        aria-label={t('volume')}
+        className="w-20 sm:w-28 accent-white cursor-pointer"
+      />
+      {showFullscreen && (
+        <button
+          type="button"
+          onClick={onFullscreen}
+          aria-label={t('fullscreen')}
+          title={t('fullscreen')}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
+        >
+          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3" />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+}
+
 function AudioCard({
   thumbnail, title, connection, viewer, t,
 }: { thumbnail: string | null; title: string; connection: ConnectionState; viewer: Viewer; t: T }) {
@@ -95,23 +156,7 @@ function AudioCard({
             🔊 {t('tapToListen')}
           </button>
         ) : (
-          <div className="flex items-center gap-3 w-full">
-            <button
-              onClick={() => viewer.setMuted(true)}
-              aria-label={t('mute')}
-              title={t('mute')}
-              className="shrink-0 bg-white/15 hover:bg-white/25 rounded-full w-9 h-9"
-            >
-              🔊
-            </button>
-            <input
-              type="range" min={0} max={1} step={0.05}
-              value={viewer.volume}
-              onChange={e => viewer.setVolume(parseFloat(e.target.value))}
-              aria-label={t('volume')}
-              className="flex-1 accent-white"
-            />
-          </div>
+          <PlayerControls viewer={viewer} t={t} className="w-full max-w-xs justify-center" />
         )}
       </div>
     </div>
@@ -131,6 +176,13 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
   const [submitting, setSubmitting] = useState(false);
 
   const commentsRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
+  const toggleFullscreen = useCallback(() => {
+    const el = playerRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else el.requestFullscreen?.().catch(() => {});
+  }, []);
 
   // ── Load stream data ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -264,7 +316,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
 
         {/* Video column */}
         <div className="lg:col-span-2 space-y-3">
-          <div className="relative aspect-video bg-black rounded-2xl overflow-hidden">
+          <div ref={playerRef} className="relative aspect-video bg-black rounded-2xl overflow-hidden">
             {isLive && !viewerEnded && (
               <>
                 <video
@@ -285,13 +337,24 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
                   />
                 )}
                 <ConnectionOverlay connection={connection} hasVideo={hasVideo} onReconnect={viewer.reconnect} t={t} />
-                {hasVideo && viewer.needsGesture && connection === 'live' && (
-                  <button
-                    onClick={viewer.listen}
-                    className="absolute top-3 end-3 bg-black/70 hover:bg-black/85 text-white text-xs font-semibold px-3 py-1.5 rounded-full"
-                  >
-                    🔇 {t('unmute')}
-                  </button>
+                {hasVideo && connection === 'live' && (
+                  viewer.needsGesture && viewer.muted ? (
+                    <button
+                      onClick={viewer.listen}
+                      className="absolute top-3 end-3 z-10 inline-flex items-center gap-1.5 bg-white text-gray-900 text-xs font-semibold px-3 py-1.5 rounded-full shadow animate-pulse"
+                    >
+                      🔇 {t('tapToListen')}
+                    </button>
+                  ) : null
+                )}
+                {hasVideo && connection === 'live' && (
+                  <PlayerControls
+                    viewer={viewer}
+                    t={t}
+                    showFullscreen
+                    onFullscreen={toggleFullscreen}
+                    className="absolute bottom-14 end-3 z-10"
+                  />
                 )}
               </>
             )}

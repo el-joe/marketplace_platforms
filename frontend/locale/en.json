@@ -1489,6 +1489,7 @@
     "tapToListen": "Tap to listen",
     "mute": "Mute",
     "unmute": "Unmute",
+    "fullscreen": "Fullscreen",
     "volume": "Volume",
     "connectionFailed": "Connection lost. Please try again.",
     "realtimeUnavailable": "Live playback is unavailable right now (realtime service is not configured).",
