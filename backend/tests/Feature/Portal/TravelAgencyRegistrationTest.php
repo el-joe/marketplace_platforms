@@ -68,6 +68,13 @@ class TravelAgencyRegistrationTest extends TestCase
         $response->assertSee('travelAgencyWizard()', false);
     }
 
+    public function test_registration_success_page_renders(): void
+    {
+        $response = $this->get(route('portal.companies.travel-agency.register.success'));
+
+        $response->assertOk();
+    }
+
     public function test_step_one_stores_account_data_and_advances(): void
     {
         $country = $this->activeCountry();
