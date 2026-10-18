@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getStreams } from './api';
 import type { LiveStreamCard, StreamStatus } from './types';
+import { getImageURL } from '@/src/helpers/get-image-url';
 
 function StreamCard({
   stream,
@@ -33,7 +34,7 @@ function StreamCard({
       <div className="relative aspect-video bg-gray-100">
         {stream.thumbnail_url ? (
           <Image
-            src={stream.thumbnail_url}
+            src={getImageURL(stream.thumbnail_url)}
             alt={title}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
