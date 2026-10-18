@@ -1,5 +1,7 @@
 # Live Streams (WebRTC) on Ubuntu + Apache2 — Production Runbook
 
+> **Using nginx instead of Apache?** See [`docs/LIVE_STREAMS_VPS_NGINX.md`](LIVE_STREAMS_VPS_NGINX.md) — the same runbook (sections 0-10) with nginx server blocks.
+
 Target: Ubuntu 22.04 / 24.04, PHP 8.3, Apache2, MySQL, Node.js LTS. Goal: admin studio (`admin.example.com/.../live-streams`) and the Next.js `/live-streams` pages work with WebRTC **audio only, video only, or both**, also for viewers on mobile data.
 
 Placeholders used everywhere: `example.com` (your domain), `203.0.113.10` (server public IP), `deploy` (Linux user that owns the code), `/var/www/marketplace` (app dir; contains `backend/` and `frontend/`). Replace them consistently.

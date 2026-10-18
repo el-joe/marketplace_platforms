@@ -1,4 +1,5 @@
 >>> NOTE: An Apache2-specific, step-by-step runbook (vhosts, Reverb systemd, coturn, verification) now exists: docs/LIVE_STREAMS_VPS_APACHE.md  <<<
+>>> nginx users: the same runbook for nginx is in docs/LIVE_STREAMS_VPS_NGINX.md  <<<
 
 ═══════════════════════════════════════════════════════════════════
   LIVE STREAM SYSTEM — VPS INTEGRATION GUIDE
