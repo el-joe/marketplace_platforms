@@ -768,22 +768,18 @@ return [
 
     ['join', 'card_product_vendor', 'title', 'text', 'Product Seller', 'بائع منتجات', null, 1],
     ['join', 'card_product_vendor', 'description', 'text', 'Sell physical or digital products and manage your own store on Nawy.', 'بِع منتجاتك المادية أو الرقمية وأدر متجرك الخاص على ناوي.', null, 2],
-    ['join', 'card_product_vendor', 'cta', 'text', 'Start selling', 'ابدأ البيع', null, 3],
-    ['join', 'card_product_vendor', 'image', 'image', 'Product seller', 'بائع منتجات', '/images/join/seller.svg', 4],
+    ['join', 'card_product_vendor', 'image', 'image', 'Product seller', 'بائع منتجات', '/images/join/seller.svg', 3],
 
     ['join', 'card_classified_vendor', 'title', 'text', 'Specialized Companies & Brokers', 'شركات تخصصية ووسطاء', null, 1],
     ['join', 'card_classified_vendor', 'description', 'text', 'Join as a specialized company or an intermediary across real estate, cars, travel, chalets and more.', 'انضم كشركة تخصصية أو وسيط في العقارات والسيارات والسفر والشاليهات وغيرها.', null, 2],
-    ['join', 'card_classified_vendor', 'cta', 'text', 'Explore the section', 'استكشف القسم', null, 3],
-    ['join', 'card_classified_vendor', 'image', 'image', 'Specialized companies and brokers', 'شركات تخصصية ووسطاء', '/images/join/companies.svg', 4],
+    ['join', 'card_classified_vendor', 'image', 'image', 'Specialized companies and brokers', 'شركات تخصصية ووسطاء', '/images/join/companies.svg', 3],
 
     ['join', 'card_marketer', 'title', 'text', 'Influencers, Creators & Affiliates', 'مشاهير ومؤثرون ومسوقون بالعمولة', null, 1],
     ['join', 'card_marketer', 'description', 'text', 'Promote products and listings as an influencer, creator or commission-based marketer.', 'روّج للمنتجات والإعلانات كمشهور أو مؤثر أو مسوق بالعمولة.', null, 2],
-    ['join', 'card_marketer', 'cta', 'text', 'Join as a marketer', 'انضم كمسوق', null, 3],
-    ['join', 'card_marketer', 'image', 'image', 'Influencers, creators and affiliates', 'مشاهير ومؤثرون ومسوقون بالعمولة', '/images/join/marketer.svg', 4],
+    ['join', 'card_marketer', 'image', 'image', 'Influencers, creators and affiliates', 'مشاهير ومؤثرون ومسوقون بالعمولة', '/images/join/marketer.svg', 3],
 
     ['join', 'actions', 'continue', 'text', 'Continue', 'متابعة', null, 1],
     ['join', 'actions', 'select_hint', 'text', 'Select an option to continue', 'اختر أحد الخيارات للمتابعة', null, 2],
-    ['join', 'actions', 'selected_label', 'text', 'Selected', 'تم الاختيار', null, 3],
 
     // ─── page_key = 'layout' ──────────────────────────────────────────────────────
     ['layout', 'portal', 'default_title', 'text', 'Sell on Nawy', 'بيع على ناوي', null, 1],

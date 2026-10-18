@@ -9,7 +9,6 @@
             'icon' => 'sellers',
             'title' => portal_content('join', 'card_product_vendor', 'title', 'Product Seller', 'بائع منتجات'),
             'desc' => portal_content('join', 'card_product_vendor', 'description', 'Sell physical or digital products and manage your own store on Nawy.', 'بِع منتجاتك المادية أو الرقمية وأدر متجرك الخاص على ناوي.'),
-            'cta' => portal_content('join', 'card_product_vendor', 'cta', 'Start selling', 'ابدأ البيع'),
             'image' => portal_image('join', 'card_product_vendor', 'image', asset('images/join/seller.svg'), 'Product seller', 'بائع منتجات'),
         ],
         'classified_vendor' => [
@@ -17,7 +16,6 @@
             'icon' => 'companies',
             'title' => portal_content('join', 'card_classified_vendor', 'title', 'Specialized Companies & Brokers', 'شركات تخصصية ووسطاء'),
             'desc' => portal_content('join', 'card_classified_vendor', 'description', 'Join as a specialized company or an intermediary across real estate, cars, travel, chalets and more.', 'انضم كشركة تخصصية أو وسيط في العقارات والسيارات والسفر والشاليهات وغيرها.'),
-            'cta' => portal_content('join', 'card_classified_vendor', 'cta', 'Explore the section', 'استكشف القسم'),
             'image' => portal_image('join', 'card_classified_vendor', 'image', asset('images/join/companies.svg'), 'Specialized companies and brokers', 'شركات تخصصية ووسطاء'),
         ],
         'marketer' => [
@@ -25,7 +23,6 @@
             'icon' => 'marketers',
             'title' => portal_content('join', 'card_marketer', 'title', 'Influencers, Creators & Affiliates', 'مشاهير ومؤثرون ومسوقون بالعمولة'),
             'desc' => portal_content('join', 'card_marketer', 'description', 'Promote products and listings as an influencer, creator or commission-based marketer.', 'روّج للمنتجات والإعلانات كمشهور أو مؤثر أو مسوق بالعمولة.'),
-            'cta' => portal_content('join', 'card_marketer', 'cta', 'Join as a marketer', 'انضم كمسوق'),
             'image' => portal_image('join', 'card_marketer', 'image', asset('images/join/marketer.svg'), 'Influencers, creators and affiliates', 'مشاهير ومؤثرون ومسوقون بالعمولة'),
         ],
     ];
@@ -95,9 +92,7 @@
                                 @click="selected = '{{ $value }}'"
                                 :aria-pressed="selected === '{{ $value }}' ? 'true' : 'false'"
                                 class="group relative flex w-full flex-col-reverse overflow-hidden rounded-3xl border bg-gray-900 text-start transition-all duration-300 hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#feee00] focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 md:flex-row"
-                                :style="selected === '{{ $value }}'
-                                    ? 'border-color: {{ $card['accent'] }}; box-shadow: 0 0 0 2px {{ $card['accent'] }}, 0 24px 45px -28px {{ $card['accent'] }}'
-                                    : 'border-color: #1f2937'">
+                                :style="selected === '{{ $value }}' ? 'border-color: #feee00' : 'border-color: #1f2937'">
 
                                 {{-- Text half --}}
                                 <div class="flex w-full flex-col justify-center gap-5 p-6 sm:p-8 md:w-1/2">
@@ -122,24 +117,6 @@
                                         <h2 class="text-white font-extrabold text-xl sm:text-2xl leading-snug">{{ $card['title'] ?? $label }}</h2>
                                         <p class="mt-3 text-sm sm:text-base text-gray-400 leading-relaxed">{{ $card['desc'] }}</p>
                                     </div>
-
-                                    <span class="inline-flex flex-wrap items-center gap-3 text-sm font-bold" style="color: {{ $card['accent'] }}">
-                                        <span class="inline-flex items-center gap-2">
-                                            {{ $card['cta'] }}
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="18" height="18"
-                                                class="transition-transform duration-300 group-hover:{{ $isAr ? '-translate-x-1' : 'translate-x-1' }} {{ $isAr ? '-scale-x-100' : '' }}">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />
-                                            </svg>
-                                        </span>
-                                        <span x-show="selected === '{{ $value }}'" x-cloak
-                                            class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
-                                            style="background-color: {{ $card['accent'] }}; color: #0b0b0b">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" width="12" height="12">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                                            </svg>
-                                            {{ portal_content('join', 'actions', 'selected_label', 'Selected', 'تم الاختيار') }}
-                                        </span>
-                                    </span>
                                 </div>
 
                                 {{-- Image half --}}
@@ -148,10 +125,9 @@
                                         class="h-52 w-full object-cover transition-transform duration-700 group-hover:scale-105 sm:h-64 md:absolute md:inset-0 md:h-full">
                                 </div>
 
-                                {{-- Selected check badge --}}
+                                {{-- Selected check icon --}}
                                 <span x-show="selected === '{{ $value }}'" x-cloak
-                                    class="pointer-events-none absolute end-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full shadow-lg"
-                                    style="background-color: {{ $card['accent'] }}; color: #0b0b0b">
+                                    class="pointer-events-none absolute end-4 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#feee00] text-gray-950 shadow-lg">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" width="18" height="18">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                                     </svg>
