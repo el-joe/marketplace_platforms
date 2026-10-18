@@ -7,14 +7,14 @@ cd "$APP_DIR"
 git pull origin main
 
 cd backend
-composer install --no-dev --optimize-autoloader --no-interaction
+sudo composer install --no-dev --optimize-autoloader --no-interaction
 [ -L public/storage ] || php artisan storage:link
 php artisan down --retry=30 || true
 trap 'php artisan up' EXIT
 php artisan migrate --force
 php artisan seed:run --permissions-only
-yarn install
-yarn build
+sudo yarn install
+sudo yarn build
 sudo chown -R "$(whoami)":www-data storage bootstrap/cache
 sudo find storage bootstrap/cache -type d -exec chmod 2775 {} \;
 sudo find storage bootstrap/cache -type f -exec chmod 664 {} \;
@@ -28,8 +28,11 @@ if [ "${1:-}" != "--skip-frontend" ]; then
 fi
 
 if pm2 describe mp-frontend >/dev/null 2>&1; then
-  pm2 restart mp-frontend mp-reverb mp-queue
+  sudo pm2 restart mp-frontend mp-reverb mp-queue
 else
-  pm2 start "$APP_DIR/ecosystem.config.cjs" && pm2 save
+  sudo pm2 start "$APP_DIR/ecosystem.config.cjs" && pm2 save
 fi
+
+cd ../backend
+php artisan up
 echo "Done ------------"
