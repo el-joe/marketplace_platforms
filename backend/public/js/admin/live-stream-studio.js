@@ -433,6 +433,13 @@
     show($('viewer-count'), isLive);
   }
 
+  /** SDP must end with CRLF; proxies/middleware may trim it. */
+  function fixSdp(d) {
+    if (!d || typeof d.sdp !== 'string') return d;
+    const sdp = d.sdp.replace(/\r?\n/g, '\r\n').replace(/(\r\n)*$/, '\r\n');
+    return { type: d.type, sdp };
+  }
+
   // ─── Incoming signals ─────────────────────────────────────────────────────
   async function handleSignal(msg) {
     if (!msg || msg.target !== 'admin' || !msg.from || msg.from === 'admin') return;
@@ -450,7 +457,7 @@
           const peer = peers.get(from) || createPeer(from);
           const pc = peer.pc;
           // Admin is the polite side: an incoming offer wins (implicit rollback).
-          await pc.setRemoteDescription(payload);
+          await pc.setRemoteDescription(fixSdp(payload));
           await flushIce(peer);
           await pc.setLocalDescription(await pc.createAnswer());
           await sendSignal(from, 'answer', { type: pc.localDescription.type, sdp: pc.localDescription.sdp });
@@ -459,7 +466,7 @@
         case 'answer': {
           const peer = peers.get(from);
           if (!peer || peer.pc.signalingState !== 'have-local-offer') return;
-          await peer.pc.setRemoteDescription(payload);
+          await peer.pc.setRemoteDescription(fixSdp(payload));
           await flushIce(peer);
           break;
         }

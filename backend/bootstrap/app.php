@@ -87,6 +87,11 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // WebRTC SDP must keep its trailing CRLF, otherwise browsers reject it ("Invalid SDP line").
+        $middleware->trimStrings(except: [
+            fn ($request) => str_contains($request->path(), '/signal'),
+        ]);
+
         $middleware->api(prepend: [
             HandleCors::class,
             ResolveAppContext::class,

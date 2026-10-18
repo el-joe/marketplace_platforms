@@ -47,6 +47,12 @@ const buildIceServers = (): RTCIceServer[] => {
 
 const ICE_SERVERS = buildIceServers();
 
+/** SDP must end with CRLF; middleware/proxies may trim it. */
+function fixSdp(d: RTCSessionDescriptionInit): RTCSessionDescriptionInit {
+  if (!d || typeof d.sdp !== 'string') return d;
+  return { type: d.type, sdp: d.sdp.replace(/\r?\n/g, '\r\n').replace(/(\r\n)*$/, '\r\n') };
+}
+
 export function getGuestPeerId(): string {
   if (typeof window === 'undefined') return '';
   try {
@@ -318,7 +324,7 @@ export function useLiveStreamViewer({ streamId, streamKey, enabled, initialMode 
         case 'answer':
           if (pc && pc.signalingState === 'have-local-offer' && msg.payload) {
             try {
-              await pc.setRemoteDescription(msg.payload);
+              await pc.setRemoteDescription(fixSdp(msg.payload));
               await flushRemoteIce(pc);
             } catch { scheduleReconnect(); }
           }
@@ -327,7 +333,7 @@ export function useLiveStreamViewer({ streamId, streamKey, enabled, initialMode 
           if (pc && msg.payload) {
             try {
               if (pc.signalingState !== 'stable') await pc.setLocalDescription({ type: 'rollback' });
-              await pc.setRemoteDescription(msg.payload);
+              await pc.setRemoteDescription(fixSdp(msg.payload));
               await flushRemoteIce(pc);
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
