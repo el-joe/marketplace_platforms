@@ -110,6 +110,7 @@ return [
 
     'turn' => [
         'url' => env('TURN_URL', ''),
+        'tls_url' => env('TURN_TLS_URL', ''),
         'username' => env('TURN_USERNAME', ''),
         'credential' => env('TURN_CREDENTIAL', ''),
     ],

@@ -1,5 +1,7 @@
 export type StreamStatus = 'scheduled' | 'live' | 'ended';
 
+export type MediaMode = 'audio' | 'video' | 'both';
+
 export interface LiveStreamCard {
   id: string;
   title: { en: string; ar: string };
@@ -10,6 +12,8 @@ export interface LiveStreamCard {
   ended_at: string | null;
   total_viewers: number;
   likes_count: number;
+  /** null when the broadcaster has not published media yet */
+  media_mode?: MediaMode | null;
 }
 
 export interface StreamComment {

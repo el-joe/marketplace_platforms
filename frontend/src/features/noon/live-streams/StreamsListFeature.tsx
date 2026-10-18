@@ -50,6 +50,12 @@ function StreamCard({
           {cfg.label}
         </span>
 
+        {stream.media_mode && stream.status !== 'scheduled' && (
+          <span className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+            {stream.media_mode === 'audio' ? `🎧 ${t('badgeAudio')}` : `🎥 ${t('badgeVideo')}`}
+          </span>
+        )}
+
         {stream.status === 'live' && (
           <span className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
             👁 {stream.total_viewers.toLocaleString()}

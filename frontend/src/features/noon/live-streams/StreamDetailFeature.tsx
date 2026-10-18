@@ -4,41 +4,10 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import useLocale from '@/src/hooks/use-locale';
 import Image from 'next/image';
-import { getStream, postComment, postLike, postSignal } from './api';
+import Link from 'next/link';
+import { getStream, postComment, postLike } from './api';
+import { ensureEcho, useLiveStreamViewer, type ConnectionState } from './useLiveStreamViewer';
 import type { LiveStreamDetail, StreamComment } from './types';
-
-const buildIceServers = (): RTCIceServer[] => {
-  const servers: RTCIceServer[] = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-  ];
-
-  const turnUrl  = process.env.NEXT_PUBLIC_TURN_URL;
-  const turnUser = process.env.NEXT_PUBLIC_TURN_USERNAME;
-  const turnPass = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
-
-  if (turnUrl && turnUser && turnPass) {
-    servers.push({
-      urls:       [turnUrl, turnUrl.replace('turn:', 'turns:').replace(':3478', ':5349')],
-      username:   turnUser,
-      credential: turnPass,
-    });
-  }
-
-  return servers;
-};
-
-const ICE_SERVERS = buildIceServers();
-
-function getGuestPeerId(): string {
-  if (typeof window === 'undefined') return '';
-  let id = sessionStorage.getItem('guest_peer_id');
-  if (!id) {
-    id = 'viewer-' + Math.random().toString(36).slice(2, 10);
-    sessionStorage.setItem('guest_peer_id', id);
-  }
-  return id;
-}
 
 function getGuestToken(): string {
   if (typeof window === 'undefined') return '';
@@ -48,6 +17,104 @@ function getGuestToken(): string {
     localStorage.setItem('guest_like_token', t);
   }
   return t;
+}
+
+type Viewer = ReturnType<typeof useLiveStreamViewer>;
+type T = ReturnType<typeof useTranslations>;
+
+function ConnectionOverlay({
+  connection, hasVideo, onReconnect, t,
+}: { connection: ConnectionState; hasVideo: boolean; onReconnect: () => void; t: T }) {
+  if (connection === 'unavailable') {
+    return (
+      <div className="absolute inset-x-3 top-3 z-10 rounded-lg bg-amber-100 text-amber-900 text-xs px-3 py-2">
+        {t('realtimeUnavailable')}
+      </div>
+    );
+  }
+  if (connection === 'failed') {
+    return (
+      <div className="absolute inset-0 z-10 bg-black/70 flex flex-col items-center justify-center gap-3 text-white text-center px-6">
+        <p className="text-sm">{t('connectionFailed')}</p>
+        <button onClick={onReconnect} className="bg-white text-gray-900 text-sm font-semibold px-4 py-2 rounded-full">
+          {t('reconnect')}
+        </button>
+      </div>
+    );
+  }
+  const label =
+    connection === 'live' ? null
+    : connection === 'reconnecting' ? t('reconnecting')
+    : hasVideo ? t('connecting') : null;
+  if (!label) return null;
+  return (
+    <div className="absolute top-3 start-3 z-10 inline-flex items-center gap-2 bg-black/70 text-white text-xs px-3 py-1.5 rounded-full">
+      <span className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+      {label}
+    </div>
+  );
+}
+
+function AudioCard({
+  thumbnail, title, connection, viewer, t,
+}: { thumbnail: string | null; title: string; connection: ConnectionState; viewer: Viewer; t: T }) {
+  const playing = connection === 'live' && !viewer.muted;
+  const status =
+    connection === 'live' ? (viewer.stream ? t('connLive') : t('waitingForBroadcaster'))
+    : connection === 'reconnecting' ? t('reconnecting')
+    : connection === 'connecting' ? t('connecting')
+    : '';
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-white bg-gradient-to-br from-gray-900 via-gray-800 to-primary-900">
+      {thumbnail && (
+        <Image src={thumbnail} alt="" fill className="object-cover opacity-20 blur-sm" sizes="100vw" />
+      )}
+      <div className="relative z-[1] flex flex-col items-center gap-4 w-full max-w-sm">
+        <span className="inline-flex items-center gap-1.5 bg-white/15 text-xs font-semibold px-3 py-1 rounded-full">
+          🎧 {t('audioOnly')}
+        </span>
+        <div className="flex items-end gap-1 h-12" aria-hidden>
+          {[0.5, 0.9, 0.6, 1, 0.7, 0.95, 0.55].map((h, i) => (
+            <span
+              key={i}
+              className={`w-1.5 rounded-full bg-white/80 ${playing ? 'animate-pulse' : 'opacity-40'}`}
+              style={{ height: `${h * 100}%`, animationDelay: `${i * 120}ms`, animationDuration: '900ms' }}
+            />
+          ))}
+        </div>
+        <p className="text-center text-sm font-semibold line-clamp-2">{title}</p>
+        {status && <p className="text-xs text-gray-300">{status}</p>}
+
+        {viewer.needsGesture ? (
+          <button
+            onClick={viewer.listen}
+            disabled={!viewer.stream}
+            className="bg-white text-gray-900 font-semibold text-sm px-5 py-2.5 rounded-full shadow disabled:opacity-60"
+          >
+            🔊 {t('tapToListen')}
+          </button>
+        ) : (
+          <div className="flex items-center gap-3 w-full">
+            <button
+              onClick={() => viewer.setMuted(true)}
+              aria-label={t('mute')}
+              title={t('mute')}
+              className="shrink-0 bg-white/15 hover:bg-white/25 rounded-full w-9 h-9"
+            >
+              🔊
+            </button>
+            <input
+              type="range" min={0} max={1} step={0.05}
+              value={viewer.volume}
+              onChange={e => viewer.setVolume(parseFloat(e.target.value))}
+              aria-label={t('volume')}
+              className="flex-1 accent-white"
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function StreamDetailFeature({ streamId }: { streamId: string }) {
@@ -62,10 +129,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
   const [likeAnim, setLikeAnim]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const videoRef    = useRef<HTMLVideoElement>(null);
   const commentsRef = useRef<HTMLDivElement>(null);
-  const pcRef       = useRef<RTCPeerConnection | null>(null);
-  const peerId      = useRef(getGuestPeerId());
 
   // ── Load stream data ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -79,63 +143,50 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
       .finally(() => setLoading(false));
   }, [streamId]);
 
-  // ── WebRTC: connect as viewer ──────────────────────────────────────────────
-  const startWebRTC = useCallback(async (streamKey: string) => {
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-    pcRef.current = pc;
+  const isLive = stream?.status === 'live';
+  const streamKey = stream?.stream_key ?? null;
 
-    pc.addTransceiver('video', { direction: 'recvonly' });
-    pc.addTransceiver('audio', { direction: 'recvonly' });
+  const handleStreamUpdate = useCallback((fresh: LiveStreamDetail) => {
+    setStream(prev => (prev ? { ...prev, ...fresh, comments: prev.comments } : fresh));
+  }, []);
 
-    pc.ontrack = (event) => {
-      if (videoRef.current && event.streams[0]) {
-        videoRef.current.srcObject = event.streams[0];
-      }
-    };
-
-    pc.onicecandidate = ({ candidate }) => {
-      if (candidate) {
-        postSignal(streamId, 'ice-candidate', candidate.toJSON(), peerId.current).catch(() => {});
-      }
-    };
-
-    if (window.Echo) {
-      window.Echo.channel(`stream.${streamKey}`)
-        .listen('.signal', (data: any) => {
-          if (data.target && data.target !== peerId.current) return;
-          if (data.type === 'answer' && pcRef.current) {
-            pcRef.current.setRemoteDescription(new RTCSessionDescription(data.payload)).catch(() => {});
-          } else if (data.type === 'ice-candidate' && pcRef.current) {
-            pcRef.current.addIceCandidate(new RTCIceCandidate(data.payload)).catch(() => {});
-          }
-        })
-        .listen('.comment', (data: any) => {
-          setComments(prev => [
-            ...prev,
-            { id: data.id, author: data.author, body: data.body, created_at: data.created_at },
-          ]);
-        })
-        .listen('.like', (data: any) => {
-          setLikesCount(data.likes_count);
-        });
-    }
-
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    await postSignal(streamId, 'offer', offer, peerId.current);
-  }, [streamId]);
-
+  const viewer = useLiveStreamViewer({
+    streamId,
+    streamKey,
+    enabled: isLive,
+    initialMode: stream?.media_mode ?? null,
+    onStreamUpdate: handleStreamUpdate,
+  });
+  // A scheduled page must notice when the admin goes live (the viewer hook only polls while live).
   useEffect(() => {
-    if (stream?.status === 'live' && stream.stream_key) {
-      startWebRTC(stream.stream_key);
-    }
+    if (stream?.status !== 'scheduled') return;
+    const timer = setInterval(() => {
+      getStream(streamId).then(handleStreamUpdate).catch(() => {});
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [stream?.status, streamId, handleStreamUpdate]);
+
+  const { connection, hasVideo } = viewer;
+  const viewerEnded = connection === 'ended';
+  const showLive = isLive && !viewerEnded;
+
+  // ── Realtime comments / likes (same public channel; no leaveChannel here) ──
+  useEffect(() => {
+    if (!isLive || !streamKey || !ensureEcho()) return;
+    const channel = window.Echo.channel(`stream.${streamKey}`);
+    const onComment = (data: any) =>
+      setComments(prev =>
+        prev.some(c => c.id === data.id)
+          ? prev
+          : [...prev, { id: data.id, author: data.author, body: data.body, created_at: data.created_at }],
+      );
+    const onLike = (data: any) => setLikesCount(data.likes_count);
+    channel.listen('.comment', onComment).listen('.like', onLike);
     return () => {
-      pcRef.current?.close();
-      if (window.Echo && stream?.stream_key) {
-        window.Echo.leaveChannel(`stream.${stream.stream_key}`);
-      }
+      channel.stopListening('.comment', onComment);
+      channel.stopListening('.like', onLike);
     };
-  }, [stream?.status, stream?.stream_key, startWebRTC]);
+  }, [isLive, streamKey]);
 
   // ── Auto-scroll comments ───────────────────────────────────────────────────
   useEffect(() => {
@@ -160,7 +211,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
     setSubmitting(true);
     try {
       const comment = await postComment(streamId, commentBody.trim(), guestName);
-      setComments(prev => [...prev, comment]);
+      setComments(prev => (prev.some(c => c.id === comment.id) ? prev : [...prev, comment]));
       setCommentBody('');
     } catch {}
     setSubmitting(false);
@@ -190,7 +241,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
       {/* Title + status badge row */}
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="text-xl font-bold text-gray-900 flex-1">{title}</h1>
-        {stream.status === 'live' && (
+        {showLive && (
           <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {t('statusLive')}
           </span>
@@ -200,7 +251,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
             {t('statusScheduled')} {stream.scheduled_at ? new Date(stream.scheduled_at).toLocaleString() : ''}
           </span>
         )}
-        {stream.status === 'ended' && (
+        {(stream.status === 'ended' || viewerEnded) && (
           <span className="bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">
             {t('streamEnded')}
           </span>
@@ -212,15 +263,47 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
         {/* Video column */}
         <div className="lg:col-span-2 space-y-3">
           <div className="relative aspect-video bg-black rounded-2xl overflow-hidden">
-            {stream.status === 'live' ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-                poster={stream.thumbnail_url ?? undefined}
-              />
-            ) : stream.thumbnail_url ? (
+            {isLive && !viewerEnded && (
+              <>
+                <video
+                  ref={viewer.mediaRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className={hasVideo ? 'w-full h-full object-contain bg-black' : 'absolute h-px w-px opacity-0 pointer-events-none'}
+                  poster={stream.thumbnail_url ?? undefined}
+                />
+                {!hasVideo && (
+                  <AudioCard
+                    thumbnail={stream.thumbnail_url}
+                    title={title}
+                    connection={connection}
+                    viewer={viewer}
+                    t={t}
+                  />
+                )}
+                <ConnectionOverlay connection={connection} hasVideo={hasVideo} onReconnect={viewer.reconnect} t={t} />
+                {hasVideo && viewer.needsGesture && connection === 'live' && (
+                  <button
+                    onClick={viewer.listen}
+                    className="absolute top-3 end-3 bg-black/70 hover:bg-black/85 text-white text-xs font-semibold px-3 py-1.5 rounded-full"
+                  >
+                    🔇 {t('unmute')}
+                  </button>
+                )}
+              </>
+            )}
+            {viewerEnded && (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-center px-6 bg-gray-900 text-white">
+                <span className="text-5xl">📴</span>
+                <p className="text-lg font-bold">{t('streamEnded')}</p>
+                <p className="text-sm text-gray-300">{t('streamEndedBody')}</p>
+                <Link href="/live-streams" className="mt-1 bg-white text-gray-900 text-sm font-semibold px-4 py-2 rounded-full">
+                  {t('backToStreams')}
+                </Link>
+              </div>
+            )}
+            {!isLive && !viewerEnded && (stream.thumbnail_url ? (
               <Image src={stream.thumbnail_url} alt={title} fill className="object-cover" sizes="100vw" />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-3">
@@ -229,9 +312,9 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
                   {stream.status === 'scheduled' ? t('startingSoon') : t('hasEnded')}
                 </p>
               </div>
-            )}
+            ))}
 
-            {stream.status === 'live' && (
+            {showLive && (
               <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                 <span className="bg-black/60 text-white text-xs px-2.5 py-1 rounded-full">
                   👁 {stream.total_viewers.toLocaleString()} {t('watching')}
@@ -246,7 +329,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
             )}
           </div>
 
-          {stream.status !== 'live' && (
+          {!showLive && (
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-500">❤️ {likesCount.toLocaleString()} {t('likes')}</span>
               <span className="text-sm text-gray-500">👁 {stream.total_viewers.toLocaleString()} {t('totalViewers')}</span>
@@ -268,7 +351,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
           style={{ height: '520px' }}
         >
           <div className="px-4 py-3 border-b border-gray-100 font-semibold text-gray-800 text-sm">
-            💬 {stream.status === 'live' ? t('liveChat') : t('comments')} ({comments.length})
+            💬 {showLive ? t('liveChat') : t('comments')} ({comments.length})
           </div>
 
           <div ref={commentsRef} className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -288,7 +371,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
             )}
           </div>
 
-          {stream.status === 'live' && (
+          {showLive && (
             <div className="border-t border-gray-100 p-3 space-y-2">
               <input
                 type="text"

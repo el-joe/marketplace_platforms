@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 
 class LiveStream extends Model
 {
-    use HasUuids, HasFactory, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
         'title_en', 'title_ar',
@@ -25,14 +25,15 @@ class LiveStream extends Model
         'total_viewers',
         'likes_count',
         'stream_key',
+        'media_mode',
         'created_by_admin_id',
     ];
 
     protected $casts = [
-        'status'       => LiveStreamStatus::class,
+        'status' => LiveStreamStatus::class,
         'scheduled_at' => 'datetime',
-        'started_at'   => 'datetime',
-        'ended_at'     => 'datetime',
+        'started_at' => 'datetime',
+        'ended_at' => 'datetime',
     ];
 
     protected static function booted(): void

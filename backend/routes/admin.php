@@ -1918,7 +1918,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::delete('/{liveStream}', [LiveStreamController::class, 'destroy'])->name('destroy');
         Route::post('/{liveStream}/go-live', [LiveStreamController::class, 'goLive'])->name('go-live');
         Route::post('/{liveStream}/end', [LiveStreamController::class, 'endStream'])->name('end');
-        Route::post('/{liveStream}/signal', [LiveStreamController::class, 'signal'])->name('signal');
+        Route::post('/{liveStream}/signal', [LiveStreamController::class, 'signal'])->middleware('throttle:600,1')->name('signal');
+        Route::post('/{liveStream}/media', [LiveStreamController::class, 'media'])->name('media');
         Route::get('/{liveStream}/comments', [LiveStreamController::class, 'comments'])->name('comments');
         Route::delete('/{liveStream}/comments/{comment}', [LiveStreamController::class, 'deleteComment'])->name('comments.destroy');
     });

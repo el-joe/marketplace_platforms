@@ -1,3 +1,5 @@
+>>> NOTE: An Apache2-specific, step-by-step runbook (vhosts, Reverb systemd, coturn, verification) now exists: docs/LIVE_STREAMS_VPS_APACHE.md  <<<
+
 ═══════════════════════════════════════════════════════════════════
   LIVE STREAM SYSTEM — VPS INTEGRATION GUIDE
   Ubuntu + Apache2 + Laravel Reverb (WebSocket) + WebRTC

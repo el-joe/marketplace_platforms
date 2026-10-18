@@ -44,9 +44,16 @@ export async function postLike(streamId: string, guestToken: string): Promise<nu
   return env.data.likes_count;
 }
 
+export type SignalType =
+  | 'offer'
+  | 'answer'
+  | 'ice-candidate'
+  | 'hello'
+  | 'bye';
+
 export async function postSignal(
   streamId: string,
-  type: 'offer' | 'answer' | 'ice-candidate',
+  type: SignalType,
   payload: object,
   peerId: string,
 ): Promise<void> {
@@ -54,4 +61,23 @@ export async function postSignal(
     method: 'POST',
     body:   JSON.stringify({ type, payload, peer_id: peerId }),
   });
+}
+
+/** Fire-and-forget signal that survives page unload (used for `bye`). */
+export function postSignalKeepalive(
+  streamId: string,
+  type: SignalType,
+  payload: object,
+  peerId: string,
+): void {
+  try {
+    fetch(`${apiPublicBaseUrlGlobal}/streams/${streamId}/signal`, {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ type, payload, peer_id: peerId }),
+    }).catch(() => {});
+  } catch {
+    /* ignore */
+  }
 }

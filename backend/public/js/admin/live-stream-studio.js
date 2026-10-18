@@ -1,277 +1,572 @@
+/**
+ * Admin live-stream studio - WebRTC publisher, signalling protocol v2.
+ *
+ * Signal envelope (Reverb event ".signal" on channel "stream.{key}"):
+ *   { type, payload, target, from }
+ *   type: offer | answer | ice-candidate | hello | bye | media-state | ended
+ * Admin id = "admin". Viewers = "viewer-xxxx". This script ignores every message
+ * whose target !== "admin". One RTCPeerConnection per viewer (mesh).
+ */
 (function () {
   'use strict';
 
-  const META = (name) => document.querySelector(`meta[name="${name}"]`)?.content;
+  const META = (name) => document.querySelector(`meta[name="${name}"]`)?.content || '';
   const STREAM_KEY = META('stream-key');
-  const STREAM_ID  = META('stream-id');
-  const CSRF       = META('csrf-token');
+  const STREAM_ID = META('stream-id');
+  const CSRF = META('csrf-token');
+  const I18N = window.LIVE_STUDIO_I18N || {};
+  const t = (key, vars) => {
+    let s = I18N[key] ?? key;
+    if (vars) Object.keys(vars).forEach((k) => { s = s.replace(':' + k, vars[k]); });
+    return s;
+  };
+  const $ = (id) => document.getElementById(id);
+  const show = (el, on) => el && el.classList.toggle('hidden', !on);
 
-  let localStream     = null;
-  let screenStream    = null;
-  let peerConnections = {};   // peerId → RTCPeerConnection
-  let isLive          = META('stream-status') === 'live';
-  let audioMuted      = false;
-  let channel         = null;
+  // ─── State ────────────────────────────────────────────────────────────────
+  let isLive = META('stream-status') === 'live';
+  let isEnded = META('stream-status') === 'ended';
+  let mode = 'both';              // UI mode: both | video | audio | screen
+  let audioTrack = null;
+  let videoTrack = null;
+  let rawStreams = [];            // every acquired MediaStream (for cleanup)
+  let mixCtx = null;              // AudioContext used for screen+mic mixing
+  let micMuted = false;
+  let camOff = false;
+  let previewActive = false;
+  let acquiring = false;
+  const peers = new Map();        // peerId -> { pc, pendingIce, makingOffer, senders, disconnectTimer }
 
-  const $          = (id) => document.getElementById(id);
-  const localVideo = $('local-video');
-  const noPreview  = $('no-preview');
+  // ─── Errors ───────────────────────────────────────────────────────────────
+  function showError(msg) {
+    const el = $('studio-error');
+    if (!el) return;
+    el.textContent = msg || '';
+    show(el, !!msg);
+  }
 
-  // ─── Reverb channel ────────────────────────────────────────────────────────
+  function mediaErrorMessage(err) {
+    if (!window.isSecureContext) return t('err_insecure');
+    switch (err && err.name) {
+      case 'NotAllowedError':
+      case 'SecurityError': return t('err_not_allowed');
+      case 'NotFoundError':
+      case 'DevicesNotFoundError': return t('err_not_found');
+      case 'NotReadableError':
+      case 'TrackStartError': return t('err_not_readable');
+      case 'OverconstrainedError': return t('err_overconstrained');
+      default: return t('err_generic') + (err && err.message ? ': ' + err.message : '');
+    }
+  }
+
+  // ─── Realtime (bundled window.Echo) ───────────────────────────────────────
+  function setConn(state) {
+    const dot = $('conn-dot');
+    const text = $('conn-text');
+    if (!dot || !text) return;
+    const map = {
+      ok: ['bg-green-500', t('conn_connected')],
+      connecting: ['bg-yellow-400 animate-pulse', t('conn_connecting')],
+      down: ['bg-red-500', t('conn_disconnected')],
+      missing: ['bg-red-500', t('conn_unavailable')],
+    };
+    const [cls, label] = map[state] || map.down;
+    dot.className = 'w-2 h-2 rounded-full ' + cls;
+    text.textContent = label;
+  }
+
+  function bindConnection() {
+    const conn = window.Echo?.connector?.pusher?.connection;
+    if (!conn) { setConn('down'); return; }
+    const apply = (s) => {
+      if (s === 'connected') setConn('ok');
+      else if (s === 'connecting' || s === 'initialized') setConn('connecting');
+      else setConn('down');
+    };
+    apply(conn.state);
+    conn.bind('state_change', (st) => apply(st.current));
+  }
 
   function subscribeChannel() {
-    if (!window.Echo) return;
-    channel = window.Echo.channel(`stream.${STREAM_KEY}`);
-
-    channel.listen('.signal', (data) => {
-      if (data.target && data.target !== 'admin') return;
-      handleIncomingSignal(data.from, data.type, data.payload);
-    });
-
+    const channel = window.Echo.channel(`stream.${STREAM_KEY}`);
+    channel.listen('.signal', (data) => handleSignal(data));
     channel.listen('.like', (data) => {
-      $('likes-count').textContent = data.likes_count;
-      $('stat-likes').textContent  = data.likes_count.toLocaleString();
+      const n = Number(data.likes_count ?? data.likes ?? 0);
+      if ($('likes-count')) $('likes-count').textContent = n;
+      if ($('stat-likes')) $('stat-likes').textContent = n.toLocaleString();
     });
-
     channel.listen('.comment', (data) => {
       appendComment(data);
-      const c = parseInt($('stat-comments').textContent || '0', 10);
-      $('stat-comments').textContent = c + 1;
+      const el = $('stat-comments');
+      if (el) el.textContent = (parseInt(el.textContent.replace(/,/g, ''), 10) || 0) + 1;
     });
+    bindConnection();
   }
 
-  // ─── Camera / screen capture ───────────────────────────────────────────────
-
-  $('btn-start-camera').addEventListener('click', async () => {
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localVideo.srcObject = localStream;
-      noPreview.classList.add('hidden');
-      $('btn-mute').classList.remove('hidden');
-      $('btn-stop').classList.remove('hidden');
-      addStreamsToAllPeers();
-    } catch (err) {
-      alert('Camera access denied: ' + err.message);
-    }
-  });
-
-  $('btn-share-screen').addEventListener('click', async () => {
-    try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: { cursor: 'always' },
-        audio: true,
-      });
-      const micStream = localStream || await navigator.mediaDevices.getUserMedia({ audio: true });
-      const ctx  = new AudioContext();
-      const dest = ctx.createMediaStreamDestination();
-      if (micStream.getAudioTracks().length)   ctx.createMediaStreamSource(micStream).connect(dest);
-      if (screenStream.getAudioTracks().length) ctx.createMediaStreamSource(screenStream).connect(dest);
-
-      const combined = new MediaStream([
-        ...screenStream.getVideoTracks(),
-        ...dest.stream.getAudioTracks(),
-      ]);
-      localStream = combined;
-      localVideo.srcObject = combined;
-      noPreview.classList.add('hidden');
-      $('btn-stop').classList.remove('hidden');
-      $('btn-mute').classList.remove('hidden');
-      addStreamsToAllPeers();
-
-      screenStream.getVideoTracks()[0].addEventListener('ended', stopStream);
-    } catch (err) {
-      if (err.name !== 'NotAllowedError') alert('Screen share failed: ' + err.message);
-    }
-  });
-
-  $('btn-mute').addEventListener('click', () => {
-    audioMuted = !audioMuted;
-    localStream?.getAudioTracks().forEach(t => t.enabled = !audioMuted);
-    $('btn-mute').textContent = audioMuted ? '🔊 Unmute' : '🔇 Mute Audio';
-  });
-
-  $('btn-stop').addEventListener('click', stopStream);
-
-  function stopStream() {
-    localStream?.getTracks().forEach(t => t.stop());
-    screenStream?.getTracks().forEach(t => t.stop());
-    localStream = null;
-    localVideo.srcObject = null;
-    noPreview.classList.remove('hidden');
-    $('btn-stop').classList.add('hidden');
-    $('btn-mute').classList.add('hidden');
+  // ─── Signalling transport (ordered) ───────────────────────────────────────
+  let sendChain = Promise.resolve();
+  function sendSignal(target, type, payload) {
+    sendChain = sendChain.then(() => api(`/live-streams/${STREAM_ID}/signal`, { type, payload: payload || {}, target }))
+      .catch((e) => console.warn('[studio] signal failed', type, e.message));
+    return sendChain;
   }
 
-  function addStreamsToAllPeers() {
-    if (!localStream) return;
-    Object.values(peerConnections).forEach(pc => {
-      localStream.getTracks().forEach(track => {
-        const sender = pc.getSenders().find(s => s.track?.kind === track.kind);
-        if (sender) sender.replaceTrack(track);
-        else        pc.addTrack(track, localStream);
-      });
+  async function api(url, body) {
+    const res = await fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'X-CSRF-TOKEN': CSRF, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(body || {}),
     });
+    let json = null;
+    try { json = await res.json(); } catch (_) { /* non-JSON */ }
+    if (!res.ok || (json && json.success === false)) {
+      throw new Error((json && json.message) || `${t('err_request')} (${res.status})`);
+    }
+    return json || {};
   }
 
-  // ─── Go Live ──────────────────────────────────────────────────────────────
+  // ─── ICE servers + diagnostics ────────────────────────────────────────────
+  function buildIceServers() {
+    const servers = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }];
+    const turn = META('turn-url');
+    const turns = META('turns-url');
+    const user = META('turn-user');
+    const cred = META('turn-cred');
+    const urls = [turn, turns].filter(Boolean);
+    if (urls.length && user && cred) servers.push({ urls, username: user, credential: cred });
+    return { servers, turnUrls: urls };
+  }
+  const ICE = buildIceServers();
 
-  const btnGoLive = $('btn-go-live');
-  if (btnGoLive) {
-    btnGoLive.addEventListener('click', async () => {
-      btnGoLive.disabled = true;
-      btnGoLive.textContent = 'Starting…';
-      const res = await fetch(`/live-streams/${STREAM_ID}/go-live`, {
-        method:  'POST',
-        headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
-      }).then(r => r.json());
+  function runIceDiagnostics() {
+    const el = $('ice-diag');
+    if (!el || typeof RTCPeerConnection === 'undefined') return;
+    if (!ICE.turnUrls.length) { el.textContent = t('diag_stun_only'); return; }
+    const base = t('diag_turn', { urls: ICE.turnUrls.join(', ') });
+    el.textContent = base;
+    let relay = false;
+    const pc = new RTCPeerConnection({ iceServers: ICE.servers });
+    pc.createDataChannel('probe');
+    pc.onicecandidate = (e) => {
+      if (e.candidate && / typ relay /.test(e.candidate.candidate)) relay = true;
+      if (!e.candidate) finish();
+    };
+    const finish = () => {
+      el.textContent = base + ' - ' + (relay ? t('diag_relay') : t('diag_no_relay'));
+      try { pc.close(); } catch (_) { /* noop */ }
+    };
+    pc.createOffer().then((o) => pc.setLocalDescription(o)).catch(() => finish());
+    setTimeout(() => { if (pc.signalingState !== 'closed') finish(); }, 6000);
+  }
 
-      if (res.success) {
-        isLive = true;
-        btnGoLive.replaceWith(createEndButton());
-        $('live-indicator')?.classList.remove('hidden');
-        $('viewer-count')?.classList.remove('hidden');
-        subscribeChannel();
-        updateStatusBadge('live');
-      } else {
-        alert(res.message);
-        btnGoLive.disabled = false;
-        btnGoLive.textContent = 'Go Live Now';
+  // ─── Devices ──────────────────────────────────────────────────────────────
+  async function refreshDevices() {
+    if (!navigator.mediaDevices?.enumerateDevices) return;
+    let list = [];
+    try { list = await navigator.mediaDevices.enumerateDevices(); } catch (_) { return; }
+    fill($('sel-camera'), list.filter((d) => d.kind === 'videoinput'), 'Camera');
+    fill($('sel-mic'), list.filter((d) => d.kind === 'audioinput'), 'Microphone');
+  }
+
+  function fill(select, devices, fallbackLabel) {
+    if (!select) return;
+    const prev = select.value;
+    select.innerHTML = '';
+    const def = document.createElement('option');
+    def.value = '';
+    def.textContent = devices.length ? t('default_device') : t('no_devices');
+    select.appendChild(def);
+    devices.forEach((d, i) => {
+      if (!d.deviceId || d.deviceId === 'default') return;
+      const o = document.createElement('option');
+      o.value = d.deviceId;
+      o.textContent = d.label || `${fallbackLabel} ${i + 1}`;
+      select.appendChild(o);
+    });
+    if ([...select.options].some((o) => o.value === prev)) select.value = prev;
+  }
+
+  // ─── Capture ──────────────────────────────────────────────────────────────
+  function stopCapture() {
+    rawStreams.forEach((s) => s.getTracks().forEach((tr) => tr.stop()));
+    rawStreams = [];
+    if (mixCtx) { mixCtx.close().catch(() => {}); mixCtx = null; }
+    audioTrack = null;
+    videoTrack = null;
+  }
+
+  const deviceConstraint = (id) => (id ? { deviceId: { exact: id } } : true);
+
+  async function acquire(selMode) {
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      const e = new Error('insecure'); e.name = 'SecurityError'; throw e;
+    }
+    const camId = $('sel-camera')?.value;
+    const micId = $('sel-mic')?.value;
+    const out = { audio: null, video: null, streams: [], ctx: null };
+
+    if (selMode === 'screen') {
+      if (!navigator.mediaDevices.getDisplayMedia) throw new Error(t('err_unsupported'));
+      let screen;
+      try {
+        screen = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      } catch (e) {
+        if (e.name === 'NotAllowedError') throw Object.assign(new Error(t('err_screen')), { name: 'ScreenCancelled' });
+        throw e;
       }
-    });
-  }
-
-  function createEndButton() {
-    const btn = document.createElement('button');
-    btn.id        = 'btn-end-stream';
-    btn.className = 'px-5 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-800';
-    btn.textContent = 'End Stream';
-    btn.addEventListener('click', endStream);
-    return btn;
-  }
-
-  const btnEnd = $('btn-end-stream');
-  if (btnEnd) btnEnd.addEventListener('click', endStream);
-
-  async function endStream() {
-    if (!confirm('End this live stream?')) return;
-    await fetch(`/live-streams/${STREAM_ID}/end`, {
-      method:  'POST',
-      headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
-    });
-    isLive = false;
-    stopStream();
-    Object.values(peerConnections).forEach(pc => pc.close());
-    peerConnections = {};
-    updateStatusBadge('ended');
-    $('live-indicator')?.classList.add('hidden');
-    $('btn-end-stream')?.remove();
-  }
-
-  // ─── WebRTC ───────────────────────────────────────────────────────────────
-
-  // TURN config is injected into the page via a <meta> tag from show.blade.php
-  // See: <meta name="turn-url"> <meta name="turn-user"> <meta name="turn-cred">
-  const buildIceServers = () => {
-    const servers = [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-    ];
-    const turnUrl  = META('turn-url');
-    const turnUser = META('turn-user');
-    const turnCred = META('turn-cred');
-    if (turnUrl && turnUser && turnCred) {
-      servers.push({
-        urls:       [turnUrl, turnUrl.replace('turn:', 'turns:').replace(':3478', ':5349')],
-        username:   turnUser,
-        credential: turnCred,
-      });
+      out.streams.push(screen);
+      out.video = screen.getVideoTracks()[0] || null;
+      let mic = null;
+      try {
+        mic = await navigator.mediaDevices.getUserMedia({ audio: deviceConstraint(micId) });
+        out.streams.push(mic);
+      } catch (_) { /* mic optional for screen share */ }
+      const sources = [screen, mic].filter((s) => s && s.getAudioTracks().length);
+      if (sources.length > 1) {
+        out.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const dest = out.ctx.createMediaStreamDestination();
+        sources.forEach((s) => out.ctx.createMediaStreamSource(s).connect(dest));
+        out.audio = dest.stream.getAudioTracks()[0];
+      } else if (sources.length === 1) {
+        out.audio = sources[0].getAudioTracks()[0];
+      }
+      return out;
     }
-    return servers;
-  };
-  const ICE_SERVERS = buildIceServers();
 
-  function createPeerConnection(peerId) {
-    if (peerConnections[peerId]) return peerConnections[peerId];
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-    peerConnections[peerId] = pc;
+    const wantVideo = selMode === 'both' || selMode === 'video';
+    const wantAudio = selMode === 'both' || selMode === 'audio';
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: wantVideo ? deviceConstraint(camId) : false,
+      audio: wantAudio ? (micId ? { deviceId: { exact: micId }, echoCancellation: true, noiseSuppression: true } : { echoCancellation: true, noiseSuppression: true }) : false,
+    });
+    out.streams.push(stream);
+    out.video = stream.getVideoTracks()[0] || null;
+    out.audio = stream.getAudioTracks()[0] || null;
+    return out;
+  }
 
-    localStream?.getTracks().forEach(t => pc.addTrack(t, localStream));
+  async function startPreview() {
+    if (acquiring) return;
+    acquiring = true;
+    showError('');
+    $('btn-start-camera').disabled = true;
+    try {
+      const sel = $('sel-mode').value;
+      const got = await acquire(sel);
+      stopCapture();                     // release old devices only after new ones succeeded
+      mode = sel;
+      rawStreams = got.streams;
+      mixCtx = got.ctx;
+      audioTrack = got.audio;
+      videoTrack = got.video;
+      if (audioTrack) audioTrack.enabled = !micMuted;
+      if (videoTrack && mode !== 'screen') videoTrack.enabled = !camOff;
+      if (videoTrack) videoTrack.addEventListener('ended', () => { if (mode === 'screen') stopPreview(); });
+      previewActive = true;
+      renderPreview();
+      await refreshDevices();            // labels are available after permission
+      syncAllPeers();
+      publishMediaMode();
+    } catch (err) {
+      showError(err.name === 'ScreenCancelled' ? err.message : mediaErrorMessage(err));
+      console.warn('[studio] capture failed', err);
+    } finally {
+      acquiring = false;
+      $('btn-start-camera').disabled = false;
+    }
+  }
+
+  function stopPreview() {
+    stopCapture();
+    previewActive = false;
+    renderPreview();
+    syncAllPeers();
+  }
+
+  function currentMediaMode() {
+    if (videoTrack && audioTrack) return 'both';
+    if (videoTrack) return 'video';
+    if (audioTrack) return 'audio';
+    return null;
+  }
+
+  function publishMediaMode() {
+    const m = currentMediaMode();
+    if (!m) return;
+    api(`/live-streams/${STREAM_ID}/media`, { mode: m }).catch((e) => showError(e.message));
+  }
+
+  // ─── Preview rendering ────────────────────────────────────────────────────
+  let meterRaf = 0;
+  let meterCtx = null;
+
+  function renderPreview() {
+    const video = $('local-video');
+    const hasVideo = previewActive && !!videoTrack;
+    const audioOnly = previewActive && !videoTrack && !!audioTrack;
+    video.srcObject = hasVideo ? new MediaStream([videoTrack]) : null;
+    show($('no-preview'), !previewActive);
+    show($('audio-meter'), audioOnly);
+    show($('audio-only-badge'), audioOnly);
+    show($('btn-stop'), previewActive);
+    show($('btn-mute'), previewActive && !!audioTrack);
+    show($('btn-camera-toggle'), previewActive && !!videoTrack && mode !== 'screen');
+    $('btn-start-camera').textContent = t(previewActive ? 'apply_mode' : 'start_preview');
+    updateToggleLabels();
+    stopMeter();
+    if (previewActive && audioTrack && audioOnly) startMeter();
+  }
+
+  function updateToggleLabels() {
+    $('btn-mute').textContent = t(micMuted ? 'unmute' : 'mute');
+    $('btn-camera-toggle').textContent = t(camOff ? 'camera_on' : 'camera_off');
+  }
+
+  function startMeter() {
+    const canvas = $('audio-meter');
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!canvas || !AC) return;
+    meterCtx = new AC();
+    const analyser = meterCtx.createAnalyser();
+    analyser.fftSize = 256;
+    meterCtx.createMediaStreamSource(new MediaStream([audioTrack])).connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    const g = canvas.getContext('2d');
+    const draw = () => {
+      meterRaf = requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(data);
+      g.fillStyle = '#111827';
+      g.fillRect(0, 0, canvas.width, canvas.height);
+      const bars = 48;
+      const w = canvas.width / bars;
+      for (let i = 0; i < bars; i++) {
+        const v = micMuted ? 0 : data[Math.floor((i / bars) * data.length * 0.6)] / 255;
+        const h = Math.max(4, v * canvas.height * 0.7);
+        g.fillStyle = v > 0.75 ? '#ef4444' : '#22c55e';
+        g.fillRect(i * w + 2, (canvas.height - h) / 2, w - 4, h);
+      }
+    };
+    draw();
+  }
+
+  function stopMeter() {
+    cancelAnimationFrame(meterRaf);
+    if (meterCtx) { meterCtx.close().catch(() => {}); meterCtx = null; }
+  }
+
+  // ─── Peer connections ─────────────────────────────────────────────────────
+  function createPeer(peerId) {
+    closePeer(peerId, false);
+    const pc = new RTCPeerConnection({ iceServers: ICE.servers });
+    const peer = { pc, pendingIce: [], makingOffer: false, senders: { audio: null, video: null }, disconnectTimer: null };
+    peers.set(peerId, peer);
 
     pc.onicecandidate = ({ candidate }) => {
       if (candidate) sendSignal(peerId, 'ice-candidate', candidate.toJSON());
     };
 
-    pc.onconnectionstatechange = () => {
-      if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
-        pc.close();
-        delete peerConnections[peerId];
-        updateViewerCount();
+    pc.onnegotiationneeded = async () => {
+      if (peer.makingOffer || pc.signalingState !== 'stable') return;
+      try {
+        peer.makingOffer = true;
+        await pc.setLocalDescription(await pc.createOffer());
+        await sendSignal(peerId, 'offer', { type: pc.localDescription.type, sdp: pc.localDescription.sdp });
+      } catch (e) {
+        console.warn('[studio] negotiation failed', e);
+      } finally {
+        peer.makingOffer = false;
       }
     };
 
+    pc.onconnectionstatechange = () => {
+      clearTimeout(peer.disconnectTimer);
+      const st = pc.connectionState;
+      if (st === 'failed' || st === 'closed') closePeer(peerId, true);
+      else if (st === 'disconnected') peer.disconnectTimer = setTimeout(() => {
+        if (pc.connectionState === 'disconnected') closePeer(peerId, true);
+      }, 8000);
+      updateViewerCount();
+    };
+
+    syncPeer(peer);
     updateViewerCount();
-    return pc;
+    return peer;
   }
 
-  async function handleIncomingSignal(fromPeerId, type, payload) {
-    if (type === 'offer') {
-      const pc = createPeerConnection(fromPeerId);
-      await pc.setRemoteDescription(new RTCSessionDescription(payload));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      sendSignal(fromPeerId, 'answer', answer);
-    } else if (type === 'ice-candidate') {
-      const pc = peerConnections[fromPeerId];
-      if (pc) await pc.addIceCandidate(new RTCIceCandidate(payload)).catch(() => {});
-    }
+  function closePeer(peerId, count) {
+    const peer = peers.get(peerId);
+    if (!peer) return;
+    clearTimeout(peer.disconnectTimer);
+    peers.delete(peerId);
+    peer.pc.onicecandidate = peer.pc.onnegotiationneeded = peer.pc.onconnectionstatechange = null;
+    try { peer.pc.close(); } catch (_) { /* noop */ }
+    if (count) updateViewerCount();
   }
 
-  function sendSignal(targetPeerId, type, payload) {
-    fetch(`/live-streams/${STREAM_ID}/signal`, {
-      method:  'POST',
-      headers: { 'X-CSRF-TOKEN': CSRF, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body:    JSON.stringify({ type, payload, to: targetPeerId }),
+  function closeAllPeers() {
+    [...peers.keys()].forEach((id) => closePeer(id, false));
+    updateViewerCount();
+  }
+
+  /** Make a peer's senders reflect the current tracks. replaceTrack where possible. */
+  function syncPeer(peer) {
+    [['audio', audioTrack], ['video', videoTrack]].forEach(([kind, track]) => {
+      const sender = peer.senders[kind];
+      if (sender) {
+        if (sender.track !== track) sender.replaceTrack(track || null).catch(() => {});
+      } else if (track) {
+        const stream = new MediaStream([track]);
+        peer.senders[kind] = peer.pc.addTrack(track, stream);   // fires negotiationneeded
+      }
     });
   }
 
-  function updateViewerCount() {
-    const count = Object.keys(peerConnections).length;
-    const el = $('viewer-num');
-    if (el) el.textContent = count;
-    $('viewer-count')?.classList.toggle('hidden', !isLive);
+  function syncAllPeers() {
+    peers.forEach((peer) => syncPeer(peer));
   }
 
-  function updateStatusBadge(status) {
+  function updateViewerCount() {
+    let n = 0;
+    peers.forEach((p) => { if (p.pc.connectionState === 'connected') n++; });
+    if ($('viewer-num')) $('viewer-num').textContent = n;
+    show($('viewer-count'), isLive);
+  }
+
+  // ─── Incoming signals ─────────────────────────────────────────────────────
+  async function handleSignal(msg) {
+    if (!msg || msg.target !== 'admin' || !msg.from || msg.from === 'admin') return;
+    if (!isLive) return;
+    const from = msg.from;
+    const payload = msg.payload || {};
+    try {
+      switch (msg.type) {
+        case 'hello': {
+          createPeer(from);
+          sendSignal(from, 'media-state', mediaStatePayload());
+          break;
+        }
+        case 'offer': {
+          const peer = peers.get(from) || createPeer(from);
+          const pc = peer.pc;
+          // Admin is the polite side: an incoming offer wins (implicit rollback).
+          await pc.setRemoteDescription(payload);
+          await flushIce(peer);
+          await pc.setLocalDescription(await pc.createAnswer());
+          await sendSignal(from, 'answer', { type: pc.localDescription.type, sdp: pc.localDescription.sdp });
+          break;
+        }
+        case 'answer': {
+          const peer = peers.get(from);
+          if (!peer || peer.pc.signalingState !== 'have-local-offer') return;
+          await peer.pc.setRemoteDescription(payload);
+          await flushIce(peer);
+          break;
+        }
+        case 'ice-candidate': {
+          const peer = peers.get(from);
+          if (!peer) return;
+          if (peer.pc.remoteDescription) await peer.pc.addIceCandidate(payload).catch(() => {});
+          else peer.pendingIce.push(payload);
+          break;
+        }
+        case 'bye':
+          closePeer(from, true);
+          break;
+        default:
+      }
+    } catch (e) {
+      console.warn('[studio] signal handling failed', msg.type, e);
+    }
+  }
+
+  async function flushIce(peer) {
+    const queued = peer.pendingIce.splice(0);
+    for (const c of queued) await peer.pc.addIceCandidate(c).catch(() => {});
+  }
+
+  function mediaStatePayload() {
+    const m = currentMediaMode();
+    return { mode: m, audio: !!audioTrack, video: !!videoTrack };
+  }
+
+  // ─── Go live / End ────────────────────────────────────────────────────────
+  async function goLive() {
+    const btn = $('btn-go-live');
+    btn.disabled = true;
+    const label = btn.querySelector('.label');
+    const old = label.textContent;
+    label.textContent = t('starting');
+    try {
+      await api(`/live-streams/${STREAM_ID}/go-live`);
+      isLive = true;
+      renderLiveState();
+      publishMediaMode();
+    } catch (e) {
+      showError(e.message);
+      label.textContent = old;
+      btn.disabled = false;
+    }
+  }
+
+  async function endStream() {
+    if (!confirm(t('confirm_end'))) return;
+    const btn = $('btn-end-stream');
+    btn.disabled = true;
+    try {
+      await api(`/live-streams/${STREAM_ID}/end`);
+    } catch (e) {
+      showError(e.message);
+      btn.disabled = false;
+      return;
+    }
+    isLive = false;
+    isEnded = true;
+    closeAllPeers();
+    stopPreview();
+    renderLiveState();
+  }
+
+  function renderLiveState() {
+    show($('btn-go-live'), !isLive && !isEnded);
+    show($('btn-end-stream'), isLive);
+    show($('live-indicator'), isLive);
+    show($('viewer-count'), isLive);
     const badge = $('status-badge');
-    if (!badge) return;
-    const labels = { live: '🔴 Live', scheduled: 'Scheduled', ended: 'Ended' };
-    const colors  = {
-      live:      'bg-green-100 text-green-700',
-      scheduled: 'bg-yellow-100 text-yellow-700',
-      ended:     'bg-gray-100 text-gray-600',
-    };
-    badge.className  = `inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${colors[status]}`;
-    badge.textContent = labels[status];
+    if (badge) {
+      const st = isLive ? 'live' : isEnded ? 'ended' : 'scheduled';
+      const colors = { live: 'bg-green-100 text-green-700', scheduled: 'bg-yellow-100 text-yellow-700', ended: 'bg-gray-100 text-gray-600' };
+      badge.className = `inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${colors[st]}`;
+      badge.textContent = t('state_' + st);
+    }
+    updateViewerCount();
   }
 
   // ─── Comments ─────────────────────────────────────────────────────────────
-
   function appendComment(data) {
     const list = $('comments-list');
     if (!list) return;
+    const author = String(data.author || 'G');
     const div = document.createElement('div');
-    div.className  = 'comment-item flex gap-2';
+    div.className = 'comment-item flex gap-2';
     div.dataset.id = data.id;
-    div.innerHTML  = `
-      <div class="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center text-xs font-bold text-primary-600 shrink-0">
-        ${(data.author || 'G').charAt(0).toUpperCase()}
-      </div>
-      <div class="flex-1 min-w-0">
-        <span class="text-xs font-semibold text-gray-700">${data.author}</span>
-        <p class="text-xs text-gray-600 mt-0.5 leading-snug">${data.body}</p>
-      </div>
-      <button class="delete-comment text-gray-300 hover:text-red-500 text-xs shrink-0" data-id="${data.id}">✕</button>
-    `;
+    const avatar = document.createElement('div');
+    avatar.className = 'w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center text-xs font-bold text-primary-600 shrink-0';
+    avatar.textContent = author.charAt(0).toUpperCase();
+    const body = document.createElement('div');
+    body.className = 'flex-1 min-w-0';
+    const name = document.createElement('span');
+    name.className = 'text-xs font-semibold text-gray-700';
+    name.textContent = author;
+    const text = document.createElement('p');
+    text.className = 'text-xs text-gray-600 mt-0.5 leading-snug';
+    text.textContent = data.body || '';
+    body.append(name, text);
+    const del = document.createElement('button');
+    del.className = 'delete-comment text-gray-300 hover:text-red-500 text-xs shrink-0';
+    del.dataset.id = data.id;
+    del.textContent = '✕';
+    div.append(avatar, body, del);
     list.appendChild(div);
     list.scrollTop = list.scrollHeight;
     const cnt = $('comment-count');
@@ -282,17 +577,57 @@
     const btn = e.target.closest('.delete-comment');
     if (!btn) return;
     await fetch(`/live-streams/${STREAM_ID}/comments/${btn.dataset.id}`, {
-      method:  'DELETE',
-      headers: { 'X-CSRF-TOKEN': CSRF },
+      method: 'DELETE',
+      headers: { 'X-CSRF-TOKEN': CSRF, Accept: 'application/json' },
     });
     btn.closest('.comment-item').remove();
   });
 
-  // ─── Init ─────────────────────────────────────────────────────────────────
-
-  if (isLive) {
-    subscribeChannel();
-    $('viewer-count')?.classList.remove('hidden');
+  // ─── Wiring ───────────────────────────────────────────────────────────────
+  function wire() {
+    $('btn-start-camera').addEventListener('click', startPreview);
+    $('btn-stop').addEventListener('click', stopPreview);
+    $('btn-mute').addEventListener('click', () => {
+      micMuted = !micMuted;
+      if (audioTrack) audioTrack.enabled = !micMuted;
+      updateToggleLabels();
+    });
+    $('btn-camera-toggle').addEventListener('click', () => {
+      camOff = !camOff;
+      if (videoTrack) videoTrack.enabled = !camOff;
+      updateToggleLabels();
+    });
+    ['sel-mode', 'sel-camera', 'sel-mic'].forEach((id) => {
+      $(id).addEventListener('change', () => { if (previewActive) startPreview(); });
+    });
+    $('btn-go-live')?.addEventListener('click', goLive);
+    $('btn-end-stream')?.addEventListener('click', endStream);
+    navigator.mediaDevices?.addEventListener?.('devicechange', refreshDevices);
   }
 
+  function init() {
+    wire();
+    renderLiveState();
+    refreshDevices();
+    runIceDiagnostics();
+    if (!window.isSecureContext) showError(t('err_insecure'));
+
+    // The Vite bundle creates window.Echo; give it a moment, then fail loudly.
+    let tries = 0;
+    const wait = setInterval(() => {
+      if (window.Echo) {
+        clearInterval(wait);
+        subscribeChannel();
+        // Admin page reloaded while live: re-announce so viewers re-hello.
+        if (isLive) api(`/live-streams/${STREAM_ID}/go-live`).catch((e) => showError(e.message));
+      } else if (++tries > 20) {
+        clearInterval(wait);
+        setConn('missing');
+        show($('echo-missing-banner'), true);
+      }
+    }, 150);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();

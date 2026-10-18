@@ -1,5 +1,7 @@
 # Marketplace Platform — Full VPS Deployment Guide (Ubuntu 24.04)
 
+> **Using Apache2 instead of nginx?** See [`docs/LIVE_STREAMS_VPS_APACHE.md`](LIVE_STREAMS_VPS_APACHE.md) for the Apache vhosts + live-stream (Reverb/WebRTC/coturn) runbook.
+
 Stack deployed by this guide:
 
 | Part | Tech | Runs as |

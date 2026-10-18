@@ -29,11 +29,10 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // Signal — high frequency during WebRTC negotiation; generous limit
-        Route::middleware('throttle:120,1')->group(function () {
+        Route::middleware('throttle:240,1')->group(function () {
             Route::post('/{stream}/signal', [PublicLiveStreamController::class, 'signal'])->name('signal');
         });
     });
-
 
     // ── Public settings (consumed by Flutter apps) ──────────────────────────────
     Route::get('settings', [PublicSettingsController::class, 'index'])
