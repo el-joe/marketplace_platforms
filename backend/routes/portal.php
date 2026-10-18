@@ -104,16 +104,22 @@ Route::get('/vendors', [LandingController::class, 'vendors'])->name('vendors');
 Route::get('/companies', [CompaniesController::class, 'index'])->name('companies');
 Route::get('/marketers', [MarketersController::class, 'index'])->name('marketers');
 
-// Multi-step vendor registration
-Route::get('/register', [RegistrationController::class, 'show'])->name('register');
-Route::get('/register/success', [RegistrationController::class, 'success'])->name('register.success');
-Route::post('/register/step/{step}', [RegistrationController::class, 'storeStep'])->where('step', '[1-3]')->name('register.step');
-Route::get('/register/check-slug', [RegistrationController::class, 'checkSlug'])->name('register.check-slug');
-Route::get('/register/cities', [RegistrationController::class, 'cities'])->name('register.cities');
-Route::get('/register/document-requirements', [RegistrationController::class, 'documentRequirements'])->name('register.document-requirements');
-Route::post('/register/upload', [RegistrationController::class, 'uploadDocument'])->name('register.upload');
-Route::delete('/register/document', [RegistrationController::class, 'removeDocument'])->name('register.document.remove');
-Route::post('/register/complete', [RegistrationController::class, 'complete'])->name('register.complete');
+// Multi-step vendor registration — lives under the product-seller /vendors section.
+Route::prefix('vendors/register')->group(function () {
+    Route::get('/', [RegistrationController::class, 'show'])->name('register');
+    Route::get('/success', [RegistrationController::class, 'success'])->name('register.success');
+    Route::post('/step/{step}', [RegistrationController::class, 'storeStep'])->where('step', '[1-3]')->name('register.step');
+    Route::get('/check-slug', [RegistrationController::class, 'checkSlug'])->name('register.check-slug');
+    Route::get('/cities', [RegistrationController::class, 'cities'])->name('register.cities');
+    Route::get('/document-requirements', [RegistrationController::class, 'documentRequirements'])->name('register.document-requirements');
+    Route::post('/upload', [RegistrationController::class, 'uploadDocument'])->name('register.upload');
+    Route::delete('/document', [RegistrationController::class, 'removeDocument'])->name('register.document.remove');
+    Route::post('/complete', [RegistrationController::class, 'complete'])->name('register.complete');
+});
+
+// Legacy /register URLs keep working after the move to /vendors/register.
+Route::get('/register', fn () => redirect()->route('portal.register', [], 301));
+Route::get('/register/success', fn () => redirect()->route('portal.register.success', [], 301));
 
 // Blog
 Route::prefix('blog')->name('blog.')->group(function () {

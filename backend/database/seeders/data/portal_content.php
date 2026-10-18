@@ -289,7 +289,7 @@ return [
     ['cta_footer', 'main', 'eyebrow', 'text', 'Get Started', 'ابدأ الآن', null, 1],
     ['cta_footer', 'main', 'title', 'text', 'Ready to Sell?', 'جاهز للبيع؟', null, 2],
     ['cta_footer', 'main', 'subtitle', 'text', 'Join thousands of sellers across the region who are growing with Nawy.', 'انضم إلى آلاف البائعين في جميع أنحاء المنطقة الذين ينمون ويكبرون مع ناوي.', null, 3],
-    ['cta_footer', 'main', 'button', 'link', 'Sign Up Now', 'سجل الآن', '/join', 4],
+    ['cta_footer', 'main', 'button', 'link', 'Sign Up Now', 'سجل الآن', '/vendors/register', 4],
     ['cta_footer', 'main', 'copyright', 'text', 'Nawy. All rights reserved', 'ناوي. جميع الحقوق محفوظة', null, 5],
 
     // ─── page_key = 'faq' ─────────────────────────────────────────────────────────
@@ -383,7 +383,7 @@ return [
     ['home', 'hero', 'title_line1', 'text', 'Start selling on', 'ابدأ البيع على', null, 1],
     ['home', 'testimonials', 'heading', 'text', 'Testimonials', 'شهادات', null, 1],
     ['home', 'hero', 'title_line2', 'text', 'Nawy today!', 'ناوي اليوم!', null, 2],
-    ['home', 'hero', 'cta_button', 'link', 'Sign Up Now', 'سجل الآن', '/join', 2],
+    ['home', 'hero', 'cta_button', 'link', 'Sign Up Now', 'سجل الآن', '/vendors/register', 2],
     ['home', 'hero', 'photo', 'image', 'A Nawy delivery agent carrying a box', 'مندوب توصيل ناوي يحمل طرداً', '/images/nawy_hero.jpg', 3],
     ['home', 'testimonials', 'eyebrow', 'text', 'Seller success story', 'قصة نجاح بائع', null, 3],
     ['home', 'testimonials', 'featured_title', 'text', 'PAN Home chose Nawy\'s Fulfilled by Partner (FBP) model — and became the #1 furniture seller in the region.', 'اختارت بان هوم نموذج التوصيل عن طريق البائع (FBP) من ناوي — وأصبحت البائع رقم 1 للأثاث في المنطقة.', null, 4],
