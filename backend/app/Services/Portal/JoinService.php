@@ -65,6 +65,44 @@ class JoinService
     }
 
     /**
+     * Countries offered in the join / choice header switcher, guaranteed to
+     * include Oman (the cultural context of the imagery) even ahead of launch.
+     *
+     * @return Collection<int, Country>
+     */
+    public function headerCountries(): Collection
+    {
+        $countries = $this->selectableCountries();
+
+        $oman = Country::where('iso_code_2', 'OM')->where('is_active', true)->first();
+
+        if ($oman && ! $countries->contains('id', $oman->id)) {
+            $countries = $countries->push($oman)->sortBy('name_en')->values();
+        }
+
+        return $countries;
+    }
+
+    /**
+     * The country effective for a join / choice header: an explicit session
+     * pick, else Oman (the imagery default), else the first launched country.
+     *
+     * @param  Collection<int, Country>|null  $countries
+     */
+    public function headerCountry(?Collection $countries = null): ?Country
+    {
+        $countries ??= $this->headerCountries();
+
+        $current = session()->has('portal_country')
+            ? $countries->firstWhere('site_code', session('portal_country'))
+            : null;
+
+        return $current
+            ?? $countries->firstWhere('iso_code_2', 'OM')
+            ?? $countries->first();
+    }
+
+    /**
      * Selectable sections, keyed by {@see JoinSection} value.
      *
      * @return array<string, string>

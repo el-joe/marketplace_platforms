@@ -781,6 +781,44 @@ return [
     ['join', 'actions', 'continue', 'text', 'Continue', 'متابعة', null, 1],
     ['join', 'actions', 'select_hint', 'text', 'Select an option to continue', 'اختر أحد الخيارات للمتابعة', null, 2],
 
+    // ─── page_key = 'companies' ───────────────────────────────────────────────────
+    ['companies', 'meta', 'title', 'text', 'Specialized Companies & Brokers', 'الشركات التخصصية والوسطاء', null, 1],
+    ['companies', 'hero', 'back', 'text', 'Back to join options', 'الرجوع لاختيار نوع الانضمام', null, 1],
+    ['companies', 'hero', 'title', 'text', 'How would you like to join?', 'كيف تريد الانضمام؟', null, 2],
+    ['companies', 'hero', 'subtitle', 'text', 'Choose the option that fits your business, then continue.', 'اختر الخيار المناسب لنشاطك، ثم تابع.', null, 3],
+
+    ['companies', 'card_travel_agency', 'title', 'text', 'Travel Agency', 'وكالة سفر', null, 1],
+    ['companies', 'card_travel_agency', 'description', 'text', 'Register your travel agency to publish trips, packages and bookings on Nawy.', 'سجّل وكالة السفر الخاصة بك لنشر الرحلات والباقات والحجوزات على ناوي.', null, 2],
+    ['companies', 'card_travel_agency', 'image', 'image', 'Travel agency', 'وكالة سفر', '/images/join/travel-agency.jpg', 3],
+
+    ['companies', 'card_open_souq', 'title', 'text', 'Open Souq', 'السوق المفتوح', null, 1],
+    ['companies', 'card_open_souq', 'description', 'text', 'List across our classified categories — real estate, cars, chalets and more.', 'أدرج إعلاناتك في فئات السوق المفتوح — العقارات والسيارات والشاليهات وغيرها.', null, 2],
+    ['companies', 'card_open_souq', 'image', 'image', 'Open Souq', 'السوق المفتوح', '/images/join/open-souq.jpg', 3],
+
+    ['companies', 'form', 'category_label', 'text', 'Your specialization', 'التخصص', null, 1],
+    ['companies', 'form', 'category_empty', 'text', 'Specializations are being updated, please check back soon.', 'يتم تحديث التخصصات حالياً، يرجى المحاولة قريباً.', null, 2],
+
+    ['companies', 'actions', 'continue', 'text', 'Continue', 'متابعة', null, 1],
+    ['companies', 'actions', 'select_hint', 'text', 'Select an option to continue', 'اختر أحد الخيارات للمتابعة', null, 2],
+
+    // ─── page_key = 'marketers' ───────────────────────────────────────────────────
+    ['marketers', 'meta', 'title', 'text', 'Influencers, Creators & Affiliates', 'المشاهير والمؤثرون والمسوقون بالعمولة', null, 1],
+    ['marketers', 'hero', 'back', 'text', 'Back to join options', 'الرجوع لاختيار نوع الانضمام', null, 1],
+    ['marketers', 'hero', 'title', 'text', 'How would you like to join?', 'كيف تريد الانضمام؟', null, 2],
+    ['marketers', 'hero', 'subtitle', 'text', 'Turn your reach into income. Choose the type that matches how you work and complete your registration.', 'حوّل جمهورك إلى دخل. اختر النوع الذي يناسب طريقة عملك وأكمل تسجيلك.', null, 3],
+
+    ['marketers', 'card_influencer', 'description', 'text', 'Promote products and listings to your audience with a fixed amount per campaign.', 'روّج للمنتجات والإعلانات لجمهورك مقابل مبلغ ثابت لكل حملة.', null, 1],
+    ['marketers', 'card_influencer', 'image', 'image', 'Influencer', 'مشهور', '/images/join/marketer-type.jpg', 2],
+
+    ['marketers', 'card_affiliate', 'description', 'text', 'Earn a percentage of every sale you drive through your affiliate links.', 'اربح نسبة من كل عملية بيع تحققها عبر روابطك التسويقية.', null, 1],
+    ['marketers', 'card_affiliate', 'image', 'image', 'Affiliate', 'مسوّق بالعمولة', '/images/join/marketer-type.jpg', 2],
+
+    ['marketers', 'card_broker', 'description', 'text', 'Connect buyers and sellers and earn a fixed amount, a percentage, or both.', 'اربط المشترين بالبائعين واربح مبلغاً ثابتاً أو نسبة أو كليهما.', null, 1],
+    ['marketers', 'card_broker', 'image', 'image', 'Broker', 'وسيط', '/images/join/marketer-type.jpg', 2],
+
+    ['marketers', 'actions', 'continue', 'text', 'Continue', 'متابعة', null, 1],
+    ['marketers', 'actions', 'select_hint', 'text', 'Select an option to continue', 'اختر أحد الخيارات للمتابعة', null, 2],
+
     // ─── page_key = 'layout' ──────────────────────────────────────────────────────
     ['layout', 'portal', 'default_title', 'text', 'Sell on Nawy', 'بيع على ناوي', null, 1],
     ['layout', 'portal', 'title_suffix', 'text', 'Nawy for Sellers', 'ناوي للبائعين', null, 2],

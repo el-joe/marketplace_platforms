@@ -149,11 +149,51 @@ class JoinPageTest extends TestCase
         $response = $this->get(route('portal.companies'));
 
         $response->assertOk();
+        // The Open Souq choice reveals the classified categories to pick from.
         $response->assertSee($active->name_ar);
         $response->assertDontSee('غير متاح');
-        // Not the seller wizard.
-        $response->assertSee('شركة تخصصية');
-        $response->assertSee('وسيط');
+        $response->assertSee('name="classified_category_id"', false);
+        // The two ways into the classified side.
+        $response->assertSee('وكالة سفر');
+        $response->assertSee('السوق المفتوح');
+    }
+
+    public function test_companies_page_choice_screen_uses_its_own_continue_action(): void
+    {
+        $response = $this->get(route('portal.companies'));
+
+        $response->assertOk();
+        $response->assertSee(route('portal.companies.continue'), false);
+        $response->assertSee('name="choice"', false);
+        // No section navigation menu on the uniform choice screen.
+        $response->assertDontSee(route('portal.companies').'#specializations', false);
+    }
+
+    public function test_companies_continue_stores_the_choice(): void
+    {
+        $category = $this->activeClassifiedCategory();
+
+        $travel = $this->post(route('portal.companies.continue'), ['choice' => 'travel_agency']);
+        $travel->assertRedirect(route('portal.companies'));
+        $travel->assertSessionHas('join_status');
+        $travel->assertSessionHas('companies.selection.choice', 'travel_agency');
+
+        $souq = $this->post(route('portal.companies.continue'), [
+            'choice' => 'open_souq',
+            'classified_category_id' => $category->id,
+        ]);
+        $souq->assertRedirect(route('portal.companies'));
+        $souq->assertSessionHas('join_status');
+        $souq->assertSessionHas('companies.selection.classified_category_id', $category->id);
+    }
+
+    public function test_open_souq_requires_a_specialization(): void
+    {
+        $response = $this->from(route('portal.companies'))->post(route('portal.companies.continue'), [
+            'choice' => 'open_souq',
+        ]);
+
+        $response->assertSessionHasErrors('classified_category_id');
     }
 
     public function test_companies_page_inherits_the_home_page_country_without_a_picker(): void
@@ -213,16 +253,28 @@ class JoinPageTest extends TestCase
 
     // ── Marketers landing ─────────────────────────────────────────────────
 
-    public function test_marketers_landing_links_each_active_type_to_marketer_register(): void
+    public function test_marketers_landing_lists_each_active_type_on_the_choice_screen(): void
     {
-        $this->activeMarketerJob('affiliate');
-        $this->activeMarketerJob('influencer', 2);
+        $affiliate = $this->activeMarketerJob('affiliate');
+        $influencer = $this->activeMarketerJob('influencer', 2);
 
         $response = $this->get(route('portal.marketers'));
 
         $response->assertOk();
-        $response->assertSee(route('marketer.register', ['type' => 'affiliate']), false);
-        $response->assertSee(route('marketer.register', ['type' => 'influencer']), false);
+        $response->assertSee($affiliate->name_ar);
+        $response->assertSee($influencer->name_ar);
+        $response->assertSee('name="marketer_type"', false);
+        $response->assertSee(route('portal.marketers.continue'), false);
+    }
+
+    public function test_marketer_continue_hands_off_to_marketer_register(): void
+    {
+        $this->activeMarketerJob('affiliate');
+
+        $response = $this->post(route('portal.marketers.continue'), ['marketer_type' => 'affiliate']);
+
+        $response->assertRedirect(route('marketer.register', ['type' => 'affiliate']));
+        $response->assertSessionHas('marketers.selection.marketer_type', 'affiliate');
     }
 
     public function test_marketer_type_must_be_an_active_job_key(): void
@@ -288,25 +340,22 @@ class JoinPageTest extends TestCase
         $response->assertDontSee('تم تحديدها تلقائيًا');
     }
 
-    // ── Section-specific navigation ──────────────────────────────────────
+    // ── Section-specific choice screens ──────────────────────────────────
 
-    public function test_companies_page_shows_its_own_section_navigation(): void
+    public function test_companies_page_links_back_to_the_join_options(): void
     {
         $response = $this->get(route('portal.companies'));
 
         $response->assertOk();
-        $response->assertSee(route('portal.companies').'#how', false);
-        $response->assertSee(route('portal.companies').'#specializations', false);
-        $response->assertSee(route('portal.companies').'#register', false);
+        $response->assertSee('href="'.route('portal.join').'"', false);
     }
 
-    public function test_marketers_page_shows_its_own_section_navigation(): void
+    public function test_marketers_page_links_back_to_the_join_options(): void
     {
         $response = $this->get(route('portal.marketers'));
 
         $response->assertOk();
-        $response->assertSee(route('portal.marketers').'#types', false);
-        $response->assertSee(route('portal.marketers').'#register', false);
+        $response->assertSee('href="'.route('portal.join').'"', false);
     }
 
     // ── Backward compatibility ────────────────────────────────────────────

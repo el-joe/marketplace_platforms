@@ -102,7 +102,9 @@ Route::post('/join/continue', [JoinController::class, 'continue'])->name('join.c
 // /vendors reuses the legacy product-seller portal content unchanged.
 Route::get('/vendors', [LandingController::class, 'vendors'])->name('vendors');
 Route::get('/companies', [CompaniesController::class, 'index'])->name('companies');
+Route::post('/companies/continue', [CompaniesController::class, 'continue'])->name('companies.continue');
 Route::get('/marketers', [MarketersController::class, 'index'])->name('marketers');
+Route::post('/marketers/continue', [MarketersController::class, 'continue'])->name('marketers.continue');
 
 // Multi-step vendor registration — lives under the product-seller /vendors section.
 Route::prefix('vendors/register')->group(function () {

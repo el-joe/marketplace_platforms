@@ -4,25 +4,100 @@ namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
 use App\Services\Portal\JoinService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CompaniesController extends Controller
 {
+    /**
+     * The two ways a company/broker enters the classified side of the platform.
+     *
+     * @var list<string>
+     */
+    private const CHOICES = ['travel_agency', 'open_souq'];
+
     public function __construct(private JoinService $joinService) {}
 
     /**
-     * GET /companies — landing page for specialized companies and brokers.
+     * GET /companies — pick how to join the classified side: as a travel agency
+     * or through Open Souq, which reveals the classified categories to pick from.
      *
-     * Specializations come from the existing classified_categories table; the
-     * country is inherited from the portal home page selection rather than
-     * being asked for again here.
+     * Mirrors the /join choice screen; the country is inherited from the portal
+     * home page selection rather than being asked for again here.
      */
     public function index(): View
     {
+        $countries = $this->joinService->headerCountries();
+        $selection = (array) session('companies.selection', []);
+
         return view('portal.companies', [
+            'cards' => $this->cards(),
             'categories' => $this->joinService->classifiedCategories(),
-            'currentCountry' => $this->joinService->currentCountry(),
-            'selection' => $this->joinService->currentSelection(),
+            'selection' => $selection,
+            'countries' => $countries,
+            'currentCountry' => $this->joinService->headerCountry($countries),
         ]);
+    }
+
+    /**
+     * POST /companies/continue — validate the choice server-side and remember it.
+     *
+     * Travel agency and Open Souq registration flows are being prepared; a
+     * valid selection is stored and the visitor is returned with a status note
+     * so no partial registration flow is ever activated.
+     */
+    public function continue(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'choice' => ['required', 'string', Rule::in(self::CHOICES)],
+            'classified_category_id' => [
+                'nullable',
+                'string',
+                Rule::exists('classified_categories', 'id')->where('is_active', true),
+            ],
+        ], [
+            'choice.in' => __('portal.companies.choice_invalid'),
+            'classified_category_id.exists' => __('portal.companies.category_unavailable'),
+        ]);
+
+        if ($validated['choice'] === 'open_souq' && empty($validated['classified_category_id'])) {
+            throw ValidationException::withMessages([
+                'classified_category_id' => __('portal.companies.category_required'),
+            ]);
+        }
+
+        session(['companies.selection' => $validated]);
+
+        $message = $validated['choice'] === 'travel_agency'
+            ? __('portal.companies.travel_pending')
+            : __('portal.companies.souq_pending');
+
+        return redirect()->route('portal.companies')->with('join_status', $message);
+    }
+
+    /**
+     * Choice cards for the companies screen, CMS-editable via Portal Content.
+     *
+     * @return array<int, array{value: string, title: string, description: string, image: array{src: string, alt: string}}>
+     */
+    private function cards(): array
+    {
+        return [
+            [
+                'value' => 'travel_agency',
+                'title' => portal_content('companies', 'card_travel_agency', 'title', 'Travel Agency', 'وكالة سفر'),
+                'description' => portal_content('companies', 'card_travel_agency', 'description', 'Register your travel agency to publish trips, packages and bookings on Nawy.', 'سجّل وكالة السفر الخاصة بك لنشر الرحلات والباقات والحجوزات على ناوي.'),
+                'image' => portal_image('companies', 'card_travel_agency', 'image', asset('images/join/travel-agency.jpg'), 'Travel agency', 'وكالة سفر'),
+            ],
+            [
+                'value' => 'open_souq',
+                'title' => portal_content('companies', 'card_open_souq', 'title', 'Open Souq', 'السوق المفتوح'),
+                'description' => portal_content('companies', 'card_open_souq', 'description', 'List across our classified categories — real estate, cars, chalets and more.', 'أدرج إعلاناتك في فئات السوق المفتوح — العقارات والسيارات والشاليهات وغيرها.'),
+                'image' => portal_image('companies', 'card_open_souq', 'image', asset('images/join/open-souq.jpg'), 'Open Souq', 'السوق المفتوح'),
+            ],
+        ];
     }
 }

@@ -25,7 +25,8 @@
 
                 <div class="flex items-center gap-6 xl:gap-[48px] h-full">
                     <a href="{{ route('portal.home') }}" class="flex items-center shrink-0" aria-label="{{ $navLogoAria }}">
-                        <img src="{{ $navLogo['src'] }}" alt="{{ $navLogo['alt'] }}" class="h-[40px] w-auto">
+                        <img src="{{ $navLogo['src'] }}" alt="{{ $navLogo['alt'] }}" width="808" height="780"
+                            decoding="async" class="h-[44px] w-auto object-contain">
                     </a>
 
                     <nav class="hidden lg:flex items-center gap-4 xl:gap-[32px] h-full">
@@ -100,7 +101,8 @@
         <div class="px-4 sm:px-6 shrink-0">
             <div class="flex items-center justify-between h-[72px]">
                 <a href="{{ route('portal.home') }}" @click="mobileOpen = false" class="flex items-center shrink-0">
-                    <img src="{{ $navLogo['src'] }}" alt="{{ $navLogo['alt'] }}" class="h-[36px] w-auto">
+                    <img src="{{ $navLogo['src'] }}" alt="{{ $navLogo['alt'] }}" width="808" height="780"
+                        decoding="async" class="h-[40px] w-auto object-contain">
                 </a>
                 <button @click="mobileOpen = false" class="text-white p-1 focus:outline-none" aria-label="{{ $navCloseAria }}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"

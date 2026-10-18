@@ -106,7 +106,8 @@
                 {{-- Logo --}}
                 <a href="{{ route('portal.home') }}" class="flex items-center shrink-0"
                     aria-label="{{ $navLogoAria }}">
-                    <img src="{{ $navLogo['src'] }}" alt="{{ $navLogo['alt'] }}" class="h-[40px] w-auto">
+                    <img src="{{ $navLogo['src'] }}" alt="{{ $navLogo['alt'] }}" width="808" height="780"
+                        decoding="async" class="h-[44px] w-auto object-contain">
                 </a>
 
                 {{-- Desktop nav links --}}

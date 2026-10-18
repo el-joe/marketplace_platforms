@@ -174,4 +174,17 @@ return [
         'marketer_type_required' => 'Please select a registration type.',
         'classified_pending' => 'Registration for specialized companies and brokers is being prepared and will be available soon.',
     ],
+
+    'companies' => [
+        'choice_invalid' => 'The selected option is invalid.',
+        'category_required' => 'Please select a specialization.',
+        'category_unavailable' => 'The selected specialization is not available right now.',
+        'travel_pending' => 'Travel agency registration is being prepared and will be available soon.',
+        'souq_pending' => 'Open Souq registration is being prepared and will be available soon.',
+    ],
+
+    'marketers' => [
+        'type_invalid' => 'The selected type is invalid.',
+        'type_required' => 'Please select a type.',
+    ],
 ];
