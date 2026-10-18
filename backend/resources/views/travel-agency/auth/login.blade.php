@@ -64,6 +64,7 @@
 
         <p class="mt-6 text-center text-xs text-gray-600">
             {{ __('travel.auth.register_subtitle') }}
+            <a href="{{ route('portal.companies.travel-agency.register.show') }}" class="text-blue-400 hover:underline">{{ __('travel.auth.register') }}</a>
         </p>
     </div>
 

@@ -174,8 +174,8 @@ class JoinPageTest extends TestCase
         $category = $this->activeClassifiedCategory();
 
         $travel = $this->post(route('portal.companies.continue'), ['choice' => 'travel_agency']);
-        $travel->assertRedirect(route('portal.companies'));
-        $travel->assertSessionHas('join_status');
+        // A travel-agency choice opens that section's introduction landing page.
+        $travel->assertRedirect(route('portal.companies.travel-agency'));
         $travel->assertSessionHas('companies.selection.choice', 'travel_agency');
 
         $souq = $this->post(route('portal.companies.continue'), [

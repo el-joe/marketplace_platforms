@@ -470,7 +470,7 @@ return [
         'confirm_password_password' => 'Confirm Password',
         'already_registered' => 'Already registered?',
         'login_instead' => 'Login instead',
-        'register_subtitle' => 'For new travel agency registration, please contact the administration.',
+        'register_subtitle' => 'New travel agency?',
     ],
 
     'campaigns' => [

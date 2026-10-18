@@ -9,6 +9,8 @@ use App\Http\Controllers\Portal\JoinController;
 use App\Http\Controllers\Portal\LandingController;
 use App\Http\Controllers\Portal\MarketersController;
 use App\Http\Controllers\Portal\RegistrationController;
+use App\Http\Controllers\Portal\TravelAgencyController;
+use App\Http\Controllers\Portal\TravelAgencyRegistrationController;
 use App\Models\Country;
 use Illuminate\Support\Facades\Route;
 
@@ -105,6 +107,18 @@ Route::get('/companies', [CompaniesController::class, 'index'])->name('companies
 Route::post('/companies/continue', [CompaniesController::class, 'continue'])->name('companies.continue');
 Route::get('/marketers', [MarketersController::class, 'index'])->name('marketers');
 Route::post('/marketers/continue', [MarketersController::class, 'continue'])->name('marketers.continue');
+
+// Travel-agency section reached from the /companies choice screen: an
+// introduction landing page plus the multi-step registration wizard that
+// creates a pending TravelAgency and its owner account.
+Route::get('/companies/travel-agency', [TravelAgencyController::class, 'landing'])->name('companies.travel-agency');
+Route::prefix('companies/travel-agency/register')->name('companies.travel-agency.register.')->group(function () {
+    Route::get('/', [TravelAgencyRegistrationController::class, 'show'])->name('show');
+    Route::get('/success', [TravelAgencyRegistrationController::class, 'success'])->name('success');
+    Route::post('/step/{step}', [TravelAgencyRegistrationController::class, 'storeStep'])->where('step', '[1-2]')->name('step');
+    Route::delete('/logo', [TravelAgencyRegistrationController::class, 'removeLogo'])->name('logo.remove');
+    Route::post('/complete', [TravelAgencyRegistrationController::class, 'complete'])->name('complete');
+});
 
 // Multi-step vendor registration — lives under the product-seller /vendors section.
 Route::prefix('vendors/register')->group(function () {

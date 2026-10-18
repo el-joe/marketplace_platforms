@@ -45,9 +45,10 @@ class CompaniesController extends Controller
     /**
      * POST /companies/continue — validate the choice server-side and remember it.
      *
-     * Travel agency and Open Souq registration flows are being prepared; a
-     * valid selection is stored and the visitor is returned with a status note
-     * so no partial registration flow is ever activated.
+     * A travel-agency choice opens that section's introduction landing page,
+     * which links into the travel-agency registration wizard. Open Souq
+     * registration is still being prepared, so a valid selection is stored and
+     * the visitor is returned with a status note.
      */
     public function continue(Request $request): RedirectResponse
     {
@@ -71,11 +72,13 @@ class CompaniesController extends Controller
 
         session(['companies.selection' => $validated]);
 
-        $message = $validated['choice'] === 'travel_agency'
-            ? __('portal.companies.travel_pending')
-            : __('portal.companies.souq_pending');
+        if ($validated['choice'] === 'travel_agency') {
+            return redirect()->route('portal.companies.travel-agency');
+        }
 
-        return redirect()->route('portal.companies')->with('join_status', $message);
+        return redirect()
+            ->route('portal.companies')
+            ->with('join_status', __('portal.companies.souq_pending'));
     }
 
     /**

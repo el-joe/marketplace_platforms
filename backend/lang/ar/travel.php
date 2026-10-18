@@ -469,7 +469,7 @@ return [
         'confirm_password_password' => 'تأكيد كلمة المرور',
         'already_registered' => 'هل أنت مسجل بالفعل؟',
         'login_instead' => 'تسجيل الدخول بدلاً من ذلك',
-        'register_subtitle' => 'للتسجيل كوكالة سفر جديدة، يرجى التواصل مع الإدارة.',
+        'register_subtitle' => 'للانضمام كوكالة سفر جديدة؟',
     ],
 
     'campaigns' => [

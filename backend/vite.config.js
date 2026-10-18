@@ -83,6 +83,7 @@ export default defineConfig({
                 // Portal (portal.noon.loc)
                 'resources/js/portal/app.js',
                 'resources/js/portal/registration.js',
+                'resources/js/portal/travel-agency-registration.js',
                 // Partner panel (partner.noon.loc)
                 'resources/js/partner/app.js',
                 'resources/js/partner/ads.js',

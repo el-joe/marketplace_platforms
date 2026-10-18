@@ -187,4 +187,13 @@ return [
         'type_invalid' => 'The selected type is invalid.',
         'type_required' => 'Please select a type.',
     ],
+
+    'travel_agency' => [
+        'email_unique' => 'This email is already registered.',
+        'email_invalid' => 'Please enter a valid email address.',
+        'country_invalid' => 'The selected country is not available right now.',
+        'logo_invalid' => 'The logo must be a PNG, JPG or WEBP image.',
+        'logo_too_large' => 'The logo must not be larger than 2MB.',
+        'incomplete_data' => 'Registration data is incomplete. Please go back and re-enter the data.',
+    ],
 ];
