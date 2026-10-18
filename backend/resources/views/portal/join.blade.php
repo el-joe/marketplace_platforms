@@ -54,13 +54,9 @@
                 padding-bottom: 0.25rem;
             }
 
-            #join-page .join-brand {
-                gap: 0.75rem;
-                margin-bottom: 0.75rem;
-            }
-
-            #join-page .join-brand > a > img {
-                height: 36px;
+            #join-page .join-header > div {
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
             }
 
             #join-page .join-hero h1 {
@@ -124,11 +120,6 @@
             #join-page footer > div {
                 padding-top: 0.5rem;
                 padding-bottom: 0.5rem;
-                gap: 0.75rem;
-            }
-
-            #join-page footer img {
-                height: 26px;
             }
         }
     </style>
@@ -137,12 +128,13 @@
 @section('content')
     <div id="join-page" class="bg-gray-950 min-h-screen flex flex-col" dir="{{ $isAr ? 'rtl' : 'ltr' }}"
         x-data="{ selected: @js($selectedSection) }">
-        <div class="join-content flex-1 w-full max-w-[1080px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-16 lg:pb-24">
 
-            @php($joinLogo = portal_image('join', 'logo', 'image', asset('images/nawy_logo_transparent.png'), 'Nawy', 'ناوي'))
-            <div class="join-brand flex flex-col items-center gap-6 mb-10">
-                <a href="{{ route('portal.home') }}" aria-label="{{ portal_content('join', 'logo', 'aria_label', 'Nawy', 'ناوي') }}">
-                    <img src="{{ $joinLogo['src'] }}" alt="{{ $joinLogo['alt'] }}" class="h-[48px] sm:h-[56px] w-auto">
+        @php($joinLogo = portal_image('join', 'logo', 'image', asset('images/nawy_logo_transparent.png'), 'Nawy', 'ناوي'))
+        <header class="join-header relative z-40 w-full bg-[#0b2422] border-b border-white/10 shadow-lg shadow-black/30">
+            <div class="max-w-[1080px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+                <a href="{{ route('portal.home') }}" class="shrink-0"
+                    aria-label="{{ portal_content('join', 'logo', 'aria_label', 'Nawy', 'ناوي') }}">
+                    <img src="{{ $joinLogo['src'] }}" alt="{{ $joinLogo['alt'] }}" class="h-[40px] sm:h-[44px] w-auto">
                 </a>
                 @include('portal.partials.country-selector', [
                     'countries' => $countries,
@@ -150,6 +142,9 @@
                     'showLanguage' => true,
                 ])
             </div>
+        </header>
+
+        <div class="join-content flex-1 w-full max-w-[1080px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-16 lg:pb-24">
 
             <div class="join-hero text-center max-w-3xl mx-auto">
                 <h1 class="text-white font-extrabold text-3xl sm:text-4xl lg:text-[44px] leading-tight">
