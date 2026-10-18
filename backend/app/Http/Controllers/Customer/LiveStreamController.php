@@ -45,9 +45,7 @@ class LiveStreamController extends Controller
                 'id' => $stream->id,
                 'title' => ['en' => $stream->title_en, 'ar' => $stream->title_ar],
                 'description' => ['en' => $stream->description_en, 'ar' => $stream->description_ar],
-                'thumbnail_url' => $stream->thumbnail_path
-                    ? Storage::url($stream->thumbnail_path)
-                    : null,
+                'thumbnail_url' => $this->thumbnailUrl($stream->thumbnail_path),
                 'status' => $stream->status->value,
                 'media_mode' => $stream->media_mode,
                 'scheduled_at' => $stream->scheduled_at?->toIso8601String(),
@@ -174,14 +172,24 @@ class LiveStreamController extends Controller
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
+    /** Absolute URL (with domain) of a thumbnail stored on the public disk. */
+    private function thumbnailUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        $url = Storage::disk('public')->url($path);
+
+        return preg_match('#^https?://#i', $url) ? $url : url($url);
+    }
+
     private function cardShape(LiveStream $s): array
     {
         return [
             'id' => $s->id,
             'title' => ['en' => $s->title_en, 'ar' => $s->title_ar],
-            'thumbnail_url' => $s->thumbnail_path
-                ? Storage::url($s->thumbnail_path)
-                : null,
+            'thumbnail_url' => $this->thumbnailUrl($s->thumbnail_path),
             'status' => $s->status->value,
             'media_mode' => $s->media_mode,
             'scheduled_at' => $s->scheduled_at?->toIso8601String(),

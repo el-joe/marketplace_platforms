@@ -23,6 +23,18 @@ class LiveStreamSignalTest extends TestCase
         return route('public.streams.signal', $s);
     }
 
+    public function test_thumbnail_urls_are_absolute_in_list_and_detail(): void
+    {
+        $s = LiveStream::create(['title_en' => 'T', 'title_ar' => 'ت', 'status' => 'ended', 'thumbnail_path' => 'live-streams/thumbnails/a.jpg']);
+
+        $detail = $this->getJson(route('public.streams.show', $s))->assertOk()->json('data.thumbnail_url');
+        $list = $this->getJson(route('public.streams.index'))->assertOk()->json('data.0.thumbnail_url');
+
+        foreach ([$detail, $list] as $url) {
+            $this->assertMatchesRegularExpression('#^https?://[^/]+/storage/live-streams/thumbnails/a\.jpg$#', $url);
+        }
+    }
+
     public function test_viewer_signal_forces_target_admin_and_uses_peer_id_as_from(): void
     {
         Event::fake([StreamSignal::class]);
