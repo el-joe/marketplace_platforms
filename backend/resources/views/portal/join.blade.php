@@ -86,18 +86,18 @@
             }
 
             #join-page .join-card-media {
-                height: 150px;
+                height: 220px;
             }
 
             #join-page .join-card-media img {
                 height: 100%;
-                max-height: 150px;
+                max-height: 220px;
                 object-fit: cover;
             }
 
             #join-page .join-card-body {
                 gap: 0.5rem;
-                padding: 1rem;
+                padding: 1.25rem;
             }
 
             #join-page .join-card-body h2 {
