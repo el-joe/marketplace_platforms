@@ -56,6 +56,12 @@ class TravelAgencyRegistrationTest extends TestCase
 
         $response->assertOk();
         $response->assertSee(route('portal.companies.travel-agency.register.show'), false);
+
+        // The navbar belongs to the travel-agency section, not the product-seller (/vendors) one.
+        $response->assertSee('لماذا تبيع السفر');
+        $response->assertSee('ما يمكنك نشره');
+        $response->assertSee('كيف تبدأ');
+        $response->assertDontSee('الشحن والتوصيل');
     }
 
     public function test_registration_wizard_renders_the_alpine_component(): void

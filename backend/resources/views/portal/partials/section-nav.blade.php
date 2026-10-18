@@ -5,7 +5,8 @@
     $navLogoAria = portal_content('nav', 'logo', 'aria_label', 'Home', 'الصفحة الرئيسية');
     $navMenuAria = portal_content('nav', 'mobile', 'menu_aria', 'Menu', 'القائمة');
     $navCloseAria = portal_content('nav', 'mobile', 'close_aria', 'Close menu', 'إغلاق القائمة');
-    $backLabel = portal_content('nav', 'section_back', 'label', 'Join options', 'خيارات الانضمام');
+    $backUrl = $backUrl ?? route('portal.join');
+    $backLabel = $backLabel ?? portal_content('nav', 'section_back', 'label', 'Join options', 'خيارات الانضمام');
 
     $sectionNavLinks = collect($links ?? [])->map(fn (array $link) => [
         'href' => $link['href'],
@@ -126,7 +127,7 @@
 
         <div class="mt-auto px-6 pb-10 shrink-0">
             <div class="w-full h-px bg-white/10 mb-6"></div>
-            <a href="{{ route('portal.join') }}"
+            <a href="{{ $backUrl }}"
                 class="flex items-center justify-center w-full bg-[#0F807E] hover:bg-[#0c6665] text-white font-bold text-base py-3 rounded-full transition-colors">
                 {{ $backLabel }}
             </a>

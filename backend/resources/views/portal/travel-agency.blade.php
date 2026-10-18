@@ -27,6 +27,21 @@
 @section('title', portal_content('travel-agency', 'meta', 'title', 'Register Your Travel Agency — Nawy', 'سجّل وكالة السفر الخاصة بك — ناوي'))
 @section('meta_description', portal_content('travel-agency', 'meta', 'description', 'Publish trips, packages and bookings on Nawy and reach travelers across the region.', 'انشر الرحلات والباقات والحجوزات على ناوي وصِل إلى المسافرين في جميع أنحاء المنطقة.'))
 
+@php($travelNav = [
+    ['key' => 'benefits', 'href' => '#benefits', 'label_en' => 'Why sell travel', 'label_ar' => 'لماذا تبيع السفر'],
+    ['key' => 'publish', 'href' => '#publish', 'label_en' => 'What you can publish', 'label_ar' => 'ما يمكنك نشره'],
+    ['key' => 'steps', 'href' => '#steps', 'label_en' => 'How it works', 'label_ar' => 'كيف تبدأ'],
+    ['key' => 'register', 'href' => $registerUrl, 'label_en' => 'Register now', 'label_ar' => 'سجّل الآن'],
+])
+
+@section('nav')
+    @include('portal.partials.section-nav', [
+        'section' => 'travel_agency',
+        'backUrl' => route('portal.companies'),
+        'links' => $travelNav,
+    ])
+@endsection
+
 @section('content')
     {{-- Hero --}}
     <section class="relative overflow-hidden bg-gray-900">
@@ -68,7 +83,7 @@
     <div class="flex flex-col gap-y-[48px] lg:gap-y-[64px] py-[48px] lg:py-[64px]">
 
         {{-- Why join --}}
-        <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="benefits" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
             <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-6 lg:mb-8">
                 {{ portal_content('travel-agency', 'benefits', 'title', 'Why sell travel on Nawy?', 'لماذا تبيع السفر على ناوي؟') }}
             </h2>
@@ -91,7 +106,7 @@
 
         {{-- Categories you can publish --}}
         @if ($categories->isNotEmpty())
-            <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+            <section id="publish" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
                 <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-6 lg:mb-8">
                     {{ portal_content('travel-agency', 'categories', 'title', 'What you can publish', 'ما يمكنك نشره') }}
                 </h2>
@@ -107,7 +122,7 @@
         @endif
 
         {{-- How it works --}}
-        <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="steps" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
             <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-6 lg:mb-8">
                 {{ portal_content('travel-agency', 'steps', 'title', 'Getting started is simple', 'البدء بسيط') }}
             </h2>
