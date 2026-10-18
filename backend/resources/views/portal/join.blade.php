@@ -136,10 +136,9 @@
                     aria-label="{{ portal_content('join', 'logo', 'aria_label', 'Nawy', 'ناوي') }}">
                     <img src="{{ $joinLogo['src'] }}" alt="{{ $joinLogo['alt'] }}" class="h-[40px] sm:h-[44px] w-auto">
                 </a>
-                @include('portal.partials.country-selector', [
+                @include('portal.partials.locale-switcher', [
                     'countries' => $countries,
                     'currentCountry' => $currentCountry,
-                    'showLanguage' => true,
                 ])
             </div>
         </header>
