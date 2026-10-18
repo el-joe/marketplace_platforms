@@ -23,6 +23,7 @@ const ADMIN = 'admin';
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 8000];
 const DISCONNECT_GRACE_MS = 5000;
 const POLL_MS = 15000;
+const CONNECT_TIMEOUT_MS = 15000;
 const BROADCAST_TYPES = ['hello', 'media-state', 'ended'];
 
 const buildIceServers = (): RTCIceServer[] => {
@@ -236,8 +237,8 @@ export function useLiveStreamViewer({ streamId, streamKey, enabled, initialMode 
       pcRef.current = pc;
       setVideoActive(false);
 
-      pc.addTransceiver('video', { direction: 'recvonly' });
-      pc.addTransceiver('audio', { direction: 'recvonly' });
+      // The broadcaster is the only offerer: we just say hello and answer its
+      // offer (no transceivers here, so there is no offer glare).
 
       pc.ontrack = (ev) => {
         if (pcRef.current !== pc) return;
@@ -277,14 +278,14 @@ export function useLiveStreamViewer({ streamId, streamKey, enabled, initialMode 
         }
       };
 
+      // Give up on this attempt if the broadcaster never connects.
+      discTimer.current = setTimeout(() => {
+        discTimer.current = null;
+        if (pcRef.current === pc && pc.connectionState !== 'connected') scheduleReconnect();
+      }, CONNECT_TIMEOUT_MS);
+
       try {
         await postSignal(streamId, 'hello', {}, me);
-        const offer = await pc.createOffer();
-        if (pcRef.current !== pc) return;
-        await pc.setLocalDescription(offer);
-        await postSignal(streamId, 'offer', pc.localDescription ?? offer, me);
-        if (pcRef.current !== pc) return;
-        flushLocalIce();
       } catch {
         if (pcRef.current === pc) scheduleReconnect();
       }
@@ -331,7 +332,8 @@ export function useLiveStreamViewer({ streamId, streamKey, enabled, initialMode 
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
               await postSignal(streamId, 'answer', pc.localDescription ?? answer, me);
-            } catch { /* next hello/poll will recover */ }
+              if (pcRef.current === pc) flushLocalIce();
+            } catch { /* connect timeout will retry */ }
           }
           break;
         case 'ice-candidate':
