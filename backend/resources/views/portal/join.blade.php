@@ -49,7 +49,7 @@
                 min-height: 0;
                 display: flex;
                 flex-direction: column;
-                justify-content: space-evenly;
+                justify-content: flex-start;
                 padding-top: 1.5rem;
                 padding-bottom: 1.5rem;
             }
@@ -65,7 +65,7 @@
             }
 
             #join-page .join-hero p {
-                margin-top: 0.5rem;
+                margin-top: 0.75rem;
                 font-size: 0.95rem;
                 line-height: 1.4;
             }
@@ -75,13 +75,14 @@
             }
 
             /* Promote the form's children (cards + button) to direct flex items so
-               space-evenly distributes title, cards and button evenly. */
+               the title, cards and button can be spaced independently. */
             #join-page .join-form {
                 display: contents;
             }
 
             #join-page .join-cards {
                 gap: 1rem;
+                margin-top: auto;
             }
 
             #join-page .join-card-media {
@@ -110,7 +111,7 @@
             }
 
             #join-page .join-actions {
-                margin-top: 0;
+                margin-top: auto;
                 gap: 0.5rem;
             }
 
