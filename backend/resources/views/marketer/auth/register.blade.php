@@ -9,6 +9,17 @@
         'broker' => ['icon' => '🤝', 'label' => __('marketer.auth.type_broker'), 'hint' => __('marketer.auth.type_broker_hint')],
     ];
 
+    // When a type is handed over from the public portal (e.g. /marketers?type=broker)
+    // only that type is shown, so the visitor cannot pick a different one here.
+    $activeType = old('marketer_type', $selectedType);
+    if (is_string($activeType) && isset($marketerTypes[$activeType])) {
+        $marketerTypes = [$activeType => $marketerTypes[$activeType]];
+    }
+
+    $typeGridClass = count($marketerTypes) > 1
+        ? 'grid grid-cols-1 sm:grid-cols-3 gap-3'
+        : 'grid grid-cols-1 gap-3 sm:max-w-xs sm:mx-auto';
+
     $inputBase = 'w-full bg-gray-800 border text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors';
 @endphp
 
@@ -39,7 +50,7 @@
                         <label class="block text-sm font-medium text-gray-300 mb-2">
                             {{ __('marketer.auth.account_type_label') }} <span class="text-red-400">*</span>
                         </label>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="{{ $typeGridClass }}">
                             @foreach ($marketerTypes as $value => $type)
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="marketer_type" value="{{ $value }}" class="sr-only peer"

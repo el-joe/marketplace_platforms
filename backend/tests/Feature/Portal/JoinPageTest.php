@@ -369,4 +369,21 @@ class JoinPageTest extends TestCase
     {
         $this->get(route('marketer.register'))->assertOk();
     }
+
+    public function test_marketer_register_shows_only_the_handed_over_type(): void
+    {
+        $preselected = $this->get(route('marketer.register', ['type' => 'broker']));
+
+        $preselected->assertOk();
+        $preselected->assertSee('name="marketer_type" value="broker"', false);
+        $preselected->assertDontSee('name="marketer_type" value="influencer"', false);
+        $preselected->assertDontSee('name="marketer_type" value="affiliate"', false);
+
+        $all = $this->get(route('marketer.register'));
+
+        $all->assertOk();
+        $all->assertSee('name="marketer_type" value="influencer"', false);
+        $all->assertSee('name="marketer_type" value="affiliate"', false);
+        $all->assertSee('name="marketer_type" value="broker"', false);
+    }
 }
