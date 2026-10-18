@@ -182,9 +182,25 @@ class JoinPageTest extends TestCase
             'choice' => 'open_souq',
             'classified_category_id' => $category->id,
         ]);
-        $souq->assertRedirect(route('portal.companies'));
-        $souq->assertSessionHas('join_status');
+        // An Open Souq choice opens that section's introduction landing page.
+        $souq->assertRedirect(route('portal.companies.open-souq'));
         $souq->assertSessionHas('companies.selection.classified_category_id', $category->id);
+    }
+
+    public function test_open_souq_landing_page_renders_and_links_to_vendor_registration(): void
+    {
+        $category = $this->activeClassifiedCategory();
+
+        $response = $this->get(route('portal.companies.open-souq'));
+
+        $response->assertOk();
+        // Open Souq has no registration of its own yet: it hands off to /vendors/register.
+        $response->assertSee(route('portal.register'), false);
+        // The landing lists the classified categories that can be published.
+        $response->assertSee($category->name_ar);
+        // Its navbar belongs to the Open Souq section, not the travel-agency one.
+        $response->assertSee('لماذا تبيع على السوق المفتوح');
+        $response->assertDontSee('لماذا تبيع السفر');
     }
 
     public function test_open_souq_requires_a_specialization(): void

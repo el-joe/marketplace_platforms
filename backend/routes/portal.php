@@ -8,6 +8,7 @@ use App\Http\Controllers\Portal\HelpCenterController;
 use App\Http\Controllers\Portal\JoinController;
 use App\Http\Controllers\Portal\LandingController;
 use App\Http\Controllers\Portal\MarketersController;
+use App\Http\Controllers\Portal\OpenSouqController;
 use App\Http\Controllers\Portal\RegistrationController;
 use App\Http\Controllers\Portal\TravelAgencyController;
 use App\Http\Controllers\Portal\TravelAgencyRegistrationController;
@@ -107,6 +108,11 @@ Route::get('/companies', [CompaniesController::class, 'index'])->name('companies
 Route::post('/companies/continue', [CompaniesController::class, 'continue'])->name('companies.continue');
 Route::get('/marketers', [MarketersController::class, 'index'])->name('marketers');
 Route::get('/marketers/{marketerType}', [MarketersController::class, 'show'])->name('marketers.type');
+
+// Open Souq section reached from the /companies choice screen: an introduction
+// landing page. It reuses the product-seller /vendors/register wizard until
+// Open Souq has its own registration flow.
+Route::get('/companies/open-souq', [OpenSouqController::class, 'landing'])->name('companies.open-souq');
 
 // Travel-agency section reached from the /companies choice screen: an
 // introduction landing page plus the multi-step registration wizard that

@@ -911,6 +911,41 @@ return [
     ['travel-agency', 'success', 'login_button', 'text', 'Go to agency login', 'الذهاب لتسجيل دخول الوكالة', null, 13],
     ['travel-agency', 'success', 'back_button', 'text', 'Back to overview', 'العودة للصفحة التعريفية', null, 14],
 
+    // ─── page_key = 'open-souq' ───────────────────────────────────────────────────
+    // Introduction landing reached from the /companies choice screen. It reuses
+    // the product-seller /vendors/register wizard until it has its own flow, so
+    // the CTA urls stay null and fall back to the route passed by the view.
+    ['open-souq', 'meta', 'title', 'text', 'Sell on Open Souq — Nawy', 'بِع على السوق المفتوح — ناوي', null, 1],
+    ['open-souq', 'meta', 'description', 'text', 'List across our classified categories — real estate, cars, chalets and more — and reach buyers across the region.', 'أدرج إعلاناتك في فئات السوق المفتوح — العقارات والسيارات والشاليهات وغيرها — وصِل إلى المشترين في جميع أنحاء المنطقة.', null, 2],
+
+    ['open-souq', 'hero', 'eyebrow', 'text', 'Open Souq', 'السوق المفتوح', null, 1],
+    ['open-souq', 'hero', 'title', 'text', 'List anything, reach everyone', 'أدرج أي شيء، وصِل إلى الجميع', null, 2],
+    ['open-souq', 'hero', 'subtitle', 'text', 'Open Souq is where individuals and businesses list across our classified categories — real estate, cars, chalets and more.', 'السوق المفتوح هو المكان الذي يدرج فيه الأفراد والشركات إعلاناتهم في فئاتنا المبوبة — العقارات والسيارات والشاليهات وغيرها.', null, 3],
+    ['open-souq', 'hero', 'cta_button', 'link', 'Start selling', 'ابدأ البيع', null, 4],
+    ['open-souq', 'hero', 'photo', 'image', 'A seller listing items on Open Souq', 'بائع يدرج إعلاناته على السوق المفتوح', '/images/join/open-souq.jpg', 5],
+
+    ['open-souq', 'benefits', 'title', 'text', 'Why sell on Open Souq?', 'لماذا تبيع على السوق المفتوح؟', null, 1],
+    ['open-souq', 'benefits_item_1', 'title', 'text', 'Reach more buyers', 'صِل إلى مشترين أكثر', null, 1],
+    ['open-souq', 'benefits_item_1', 'description', 'text', 'Put your listings in front of millions of shoppers browsing Nawy every day.', 'اعرض إعلاناتك أمام ملايين المتسوقين الذين يتصفحون ناوي يومياً.', null, 2],
+    ['open-souq', 'benefits_item_2', 'title', 'text', 'List in minutes', 'أدرج إعلانك في دقائق', null, 1],
+    ['open-souq', 'benefits_item_2', 'description', 'text', 'Create your account, add your listing details and go live from one dashboard.', 'أنشئ حسابك، وأضف تفاصيل إعلانك، وانشره من لوحة تحكم واحدة.', null, 2],
+    ['open-souq', 'benefits_item_3', 'title', 'text', 'Grow with campaigns', 'انمُ عبر الحملات', null, 1],
+    ['open-souq', 'benefits_item_3', 'description', 'text', 'Boost your listings through Nawy marketers and reach the right audience faster.', 'عزّز إعلاناتك عبر مسوّقي ناوي وصِل إلى الجمهور المناسب بشكل أسرع.', null, 2],
+
+    ['open-souq', 'categories', 'title', 'text', 'What you can list', 'ما يمكنك إدراجه', null, 1],
+
+    ['open-souq', 'steps', 'title', 'text', 'Getting started is simple', 'البدء بسيط', null, 1],
+    ['open-souq', 'steps', 'step_1_title', 'text', 'Create your account', 'أنشئ حسابك', null, 2],
+    ['open-souq', 'steps', 'step_1_text', 'text', 'Sign up with your business details and pick what you want to list.', 'سجّل بيانات نشاطك واختر ما تريد إدراجه.', null, 3],
+    ['open-souq', 'steps', 'step_2_title', 'text', 'Get approved', 'احصل على الموافقة', null, 4],
+    ['open-souq', 'steps', 'step_2_text', 'text', 'Our team reviews your details and activates your account.', 'يراجع فريقنا بياناتك ويُفعّل حسابك.', null, 5],
+    ['open-souq', 'steps', 'step_3_title', 'text', 'Start listing', 'ابدأ الإدراج', null, 6],
+    ['open-souq', 'steps', 'step_3_text', 'text', 'Publish your listings, manage inquiries and start selling.', 'انشر إعلاناتك، وأدر الاستفسارات، وابدأ البيع.', null, 7],
+
+    ['open-souq', 'cta', 'title', 'text', 'Ready to start listing?', 'جاهز لبدء الإدراج؟', null, 1],
+    ['open-souq', 'cta', 'subtitle', 'text', 'Create your account in a few minutes and put your first listing live.', 'أنشئ حسابك في بضع دقائق وانشر إعلانك الأول.', null, 2],
+    ['open-souq', 'cta', 'button', 'link', 'Start registration', 'ابدأ التسجيل', null, 3],
+
     // ─── page_key = 'layout' ──────────────────────────────────────────────────────
     ['layout', 'portal', 'default_title', 'text', 'Sell on Nawy', 'بيع على ناوي', null, 1],
     ['layout', 'portal', 'title_suffix', 'text', 'Nawy for Sellers', 'ناوي للبائعين', null, 2],

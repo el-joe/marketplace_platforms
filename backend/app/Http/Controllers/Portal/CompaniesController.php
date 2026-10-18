@@ -45,10 +45,9 @@ class CompaniesController extends Controller
     /**
      * POST /companies/continue — validate the choice server-side and remember it.
      *
-     * A travel-agency choice opens that section's introduction landing page,
-     * which links into the travel-agency registration wizard. Open Souq
-     * registration is still being prepared, so a valid selection is stored and
-     * the visitor is returned with a status note.
+     * A travel-agency or Open Souq choice opens that section's introduction
+     * landing page. Open Souq currently hands off to the product-seller
+     * registration wizard from its landing until it has its own flow.
      */
     public function continue(Request $request): RedirectResponse
     {
@@ -76,9 +75,7 @@ class CompaniesController extends Controller
             return redirect()->route('portal.companies.travel-agency');
         }
 
-        return redirect()
-            ->route('portal.companies')
-            ->with('join_status', __('portal.companies.souq_pending'));
+        return redirect()->route('portal.companies.open-souq');
     }
 
     /**
