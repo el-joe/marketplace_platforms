@@ -106,7 +106,7 @@ Route::get('/vendors', [LandingController::class, 'vendors'])->name('vendors');
 Route::get('/companies', [CompaniesController::class, 'index'])->name('companies');
 Route::post('/companies/continue', [CompaniesController::class, 'continue'])->name('companies.continue');
 Route::get('/marketers', [MarketersController::class, 'index'])->name('marketers');
-Route::post('/marketers/continue', [MarketersController::class, 'continue'])->name('marketers.continue');
+Route::get('/marketers/{marketerType}', [MarketersController::class, 'show'])->name('marketers.type');
 
 // Travel-agency section reached from the /companies choice screen: an
 // introduction landing page plus the multi-step registration wizard that

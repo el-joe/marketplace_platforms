@@ -253,7 +253,7 @@ class JoinPageTest extends TestCase
 
     // ── Marketers landing ─────────────────────────────────────────────────
 
-    public function test_marketers_landing_lists_each_active_type_on_the_choice_screen(): void
+    public function test_marketers_landing_presents_each_active_type_as_a_landing_page(): void
     {
         $affiliate = $this->activeMarketerJob('affiliate');
         $influencer = $this->activeMarketerJob('influencer', 2);
@@ -263,18 +263,25 @@ class JoinPageTest extends TestCase
         $response->assertOk();
         $response->assertSee($affiliate->name_ar);
         $response->assertSee($influencer->name_ar);
-        $response->assertSee('name="marketer_type"', false);
-        $response->assertSee(route('portal.marketers.continue'), false);
+        $response->assertSee(route('portal.marketers.type', 'affiliate'), false);
+        $response->assertSee(route('portal.marketers.type', 'influencer'), false);
     }
 
-    public function test_marketer_continue_hands_off_to_marketer_register(): void
+    public function test_marketer_type_landing_hands_off_to_marketer_register(): void
     {
         $this->activeMarketerJob('affiliate');
 
-        $response = $this->post(route('portal.marketers.continue'), ['marketer_type' => 'affiliate']);
+        $response = $this->get(route('portal.marketers.type', 'affiliate'));
 
-        $response->assertRedirect(route('marketer.register', ['type' => 'affiliate']));
-        $response->assertSessionHas('marketers.selection.marketer_type', 'affiliate');
+        $response->assertOk();
+        $response->assertSee(route('marketer.register', ['type' => 'affiliate']), false);
+    }
+
+    public function test_unknown_marketer_type_landing_is_not_found(): void
+    {
+        $this->activeMarketerJob('affiliate');
+
+        $this->get(route('portal.marketers.type', 'does_not_exist'))->assertNotFound();
     }
 
     public function test_marketer_type_must_be_an_active_job_key(): void

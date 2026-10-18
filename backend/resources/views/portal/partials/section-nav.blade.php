@@ -40,13 +40,7 @@
                     </nav>
                 </div>
 
-                <div class="hidden lg:flex items-center gap-4 xl:gap-[24px]">
-                    @include('portal.partials.country-selector')
-                    <a href="{{ $langToggleUrl }}"
-                        class="text-[15px] font-bold text-white hover:opacity-80 transition-opacity">
-                        {{ portal_content('nav', 'language_toggle', 'label', 'English', 'العربية') }}
-                    </a>
-                </div>
+                @include('portal.partials.header-account-controls')
 
                 <div class="flex lg:hidden items-center gap-4">
                     <div class="relative" x-data="{ mobileCountryOpen: false }" @click.outside="mobileCountryOpen = false">

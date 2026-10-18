@@ -43,67 +43,27 @@
 @endsection
 
 @section('content')
-    {{-- Hero --}}
-    <section class="relative overflow-hidden bg-gray-900">
-        <div class="h-[520px] sm:h-[560px] lg:h-[440px] relative">
-            @php($heroImg = portal_image('travel-agency', 'hero', 'photo', asset('images/join/travel-agency.jpg'), 'A travel agency team helping travelers', 'فريق وكالة سفر يساعد المسافرين'))
-            <img src="{{ $heroImg['src'] }}" alt="{{ $heroImg['alt'] }}"
-                class="absolute inset-0 w-full h-full object-cover object-center">
-
-            <div class="absolute inset-0 {{ $isAr ? 'bg-gradient-to-l' : 'bg-gradient-to-r' }} from-black via-black/90 to-black/40 lg:to-transparent"></div>
-            <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black to-transparent lg:hidden"></div>
-
-            <div class="absolute inset-0 flex items-center">
-                <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
-                    <div class="max-w-[560px] {{ $isAr ? 'text-right' : 'text-left' }}">
-                        <p class="text-[#feee00] font-black text-xs sm:text-sm uppercase tracking-wider mb-3">
-                            {{ portal_content('travel-agency', 'hero', 'eyebrow', 'Travel Agencies', 'وكالات السفر') }}
-                        </p>
-                        <h1 class="text-white font-extrabold leading-[1.15] text-3xl sm:text-4xl lg:text-[46px]">
-                            {{ portal_content('travel-agency', 'hero', 'title', 'Put your trips on the map', 'ضع رحلاتك على الخريطة') }}
-                        </h1>
-                        <p class="mt-4 text-gray-300 text-base sm:text-lg font-medium">
-                            {{ portal_content('travel-agency', 'hero', 'subtitle', 'Register your travel agency to publish trips, packages and bookings on Nawy — and reach travelers across the region.', 'سجّل وكالة السفر الخاصة بك لنشر الرحلات والباقات والحجوزات على ناوي — وصِل إلى المسافرين في جميع أنحاء المنطقة.') }}
-                        </p>
-                        <a href="{{ $registerCta['url'] }}"
-                            class="mt-7 inline-flex items-center justify-center gap-3 bg-[#0F807E] hover:bg-[#0c6665] text-white font-bold text-base min-w-[240px] py-3 rounded-full transition-colors">
-                            {{ $registerCta['label'] }}
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" width="20" height="20" class="{{ $isAr ? '-scale-x-100' : '' }}">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <div class="flex flex-col gap-y-[48px] lg:gap-y-[64px] py-[48px] lg:py-[64px]">
-
-        {{-- Why join --}}
-        <section id="benefits" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
-            <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-6 lg:mb-8">
-                {{ portal_content('travel-agency', 'benefits', 'title', 'Why sell travel on Nawy?', 'لماذا تبيع السفر على ناوي؟') }}
-            </h2>
-
-            <div class="grid gap-4 md:grid-cols-3 lg:gap-6">
-                @foreach ($benefits as $benefit)
-                    <div class="rounded-2xl border border-white/10 bg-[#151515] p-6">
-                        <span class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#0F807E]/20 text-[#0F807E]">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" width="24" height="24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="{{ $benefit['icon'] }}" />
-                            </svg>
-                        </span>
-                        <h3 class="mt-4 text-white font-black text-lg">{{ $benefit['title'] }}</h3>
-                        <p class="mt-2 text-gray-400 text-sm leading-relaxed">{{ $benefit['desc'] }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </section>
-
+    <x-portal.section-landing
+        :hero="[
+            'eyebrow' => portal_content('travel-agency', 'hero', 'eyebrow', 'Travel Agencies', 'وكالات السفر'),
+            'title' => portal_content('travel-agency', 'hero', 'title', 'Put your trips on the map', 'ضع رحلاتك على الخريطة'),
+            'subtitle' => portal_content('travel-agency', 'hero', 'subtitle', 'Register your travel agency to publish trips, packages and bookings on Nawy — and reach travelers across the region.', 'سجّل وكالة السفر الخاصة بك لنشر الرحلات والباقات والحجوزات على ناوي — وصِل إلى المسافرين في جميع أنحاء المنطقة.'),
+            'image' => portal_image('travel-agency', 'hero', 'photo', asset('images/join/travel-agency.jpg'), 'A travel agency team helping travelers', 'فريق وكالة سفر يساعد المسافرين'),
+            'cta' => $registerCta,
+        ]"
+        :benefits="$benefits"
+        :benefits-title="portal_content('travel-agency', 'benefits', 'title', 'Why sell travel on Nawy?', 'لماذا تبيع السفر على ناوي؟')"
+        :steps="[
+            ['number' => '1', 'title' => portal_content('travel-agency', 'steps', 'step_1_title', 'Create your account', 'أنشئ حسابك'), 'desc' => portal_content('travel-agency', 'steps', 'step_1_text', 'Tell us about your agency and add your license number.', 'أخبرنا عن وكالتك وأضف رقم الترخيص.')],
+            ['number' => '2', 'title' => portal_content('travel-agency', 'steps', 'step_2_title', 'Get approved', 'احصل على الموافقة'), 'desc' => portal_content('travel-agency', 'steps', 'step_2_text', 'Our team reviews your details and activates your agency.', 'يراجع فريقنا بياناتك ويُفعّل وكالتك.')],
+            ['number' => '3', 'title' => portal_content('travel-agency', 'steps', 'step_3_title', 'Publish your trips', 'انشر رحلاتك'), 'desc' => portal_content('travel-agency', 'steps', 'step_3_text', 'Add packages, manage bookings and start earning.', 'أضف الباقات، وأدر الحجوزات، وابدأ بالربح.')],
+        ]"
+        :steps-title="portal_content('travel-agency', 'steps', 'title', 'Getting started is simple', 'البدء بسيط')"
+        :cta="[
+            'title' => portal_content('travel-agency', 'cta', 'title', 'Ready to list your travel agency?', 'جاهز لإدراج وكالة السفر الخاصة بك؟'),
+            'subtitle' => portal_content('travel-agency', 'cta', 'subtitle', 'Complete the registration in a few minutes. You can log in after your agency is approved.', 'أكمل التسجيل في بضع دقائق. يمكنك تسجيل الدخول بعد الموافقة على وكالتك.'),
+            'button' => portal_link('travel-agency', 'cta', 'button', 'Start registration', 'ابدأ التسجيل', $registerUrl),
+        ]">
         {{-- Categories you can publish --}}
         @if ($categories->isNotEmpty())
             <section id="publish" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
@@ -120,52 +80,7 @@
                 </div>
             </section>
         @endif
-
-        {{-- How it works --}}
-        <section id="steps" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
-            <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-6 lg:mb-8">
-                {{ portal_content('travel-agency', 'steps', 'title', 'Getting started is simple', 'البدء بسيط') }}
-            </h2>
-
-            <div class="grid gap-5 md:grid-cols-3">
-                @foreach ([
-                    ['number' => '1', 'title' => portal_content('travel-agency', 'steps', 'step_1_title', 'Create your account', 'أنشئ حسابك'), 'desc' => portal_content('travel-agency', 'steps', 'step_1_text', 'Tell us about your agency and add your license number.', 'أخبرنا عن وكالتك وأضف رقم الترخيص.')],
-                    ['number' => '2', 'title' => portal_content('travel-agency', 'steps', 'step_2_title', 'Get approved', 'احصل على الموافقة'), 'desc' => portal_content('travel-agency', 'steps', 'step_2_text', 'Our team reviews your details and activates your agency.', 'يراجع فريقنا بياناتك ويُفعّل وكالتك.')],
-                    ['number' => '3', 'title' => portal_content('travel-agency', 'steps', 'step_3_title', 'Publish your trips', 'انشر رحلاتك'), 'desc' => portal_content('travel-agency', 'steps', 'step_3_text', 'Add packages, manage bookings and start earning.', 'أضف الباقات، وأدر الحجوزات، وابدأ بالربح.')],
-                ] as $step)
-                    <div class="relative rounded-2xl border border-white/10 bg-[#151515] p-6">
-                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#feee00] text-gray-950 font-black">
-                            {{ $step['number'] }}
-                        </span>
-                        <h3 class="mt-4 text-white font-black text-lg">{{ $step['title'] }}</h3>
-                        <p class="mt-2 text-gray-400 text-sm leading-relaxed">{{ $step['desc'] }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </section>
-
-        {{-- CTA --}}
-        <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="rounded-3xl border border-white/10 bg-[#151515] px-6 py-10 sm:px-10 text-center">
-                <h2 class="text-white font-extrabold text-2xl sm:text-3xl">
-                    {{ portal_content('travel-agency', 'cta', 'title', 'Ready to list your travel agency?', 'جاهز لإدراج وكالة السفر الخاصة بك؟') }}
-                </h2>
-                <p class="mt-3 text-gray-400 text-sm sm:text-base max-w-[60ch] mx-auto">
-                    {{ portal_content('travel-agency', 'cta', 'subtitle', 'Complete the registration in a few minutes. You can log in after your agency is approved.', 'أكمل التسجيل في بضع دقائق. يمكنك تسجيل الدخول بعد الموافقة على وكالتك.') }}
-                </p>
-                @php($ctaButton = portal_link('travel-agency', 'cta', 'button', 'Start registration', 'ابدأ التسجيل', $registerUrl))
-                <a href="{{ $ctaButton['url'] }}"
-                    class="mt-7 inline-flex items-center justify-center gap-3 bg-[#0F807E] hover:bg-[#0c6665] text-white font-bold text-base min-w-[240px] py-3 rounded-full transition-colors">
-                    {{ $ctaButton['label'] }}
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" width="20" height="20" class="{{ $isAr ? '-scale-x-100' : '' }}">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />
-                    </svg>
-                </a>
-            </div>
-        </section>
-    </div>
+    </x-portal.section-landing>
 
     @include('portal.partials.portal-footer')
 @endsection
