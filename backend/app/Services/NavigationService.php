@@ -771,13 +771,6 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
-                        'label' => __('admin.nav.radio_channels'),
-                        'route' => 'admin.radio.channels.index',
-                        'icon' => 'play-circle',
-                        'permission' => 'pages.view',
-                        'badge' => null,
-                    ],
-                    [
                         'label' => __('admin.nav.live_streams'),
                         'route' => 'admin.live-streams.index',
                         'icon' => 'video-camera',
@@ -937,7 +930,6 @@ class NavigationService
                     ['label' => __('admin.nav.docs_warranties'), 'route' => 'admin.docs.features.warranties', 'icon' => 'shield-check', 'permission' => null, 'badge' => null],
                     ['label' => __('admin.nav.docs_classifieds'), 'route' => 'admin.docs.features.classifieds', 'icon' => 'home-modern', 'permission' => null, 'badge' => null],
                     ['label' => __('admin.nav.docs_travel'), 'route' => 'admin.docs.features.travel', 'icon' => 'briefcase', 'permission' => null, 'badge' => null],
-                    ['label' => __('admin.nav.docs_radio'), 'route' => 'admin.docs.features.radio', 'icon' => 'play-circle', 'permission' => null, 'badge' => null],
                     ['label' => __('admin.nav.docs_roles'), 'route' => 'admin.docs.features.roles', 'icon' => 'key', 'permission' => null, 'badge' => null],
                     ['label' => __('admin.nav.docs_content_pages'), 'route' => 'admin.docs.features.content-pages', 'icon' => 'document-text', 'permission' => null, 'badge' => null],
                     ['label' => __('admin.nav.docs_system_pages'), 'route' => 'admin.docs.features.system-pages', 'icon' => 'cog-6-tooth', 'permission' => null, 'badge' => null],
