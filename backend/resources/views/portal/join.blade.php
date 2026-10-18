@@ -31,13 +31,116 @@
 @section('title', portal_content('join', 'meta', 'title', 'Join Nawy', 'انضم إلى ناوي'))
 @section('hide_nav', true)
 
+@push('head')
+    <style>
+        /* No-scroll wizard layout for desktop/laptop only. Mobile & tablet keep normal scrolling. */
+        @media (min-width: 1024px) {
+            #join-page {
+                height: 100vh;
+                min-height: 0;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+
+            #join-page .join-content {
+                flex: 1 1 auto;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding-top: 1rem;
+                padding-bottom: 0.25rem;
+            }
+
+            #join-page .join-brand {
+                gap: 0.75rem;
+                margin-bottom: 0.75rem;
+            }
+
+            #join-page .join-brand > a > img {
+                height: 36px;
+            }
+
+            #join-page .join-hero h1 {
+                font-size: 2rem;
+                line-height: 1.2;
+            }
+
+            #join-page .join-hero p {
+                margin-top: 0.5rem;
+                font-size: 0.95rem;
+                line-height: 1.4;
+            }
+
+            #join-page .join-alert {
+                margin-top: 0.75rem;
+            }
+
+            #join-page .join-form {
+                margin-top: 1rem;
+            }
+
+            #join-page .join-cards {
+                gap: 1rem;
+            }
+
+            #join-page .join-card-media {
+                height: 150px;
+            }
+
+            #join-page .join-card-media img {
+                height: 100%;
+                max-height: 150px;
+                object-fit: cover;
+            }
+
+            #join-page .join-card-body {
+                gap: 0.5rem;
+                padding: 1rem;
+            }
+
+            #join-page .join-card-body h2 {
+                font-size: 1rem;
+                line-height: 1.3;
+            }
+
+            #join-page .join-card-body p {
+                font-size: 0.8125rem;
+                line-height: 1.4;
+            }
+
+            #join-page .join-actions {
+                margin-top: 0.75rem;
+                gap: 0.5rem;
+            }
+
+            #join-page .join-actions > button {
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+
+            #join-page footer > div {
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
+                gap: 0.75rem;
+            }
+
+            #join-page footer img {
+                height: 26px;
+            }
+        }
+    </style>
+@endpush
+
 @section('content')
-    <div class="bg-gray-950 min-h-screen flex flex-col" dir="{{ $isAr ? 'rtl' : 'ltr' }}"
+    <div id="join-page" class="bg-gray-950 min-h-screen flex flex-col" dir="{{ $isAr ? 'rtl' : 'ltr' }}"
         x-data="{ selected: @js($selectedSection) }">
-        <div class="flex-1 w-full max-w-[1080px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-16 lg:pb-24">
+        <div class="join-content flex-1 w-full max-w-[1080px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-16 lg:pb-24">
 
             @php($joinLogo = portal_image('join', 'logo', 'image', asset('images/nawy_logo_transparent.png'), 'Nawy', 'ناوي'))
-            <div class="flex flex-col items-center gap-6 mb-10">
+            <div class="join-brand flex flex-col items-center gap-6 mb-10">
                 <a href="{{ route('portal.home') }}" aria-label="{{ portal_content('join', 'logo', 'aria_label', 'Nawy', 'ناوي') }}">
                     <img src="{{ $joinLogo['src'] }}" alt="{{ $joinLogo['alt'] }}" class="h-[48px] sm:h-[56px] w-auto">
                 </a>
@@ -48,7 +151,7 @@
                 ])
             </div>
 
-            <div class="text-center max-w-3xl mx-auto">
+            <div class="join-hero text-center max-w-3xl mx-auto">
                 <h1 class="text-white font-extrabold text-3xl sm:text-4xl lg:text-[44px] leading-tight">
                     {{ portal_content('join', 'hero', 'title', 'Join Nawy', 'انضم إلى ناوي') }}
                 </h1>
@@ -58,13 +161,13 @@
             </div>
 
             @if (session('join_status'))
-                <div class="mt-8 max-w-2xl mx-auto rounded-xl border border-[#feee00]/40 bg-[#feee00]/10 px-5 py-4 text-sm font-medium text-[#feee00]">
+                <div class="join-alert mt-8 max-w-2xl mx-auto rounded-xl border border-[#feee00]/40 bg-[#feee00]/10 px-5 py-4 text-sm font-medium text-[#feee00]">
                     {{ session('join_status') }}
                 </div>
             @endif
 
             @if ($errors->any())
-                <div class="mt-8 max-w-2xl mx-auto rounded-xl border border-red-500/40 bg-red-500/10 px-5 py-4 text-sm text-red-300">
+                <div class="join-alert mt-8 max-w-2xl mx-auto rounded-xl border border-red-500/40 bg-red-500/10 px-5 py-4 text-sm text-red-300">
                     <ul class="space-y-1 {{ $isAr ? 'list-disc pr-5' : 'list-disc pl-5' }}">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -73,11 +176,11 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('portal.join.select') }}" class="mt-10 sm:mt-12">
+            <form method="POST" action="{{ route('portal.join.select') }}" class="join-form mt-10 sm:mt-12">
                 @csrf
                 <input type="hidden" name="section" :value="selected">
 
-                <div class="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-3" role="group"
+                <div class="join-cards grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-3" role="group"
                     aria-label="{{ portal_content('join', 'hero', 'title', 'Join Nawy', 'انضم إلى ناوي') }}">
                     @foreach ($sections as $value => $label)
                         @php($card = $cards[$value] ?? null)
@@ -89,13 +192,13 @@
                                 :style="selected === '{{ $value }}' ? 'border-color: #feee00' : 'border-color: #1f2937'">
 
                                 {{-- Image (top half) --}}
-                                <div class="relative w-full overflow-hidden bg-gray-800">
+                                <div class="join-card-media relative w-full overflow-hidden bg-gray-800">
                                     <img src="{{ $card['image']['src'] }}" alt="{{ $card['image']['alt'] }}" loading="lazy"
                                         class="h-48 w-full object-cover transition-transform duration-700 group-hover:scale-105 sm:h-52 lg:h-44">
                                 </div>
 
                                 {{-- Title + description (bottom half) --}}
-                                <div class="flex flex-1 flex-col gap-3 p-6">
+                                <div class="join-card-body flex flex-1 flex-col gap-3 p-6">
                                     <h2 class="text-white font-extrabold text-lg sm:text-xl leading-snug">{{ $card['title'] ?? $label }}</h2>
                                     <p class="text-sm text-gray-400 leading-relaxed">{{ $card['desc'] }}</p>
                                 </div>
@@ -112,7 +215,7 @@
                     @endforeach
                 </div>
 
-                <div class="mt-9 flex flex-col items-center gap-3">
+                <div class="join-actions mt-9 flex flex-col items-center gap-3">
                     <button type="submit" :disabled="!selected" disabled
                         class="inline-flex min-w-[200px] items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-extrabold transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#feee00] focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 disabled:cursor-not-allowed"
                         :class="selected
