@@ -93,6 +93,7 @@
                 height: 100%;
                 max-height: 220px;
                 object-fit: cover;
+                object-position: center;
             }
 
             #join-page .join-card-body {
@@ -133,7 +134,7 @@
         x-data="{ selected: @js($selectedSection) }">
 
         @php($joinLogo = portal_image('join', 'logo', 'image', asset('images/nawy_logo_transparent.png'), 'Nawy', 'ناوي'))
-        <header class="join-header relative z-40 w-full bg-[#0b2422] border-b border-white/10 shadow-lg shadow-black/30">
+        <header class="join-header relative z-40 w-full bg-gray-950 border-b border-white/10">
             <div class="max-w-[1080px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
                 <a href="{{ route('portal.home') }}" class="shrink-0"
                     aria-label="{{ portal_content('join', 'logo', 'aria_label', 'Nawy', 'ناوي') }}">

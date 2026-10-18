@@ -26,7 +26,19 @@ class JoinController extends Controller
     public function index(): View
     {
         $countries = $this->joinService->selectableCountries();
-        $currentCountry = $this->joinService->currentCountry();
+
+        // The join header defaults to Oman (the cultural context of the imagery)
+        // and keeps it selectable ahead of a formal launch, so ensure it is present.
+        $oman = Country::where('iso_code_2', 'OM')->where('is_active', true)->first();
+        if ($oman && ! $countries->contains('id', $oman->id)) {
+            $countries = $countries->push($oman)->sortBy('name_en')->values();
+        }
+
+        // Respect an explicit session pick; otherwise default to Oman, then the first country.
+        $currentCountry = session()->has('portal_country')
+            ? $countries->firstWhere('site_code', session('portal_country'))
+            : null;
+        $currentCountry = $currentCountry ?? $oman ?? $countries->first();
 
         return view('portal.join', [
             'sections' => $this->joinService->sections(),
