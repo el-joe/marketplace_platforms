@@ -105,16 +105,10 @@
 
             {{-- Broadcast controls --}}
             <div class="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <label class="block">
-                        <span class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.live_streams.mode_label') }}</span>
-                        <select id="sel-mode" class="w-full rounded-lg border-gray-300 text-sm">
-                            <option value="both">{{ __('admin.live_streams.mode_camera_mic') }}</option>
-                            <option value="video">{{ __('admin.live_streams.mode_camera') }}</option>
-                            <option value="audio">{{ __('admin.live_streams.mode_mic') }}</option>
-                            <option value="screen">{{ __('admin.live_streams.mode_screen') }}</option>
-                        </select>
-                    </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <select id="sel-mode" class="hidden">
+                        <option value="both" selected></option>
+                    </select>
                     <label class="block">
                         <span class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.live_streams.camera_device') }}</span>
                         <select id="sel-camera" class="w-full rounded-lg border-gray-300 text-sm"></select>
