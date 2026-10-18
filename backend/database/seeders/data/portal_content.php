@@ -762,15 +762,28 @@ return [
     // ─── page_key = 'join' ────────────────────────────────────────────────────────
     ['join', 'meta', 'title', 'text', 'Join Nawy', 'انضم إلى ناوي', null, 1],
     ['join', 'hero', 'title', 'text', 'Join Nawy', 'انضم إلى ناوي', null, 1],
-    ['join', 'hero', 'subtitle', 'text', 'Choose your country and the account type that fits you, and we will take you to the right registration flow.', 'اختر دولتك ونوع الحساب المناسب لك، وسنوجهك إلى مسار التسجيل الصحيح.', null, 2],
-    ['join', 'form', 'country_label', 'text', 'Country', 'الدولة', null, 10],
-    ['join', 'form', 'country_placeholder', 'text', '— Select Country —', '— اختر الدولة —', null, 11],
-    ['join', 'form', 'section_label', 'text', 'How would you like to join?', 'كيف تريد الانضمام؟', null, 12],
-    ['join', 'form', 'specialization_label', 'text', 'Specialization', 'التخصص', null, 13],
-    ['join', 'form', 'specialization_placeholder', 'text', '— Select Specialization —', '— اختر التخصص —', null, 14],
-    ['join', 'form', 'marketer_type_label', 'text', 'Registration type', 'نوع التسجيل', null, 15],
-    ['join', 'form', 'submit', 'text', 'Continue', 'متابعة', null, 16],
-    ['join', 'form', 'note', 'text', 'You can change your country, section and specialization before completing registration.', 'يمكنك تغيير الدولة والقسم والتخصص قبل إكمال التسجيل.', null, 17],
+    ['join', 'hero', 'subtitle', 'text', 'Choose the account type that fits you, then continue to the registration experience made for it.', 'اختر نوع الحساب المناسب لك، ثم تابع إلى تجربة التسجيل المخصصة له.', null, 2],
+    ['join', 'logo', 'image', 'image', 'Nawy', 'ناوي', '/images/nawy_logo_transparent.png', 1],
+    ['join', 'logo', 'aria_label', 'text', 'Nawy', 'ناوي', null, 2],
+
+    ['join', 'card_product_vendor', 'title', 'text', 'Product Seller', 'بائع منتجات', null, 1],
+    ['join', 'card_product_vendor', 'description', 'text', 'Sell physical or digital products and manage your own store on Nawy.', 'بِع منتجاتك المادية أو الرقمية وأدر متجرك الخاص على ناوي.', null, 2],
+    ['join', 'card_product_vendor', 'cta', 'text', 'Start selling', 'ابدأ البيع', null, 3],
+    ['join', 'card_product_vendor', 'image', 'image', 'Product seller', 'بائع منتجات', '/images/join/seller.svg', 4],
+
+    ['join', 'card_classified_vendor', 'title', 'text', 'Specialized Companies & Brokers', 'شركات تخصصية ووسطاء', null, 1],
+    ['join', 'card_classified_vendor', 'description', 'text', 'Join as a specialized company or an intermediary across real estate, cars, travel, chalets and more.', 'انضم كشركة تخصصية أو وسيط في العقارات والسيارات والسفر والشاليهات وغيرها.', null, 2],
+    ['join', 'card_classified_vendor', 'cta', 'text', 'Explore the section', 'استكشف القسم', null, 3],
+    ['join', 'card_classified_vendor', 'image', 'image', 'Specialized companies and brokers', 'شركات تخصصية ووسطاء', '/images/join/companies.svg', 4],
+
+    ['join', 'card_marketer', 'title', 'text', 'Influencers, Creators & Affiliates', 'مشاهير ومؤثرون ومسوقون بالعمولة', null, 1],
+    ['join', 'card_marketer', 'description', 'text', 'Promote products and listings as an influencer, creator or commission-based marketer.', 'روّج للمنتجات والإعلانات كمشهور أو مؤثر أو مسوق بالعمولة.', null, 2],
+    ['join', 'card_marketer', 'cta', 'text', 'Join as a marketer', 'انضم كمسوق', null, 3],
+    ['join', 'card_marketer', 'image', 'image', 'Influencers, creators and affiliates', 'مشاهير ومؤثرون ومسوقون بالعمولة', '/images/join/marketer.svg', 4],
+
+    ['join', 'actions', 'continue', 'text', 'Continue', 'متابعة', null, 1],
+    ['join', 'actions', 'select_hint', 'text', 'Select an option to continue', 'اختر أحد الخيارات للمتابعة', null, 2],
+    ['join', 'actions', 'selected_label', 'text', 'Selected', 'تم الاختيار', null, 3],
 
     // ─── page_key = 'layout' ──────────────────────────────────────────────────────
     ['layout', 'portal', 'default_title', 'text', 'Sell on Nawy', 'بيع على ناوي', null, 1],

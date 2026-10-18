@@ -5,6 +5,7 @@ namespace Tests\Feature\Portal;
 use App\Models\ClassifiedCategory;
 use App\Models\Country;
 use App\Models\MarketerJob;
+use App\Models\PortalContent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -60,6 +61,27 @@ class JoinPageTest extends TestCase
         // No country or specialization pickers on the first screen.
         $response->assertDontSee('name="country_id"', false);
         $response->assertDontSee('name="classified_category_id"', false);
+    }
+
+    public function test_join_page_renders_admin_managed_card_images_and_continue_action(): void
+    {
+        PortalContent::where('page_key', 'join')
+            ->where('block_key', 'card_product_vendor')
+            ->where('field_key', 'image')
+            ->update(['value_url' => '/images/join/custom-seller.svg']);
+        PortalContent::flush('join');
+
+        $response = $this->get(route('portal.join'));
+
+        $response->assertOk();
+        // Admin-edited image flows straight to the card.
+        $response->assertSee('/images/join/custom-seller.svg', false);
+        $response->assertSee('/images/join/companies.svg', false);
+        $response->assertSee('/images/join/marketer.svg', false);
+        // Selection is client-side; the Continue button submits the choice once.
+        $response->assertSee(route('portal.join.select'), false);
+        $response->assertSee('name="section"', false);
+        $response->assertSee('متابعة');
     }
 
     public function test_home_redirects_to_the_section_selection_page(): void

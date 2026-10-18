@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Product seller">
+    <defs>
+        <linearGradient id="sellerBg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#0b1f1e"/>
+            <stop offset="1" stop-color="#0F807E"/>
+        </linearGradient>
+        <linearGradient id="sellerBox" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#cfeae9"/>
+        </linearGradient>
+    </defs>
+    <rect width="800" height="600" fill="url(#sellerBg)"/>
+    <circle cx="650" cy="120" r="180" fill="#ffffff" opacity="0.06"/>
+    <circle cx="150" cy="520" r="150" fill="#ffffff" opacity="0.05"/>
+
+    <rect x="180" y="210" width="440" height="300" rx="26" fill="#ffffff" opacity="0.10"/>
+    <rect x="210" y="250" width="380" height="230" rx="18" fill="#05221f" opacity="0.75"/>
+
+    <!-- awning stripes -->
+    <g>
+        <path d="M170 250 h460 v40 a230 230 0 0 1 -460 0 Z" fill="#feee00"/>
+        <path d="M170 250 h76 v80 a230 230 0 0 1 -76 -22 Z" fill="#ffffff" opacity="0.65"/>
+        <path d="M322 250 h76 v80 a230 230 0 0 1 -76 -22 Z" fill="#ffffff" opacity="0.65"/>
+        <path d="M474 250 h76 v80 a230 230 0 0 1 -76 -22 Z" fill="#ffffff" opacity="0.65"/>
+        <path d="M626 250 h4 v40 a230 230 0 0 1 -4 18 Z" fill="#ffffff" opacity="0.65"/>
+    </g>
+
+    <!-- shopping bag -->
+    <g transform="translate(300 300)">
+        <path d="M20 40 h180 a14 14 0 0 1 14 15 l-13 130 a16 16 0 0 1 -16 15 H35 a16 16 0 0 1 -16 -15 L6 55 a14 14 0 0 1 14 -15 Z" fill="url(#sellerBox)"/>
+        <path d="M60 42 c0 -34 22 -52 50 -52 s50 18 50 52" fill="none" stroke="#0F807E" stroke-width="14" stroke-linecap="round"/>
+        <circle cx="110" cy="120" r="30" fill="#0F807E" opacity="0.15"/>
+        <path d="M96 120 l10 12 l22 -26" fill="none" stroke="#0F807E" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+</svg>

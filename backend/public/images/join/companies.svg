@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Specialized companies and brokers">
+    <defs>
+        <linearGradient id="companiesBg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#241f00"/>
+            <stop offset="1" stop-color="#8a7c00"/>
+        </linearGradient>
+        <linearGradient id="tower" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#f4e98a"/>
+        </linearGradient>
+    </defs>
+    <rect width="800" height="600" fill="url(#companiesBg)"/>
+    <circle cx="140" cy="120" r="170" fill="#ffffff" opacity="0.07"/>
+    <circle cx="680" cy="510" r="160" fill="#ffffff" opacity="0.06"/>
+
+    <!-- skyline -->
+    <g opacity="0.95">
+        <rect x="150" y="300" width="120" height="190" rx="10" fill="url(#tower)"/>
+        <rect x="300" y="210" width="150" height="280" rx="10" fill="#ffffff" opacity="0.92"/>
+        <rect x="480" y="270" width="130" height="220" rx="10" fill="url(#tower)"/>
+    </g>
+
+    <!-- windows -->
+    <g fill="#6b5f00" opacity="0.55">
+        <rect x="172" y="326" width="26" height="26" rx="4"/>
+        <rect x="222" y="326" width="26" height="26" rx="4"/>
+        <rect x="172" y="372" width="26" height="26" rx="4"/>
+        <rect x="222" y="372" width="26" height="26" rx="4"/>
+        <rect x="324" y="238" width="30" height="30" rx="4"/>
+        <rect x="378" y="238" width="30" height="30" rx="4"/>
+        <rect x="324" y="292" width="30" height="30" rx="4"/>
+        <rect x="378" y="292" width="30" height="30" rx="4"/>
+        <rect x="324" y="346" width="30" height="30" rx="4"/>
+        <rect x="378" y="346" width="30" height="30" rx="4"/>
+        <rect x="502" y="296" width="28" height="28" rx="4"/>
+        <rect x="556" y="296" width="28" height="28" rx="4"/>
+        <rect x="502" y="348" width="28" height="28" rx="4"/>
+        <rect x="556" y="348" width="28" height="28" rx="4"/>
+    </g>
+
+    <!-- handshake / deal badge -->
+    <g transform="translate(360 400)">
+        <circle cx="60" cy="60" r="78" fill="#feee00"/>
+        <path d="M22 66 l26 26 l50 -58" fill="none" stroke="#1c1700" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+</svg>

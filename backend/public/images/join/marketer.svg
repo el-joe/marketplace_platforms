@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Influencers, creators and affiliates">
+    <defs>
+        <linearGradient id="marketerBg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#1a123f"/>
+            <stop offset="1" stop-color="#7C5CFF"/>
+        </linearGradient>
+        <linearGradient id="horn" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#ddd3ff"/>
+        </linearGradient>
+    </defs>
+    <rect width="800" height="600" fill="url(#marketerBg)"/>
+    <circle cx="650" cy="130" r="185" fill="#ffffff" opacity="0.07"/>
+    <circle cx="140" cy="500" r="150" fill="#ffffff" opacity="0.06"/>
+
+    <!-- sound waves -->
+    <g fill="none" stroke="#feee00" stroke-width="12" stroke-linecap="round" opacity="0.9">
+        <path d="M520 210 a120 120 0 0 1 0 180"/>
+        <path d="M570 170 a180 180 0 0 1 0 260"/>
+    </g>
+
+    <!-- megaphone -->
+    <g transform="translate(210 230)">
+        <path d="M0 70 l150 -60 v210 l-150 -60 Z" fill="url(#horn)"/>
+        <rect x="-40" y="70" width="60" height="90" rx="16" fill="#feee00"/>
+        <path d="M150 80 h40 a30 30 0 0 1 30 30 v40 a30 30 0 0 1 -30 30 h-40 Z" fill="#ffffff" opacity="0.85"/>
+        <rect x="46" y="150" width="34" height="90" rx="14" fill="#feee00"/>
+    </g>
+
+    <!-- star -->
+    <path d="M650 400 l22 46 50 7 -36 35 9 50 -45 -24 -45 24 9 -50 -36 -35 50 -7 Z" fill="#feee00"/>
+</svg>
