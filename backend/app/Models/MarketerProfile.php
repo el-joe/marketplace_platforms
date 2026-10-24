@@ -3,15 +3,18 @@
 namespace App\Models;
 
 use App\Casts\DecimalMoney;
+use App\Enums\MarketerGender;
 use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class MarketerProfile extends Model
 {
+    use HasFactory;
     use HasUuids;
 
     protected $fillable = [
@@ -27,6 +30,7 @@ class MarketerProfile extends Model
         'contact_details',
         'qr_code_path',
         'profile_slug',
+        'gender',
         'total_campaigns',
         'total_conversions',
         'total_earnings',
@@ -59,6 +63,7 @@ class MarketerProfile extends Model
     ];
 
     protected $casts = [
+        'gender' => MarketerGender::class,
         'social_links' => 'array',
         'contact_details' => 'array',
         'ad_price' => DecimalMoney::class,

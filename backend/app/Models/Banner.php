@@ -4,15 +4,20 @@ namespace App\Models;
 
 use App\Enums\BannerAudience;
 use App\Enums\BannerDeviceTarget;
+use App\Enums\BannerGenderScope;
 use App\Enums\BannerLinkType;
 use App\Enums\BannerStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Banner extends Model
 {
+    use HasFactory;
     use HasUuids;
 
     protected $casts = [
@@ -20,6 +25,8 @@ class Banner extends Model
         'link_type' => BannerLinkType::class,
         'device_target' => BannerDeviceTarget::class,
         'audience' => BannerAudience::class,
+        'is_global' => 'boolean',
+        'gender_scope' => BannerGenderScope::class,
     ];
 
     protected $fillable = [
@@ -44,6 +51,8 @@ class Banner extends Model
         'device_target',
         'audience',
         'priority',
+        'is_global',
+        'gender_scope',
         'impressions_count',
         'clicks_count',
         'created_by_admin_id',
@@ -73,5 +82,61 @@ class Banner extends Model
     public function files(): MorphMany
     {
         return $this->morphMany(File::class, 'model');
+    }
+
+    public function marketers(): BelongsToMany
+    {
+        return $this->belongsToMany(Marketer::class, 'banner_marketer')->withTimestamps();
+    }
+
+    /**
+     * Currently live banners: active status, inside the schedule window and valid for the country.
+     */
+    public function scopeLive(Builder $query, ?string $countryId = null): Builder
+    {
+        $now = now();
+
+        return $query
+            ->where('status', BannerStatus::Active->value)
+            ->where('starts_at', '<=', $now)
+            ->where('ends_at', '>=', $now)
+            ->where(fn (Builder $q) => $q->whereNull('country_id')->orWhere('country_id', $countryId));
+    }
+
+    /**
+     * Global banners for the marketers list page. A null gender (both tabs) keeps every
+     * global banner; 'male' / 'female' keep banners scoped to that gender or to 'all'.
+     */
+    public function scopeForMarketerList(Builder $query, ?string $gender = null): Builder
+    {
+        $query->where('is_global', true);
+
+        if ($gender !== null) {
+            $query->whereIn('gender_scope', [BannerGenderScope::All->value, $gender]);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Banners shown inside a marketer's details page: global banners whose gender scope matches
+     * the marketer (gender-less marketers only get 'all'), plus non-global banners selected for them.
+     */
+    public function scopeForMarketerProfile(Builder $query, Marketer $marketer): Builder
+    {
+        $gender = $marketer->relationLoaded('marketerProfile')
+            ? $marketer->marketerProfile?->gender
+            : $marketer->marketerProfile()->value('gender');
+        $gender = $gender instanceof \BackedEnum ? $gender->value : $gender;
+
+        return $query->where(function (Builder $q) use ($marketer, $gender) {
+            $q->where(function (Builder $g) use ($gender) {
+                $g->where('is_global', true)
+                    ->whereIn('gender_scope', array_filter([BannerGenderScope::All->value, $gender]));
+            })->orWhere(function (Builder $s) use ($marketer) {
+                $s->where('is_global', false)
+                    ->whereHas('marketers', fn (Builder $m) => $m->whereKey($marketer->getKey()));
+            });
+        });
     }
 }

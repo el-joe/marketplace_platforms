@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Casts\DecimalMoney;
+use App\Enums\MarketerType;
 use App\Enums\VendorGlobalStatus;
 use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -16,6 +18,7 @@ use Illuminate\Support\Collection;
 
 class Marketer extends Model
 {
+    use HasFactory;
     use HasUuids;
 
     protected $fillable = [
@@ -79,6 +82,11 @@ class Marketer extends Model
     public function marketerProfile(): HasOne
     {
         return $this->hasOne(MarketerProfile::class, 'marketer_id');
+    }
+
+    public function banners(): BelongsToMany
+    {
+        return $this->belongsToMany(Banner::class, 'banner_marketer')->withTimestamps();
     }
 
     public function invitations(): HasMany
@@ -163,9 +171,9 @@ class Marketer extends Model
      * The marketer's display type: influencer first, then broker, then affiliate (a marketer can hold several jobs).
      * Null when he holds none of the three (legacy job keys only).
      */
-    public function primaryType(): ?\App\Enums\MarketerType
+    public function primaryType(): ?MarketerType
     {
-        return \App\Enums\MarketerType::heldBy($this)[0] ?? null;
+        return MarketerType::heldBy($this)[0] ?? null;
     }
 
     /** Localized label of primaryType() ("Influencer", "Broker", "Affiliate"); empty string when there is none. */
@@ -180,8 +188,8 @@ class Marketer extends Model
     public function typeBadgeClasses(): string
     {
         return match ($this->primaryType()) {
-            \App\Enums\MarketerType::Influencer => 'bg-purple-100 text-purple-700',
-            \App\Enums\MarketerType::Broker => 'bg-emerald-100 text-emerald-700',
+            MarketerType::Influencer => 'bg-purple-100 text-purple-700',
+            MarketerType::Broker => 'bg-emerald-100 text-emerald-700',
             default => 'bg-blue-100 text-blue-700',
         };
     }

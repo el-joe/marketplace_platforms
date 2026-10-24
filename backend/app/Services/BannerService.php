@@ -4,8 +4,9 @@ namespace App\Services;
 
 use App\Models\Banner;
 use App\Models\File;
+use App\Models\Marketer;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class BannerService
@@ -15,11 +16,8 @@ class BannerService
     /**
      * Store a banner image and create a files record.
      *
-     * @param  UploadedFile  $file
-     * @param  Banner        $banner
-     * @param  string        $slot   'desktop_en' | 'desktop_ar' | 'mobile_en' | 'mobile_ar'
-     *                                (bare 'desktop' / 'mobile' accepted as legacy aliases for 'en')
-     * @return File
+     * @param  string  $slot  'desktop_en' | 'desktop_ar' | 'mobile_en' | 'mobile_ar'
+     *                        (bare 'desktop' / 'mobile' accepted as legacy aliases for 'en')
      */
     public function storeImage(UploadedFile $file, Banner $banner, string $slot = 'desktop_en'): File
     {
@@ -29,15 +27,15 @@ class BannerService
         $this->deleteImageBySlot($banner, $slot);
 
         $ext = $file->getClientOriginalExtension() ?: $file->guessExtension();
-        $key = 'banners/' . $banner->id . '/' . $slot . '_' . Str::random(8) . '.' . $ext;
-        $path = $file->storeAs('banners/' . $banner->id, $slot . '_' . Str::random(8) . '.' . $ext, self::DISK);
+        $key = 'banners/'.$banner->id.'/'.$slot.'_'.Str::random(8).'.'.$ext;
+        $path = $file->storeAs('banners/'.$banner->id, $slot.'_'.Str::random(8).'.'.$ext, self::DISK);
         $isDesktop = str_starts_with($slot, 'desktop');
 
         return File::create([
             'key' => $key,
             'path' => $path,
             'storage_type' => self::DISK,
-            'file_type' => 'banner_' . $slot,
+            'file_type' => 'banner_'.$slot,
             'mime_type' => $file->getMimeType(),
             'extension' => $ext,
             'size' => $file->getSize(),
@@ -66,7 +64,7 @@ class BannerService
     public function getImage(Banner $banner, string $slot): ?File
     {
         return $banner->files()
-            ->where('file_type', 'banner_' . $this->normalizeSlot($slot))
+            ->where('file_type', 'banner_'.$this->normalizeSlot($slot))
             ->first();
     }
 
@@ -114,11 +112,46 @@ class BannerService
     }
 
     /**
+     * Live banners for the marketers list page (placement 'marketers_list_hero' | 'marketers_list_strip').
+     * Only global banners qualify; $gender (male|female|null = both tabs) is matched against gender_scope.
+     * Ordered by priority desc, then newest first.
+     *
+     * @return Collection<int, Banner>
+     */
+    public function activeForMarketerList(string $placementCode, ?string $gender, ?string $countryId): Collection
+    {
+        return Banner::with('files')
+            ->where('placement_code', $placementCode)
+            ->live($countryId)
+            ->forMarketerList($gender)
+            ->orderByDesc('priority')
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
+    /**
+     * Live 'marketer_profile_slider' banners for one marketer's details page: matching global
+     * banners plus banners explicitly selected for this marketer. Ordered by priority desc.
+     *
+     * @return Collection<int, Banner>
+     */
+    public function activeForMarketerProfile(Marketer $marketer, ?string $countryId): Collection
+    {
+        return Banner::with('files')
+            ->where('placement_code', 'marketer_profile_slider')
+            ->live($countryId)
+            ->forMarketerProfile($marketer)
+            ->orderByDesc('priority')
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
+    /**
      * Delete an image for a banner by slot (desktop / mobile).
      */
     public function deleteImageBySlot(Banner $banner, string $slot): void
     {
-        $fileType = 'banner_' . $this->normalizeSlot($slot);
+        $fileType = 'banner_'.$this->normalizeSlot($slot);
 
         $banner->files()
             ->where('file_type', $fileType)
@@ -132,7 +165,7 @@ class BannerService
      */
     public function deleteAllImages(Banner $banner): void
     {
-        $banner->files()->each(fn(File $f) => $f->delete());
+        $banner->files()->each(fn (File $f) => $f->delete());
     }
 
     /**
@@ -144,11 +177,12 @@ class BannerService
             ->where('model_type', Banner::class)
             ->first();
 
-        if (!$file) {
+        if (! $file) {
             return false;
         }
 
         $file->delete();
+
         return true;
     }
 
@@ -158,7 +192,7 @@ class BannerService
     public function duplicate(Banner $source, string $adminId): Banner
     {
         $copy = $source->replicate(['impressions_count', 'clicks_count']);
-        $copy->name = 'Copy of ' . $source->name;
+        $copy->name = 'Copy of '.$source->name;
         $copy->status = 'inactive';
         $copy->created_by_admin_id = $adminId;
         $copy->updated_by_admin_id = null;
