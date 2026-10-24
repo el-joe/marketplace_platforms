@@ -23,6 +23,8 @@ class PortalContentCountryAdminTest extends TestCase
     {
         parent::setUp();
 
+        config(['portal_bands' => []]);
+
         $this->kw = Country::factory()->create(['site_code' => 'kw', 'iso_code_2' => 'KW', 'name_en' => 'Kuwait', 'is_active' => true]);
         $this->eg = Country::factory()->create(['site_code' => 'eg', 'iso_code_2' => 'EG', 'name_en' => 'Egypt', 'is_active' => true]);
 
@@ -75,9 +77,9 @@ class PortalContentCountryAdminTest extends TestCase
             $html = $this->actingAs($admin, 'admin')->withSession(['locale' => 'en'])->get(route('admin.portal-content.page', [$code, 'zz_test']))
                 ->assertOk()->getContent();
 
-            $zeta = strpos($html, 'id="section-zeta"');
-            $alpha = strpos($html, 'id="section-alpha"');
-            $omega = strpos($html, 'id="section-omega"');
+            $zeta = strpos($html, 'id="band-zeta"');
+            $alpha = strpos($html, 'id="band-alpha"');
+            $omega = strpos($html, 'id="band-omega"');
             $this->assertTrue($zeta !== false && $zeta < $alpha && $alpha < $omega, 'sections must follow config order, unknown blocks last');
             $this->assertStringContainsString('_placeholder.en.svg', $html);
         }
@@ -93,6 +95,96 @@ class PortalContentCountryAdminTest extends TestCase
         $this->assertStringContainsString('dir="rtl"', $html);
         $this->assertStringContainsString('صفحة اختبار', $html);
         $this->assertStringContainsString('_placeholder.ar.svg', $html);
+    }
+
+    private function bandsFixture(): void
+    {
+        foreach ([['zz_other', 'extra', 'title'], ['zz_secret', 'hidden', 'title']] as [$p, $b, $f]) {
+            PortalContent::create(['page_key' => $p, 'block_key' => $b, 'field_key' => $f, 'type' => 'text', 'value_en' => "{$b} en", 'value_ar' => "{$b} ar"]);
+        }
+        config(['portal_bands' => ['zz_test' => [
+            'label_en' => 'ZZ', 'label_ar' => 'زز', 'route' => '/zz', 'scope' => 'page',
+            'bands' => [
+                ['key' => '00-first', 'label_en' => 'First band', 'label_ar' => 'النطاق الأول', 'image' => null, 'blocks' => [['zz_test', 'zeta'], ['zz_other', 'extra']]],
+                ['key' => '01-second', 'label_en' => 'Second band', 'label_ar' => 'النطاق الثاني', 'image' => 'zz_test/01-second', 'blocks' => [['zz_test', 'alpha']]],
+            ],
+        ]]]);
+    }
+
+    public function test_bands_render_in_declared_order_with_cross_key_block_and_chips(): void
+    {
+        $this->bandsFixture();
+        $html = $this->actingAs($this->admin(), 'admin')->withSession(['locale' => 'en'])
+            ->get(route('admin.portal-content.page', ['kw', 'zz_test']))->assertOk()->getContent();
+
+        $p1 = strpos($html, 'id="band-00-first"');
+        $p2 = strpos($html, 'id="band-01-second"');
+        $this->assertTrue($p1 !== false && $p1 < $p2);
+        $this->assertStringContainsString('href="#band-01-second"', $html);
+        $this->assertStringContainsString('data-block="zz_other.extra"', $html);
+        $this->assertStringNotContainsString('zz_secret.hidden', $html);
+        $this->assertStringNotContainsString('data-block="zz_test.omega"', $html);
+        $this->assertStringContainsString('_placeholder.en.svg', $html);
+        $this->assertSame(1, PortalContent::where('country_code', 'kw')->where('page_key', 'zz_other')->count());
+    }
+
+    public function test_cross_key_block_is_saved_and_undeclared_pair_is_ignored(): void
+    {
+        $this->bandsFixture();
+        app(PortalContentCountrySync::class)->copyGlobalToAllCountries();
+        $admin = $this->admin();
+        $cross = PortalContent::where('country_code', 'kw')->where('page_key', 'zz_other')->firstOrFail();
+        $crossEg = PortalContent::where('country_code', 'eg')->where('page_key', 'zz_other')->firstOrFail();
+        $secret = PortalContent::where('country_code', 'kw')->where('page_key', 'zz_secret')->firstOrFail();
+        $omega = PortalContent::where('country_code', 'kw')->where('block_key', 'omega')->firstOrFail();
+
+        $f = fn ($v) => ['value_en' => $v, 'value_ar' => $v, 'is_active' => '1'];
+        $this->actingAs($admin, 'admin')->post(route('admin.portal-content.save', ['kw', 'zz_test']), ['fields' => [
+            $cross->id => $f('cross saved'), $crossEg->id => $f('HACK'), $secret->id => $f('HACK'), $omega->id => $f('HACK'),
+        ]])->assertRedirect();
+
+        $this->assertSame('cross saved', $cross->fresh()->value_en);
+        $this->assertSame($admin->id, $cross->fresh()->updated_by_admin_id);
+        $this->assertSame('extra en', $crossEg->fresh()->value_en);
+        $this->assertSame('hidden en', $secret->fresh()->value_en);
+        $this->assertSame('omega en', $omega->fresh()->value_en);
+        $this->assertSame('cross saved', PortalContent::forPage('zz_other', 'kw')->get('extra.title')->value_en);
+    }
+
+    public function test_direction_follows_admin_locale_and_uses_band_image_when_present(): void
+    {
+        $this->bandsFixture();
+        $dir = public_path('images/portal-sections/zz_test');
+        @mkdir($dir, 0777, true);
+        file_put_contents($dir.'/01-second.en.png', 'x');
+
+        try {
+            $admin = $this->admin();
+            $ltr = $this->actingAs($admin, 'admin')->withSession(['locale' => 'en'])->get(route('admin.portal-content.page', ['kw', 'zz_test']))->getContent();
+            $this->assertStringContainsString('images/portal-sections/zz_test/01-second.en.png', $ltr);
+            $this->assertStringContainsString('dir="ltr"', $ltr);
+
+            // Arabic admin: no .ar file -> falls back to the English screenshot; first band has no image -> ar placeholder.
+            $rtl = $this->actingAs($admin, 'admin')->withSession(['locale' => 'ar'])->get(route('admin.portal-content.page', ['kw', 'zz_test']))->getContent();
+            $this->assertStringContainsString('dir="rtl"', $rtl);
+            $this->assertStringContainsString('النطاق الأول', $rtl);
+            $this->assertStringContainsString('01-second.en.png', $rtl);
+            $this->assertStringContainsString('_placeholder.ar.svg', $rtl);
+        } finally {
+            @unlink($dir.'/01-second.en.png');
+            @rmdir($dir);
+        }
+    }
+
+    public function test_pages_without_bands_entry_fall_back_to_sections_config(): void
+    {
+        config(['portal_bands' => ['some_other_page' => ['bands' => []]]]);
+        $html = $this->actingAs($this->admin(), 'admin')->withSession(['locale' => 'en'])
+            ->get(route('admin.portal-content.page', ['kw', 'zz_test']))->assertOk()->getContent();
+
+        $this->assertStringContainsString('id="band-zeta"', $html);
+        $this->assertStringContainsString('Zeta first', $html);
+        $this->assertStringContainsString('_placeholder.en.svg', $html);
     }
 
     public function test_unknown_country_or_page_is_404(): void

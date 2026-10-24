@@ -59,12 +59,12 @@
         </select>
     </div>
 
-    {{-- Section anchor nav --}}
-    @if(count($sections))
+    {{-- Band anchor nav --}}
+    @if(count($bands))
         <nav class="sticky top-0 z-20 -mx-6 px-6 py-2 bg-gray-50/95 backdrop-blur border-b border-gray-200 flex gap-1.5 overflow-x-auto" aria-label="{{ __('admin.portal_content.sections') }}">
-            @foreach($sections as $i => $section)
-                <a href="#section-{{ $section['block'] }}"
-                   class="shrink-0 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100">{{ $i + 1 }}. {{ $section['label'] }}</a>
+            @foreach($bands as $i => $band)
+                <a href="#band-{{ $band['key'] }}" data-band-chip="{{ $band['key'] }}"
+                   class="shrink-0 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100">{{ $i + 1 }}. {{ $band['label'] }}</a>
             @endforeach
         </nav>
     @endif
@@ -74,32 +74,41 @@
         @csrf
 
         @php($otherShown = false)
-        @forelse($sections as $section)
-            @if($section['other'] && ! $otherShown)
+        @forelse($bands as $band)
+            @if($band['other'] && ! $otherShown)
                 @php($otherShown = true)
                 <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider pt-2">{{ __('admin.portal_content.other_sections') }}</h2>
             @endif
 
-            <section id="section-{{ $section['block'] }}" data-section="{{ $section['block'] }}"
+            <section id="band-{{ $band['key'] }}" data-band="{{ $band['key'] }}"
                      class="scroll-mt-16 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div class="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between">
-                    <h2 class="text-sm font-semibold text-gray-700">{{ $section['label'] }}</h2>
-                    <span class="text-xs font-mono text-gray-400" dir="ltr">{{ $section['block'] }}</span>
+                    <h2 class="text-sm font-semibold text-gray-700">{{ $band['label'] }}</h2>
+                    <span class="text-xs font-mono text-gray-400" dir="ltr">{{ $band['key'] }}</span>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x lg:divide-gray-100 rtl:lg:divide-x-reverse">
-                    {{-- Screenshot column --}}
-                    <div class="p-4 bg-gray-50/50">
-                        <button type="button" class="block w-full cursor-zoom-in rounded-lg border border-gray-200 bg-white overflow-hidden"
-                                @click="lightbox = @js($section['image']); lightboxLabel = @js($section['label'])">
-                            <img src="{{ $section['image'] }}" alt="{{ $section['label'] }}" loading="lazy" class="w-full h-auto max-h-96 object-contain object-top">
-                        </button>
-                        <p class="mt-1.5 text-[11px] text-gray-400 text-center">{{ __('admin.portal_content.click_to_enlarge') }}</p>
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-0 lg:divide-x lg:divide-gray-100 rtl:lg:divide-x-reverse">
+                    {{-- Screenshot column (first grid column: left in LTR, right in RTL) --}}
+                    <div class="lg:col-span-3 p-4 bg-gray-50/50">
+                        <div class="lg:sticky lg:top-16">
+                            <button type="button" class="block w-full cursor-zoom-in rounded-lg border border-gray-200 bg-white overflow-hidden"
+                                    @click="lightbox = @js($band['image']); lightboxLabel = @js($band['label'])">
+                                <img src="{{ $band['image'] }}" alt="{{ $band['label'] }}" loading="lazy" class="w-full h-auto max-h-[28rem] object-contain object-top">
+                            </button>
+                            <p class="mt-1.5 text-[11px] text-gray-400 text-center">{{ __('admin.portal_content.click_to_enlarge') }}</p>
+                        </div>
                     </div>
 
                     {{-- Fields column --}}
-                    <div class="divide-y divide-gray-100">
-                        @foreach($section['rows'] as $row)
+                    <div class="lg:col-span-2 divide-y divide-gray-100">
+                        @foreach($band['blocks'] as $block)
+                        <div data-block="{{ $block['page'] }}.{{ $block['block'] }}">
+                        <div class="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                            <h3 class="text-xs font-semibold text-gray-600">{{ $block['label'] }}</h3>
+                            <span class="text-[10px] font-mono text-gray-400" dir="ltr">{{ $block['page'] }}.{{ $block['block'] }}</span>
+                        </div>
+                        <div class="divide-y divide-gray-100">
+                        @foreach($block['rows'] as $row)
                             <div class="px-4 py-4 space-y-3">
                                 <div class="flex items-center justify-between">
                                     <div class="text-xs font-mono text-gray-400" dir="ltr">{{ $row->field_key }} <span class="ms-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500">{{ $row->type->value }}</span></div>
@@ -160,6 +169,9 @@
                                     </div>
                                 @endif
                             </div>
+                        @endforeach
+                        </div>
+                        </div>
                         @endforeach
                     </div>
                 </div>

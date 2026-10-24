@@ -57,29 +57,43 @@ class PortalContentController extends Controller
         $countryModel = $this->resolveCountry($country);
         $this->assertKnownPage($pageKey);
 
-        $this->sync->ensureCountryRows($countryModel, $pageKey);
+        $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
+        $code = strtolower($countryModel->site_code);
+        $declared = $this->declaredBands($pageKey);
 
-        $rows = PortalContent::where('country_code', strtolower($countryModel->site_code))
-            ->where('page_key', $pageKey)
+        foreach (array_unique(array_column($this->pairsOf($declared), 'page')) as $pk) {
+            $this->sync->ensureCountryRows($countryModel, $pk);
+        }
+
+        $rows = PortalContent::where('country_code', $code)
+            ->whereIn('page_key', array_unique(array_column($this->pairsOf($declared), 'page')))
             ->orderBy('sort_order')
             ->orderBy('field_key')
             ->get()
-            ->groupBy('block_key');
+            ->groupBy(fn ($r) => $r->page_key."\0".$r->block_key);
 
-        $locale = app()->getLocale() === 'ar' ? 'ar' : 'en';
         $pageConfig = config("portal_sections.{$pageKey}", []);
-        $sections = [];
+        $bands = [];
 
-        foreach ($pageConfig['sections'] ?? [] as $section) {
-            if (! $rows->has($section['block'])) {
+        foreach ($declared as $band) {
+            $blocks = [];
+            foreach ($band['blocks'] as $pair) {
+                $blockRows = $rows->get($pair['page']."\0".$pair['block']);
+                if (! $blockRows) {
+                    continue;
+                }
+                $blocks[] = ['page' => $pair['page'], 'block' => $pair['block'], 'label' => $pair['label_'.$locale] ?? $pair['label_en'] ?? $pair['block'], 'rows' => $blockRows->values()];
+            }
+            if (! $blocks) {
                 continue;
             }
-            $sections[] = $this->makeSection($pageKey, $section['block'], $section['label_'.$locale] ?? $section['label_en'] ?? $section['block'], $rows->pull($section['block']), $locale);
-        }
-
-        // Unknown blocks: appended alphabetically under "Other".
-        foreach ($rows->sortKeys() as $block => $blockRows) {
-            $sections[] = $this->makeSection($pageKey, $block, $block, $blockRows, $locale, true);
+            $bands[] = [
+                'key' => $band['key'],
+                'label' => $band['label_'.$locale] ?? $band['label_en'] ?? $band['key'],
+                'image' => $this->screenshotUrl($band['image'] ?? null, $locale),
+                'other' => $band['other'] ?? false,
+                'blocks' => $blocks,
+            ];
         }
 
         return view('admin.portal-content.edit', [
@@ -88,7 +102,7 @@ class PortalContentController extends Controller
             'pageKey' => $pageKey,
             'pageLabel' => $pageConfig['label_'.$locale] ?? $pageConfig['label_en'] ?? $pageKey,
             'pages' => $this->pageOptions($locale),
-            'sections' => $sections,
+            'bands' => $bands,
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => __('admin.portal_content.title'), 'url' => route('admin.portal-content.index')],
@@ -117,12 +131,20 @@ class PortalContentController extends Controller
 
         $this->sync->ensureCountryRows($countryModel, $pageKey);
 
+        $allowed = [];
+        foreach ($this->pairsOf($this->declaredBands($pageKey)) as $pair) {
+            $allowed[$pair['page']."\0".$pair['block']] = true;
+            $this->sync->ensureCountryRows($countryModel, $pair['page']);
+        }
+        $pageKeys = array_unique(array_map(fn ($k) => explode("\0", $k)[0], array_keys($allowed)));
+
         $count = 0;
 
         foreach ($request->input('fields', []) as $id => $data) {
-            $row = PortalContent::where('country_code', $code)->where('page_key', $pageKey)->find($id);
+            $row = PortalContent::where('country_code', $code)->whereIn('page_key', $pageKeys)->find($id);
 
-            if (! $row) {
+            // Only [page_key, block_key] pairs declared in this admin page's bands are editable.
+            if (! $row || ! isset($allowed[$row->page_key."\0".$row->block_key])) {
                 continue;
             }
 
@@ -141,7 +163,7 @@ class PortalContentController extends Controller
                 $uploaded = $request->file("fields.{$id}.value_file");
 
                 if ($uploaded) {
-                    $update['value_url'] = $uploaded->store('portal-content/'.$pageKey, 'public');
+                    $update['value_url'] = $uploaded->store('portal-content/'.$row->page_key, 'public');
                 } elseif (! empty($data['reset_image'])) {
                     // Empty value_url makes portal_image() fall back to the Blade default.
                     $update['value_url'] = null;
@@ -154,7 +176,9 @@ class PortalContentController extends Controller
             $count++;
         }
 
-        PortalContent::flush($pageKey, $code);
+        foreach ($pageKeys as $pk) {
+            PortalContent::flush($pk, $code);
+        }
 
         return redirect()->route('admin.portal-content.page', [$code, $pageKey])
             ->with('success', __('admin.portal_content.saved', ['count' => $count, 'country' => $this->countryName($countryModel)]));
@@ -207,7 +231,7 @@ class PortalContentController extends Controller
     private function assertKnownPage(string $pageKey): void
     {
         abort_unless(
-            config()->has("portal_sections.{$pageKey}") || PortalContent::where('page_key', $pageKey)->exists(),
+            config()->has("portal_sections.{$pageKey}") || config()->has("portal_bands.{$pageKey}") || PortalContent::where('page_key', $pageKey)->exists(),
             404
         );
     }
@@ -233,26 +257,75 @@ class PortalContentController extends Controller
         return $options;
     }
 
-    private function makeSection(string $pageKey, string $block, string $label, Collection $rows, string $locale, bool $other = false): array
+    /**
+     * Bands of an admin page in portal DOM order. Each band lists its blocks as [page, block, labels].
+     * Uses config/portal_bands.php; falls back to config/portal_sections.php (each block = own band, no image).
+     *
+     * @return list<array{key: string, label_en: string, label_ar: string, image: ?string, other?: bool, blocks: list<array<string, mixed>>}>
+     */
+    private function declaredBands(string $pageKey): array
     {
-        return [
-            'block' => $block,
-            'label' => $label,
-            'other' => $other,
-            'rows' => $rows->values(),
-            'image' => $this->screenshotUrl($pageKey, $block, $locale),
-        ];
+        $labels = [];
+        foreach (config('portal_sections', []) as $pk => $cfg) {
+            foreach ($cfg['sections'] ?? [] as $sec) {
+                $labels[$pk."\0".$sec['block']] = $sec;
+            }
+        }
+        $mk = fn (string $pk, string $block) => ['page' => $pk, 'block' => $block]
+            + array_intersect_key($labels[$pk."\0".$block] ?? [], ['label_en' => 1, 'label_ar' => 1]);
+
+        $bandsCfg = config("portal_bands.{$pageKey}.bands");
+
+        if (is_array($bandsCfg)) {
+            return array_map(fn (array $b) => [
+                'key' => $b['key'],
+                'label_en' => $b['label_en'] ?? $b['key'],
+                'label_ar' => $b['label_ar'] ?? ($b['label_en'] ?? $b['key']),
+                'image' => $b['image'] ?? null,
+                'blocks' => array_map(fn ($pair) => $mk($pair[0], $pair[1]), $b['blocks'] ?? []),
+            ], $bandsCfg);
+        }
+
+        $bands = [];
+        $seen = [];
+        foreach (config("portal_sections.{$pageKey}.sections", []) as $sec) {
+            $seen[$sec['block']] = true;
+            $bands[] = [
+                'key' => $sec['block'],
+                'label_en' => $sec['label_en'] ?? $sec['block'],
+                'label_ar' => $sec['label_ar'] ?? ($sec['label_en'] ?? $sec['block']),
+                'image' => null,
+                'blocks' => [$mk($pageKey, $sec['block'])],
+            ];
+        }
+
+        // Blocks present in the DB but not in the sections map: appended alphabetically as "Other".
+        $others = PortalContent::where('country_code', '*')->where('page_key', $pageKey)->distinct()->pluck('block_key')
+            ->reject(fn ($b) => isset($seen[$b]))->sort()->values();
+        foreach ($others as $block) {
+            $bands[] = ['key' => $block, 'label_en' => $block, 'label_ar' => $block, 'image' => null, 'other' => true, 'blocks' => [['page' => $pageKey, 'block' => $block]]];
+        }
+
+        return $bands;
     }
 
-    /** Screenshot for the admin locale → other locale → shared placeholder. */
-    private function screenshotUrl(string $pageKey, string $block, string $locale): string
+    /** @return list<array{page: string, block: string}> */
+    private function pairsOf(array $bands): array
+    {
+        return array_merge(...array_map(fn ($b) => $b['blocks'], $bands) ?: [[]]);
+    }
+
+    /** Band screenshot for the admin locale -> other locale -> shared placeholder. */
+    private function screenshotUrl(?string $image, string $locale): string
     {
         $other = $locale === 'ar' ? 'en' : 'ar';
 
-        foreach ([$locale, $other] as $lang) {
-            $relative = "images/portal-sections/{$pageKey}/{$block}.{$lang}.png";
-            if (file_exists(public_path($relative))) {
-                return asset($relative);
+        if ($image) {
+            foreach ([$locale, $other] as $lang) {
+                $relative = "images/portal-sections/{$image}.{$lang}.png";
+                if (file_exists(public_path($relative))) {
+                    return asset($relative);
+                }
             }
         }
 
