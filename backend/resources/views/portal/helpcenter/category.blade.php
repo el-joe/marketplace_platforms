@@ -13,7 +13,7 @@
 @endsection
 
 @section('content')
-    <nav class="pb-4 text-base" aria-label="{{ portal_content('helpcenter', 'common', 'breadcrumb_aria', 'Breadcrumb', 'مسار التنقل') }}">
+    <nav data-portal-section="common" class="pb-4 text-base" aria-label="{{ portal_content('helpcenter', 'common', 'breadcrumb_aria', 'Breadcrumb', 'مسار التنقل') }}">
         <ol class="m-0 flex list-none flex-wrap items-baseline gap-2 p-0">
             <li class="flex items-center gap-2">
                 <a href="{{ route('portal.helpcenter.index', $country) }}" class="text-black no-underline hover:text-[#0B6866]">{{ portal_content('helpcenter', 'category', 'all_categories', 'All Categories', 'كل الفئات') }}</a>
@@ -23,7 +23,7 @@
         </ol>
     </nav>
 
-    <div class="flex flex-col gap-10 pt-4">
+    <div data-portal-section="category" class="flex flex-col gap-10 pt-4">
         <div>
             <div class="mb-5">
                 <div class="flex h-14 w-14 items-center justify-center rounded-[10px] bg-[#0F807E]/5">

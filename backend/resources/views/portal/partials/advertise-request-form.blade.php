@@ -10,7 +10,7 @@
     $formIcon = portal_image('advertise-request', 'form', 'icon', 'https://advertise.noon.com/images/contactUs.png', 'Contact us', 'اتصل بنا');
 @endphp
 
-<section class="bg-white">
+<section data-portal-section="form" class="bg-white">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-20">
         <div class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
 

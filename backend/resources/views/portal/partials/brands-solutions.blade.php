@@ -49,7 +49,7 @@
     ];
 @endphp
 
-<section class="bg-white">
+<section data-portal-section="solutions" class="bg-white">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 lg:pb-16">
         <div class="grid md:grid-cols-2 gap-6 lg:gap-8">
             @foreach($solutions as $item)

@@ -1,6 +1,6 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
-<section class="bg-white">
+<section data-portal-section="quick_guide" class="bg-white">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 lg:pb-16">
         <h2 class="text-2xl sm:text-3xl lg:text-[34px] font-extrabold text-gray-900 text-center mb-6 lg:mb-10">
             {{ portal_content('advertise-display', 'quick_guide', 'title', 'Quick Start Guide', 'دليل البدء السريع') }}

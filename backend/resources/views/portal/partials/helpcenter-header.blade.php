@@ -4,7 +4,7 @@
     $isAr = app()->getLocale() === 'ar';
 @endphp
 
-<header class="hc-fade-header relative flex flex-col text-black" x-data="{ mobileOpen: false }">
+<header data-portal-section="header" class="hc-fade-header relative flex flex-col text-black" x-data="{ mobileOpen: false }">
     <div class="relative flex grow flex-col {{ $variant === 'home' ? 'mb-8 pb-8' : 'pb-4' }}">
         <div class="flex h-full flex-col items-center">
 

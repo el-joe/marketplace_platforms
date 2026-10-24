@@ -10,7 +10,7 @@
 @endsection
 
 @section('content')
-    <div class="flex flex-col gap-12">
+    <div data-portal-section="index" class="flex flex-col gap-12">
 
         <div class="grid auto-rows-auto gap-x-4 sm:gap-x-6 gap-y-4 sm:gap-y-6 md:grid-cols-3" role="list">
             @foreach($collections as $collection)

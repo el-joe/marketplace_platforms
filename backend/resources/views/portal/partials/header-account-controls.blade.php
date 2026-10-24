@@ -1,6 +1,6 @@
 {{-- Desktop country + language switchers shared by the main portal nav and the
      section navs, so every portal header matches the /vendors header exactly. --}}
-<div class="hidden lg:flex items-center gap-4 xl:gap-[32px] h-full">
+<div data-portal-section="nav-controls" class="hidden lg:flex items-center gap-4 xl:gap-[32px] h-full">
     <div class="w-px h-[24px] bg-white/20 self-center"></div>
 
     {{-- Country --}}

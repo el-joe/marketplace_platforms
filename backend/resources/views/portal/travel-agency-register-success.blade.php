@@ -6,7 +6,7 @@
 
 @section('content')
     <div class="min-h-screen bg-gray-950 flex items-center justify-center py-16 px-4" dir="{{ $isAr ? 'rtl' : 'ltr' }}">
-        <div class="max-w-lg w-full text-center">
+        <div data-portal-section="success" class="max-w-lg w-full text-center">
 
             {{-- Success Icon --}}
             <div class="w-20 h-20 bg-[#0F807E]/10 border-2 border-[#feee00]/40 rounded-full flex items-center justify-center mx-auto mb-6">

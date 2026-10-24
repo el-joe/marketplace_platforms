@@ -12,7 +12,7 @@
 </style>
 @endpush
 
-<section class="bg-black relative pt-8 pb-10 lg:pb-12 md:py-10 lg:py-12">
+<section data-portal-section="steps" class="bg-black relative pt-8 pb-10 lg:pb-12 md:py-10 lg:py-12">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <h2 class="text-[32px] sm:text-[40px] lg:text-[48px] font-black mb-6 lg:mb-8 text-white leading-tight">
             {{ portal_content('how-it-works', 'steps', 'title_prefix', 'Steps to ', 'خطوات لـ ') }}<span class="text-[#0F807E] animate-blink-4 inline-block">{{ portal_content('how-it-works', 'steps', 'title_highlight', 'Go Live', 'البدء') }}</span>

@@ -4,7 +4,7 @@
     $advertisersHeroCta = portal_link('advertise-advertisers', 'hero', 'cta_button', 'Contact us', 'اتصل بنا', route('portal.advertise.request', $country ?? \App\Models\Country::resolveSiteCode(null)));
 @endphp
 
-<section class="bg-white">
+<section data-portal-section="hero" class="bg-white">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 lg:pt-16 pb-8 lg:pb-12">
         <div class="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             <div class="order-2 lg:order-1 {{ $isAr ? 'text-center lg:text-right' : 'text-center lg:text-left' }}">

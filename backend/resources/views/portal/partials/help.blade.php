@@ -1,6 +1,6 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
-<section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+<section data-portal-section="help" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
     <div class="max-w-[1140px] mx-auto rounded-2xl border border-[#2a2a2a] p-6 md:px-[60px] md:py-[44px] grid md:grid-cols-[1fr_auto] items-center gap-6 md:gap-12">
         <div class="text-center md:text-start">
             <h2 class="text-white font-bold text-[22px] lg:text-[26px] leading-tight mb-2">

@@ -15,7 +15,7 @@
     $navMenuAria = portal_content('nav', 'advertise_nav', 'menu_aria', 'Menu', 'القائمة');
 @endphp
 
-<header class="sticky top-0 z-50 bg-white border-b border-gray-100" x-data="{ mobileOpen: false }">
+<header data-portal-section="advertise_nav" class="sticky top-0 z-50 bg-white border-b border-gray-100" x-data="{ mobileOpen: false }">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-[72px] gap-4">
 

@@ -13,7 +13,7 @@
 @endpush
 
 {{-- Fulfilled by Nawy --}}
-<section id="fbn" class="bg-[#1c1c1c] pt-8 pb-10 lg:pb-12 md:py-10 lg:py-12">
+<section data-portal-section="fbn" id="fbn" class="bg-[#1c1c1c] pt-8 pb-10 lg:pb-12 md:py-10 lg:py-12">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="text-2xl sm:text-[32px] font-extrabold mb-6 lg:mb-8">
             <span class="text-[#0F807E]">{{ portal_content('fulfillment', 'fbn', 'title_prefix', 'Fulfilled by Nawy: ', 'التنفيذ من قبل ناوي: ') }}</span>
@@ -80,7 +80,7 @@
 
 {{-- FBN testimonial --}}
 <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 mt-[24px] md:mt-[48px]">
-    <section class="rounded-2xl border-2 border-[#1c1c1c] overflow-hidden md:flex md:flex-row-reverse md:items-center md:gap-10 md:p-10">
+    <section data-portal-section="fbn_testimonial" class="rounded-2xl border-2 border-[#1c1c1c] overflow-hidden md:flex md:flex-row-reverse md:items-center md:gap-10 md:p-10">
         <div class="mb-6 md:flex-1 md:mb-0">
             <div class="aspect-video rounded-xl overflow-hidden">
                 @php($fbnVideo = portal_link('fulfillment', 'fbn', 'video', 'YouTube video player', 'مشغل فيديو يوتيوب', 'https://www.youtube.com/embed/soM79P27Hm4'))
@@ -107,7 +107,7 @@
 </div>
 
 {{-- Fulfilled by partner --}}
-<section id="fbp" class="bg-[#1c1c1c] py-10 lg:py-12 mt-[24px] md:mt-[48px]">
+<section data-portal-section="fbp" id="fbp" class="bg-[#1c1c1c] py-10 lg:py-12 mt-[24px] md:mt-[48px]">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         @php($fbpHighlight = portal_content('fulfillment', 'fbp', 'title_highlight', 'Built for Flexibility', 'مصمم للمرونة'))
         <h2 class="text-2xl sm:text-[32px] font-extrabold mb-6 lg:mb-8"
@@ -176,7 +176,7 @@
 
 {{-- FBP testimonial --}}
 <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 mt-[24px] md:mt-[48px] mb-[96px]">
-    <section class="rounded-2xl border-2 border-[#1c1c1c] overflow-hidden md:flex md:flex-row-reverse md:items-center md:gap-10 md:p-10">
+    <section data-portal-section="fbp_testimonial" class="rounded-2xl border-2 border-[#1c1c1c] overflow-hidden md:flex md:flex-row-reverse md:items-center md:gap-10 md:p-10">
         <div class="mb-6 md:flex-1 md:mb-0">
             <div class="aspect-video rounded-xl overflow-hidden">
                 @php($fbpVideo = portal_link('fulfillment', 'fbp', 'video', 'YouTube video player', 'مشغل فيديو يوتيوب', 'https://www.youtube.com/embed/8W9HHs8WcH0'))

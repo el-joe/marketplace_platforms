@@ -26,7 +26,7 @@
 @endphp
 
 {{-- Hero --}}
-<section class="relative overflow-hidden bg-gray-900">
+<section data-portal-section="hero" class="relative overflow-hidden bg-gray-900">
     <div class="h-[520px] sm:h-[560px] lg:h-[440px] relative">
         <img src="{{ $hero['image']['src'] ?? '' }}" alt="{{ $hero['image']['alt'] ?? '' }}"
             class="absolute inset-0 w-full h-full object-cover object-center">
@@ -67,7 +67,7 @@
 
     {{-- Benefits --}}
     @if (!empty($benefits))
-        <section id="benefits" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
+        <section data-portal-section="benefits" id="benefits" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
             @if ($benefitsTitle)
                 <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-6 lg:mb-8">
                     {{ $benefitsTitle }}
@@ -96,7 +96,7 @@
 
     {{-- How it works --}}
     @if (!empty($steps))
-        <section id="steps" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
+        <section data-portal-section="steps" id="steps" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
             @if ($stepsTitle)
                 <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-6 lg:mb-8">
                     {{ $stepsTitle }}
@@ -119,7 +119,7 @@
 
     {{-- Closing call to action --}}
     @if (!empty($cta))
-        <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+        <section data-portal-section="cta" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
             <div class="rounded-3xl border border-white/10 bg-[#151515] px-6 py-10 sm:px-10 text-center">
                 <h2 class="text-white font-extrabold text-2xl sm:text-3xl">
                     {{ $cta['title'] ?? '' }}

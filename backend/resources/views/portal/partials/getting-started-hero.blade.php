@@ -1,6 +1,6 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
-<section class="relative overflow-hidden bg-gray-900">
+<section data-portal-section="hero" class="relative overflow-hidden bg-gray-900">
     {{-- Mobile: near full-viewport hero --}}
     <div class="h-[calc(100svh_-_72px)] md:hidden relative">
         @php($heroImgMobile = portal_image('how-it-works', 'hero', 'photo', asset('images/nawy_ui.jpeg'), 'Nawy employees working', 'موظفو ناوي في العمل'))

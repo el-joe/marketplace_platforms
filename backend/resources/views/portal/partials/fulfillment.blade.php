@@ -1,6 +1,6 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
-<section class="max-w-[1280px] w-full mx-auto px-4 sm:px-6 lg:px-8">
+<section data-portal-section="fulfillment_teaser" class="max-w-[1280px] w-full mx-auto px-4 sm:px-6 lg:px-8">
     <div class="rounded-2xl overflow-hidden bg-[#1c1c1c] grid md:grid-cols-[1.5fr_2fr]">
         <div class="relative aspect-[4/3] md:aspect-auto">
             @php($homeFulfillmentImg = portal_image('home', 'fulfillment_teaser', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-fbn.jpg', 'Shipping and Fulfilment', 'الشحن والتوصيل'))

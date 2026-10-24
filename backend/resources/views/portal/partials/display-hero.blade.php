@@ -20,7 +20,7 @@
     $displayHeroImg = portal_image('advertise-display', 'hero', 'image', 'https://advertise.noon.com/images/display-ads-home_ar.png', 'Display Ads', 'إعلانات العرض');
 @endphp
 
-<section class="bg-white">
+<section data-portal-section="hero" class="bg-white">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 lg:pt-16 pb-8 lg:pb-12">
         <div class="grid lg:grid-cols-2 rounded-3xl border border-gray-200 overflow-hidden">
 

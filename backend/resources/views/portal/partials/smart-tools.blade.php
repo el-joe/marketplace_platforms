@@ -1,7 +1,7 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
 <div class="bg-[#151515] pt-8 pb-10 lg:pt-10 lg:pb-14">
-    <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section data-portal-section="smart_tools_teaser" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-2">{{ portal_content('home', 'smart_tools_teaser', 'title', 'Grow smarter', 'نمِّ أعمالك بذكاء') }}</h2>
         <h3 class="text-white font-bold text-[22px] lg:text-[26px] leading-tight mb-8 lg:mb-10">
             {{ portal_content('home', 'smart_tools_teaser', 'subtitle', 'Everything you need to scale and stay ahead', 'كل ما تحتاجه للتوسع والبقاء في الصدارة') }}

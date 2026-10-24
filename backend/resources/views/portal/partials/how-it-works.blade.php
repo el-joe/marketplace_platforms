@@ -1,7 +1,7 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
 <div class="bg-[#151515] py-10 lg:py-12">
-    <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section data-portal-section="checklist" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <h1 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-2">{{ portal_content('how-it-works', 'checklist', 'eyebrow', 'Getting Started', 'البدء') }}</h1>
         <h2 class="text-white font-bold text-[22px] lg:text-[26px] leading-tight mb-8 lg:mb-10">
             {{ portal_content('how-it-works', 'checklist', 'title', 'Ready to start selling?', 'جاهز انك تبدأ البيع؟') }}<br>
@@ -96,7 +96,7 @@
 </div>
 
 {{-- Dubai Traders Program banner --}}
-<section class="max-w-[1280px] w-full mx-auto px-4 sm:px-6 lg:px-8">
+<section data-portal-section="trader_banner" class="max-w-[1280px] w-full mx-auto px-4 sm:px-6 lg:px-8">
     <a href="{{ route('portal.register') }}" class="block w-full">
         @php($traderBannerAlt = portal_content('how-it-works', 'trader_banner', 'alt', 'Dubai Traders Program', 'برنامج تجار دبي'))
         @php($traderBannerMobile = $isAr

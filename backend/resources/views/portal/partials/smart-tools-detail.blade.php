@@ -3,7 +3,7 @@
 <div class="flex flex-col gap-y-[48px] lg:gap-y-[64px] pt-[48px] lg:pt-[64px] pb-[48px] lg:pb-[64px]">
 
     {{-- Nawy Ads --}}
-    <section id="ads" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
+    <section data-portal-section="ads" id="ads" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div class="rounded-2xl border-2 border-[#1c1c1c] p-6 lg:p-12 flex flex-col lg:grid lg:grid-cols-[1fr_auto] items-center gap-8 lg:gap-16">
             <div class="order-2 lg:order-1 w-full">
                 @php($adsLogo = portal_image('smart-tools', 'ads', 'logo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/logo-noon-ads.svg', 'Nawy Ads', 'إعلانات ناوي'))
@@ -46,7 +46,7 @@
     </section>
 
     {{-- Fee structure --}}
-    <section id="fees" class="bg-[#1c1c1c] py-12 lg:py-16 w-full">
+    <section data-portal-section="fee-structure" id="fees" class="bg-[#1c1c1c] py-12 lg:py-16 w-full">
         <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-[#0F807E] font-black text-xl lg:text-2xl">{{ portal_content('smart-tools', 'fee-structure', 'title', 'Fee structure', 'هيكل الرسوم') }}</h2>
             <h3 class="text-white font-black text-lg lg:text-xl mt-1 mb-8 text-pretty">
@@ -79,7 +79,7 @@
     </section>
 
     {{-- Transparent fees cards --}}
-    <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
+    <section data-portal-section="transparent-fees" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <h3 class="text-2xl sm:text-[26px] font-bold leading-tight mb-6 lg:mb-8">{{ portal_content('smart-tools', 'transparent-fees', 'title', 'Transparent Fees', 'الرسوم الشفافة') }}</h3>
 
         <div class="grid gap-4 md:grid-cols-3 md:gap-4 lg:gap-6"
@@ -152,7 +152,7 @@
     </section>
 
     {{-- Payouts --}}
-    <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
+    <section data-portal-section="payouts" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div class="rounded-2xl border-2 border-[#1c1c1c] p-6 lg:p-12 grid grid-cols-1 md:grid-cols-[1fr_auto] items-center gap-6 lg:gap-16">
             <div>
                 <h2 class="text-2xl sm:text-[26px] font-bold leading-tight mb-4 lg:mb-6">
@@ -177,7 +177,7 @@
     </section>
 
     {{-- Insights --}}
-    <section id="insights" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
+    <section data-portal-section="insights" id="insights" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <section class="rounded-2xl border-2 border-[#1c1c1c] overflow-hidden md:grid md:grid-cols-[1.5fr_2fr] lg:gap-x-6">
             <div class="relative aspect-[4/3] md:aspect-auto">
                 @php($insightsImg = portal_image('smart-tools', 'insights', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-paid.jpg', 'A Nawy van in the street', 'شاحنة ناوي في الشارع'))
@@ -216,7 +216,7 @@
             </div>
         </section>
 
-        <div class="mt-6 rounded-2xl border-2 border-[#1c1c1c] p-6 lg:p-8">
+        <div data-portal-section="vantage" class="mt-6 rounded-2xl border-2 border-[#1c1c1c] p-6 lg:p-8">
             <h2 class="text-xl font-bold leading-tight mb-4">{{ portal_content('smart-tools', 'vantage', 'title', 'Vantage Analytics - your growth command centre', 'فانتج للتحليلات – مركز القيادة لنموك') }}</h2>
             <p class="text-[16px] font-medium text-gray-300">
                 {{ portal_content('smart-tools', 'vantage', 'description',

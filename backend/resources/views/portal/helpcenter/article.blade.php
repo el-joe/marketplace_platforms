@@ -17,7 +17,7 @@
 @endsection
 
 @section('content')
-    <div class="justify-between flex">
+    <div data-portal-section="article" class="justify-between flex">
         <div class="relative z-3 w-full lg:max-w-[660px]">
             <nav class="pb-4 text-base" aria-label="{{ portal_content('helpcenter', 'common', 'breadcrumb_aria', 'Breadcrumb', 'مسار التنقل') }}">
                 <ol class="m-0 flex list-none flex-wrap items-baseline gap-2 p-0">

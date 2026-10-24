@@ -10,7 +10,7 @@
 @endpush
 
 @section('content')
-<div class="min-h-screen bg-gray-950 py-10 px-4" dir="{{ $isAr ? 'rtl' : 'ltr' }}">
+<div data-portal-section="register" class="min-h-screen bg-gray-950 py-10 px-4" dir="{{ $isAr ? 'rtl' : 'ltr' }}">
     <div class="max-w-2xl mx-auto">
 
         {{-- Logo --}}

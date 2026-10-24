@@ -5,7 +5,7 @@
 @section('content')
 
 {{-- ── Header ─────────────────────────────────────────────────────── --}}
-<section class="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-950 border-b border-gray-800 py-16">
+<section data-portal-section="header" class="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-950 border-b border-gray-800 py-16">
     <div class="absolute inset-0 opacity-20 pointer-events-none"
          style="background-image: radial-gradient(circle at 20% 20%, #F59E0B 0%, transparent 35%);"></div>
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -112,7 +112,7 @@
 </div>
 
 {{-- ── Posts Grid ──────────────────────────────────────────────────── --}}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-20">
+<div data-portal-section="index" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-20">
     @if($posts->isEmpty())
         <div class="py-20 text-center text-gray-500">
             <p class="text-lg">{{ portal_content('blog', 'index', 'no_posts', 'No posts yet.', 'لا توجد مقالات بعد.') }}</p>

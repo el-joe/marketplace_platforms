@@ -1,6 +1,6 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
-<section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+<section data-portal-section="seller-hub" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
     <div class="rounded-2xl border-2 border-[#1c1c1c] overflow-hidden md:overflow-visible md:p-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16">
         <div class="relative aspect-[4/3] lg:aspect-auto lg:h-full min-h-[280px] md:rounded-2xl md:overflow-hidden">
             @php($sellerHubImg = portal_image('how-it-works', 'seller-hub', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-transparent-fees-01.jpg', 'Seller Hub', 'مركز البائعين'))

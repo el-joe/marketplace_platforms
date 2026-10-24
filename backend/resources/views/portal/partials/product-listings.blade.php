@@ -37,7 +37,7 @@
     $categoryGuideCta = portal_link('advertise-product', 'listings', 'category_guide_link', 'Read The Guide', 'اقرأ الدليل', route('portal.faq'));
 @endphp
 
-<section id="listings" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+<section data-portal-section="listings" id="listings" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
     <h2 class="text-2xl sm:text-3xl font-black text-white mb-6 lg:mb-8">
         @if($isAr)
             {{ $listingsHeadingAr }}

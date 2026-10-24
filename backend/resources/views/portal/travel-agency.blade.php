@@ -66,7 +66,7 @@
         ]">
         {{-- Categories you can publish --}}
         @if ($categories->isNotEmpty())
-            <section id="publish" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
+            <section data-portal-section="categories" id="publish" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
                 <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-6 lg:mb-8">
                     {{ portal_content('travel-agency', 'categories', 'title', 'What you can publish', 'ما يمكنك نشره') }}
                 </h2>

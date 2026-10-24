@@ -61,7 +61,7 @@
             'button' => portal_link('marketers', 'cta', 'button', 'See ways to earn', 'اطّلع على طرق الربح', '#types'),
         ]">
         {{-- Ways to earn --}}
-        <section id="types" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
+        <section data-portal-section="types" id="types" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-[72px]">
             <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-6 lg:mb-8">
                 {{ portal_content('marketers', 'types', 'title', 'Ways to earn', 'طرق الربح') }}
             </h2>

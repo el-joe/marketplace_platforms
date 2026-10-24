@@ -1,5 +1,5 @@
 @php $isAr = app()->getLocale() === 'ar'; @endphp
-<footer class="mt-20 shrink-0 bg-gray-50 px-0 py-12 text-base text-gray-500">
+<footer data-portal-section="footer" class="mt-20 shrink-0 bg-gray-50 px-0 py-12 text-base text-gray-500">
     <div class="shrink-0 grow basis-auto px-4 sm:px-8">
         <div class="mx-auto max-w-[1000px]">
             <div class="flex flex-col md:flex-row">

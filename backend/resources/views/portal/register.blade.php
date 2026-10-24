@@ -16,7 +16,7 @@
     <div class="max-w-2xl mx-auto">
 
         {{-- Logo --}}
-        <div class="text-center mb-8">
+        <div data-portal-section="header" class="text-center mb-8">
             <a href="{{ route('portal.home') }}" class="inline-flex items-center gap-2">
                 <span class="bg-[#0F807E] text-gray-950 font-black text-2xl px-3 py-1 rounded">{{ portal_content('register', 'header', 'logo_text', 'Nawy', 'Nawy') }}</span>
                 <span class="text-white text-lg font-semibold">{{ portal_content('register', 'header', 'logo_tagline', 'for Sellers', 'للبائعين') }}</span>
@@ -32,7 +32,7 @@
             class="bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
         >
             {{-- Progress bar --}}
-            <div class="bg-gray-800 px-6 pt-6 pb-4">
+            <div data-portal-section="progress" class="bg-gray-800 px-6 pt-6 pb-4">
                 <div class="flex items-center mb-4">
                     <template x-for="n in totalSteps" :key="n">
                         <div class="flex items-center" :class="n < totalSteps ? 'flex-1' : ''">
@@ -82,30 +82,30 @@
             {{-- Step bodies --}}
             <div class="p-6">
 
-                <div x-show="step === 1" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                <div data-portal-section="step_1" x-show="step === 1" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                     @include('portal.register.step-1')
                 </div>
 
-                <div x-show="step === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                <div data-portal-section="step_2" x-show="step === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                     @include('portal.register.step-2')
                 </div>
 
-                <div x-show="step === 3" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                <div data-portal-section="step_3" x-show="step === 3" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                     @include('portal.register.step-3')
                 </div>
 
-                <div x-show="step === 4" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                <div data-portal-section="step_4" x-show="step === 4" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                     @include('portal.register.step-4')
                 </div>
 
-                <div x-show="step === 5" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                <div data-portal-section="step_5" x-show="step === 5" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                     @include('portal.register.step-5')
                 </div>
 
             </div>
 
             {{-- Navigation footer --}}
-            <div class="px-6 pb-6 flex items-center gap-3 border-t border-gray-800 pt-4">
+            <div data-portal-section="footer_nav" class="px-6 pb-6 flex items-center gap-3 border-t border-gray-800 pt-4">
                 <button
                     x-show="step > 1"
                     @click="prevStep()"
@@ -152,7 +152,7 @@
 
         </div>{{-- /wizard card --}}
 
-        <p class="text-center text-sm text-gray-500 mt-6">
+        <p data-portal-section="login_prompt" class="text-center text-sm text-gray-500 mt-6">
             {{ portal_content('register', 'login_prompt', 'text', 'Already have a seller account?', 'لديك حساب بائع بالفعل؟') }}
             @php($loginLink = portal_link('register', 'login_prompt', 'link', 'Log in', 'تسجيل الدخول', route('partner.login')))
             <a href="{{ $loginLink['url'] }}" class="text-[#0F807E] hover:underline">{{ $loginLink['label'] }}</a>

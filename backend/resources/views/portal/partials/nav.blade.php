@@ -96,7 +96,7 @@
     x-effect="document.body.style.overflow = mobileOpen ? 'hidden' : ''"
     @resize.window="window.innerWidth >= 1024 ? mobileOpen = false : null">
 
-<header class="fixed inset-x-0 top-0 z-50 transition-all duration-300"
+<header data-portal-section="nav" class="fixed inset-x-0 top-0 z-50 transition-all duration-300"
     @scroll.window="scrolled = (window.pageYOffset > 20)"
     :class="scrolled ? 'bg-gray-900/80 backdrop-blur-lg shadow-lg' : 'bg-gray-900/50 backdrop-blur-md'">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -104,14 +104,14 @@
 
             <div class="flex items-center gap-6 xl:gap-[48px] h-full">
                 {{-- Logo --}}
-                <a href="{{ route('portal.home') }}" class="flex items-center shrink-0"
+                <a data-portal-section="nav-logo" href="{{ route('portal.home') }}" class="flex items-center shrink-0"
                     aria-label="{{ $navLogoAria }}">
                     <img src="{{ $navLogo['src'] }}" alt="{{ $navLogo['alt'] }}" width="808" height="780"
                         decoding="async" class="h-[44px] w-auto object-contain">
                 </a>
 
                 {{-- Desktop nav links --}}
-                <nav class="hidden lg:flex items-center gap-4 xl:gap-[32px] h-full">
+                <nav data-portal-section="nav-links" class="hidden lg:flex items-center gap-4 xl:gap-[32px] h-full">
                     @foreach ($navLinks as $link)
                         <div class="relative group h-full flex items-center" x-data="{ open: false }"
                             @mouseenter="open = true" @mouseleave="open = false">

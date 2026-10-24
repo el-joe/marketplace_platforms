@@ -40,7 +40,7 @@
             <span class="text-gray-400 line-clamp-1">{{ $post->{'title_' . $locale} }}</span>
         </nav>
 
-        <article class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+        <article data-portal-section="show" class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
 
             {{-- ── Article Header ───────────────────────────────────── --}}
             <div class="p-8 pb-6">

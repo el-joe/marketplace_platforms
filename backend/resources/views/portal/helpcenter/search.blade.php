@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-    <div class="flex flex-col gap-6">
+    <div data-portal-section="search" class="flex flex-col gap-6">
         <h1 class="text-xl font-semibold text-gray-800">
             {{ portal_content('helpcenter', 'search', 'results_for', 'Search results for', 'نتائج البحث عن') }} "{{ $q }}"
             <span class="text-gray-400 font-normal text-base">({{ $articles->count() }})</span>

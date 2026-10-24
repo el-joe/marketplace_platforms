@@ -4,7 +4,7 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- Section header --}}
-        <div class="text-center mb-16">
+        <div data-portal-section="faq-header" class="text-center mb-16">
             <span class="inline-block bg-[#0F807E]/10 border border-[#feee00]/30 text-[#0F807E]
                          text-sm font-semibold px-4 py-1.5 rounded-full mb-4">
                 {{ portal_content('faq', 'header', 'eyebrow', 'FAQ', 'الأسئلة الشائعة') }}
@@ -53,7 +53,7 @@
         </div>
 
         {{-- Still have questions CTA --}}
-        <div class="mt-12 text-center bg-gray-800/50 border border-gray-700 rounded-3xl p-8">
+        <div data-portal-section="contact_cta" class="mt-12 text-center bg-gray-800/50 border border-gray-700 rounded-3xl p-8">
             <div class="text-3xl mb-3">🤔</div>
             <h3 class="text-xl font-black text-white mb-2">
                 {{ portal_content('faq', 'contact_cta', 'title', 'Have Another Question?', 'لديك سؤال آخر؟') }}

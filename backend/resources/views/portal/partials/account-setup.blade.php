@@ -73,7 +73,7 @@
     $accountSetupImg = portal_image('account_setup', 'main', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-selling.jpg', 'Registration steps', 'خطوات التسجيل');
 @endphp
 
-<section id="registering" class="bg-[#1c1c1c] py-10 lg:py-16">
+<section data-portal-section="account-setup" id="registering" class="bg-[#1c1c1c] py-10 lg:py-16">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-start">
             <div class="relative aspect-[4/3] rounded-2xl overflow-hidden">

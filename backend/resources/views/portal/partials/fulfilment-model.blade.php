@@ -1,6 +1,6 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
-<div id="fulfilment">
+<div data-portal-section="fulfilment-model" id="fulfilment">
     <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="text-2xl sm:text-3xl font-black text-white mb-6 lg:mb-8">
             {{ portal_content('how-it-works', 'fulfilment-model', 'title', 'Choose the fulfilment model that fits you', 'اختر نموذج التنفيذ المناسب لك') }}

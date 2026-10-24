@@ -20,7 +20,7 @@
     $productHeroImg = portal_image('advertise-product', 'hero', 'image', 'https://advertise.noon.com/images/productAdsMain_ar.png', 'Product Ads', 'إعلانات المنتجات');
 @endphp
 
-<section class="bg-white">
+<section data-portal-section="hero" class="bg-white">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 lg:pt-16 pb-8 lg:pb-12">
         <div class="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
