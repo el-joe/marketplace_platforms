@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import MarketersListView from "@/src/features/noon/marketers-list";
-import { getMarketersList } from "@/src/features/noon/marketers-list/api";
+import { parseListSearchParams } from "@/src/features/noon/marketers-list/helpers/search-params";
 
 export async function generateMetadata() {
   const t = await getTranslations("marketers");
@@ -12,14 +12,11 @@ export async function generateMetadata() {
 }
 
 type Props = {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ gender?: string; type?: string; page?: string }>;
 };
 
 export default async function MarketersPage({ searchParams }: Props) {
-  const { type } = await searchParams;
-  const { items, meta } = await getMarketersList({ type });
+  const params = parseListSearchParams(await searchParams);
 
-  return (
-    <MarketersListView marketers={items} total={meta.total} activeType={type} />
-  );
+  return <MarketersListView {...params} />;
 }

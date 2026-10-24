@@ -1,30 +1,41 @@
-export interface MarketerTabConfig {
-  value?: string;
-  labelKey: "tabAll" | "tabInfluencers" | "tabAffiliates";
-}
+import type { GenderParam, MarketerGender, MarketerType } from "./types";
 
-export const MARKETER_TABS: MarketerTabConfig[] = [
-  { value: undefined, labelKey: "tabAll" },
-  { value: "influencer", labelKey: "tabInfluencers" },
-  { value: "affiliate", labelKey: "tabAffiliates" },
+export const GRID_PER_PAGE = 24;
+
+export const GENDER_TABS: { value: GenderParam; labelKey: "tabMen" | "tabWomen" }[] = [
+  { value: "men", labelKey: "tabMen" },
+  { value: "women", labelKey: "tabWomen" },
 ];
 
-/** Rotating banner-fallback gradients so a grid of cards without a banner_url isn't monotone. */
-export const CARD_GRADIENTS: string[] = [
-  "from-amber-300 via-[var(--main-color)] to-yellow-200",
-  "from-fuchsia-400 via-purple-400 to-indigo-300",
-  "from-sky-400 via-cyan-300 to-teal-200",
-  "from-rose-400 via-pink-400 to-amber-200",
-  "from-emerald-400 via-teal-300 to-lime-200",
-  "from-orange-400 via-amber-300 to-yellow-200",
-];
+export const GENDER_PARAM_TO_API: Record<GenderParam, MarketerGender> = {
+  men: "male",
+  women: "female",
+};
 
-/** Hover-shadow tint paired 1:1 with CARD_GRADIENTS, so each card's glow matches its own palette. */
-export const CARD_GLOWS: string[] = [
-  "rgba(245,158,11,0.35)",
-  "rgba(192,38,211,0.3)",
-  "rgba(14,165,233,0.3)",
-  "rgba(244,63,94,0.3)",
-  "rgba(16,185,129,0.3)",
-  "rgba(249,115,22,0.3)",
-];
+export const MARKETER_TYPES: MarketerType[] = ["influencer", "affiliate", "broker"];
+
+export const TYPE_SECTION_KEYS = {
+  influencer: "sectionInfluencers",
+  affiliate: "sectionAffiliates",
+  broker: "sectionBrokers",
+} as const;
+
+export const TYPE_BADGE_KEYS = {
+  influencer: "typeInfluencer",
+  affiliate: "typeAffiliate",
+  broker: "typeBroker",
+} as const;
+
+/** Gold accent shared by the "view all" button and active tab (boutiqaat-style). */
+export const GOLD_TEXT = "text-[#a8791a]";
+export const GOLD_BORDER = "border-[#c9a24a]";
+export const GOLD_BG = "bg-[#c9a24a]";
+
+/** Swiper breakpoints for carousel rows (portrait cards). */
+export const CAROUSEL_BREAKPOINTS = {
+  0: { slidesPerView: 2.2, spaceBetween: 12 },
+  640: { slidesPerView: 3.2, spaceBetween: 14 },
+  768: { slidesPerView: 4, spaceBetween: 16 },
+  1024: { slidesPerView: 5, spaceBetween: 16 },
+  1280: { slidesPerView: 6, spaceBetween: 16 },
+} as const;
