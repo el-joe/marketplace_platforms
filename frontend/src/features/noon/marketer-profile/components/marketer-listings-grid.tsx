@@ -1,100 +1,71 @@
 "use client";
-import { useEffect, useRef } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
 import { PackageSearch } from "lucide-react";
-import ProductCard from "@/src/components/shared/product-card";
 import { Spinner } from "@/src/components/ui/spinner";
-import { toProductCard } from "../helpers/to-product-card";
-import type { MarketerProfileMarketer, MarketerProfileInfo, MarketerProfileListingItem } from "../helpers/types";
-import { getMarketerListings } from "../api";
+import useLocale from "@/src/hooks/use-locale";
+import { useLoadMore } from "../helpers/use-load-more";
+import type { MarketerFilters, MarketerListings } from "../helpers/types";
+import MarketerListingCard from "./marketer-listing-card";
 
 interface Props {
   slug: string;
-  section: "own" | "campaign" | "vendor_campaign" | "marketer_campaign";
-  marketer: MarketerProfileMarketer;
-  profile: MarketerProfileInfo;
-  initialItems: MarketerProfileListingItem[];
-  initialTotal: number;
-  initialLastPage: number;
-  emptyLabel: string;
-  loadMoreLabel: string;
+  filters: MarketerFilters;
+  initial: MarketerListings;
+  labels: {
+    empty: string;
+    emptyHint: string;
+    loadMore: string;
+    retry: string;
+    exclusive: string;
+    negotiable: string;
+    classified: string;
+  };
 }
 
-export default function MarketerListingsGrid({
-  slug, section, marketer, profile,
-  initialItems, initialTotal, initialLastPage,
-  emptyLabel,
-}: Props) {
-  const sentinelRef = useRef<HTMLDivElement>(null);
+/** 4 cols desktop / 2 mobile. Remount (key) on filter change resets pagination. */
+export default function MarketerListingsGrid({ slug, filters, initial, labels }: Props) {
+  const locale = useLocale();
+  const { items, loading, failed, hasMore, loadMore, sentinelRef } = useLoadMore(slug, filters, initial);
 
-  const query = useInfiniteQuery({
-    queryKey: ["marketer-listings", slug, section],
-    queryFn: ({ pageParam = 2 }) => {
-      const p = pageParam as number;
-      if (section === "own") return getMarketerListings({ slug, ownPage: p });
-      if (section === "marketer_campaign") return getMarketerListings({ slug, marketerCampaignPage: p });
-      return getMarketerListings({ slug, campaignPage: p });
-    },
-    getNextPageParam: (last) => {
-      const meta =
-        section === "own"
-          ? last.own_listings.meta
-          : section === "marketer_campaign"
-            ? last.marketer_campaign_listings.meta
-            : last.vendor_campaign_listings.meta;
-      return meta.current_page < meta.last_page ? meta.current_page + 1 : undefined;
-    },
-    initialPageParam: 2, // page 1 is already SSR
-    enabled: initialLastPage > 1,
-  });
-
-  // Intersection observer — load more when sentinel enters viewport
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting && query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage(); },
-      { threshold: 0.1 }
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [query]);
-
-  // Flatten fetched pages
-  const fetchedItems = query.data?.pages.flatMap((page) => {
-    if (section === "own") return page.own_listings.items;
-    if (section === "marketer_campaign") return page.marketer_campaign_listings.items;
-    return page.vendor_campaign_listings.items;
-  }) ?? [];
-
-  const allItems = [...initialItems, ...fetchedItems];
-
-  if (allItems.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-2">
-          <PackageSearch className="h-6 w-6 text-gray" />
+        <div className="flex size-14 items-center justify-center rounded-full bg-gray-2">
+          <PackageSearch className="size-6 text-gray" />
         </div>
-        <p className="text-sm font-semibold text-gray">{emptyLabel}</p>
+        <p className="text-sm font-semibold text-primary">{labels.empty}</p>
+        <p className="text-xs text-gray">{labels.emptyHint}</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
-        {allItems.map((item) => (
-          <div key={item.listing_id} className="[&>div]:w-full">
-            <ProductCard productData={toProductCard(item, marketer, profile)} />
-          </div>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-6 lg:grid-cols-3 lg:gap-x-4 xl:grid-cols-4">
+        {items.map((item) => (
+          <MarketerListingCard
+            key={item.kind === "classified" ? `c-${item.id}` : `p-${item.listing_id}`}
+            item={item}
+            locale={locale}
+            labels={labels}
+          />
         ))}
       </div>
 
-      {/* Sentinel for infinite scroll */}
-      <div ref={sentinelRef} className="h-4 mt-4" />
-      {query.isFetchingNextPage && (
+      <div ref={sentinelRef} className="h-4" />
+      {loading && (
         <div className="flex justify-center py-6">
           <Spinner />
+        </div>
+      )}
+      {hasMore && !loading && (
+        <div className="flex justify-center py-6">
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            className="rounded-full border border-border-color px-6 py-2 text-sm font-semibold text-primary transition hover:bg-gray-2"
+          >
+            {failed ? labels.retry : labels.loadMore}
+          </button>
         </div>
       )}
     </>

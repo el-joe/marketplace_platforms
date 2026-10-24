@@ -3,6 +3,7 @@ export interface MarketerProfileMarketer {
   id: string;
   name: string;
   marketer_type: "influencer" | "affiliate" | string;
+  gender?: "male" | "female" | null;
   country?: { name_en: string; name_ar: string } | null;
   total_campaigns: number;
   total_conversions: number;
@@ -36,6 +37,7 @@ export interface MarketerProfileInfo {
   ad_price?: number | null;
   ad_price_currency?: string | null;
   broker_specialization?: MarketerBrokerSpecialization | null;
+  gender?: "male" | "female" | null;
 }
 
 export interface CampaignContext {
@@ -130,3 +132,85 @@ export interface MarketerProfileData {
   /** @deprecated Use vendor_campaign_listings — kept for backward compat */
   campaign_listings?: { items: MarketerProfileListingItem[]; meta: ListingsMeta };
 }
+
+/* ------------------------------------------------------------------ */
+/* Boutiqaat-style details page contract (design doc §3)               */
+/* ------------------------------------------------------------------ */
+
+export interface MarketerBanner {
+  id: string;
+  title: string | null;
+  subtitle: string | null;
+  cta_label: string | null;
+  link: string | null;
+  image_desktop: string | null;
+  image_mobile: string | null;
+  priority?: number;
+  click_url: string | null;
+}
+
+export type ListingSource = "all" | "own" | "for_sellers";
+export type ListingKind = "all" | "products" | "classified";
+export type ListingSort = "newest" | "price_asc" | "price_desc";
+
+export interface FacetOption {
+  id: string;
+  name: string;
+  count: number;
+}
+
+export interface MarketerFacets {
+  sources?: { key: string; count: number }[];
+  kinds?: { key: string; count: number }[];
+  categories?: FacetOption[];
+  brands?: FacetOption[];
+  price?: { min: number; max: number } | null;
+  discounted_count?: number;
+}
+
+export type MarketerProductCard = MarketerProfileListingItem & {
+  kind?: "product";
+  is_exclusive?: boolean;
+  discount_percent?: number | null;
+};
+
+export type MarketerClassifiedCard = {
+  kind: "classified";
+  id: string;
+  slug: string;
+  title_ar: string;
+  title_en?: string | null;
+  price: number | null;
+  currency: string;
+  price_negotiable?: boolean;
+  first_image?: string | null;
+  location?: string | null;
+  category?: { name_ar: string | null; name_en?: string | null } | null;
+};
+
+export type MarketerListingEntry = MarketerProductCard | MarketerClassifiedCard;
+
+export interface MarketerListings {
+  items: MarketerListingEntry[];
+  meta: ListingsMeta;
+}
+
+export interface MarketerFilters {
+  source: ListingSource;
+  kind: ListingKind;
+  q: string;
+  category: string[];
+  brand: string[];
+  priceMin: string;
+  priceMax: string;
+  discount: boolean;
+  sort: ListingSort;
+}
+
+/** Normalised data the new page works with (profile + contract extras). */
+export type MarketerProfilePageData = Omit<MarketerProfileData, "own_listings"> & {
+  own_listings?: MarketerProfileData["own_listings"];
+  banners: MarketerBanner[];
+  listings: MarketerListings;
+  facets: MarketerFacets | null;
+};

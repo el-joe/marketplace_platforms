@@ -5,19 +5,22 @@ import {
   getMarketerProfile,
   MarketerProfileNotFoundError,
 } from "@/src/features/noon/marketer-profile/api";
+import { parseFilters } from "@/src/features/noon/marketer-profile/helpers/filters";
 import getLocale from "@/src/helpers/getLocale";
 
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export async function generateMetadata({ params }: Props) {
+export async function generateMetadata({ params, searchParams }: Props) {
   const { slug } = await params;
+  const filters = parseFilters(await searchParams);
   const t = await getTranslations("marketerProfile");
   const locale = await getLocale();
 
   try {
-    const data = await getMarketerProfile(slug);
+    const data = await getMarketerProfile(slug, filters);
     const bio = locale === "ar" ? data.profile?.bio_ar : data.profile?.bio_en;
     return {
       title: data.marketer?.name
@@ -30,12 +33,13 @@ export async function generateMetadata({ params }: Props) {
   }
 }
 
-export default async function MarketerProfilePage({ params }: Props) {
+export default async function MarketerProfilePage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const filters = parseFilters(await searchParams);
 
   let profileData;
   try {
-    profileData = await getMarketerProfile(slug);
+    profileData = await getMarketerProfile(slug, filters);
   } catch (error) {
     if (error instanceof MarketerProfileNotFoundError) {
       notFound();
@@ -43,5 +47,5 @@ export default async function MarketerProfilePage({ params }: Props) {
     throw error;
   }
 
-  return <MarketerProfileView data={profileData} />;
+  return <MarketerProfileView data={profileData} filters={filters} />;
 }

@@ -35,7 +35,7 @@ export default function ProfileActions({ profileUrl, qrCodeUrl, marketerName, la
       <div className="flex gap-2">
         <button
           onClick={copyLink}
-          className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold text-white backdrop-blur-md transition hover:bg-white/20"
+          className="flex items-center gap-1.5 rounded-full border border-border-color bg-white px-3.5 py-2 text-xs font-bold text-primary transition hover:bg-gray-2"
         >
           <Share2 className="h-3.5 w-3.5" />
           {copied ? labels.copied : labels.share}
@@ -43,7 +43,7 @@ export default function ProfileActions({ profileUrl, qrCodeUrl, marketerName, la
         {qrCodeUrl && (
           <button
             onClick={() => setShowQr(true)}
-            className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold text-white backdrop-blur-md transition hover:bg-white/20"
+            className="flex items-center gap-1.5 rounded-full border border-border-color bg-white px-3.5 py-2 text-xs font-bold text-primary transition hover:bg-gray-2"
           >
             <QrCode className="h-3.5 w-3.5" />
             QR
