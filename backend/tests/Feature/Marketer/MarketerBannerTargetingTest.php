@@ -59,14 +59,15 @@ class MarketerBannerTargetingTest extends TestCase
         $this->assertSame(['all', 'men', 'women'], $this->names($this->service->activeForMarketerList('marketers_list_hero', null, null)));
     }
 
-    public function test_list_ignores_non_global_banners_and_other_placements(): void
+    public function test_list_includes_marketer_banners_of_the_gender_but_not_other_placements(): void
     {
         $m = $this->marketer('male');
         Banner::factory()->forMarketers($m, 'marketers_list_hero')->create(['name' => 'selected-on-list']);
         Banner::factory()->marketerGlobal('marketers_list_strip')->create(['name' => 'strip']);
         Banner::factory()->marketerGlobal('marketers_list_hero')->create(['name' => 'hero']);
 
-        $this->assertSame(['hero'], $this->names($this->service->activeForMarketerList('marketers_list_hero', 'male', null)));
+        $this->assertEqualsCanonicalizing(['hero', 'selected-on-list'], $this->names($this->service->activeForMarketerList('marketers_list_hero', 'male', null)));
+        $this->assertSame(['hero'], $this->names($this->service->activeForMarketerList('marketers_list_hero', 'female', null)));
         $this->assertSame(['strip'], $this->names($this->service->activeForMarketerList('marketers_list_strip', 'male', null)));
     }
 

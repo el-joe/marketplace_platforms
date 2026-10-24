@@ -139,7 +139,7 @@ class MarketerPublicDirectoryGenderTest extends TestCase
 
     public function test_list_banners_follow_gender_locale_images_and_never_go_stale(): void
     {
-        $this->mk('Man', 'influencer', 'male');
+        $man = $this->mk('Man', 'influencer', 'male');
 
         $all = Banner::factory()->marketerGlobal('marketers_list_hero', 'all')->create(['title_en' => 'All EN', 'title_ar' => 'الكل', 'priority' => 5, 'cta_url' => '/promo']);
         $this->bannerImage($all, 'desktop_en', 'banners/all-desktop-en.jpg');
@@ -148,13 +148,17 @@ class MarketerPublicDirectoryGenderTest extends TestCase
         Banner::factory()->marketerGlobal('marketers_list_hero', 'all')->inactive()->create(['title_en' => 'Inactive']);
         Banner::factory()->marketerGlobal('marketers_list_hero', 'all')->expired()->create(['title_en' => 'Expired']);
         Banner::factory()->marketerGlobal('marketers_list_strip', 'male')->create(['title_en' => 'Strip men']);
-        Banner::factory()->forMarketers(Marketer::first(), 'marketers_list_hero')->create(['title_en' => 'Selected only']);
+        Banner::factory()->forMarketers($man, 'marketers_list_hero')->create(['title_en' => 'Selected only', 'cta_url' => null]);
 
         $en = $this->getJson($this->url('marketers?grouped=1&gender=male'), ['Accept-Language' => 'en'])->assertOk()->json('data.banners');
-        $this->assertSame(['All EN'], array_column($en['hero'], 'title'));
+        $this->assertEqualsCanonicalizing(['All EN', 'Selected only'], array_column($en['hero'], 'title'));
         $this->assertSame(['Strip men'], array_column($en['strip'], 'title'));
 
-        $hero = $en['hero'][0];
+        $selected = collect($en['hero'])->firstWhere('title', 'Selected only');
+        $this->assertSame('/marketer/'.$man->marketerProfile->profile_slug, $selected['link']); // no CTA → marketer details page
+        $this->assertNotContains('Selected only', array_column($this->getJson($this->url('marketers?grouped=1&gender=female'))->json('data.banners.hero'), 'title'));
+
+        $hero = collect($en['hero'])->firstWhere('title', 'All EN');
         $this->assertSame(['id', 'title', 'subtitle', 'cta_label', 'link', 'link_type', 'link_reference_id', 'image_desktop', 'image_mobile', 'priority', 'click_url'], array_keys($hero));
         $this->assertSame('/promo', $hero['link']);
         $this->assertSame(5, $hero['priority']);
@@ -175,7 +179,7 @@ class MarketerPublicDirectoryGenderTest extends TestCase
         Banner::factory()->marketerGlobal('marketers_list_hero', 'male')->create(['title_en' => 'Fresh']);
         $all->update(['status' => 'inactive']);
         $again = $this->getJson($this->url('marketers?grouped=1&gender=male'), ['Accept-Language' => 'en'])->json('data.banners.hero');
-        $this->assertSame(['Fresh'], array_column($again, 'title'));
+        $this->assertEqualsCanonicalizing(['Selected only', 'Fresh'], array_column($again, 'title'));
     }
 
     public function test_profile_exposes_gender_and_profile_banners(): void

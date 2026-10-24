@@ -46,7 +46,7 @@ class MarketerBannerResource extends JsonResource
             'title' => $localized('title'),
             'subtitle' => $localized('subtitle'),
             'cta_label' => $localized('cta_label'),
-            'link' => $this->cta_url,
+            'link' => $this->cta_url ?: $this->marketerProfilePath(),
             'link_type' => $this->link_type?->value,
             'link_reference_id' => $this->link_reference_id,
             'image_desktop' => $image('desktop'),
@@ -56,5 +56,20 @@ class MarketerBannerResource extends JsonResource
                 ? route('customer.banners.click', [$country->site_code, $this->id])
                 : null,
         ];
+    }
+
+    /**
+     * Fallback link for banners without a CTA URL: the details page of the one marketer the
+     * banner was created for (ambiguous when several marketers are selected, so no link then).
+     */
+    private function marketerProfilePath(): ?string
+    {
+        if (! $this->relationLoaded('marketers') || $this->marketers->count() !== 1) {
+            return null;
+        }
+
+        $slug = $this->marketers->first()->marketerProfile?->profile_slug;
+
+        return $slug ? '/marketer/'.$slug : null;
     }
 }

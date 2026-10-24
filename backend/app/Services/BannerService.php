@@ -120,7 +120,7 @@ class BannerService
      */
     public function activeForMarketerList(string $placementCode, ?string $gender, ?string $countryId): Collection
     {
-        return Banner::with('files')
+        return Banner::with(['files', 'marketers.marketerProfile:id,marketer_id,profile_slug'])
             ->where('placement_code', $placementCode)
             ->live($countryId)
             ->forMarketerList($gender)
@@ -137,7 +137,7 @@ class BannerService
      */
     public function activeForMarketerProfile(Marketer $marketer, ?string $countryId): Collection
     {
-        return Banner::with('files')
+        return Banner::with(['files', 'marketers.marketerProfile:id,marketer_id,profile_slug'])
             ->where('placement_code', 'marketer_profile_slider')
             ->live($countryId)
             ->forMarketerProfile($marketer)

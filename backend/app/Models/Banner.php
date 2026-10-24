@@ -112,18 +112,28 @@ class Banner extends Model
     }
 
     /**
-     * Global banners for the marketers list page. A null gender (both tabs) keeps every
-     * global banner; 'male' / 'female' keep banners scoped to that gender or to 'all'.
+     * Banners for the marketers list page: global ones (a null gender keeps every global banner;
+     * 'male' / 'female' keep banners scoped to that gender or to 'all') plus banners selected for marketers
+     * of that gender (linked to the marketer's details page when the CTA URL is empty).
      */
     public function scopeForMarketerList(Builder $query, ?string $gender = null): Builder
     {
-        $query->where('is_global', true);
+        return $query->where(function (Builder $q) use ($gender) {
+            $q->where(function (Builder $global) use ($gender) {
+                $global->where('is_global', true);
 
-        if ($gender !== null) {
-            $query->whereIn('gender_scope', [BannerGenderScope::All->value, $gender]);
-        }
-
-        return $query;
+                if ($gender !== null) {
+                    $global->whereIn('gender_scope', [BannerGenderScope::All->value, $gender]);
+                }
+            })->orWhere(function (Builder $own) use ($gender) {
+                // Banners made for specific marketers also feature on the list and link to their page.
+                $own->where('is_global', false)->whereHas('marketers', function (Builder $m) use ($gender) {
+                    if ($gender !== null) {
+                        $m->whereHas('marketerProfile', fn (Builder $p) => $p->where('gender', $gender));
+                    }
+                });
+            });
+        });
     }
 
     /**
