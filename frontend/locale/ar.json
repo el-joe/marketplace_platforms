@@ -1564,7 +1564,14 @@
     "badgeAudio": "صوت",
     "badgeVideo": "فيديو",
     "connLive": "متصل",
-    "nowListening": "أنت تستمع الآن"
+    "nowListening": "أنت تستمع الآن",
+    "radioChannel": "راديو",
+    "radioNowPlaying": "على الهواء",
+    "radioEndsAt": "ينتهي في {time}",
+    "radioReplay": "إعادة",
+    "radioTapToPlay": "اضغط للاستماع",
+    "radioScheduledHint": "يبدأ تلقائيًا في الموعد المحدد",
+    "radioPlayFailed": "منع المتصفح التشغيل. اضغط تشغيل."
   },
   "adsPopup": {
     "close": "إغلاق",

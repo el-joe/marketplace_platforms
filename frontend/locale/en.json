@@ -1564,7 +1564,14 @@
     "badgeAudio": "Audio",
     "badgeVideo": "Video",
     "connLive": "Connected",
-    "nowListening": "Now listening"
+    "nowListening": "Now listening",
+    "radioChannel": "Radio",
+    "radioNowPlaying": "On air",
+    "radioEndsAt": "Ends at {time}",
+    "radioReplay": "Replay",
+    "radioTapToPlay": "Tap to listen",
+    "radioScheduledHint": "Starts automatically at the scheduled time",
+    "radioPlayFailed": "Playback was blocked by your browser. Tap play."
   },
   "adsPopup": {
     "close": "Close",

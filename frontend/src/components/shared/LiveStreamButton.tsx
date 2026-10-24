@@ -6,15 +6,20 @@ import { getStreams } from '@/src/features/noon/live-streams/api';
 
 export default function LiveStreamButton() {
   const [hasLive, setHasLive] = useState(false);
+  const [radioOnly, setRadioOnly] = useState(false);
 
   useEffect(() => {
     const check = () =>
       getStreams()
-        .then(streams => setHasLive(streams.some(s => s.status === 'live')))
+        .then(streams => {
+          const live = streams.filter(s => s.status === 'live');
+          setHasLive(live.length > 0);
+          setRadioOnly(live.length > 0 && live.every(s => s.source === 'recorded'));
+        })
         .catch(() => {});
 
     check();
-    const interval = setInterval(check, 60_000);
+    const interval = setInterval(check, 30_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -25,8 +30,8 @@ export default function LiveStreamButton() {
       style={{ background: hasLive ? '#dc2626' : '#1f2937', color: '#fff' }}
     >
       {hasLive && <span className="w-2 h-2 rounded-full bg-white animate-pulse" />}
-      <span className="text-base">📹</span>
-      <span>{hasLive ? 'Live Now' : 'Streams'}</span>
+      <span className="text-base">{radioOnly ? '📻' : '📹'}</span>
+      <span>{hasLive ? (radioOnly ? 'On Air' : 'Live Now') : 'Streams'}</span>
     </Link>
   );
 }

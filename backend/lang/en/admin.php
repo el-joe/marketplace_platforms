@@ -11268,6 +11268,21 @@ return [
 
     // ─── Live Streams ─────────────────────────────────────────────────────────
     'live_streams' => [
+        'type_live' => 'Live broadcast',
+        'type_live_hint' => 'Go live from the studio (camera / mic / screen)',
+        'type_radio' => 'Radio channel',
+        'type_radio_hint' => 'Upload an audio or video file and schedule it',
+        'media_file' => 'Audio / video file',
+        'media_hint' => 'MP3, WAV, OGG, M4A, AAC, MP4, WEBM or MOV (max 500 MB). The duration is detected automatically; it goes live at the scheduled time and ends by itself when the file finishes.',
+        'locked_hint' => 'The file and schedule can no longer be changed once the channel has started.',
+        'current_file' => 'Current file',
+        'duration' => 'Duration',
+        'ends_at' => 'Ends at',
+        'duration_unreadable' => 'The file duration could not be detected. Try another file.',
+        'channel_scheduled' => 'Radio channel scheduled.',
+        'radio_badge' => 'Radio channel',
+        'radio_auto' => 'This channel starts and ends automatically from its schedule and file duration.',
+        'radio_preview' => 'Preview',
         'title' => 'Live Streams',
         'subtitle' => 'Schedule and broadcast live streams to customers',
         'new_stream' => 'New Stream',

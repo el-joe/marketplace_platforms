@@ -9,6 +9,7 @@ import { getStream, postComment, postLike } from './api';
 import { ensureEcho, useLiveStreamViewer, type ConnectionState } from './useLiveStreamViewer';
 import type { LiveStreamDetail, StreamComment } from './types';
 import { getImageURL } from '@/src/helpers/get-image-url';
+import RecordedPlayer from './RecordedPlayer';
 
 function getGuestToken(): string {
   if (typeof window === 'undefined') return '';
@@ -197,6 +198,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
   }, [streamId]);
 
   const isLive = stream?.status === 'live';
+  const isRecorded = stream?.source === 'recorded';
   const streamKey = stream?.stream_key ?? null;
 
   const handleStreamUpdate = useCallback((fresh: LiveStreamDetail) => {
@@ -206,7 +208,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
   const viewer = useLiveStreamViewer({
     streamId,
     streamKey,
-    enabled: isLive,
+    enabled: isLive && !isRecorded,
     initialMode: stream?.media_mode ?? null,
     onStreamUpdate: handleStreamUpdate,
   });
@@ -218,6 +220,16 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
     }, 15000);
     return () => clearInterval(timer);
   }, [stream?.status, streamId, handleStreamUpdate]);
+
+  // An on-air radio channel ends by itself: re-check often, and right when the file finishes.
+  const refreshStream = useCallback(() => {
+    getStream(streamId).then(handleStreamUpdate).catch(() => {});
+  }, [streamId, handleStreamUpdate]);
+  useEffect(() => {
+    if (!isRecorded || !isLive) return;
+    const timer = setInterval(refreshStream, 15000);
+    return () => clearInterval(timer);
+  }, [isRecorded, isLive, refreshStream]);
 
   const { connection, hasVideo } = viewer;
   const viewerEnded = connection === 'ended';
@@ -295,6 +307,11 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
       {/* Title + status badge row */}
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="text-xl font-bold text-gray-900 flex-1">{title}</h1>
+        {isRecorded && (
+          <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-3 py-1 rounded-full">
+            {stream.media_type === 'video' ? '🎬' : '📻'} {t('radioChannel')}
+          </span>
+        )}
         {showLive && (
           <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {t('statusLive')}
@@ -317,7 +334,18 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
         {/* Video column */}
         <div className="lg:col-span-2 space-y-3">
           <div ref={playerRef} className="relative aspect-video bg-black rounded-2xl overflow-hidden">
-            {isLive && !viewerEnded && (
+            {isRecorded && stream.playback && (
+              <RecordedPlayer
+                key={`${stream.playback.url}-${isLive ? 'live' : 'replay'}`}
+                playback={stream.playback}
+                onAir={isLive}
+                title={title}
+                thumbnail={thumbUrl}
+                labels={{ onAir: t('radioNowPlaying'), replay: t('radioReplay'), tapToPlay: t('radioTapToPlay'), playFailed: t('radioPlayFailed') }}
+                onFinished={refreshStream}
+              />
+            )}
+            {isLive && !isRecorded && !viewerEnded && (
               <>
                 <video
                   ref={viewer.mediaRef}
@@ -368,7 +396,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
                 </Link>
               </div>
             )}
-            {!isLive && !viewerEnded && (thumbUrl ? (
+            {!isLive && !viewerEnded && !(isRecorded && stream.playback) && (thumbUrl ? (
               <Image src={thumbUrl} alt={title} fill className="object-cover" sizes="100vw" />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-3">

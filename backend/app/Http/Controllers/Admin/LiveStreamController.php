@@ -8,9 +8,12 @@ use App\Events\StreamSignal;
 use App\Http\Controllers\Controller;
 use App\Models\LiveStream;
 use App\Models\LiveStreamComment;
+use App\Services\LiveStream\RecordedStreamScheduler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -31,13 +34,17 @@ class LiveStreamController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $recorded = $request->input('source') === LiveStream::SOURCE_RECORDED;
+
         $data = $request->validate([
+            'source' => ['nullable', Rule::in([LiveStream::SOURCE_LIVE, LiveStream::SOURCE_RECORDED])],
             'title_en' => 'required|string|max:200',
             'title_ar' => 'required|string|max:200',
             'description_en' => 'nullable|string|max:2000',
             'description_ar' => 'nullable|string|max:2000',
-            'scheduled_at' => 'nullable|date',
+            'scheduled_at' => [$recorded ? 'required' : 'nullable', 'date'],
             'thumbnail' => 'nullable|image|max:2048',
+            ...$this->mediaRules($recorded, true),
         ]);
 
         if ($request->hasFile('thumbnail')) {
@@ -45,18 +52,38 @@ class LiveStreamController extends Controller
                 ->store('live-streams/thumbnails', 'public');
         }
 
-        unset($data['thumbnail']);
+        unset($data['thumbnail'], $data['media'], $data['duration_seconds']);
+        $data['source'] = $recorded ? LiveStream::SOURCE_RECORDED : LiveStream::SOURCE_LIVE;
         $data['created_by_admin_id'] = auth('admin')->id();
 
-        LiveStream::create($data);
+        if ($recorded) {
+            $media = $this->storeMedia($request->file('media'), (int) $request->input('duration_seconds'));
+            if ($media === null) {
+                return back()->withInput()->withErrors(['media' => __('admin.live_streams.duration_unreadable')]);
+            }
+            $data = [...$data, ...$media, 'scheduled_end_at' => RecordedStreamScheduler::endFor(Carbon::parse($data['scheduled_at']), $media['duration_seconds'])];
+        }
+
+        $stream = LiveStream::create($data);
+
+        if ($recorded) {
+            app(RecordedStreamScheduler::class)->sync();
+        }
 
         return redirect()->route('admin.live-streams.index')
-            ->with('success', 'Live stream scheduled.');
+            ->with('success', $recorded ? __('admin.live_streams.channel_scheduled') : 'Live stream scheduled.');
     }
 
     public function show(LiveStream $liveStream): View
     {
         $comments = $liveStream->comments()->latest()->limit(100)->get();
+
+        if ($liveStream->isRecorded()) {
+            app(RecordedStreamScheduler::class)->sync();
+            $liveStream->refresh();
+
+            return view('admin.live-streams.show-recorded', compact('liveStream', 'comments'));
+        }
 
         return view('admin.live-streams.show', compact('liveStream', 'comments'));
     }
@@ -68,13 +95,17 @@ class LiveStreamController extends Controller
 
     public function update(Request $request, LiveStream $liveStream): RedirectResponse
     {
+        // A recorded channel can be re-timed / re-uploaded only while it is still scheduled.
+        $editSchedule = $liveStream->isRecorded() && $liveStream->status === LiveStreamStatus::Scheduled;
+
         $data = $request->validate([
             'title_en' => 'required|string|max:200',
             'title_ar' => 'required|string|max:200',
             'description_en' => 'nullable|string|max:2000',
             'description_ar' => 'nullable|string|max:2000',
-            'scheduled_at' => 'nullable|date',
+            'scheduled_at' => [$editSchedule ? 'required' : 'nullable', 'date'],
             'thumbnail' => 'nullable|image|max:2048',
+            ...$this->mediaRules($editSchedule, false),
         ]);
 
         if ($request->hasFile('thumbnail')) {
@@ -85,17 +116,80 @@ class LiveStreamController extends Controller
                 ->store('live-streams/thumbnails', 'public');
         }
 
-        unset($data['thumbnail']);
+        unset($data['thumbnail'], $data['media'], $data['duration_seconds']);
+
+        if ($liveStream->isRecorded()) {
+            if (! $editSchedule) {
+                unset($data['scheduled_at']);
+            } else {
+                $duration = $liveStream->duration_seconds;
+
+                if ($request->hasFile('media')) {
+                    $media = $this->storeMedia($request->file('media'), (int) $request->input('duration_seconds'));
+                    if ($media === null) {
+                        return back()->withInput()->withErrors(['media' => __('admin.live_streams.duration_unreadable')]);
+                    }
+                    if ($liveStream->media_path) {
+                        Storage::disk('public')->delete($liveStream->media_path);
+                    }
+                    $data = [...$data, ...$media];
+                    $duration = $media['duration_seconds'];
+                }
+
+                $data['scheduled_end_at'] = RecordedStreamScheduler::endFor(Carbon::parse($data['scheduled_at']), $duration);
+            }
+        }
+
         $liveStream->update($data);
+
+        if ($liveStream->isRecorded()) {
+            app(RecordedStreamScheduler::class)->sync();
+        }
 
         return redirect()->route('admin.live-streams.show', $liveStream)
             ->with('success', 'Stream updated.');
+    }
+
+    /** @return array<string, mixed> */
+    private function mediaRules(bool $recorded, bool $required): array
+    {
+        return [
+            'media' => [$recorded && $required ? 'required' : 'nullable', 'file', 'mimes:mp3,wav,ogg,oga,m4a,aac,mp4,webm,mov,m4v,mpeg', 'max:512000'],
+            'duration_seconds' => ['nullable', 'integer', 'min:1', 'max:86400'],
+        ];
+    }
+
+    /**
+     * Stores the uploaded file and works out its type and duration (ffprobe first, the
+     * browser-measured value as fallback). Null when no duration can be determined.
+     *
+     * @return array{media_path: string, media_type: string, duration_seconds: int}|null
+     */
+    private function storeMedia(UploadedFile $file, int $clientDuration): ?array
+    {
+        $path = $file->store('live-streams/media', 'public');
+        $duration = RecordedStreamScheduler::probeDuration(Storage::disk('public')->path($path)) ?? ($clientDuration > 0 ? $clientDuration : null);
+
+        if ($duration === null) {
+            Storage::disk('public')->delete($path);
+
+            return null;
+        }
+
+        $mime = (string) $file->getMimeType();
+        $isVideo = str_starts_with($mime, 'video/') || in_array(strtolower($file->getClientOriginalExtension()), ['mp4', 'webm', 'mov', 'm4v'], true);
+
+        return ['media_path' => $path, 'media_type' => $isVideo ? 'video' : 'audio', 'duration_seconds' => $duration];
     }
 
     // ── Stream lifecycle ──────────────────────────────────────────────────────
 
     public function goLive(LiveStream $liveStream): JsonResponse
     {
+        if ($liveStream->isRecorded()) {
+            return response()->json(['success' => false, 'message' => 'Radio channels go live automatically at their scheduled time.'], 422);
+        }
+
         if ($liveStream->status === LiveStreamStatus::Ended) {
             return response()->json([
                 'success' => false,
@@ -147,6 +241,10 @@ class LiveStreamController extends Controller
 
     public function media(Request $request, LiveStream $liveStream): JsonResponse
     {
+        if ($liveStream->isRecorded()) {
+            return response()->json(['success' => false, 'message' => 'Not applicable to radio channels.'], 422);
+        }
+
         $data = $request->validate([
             'mode' => ['required', Rule::enum(LiveStreamMediaMode::class)],
         ]);

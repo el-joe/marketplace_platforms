@@ -51,7 +51,13 @@ function StreamCard({
           {cfg.label}
         </span>
 
-        {stream.media_mode && stream.status !== 'scheduled' && (
+        {stream.source === 'recorded' && (
+          <span className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+            {stream.media_type === 'video' ? '🎬' : '📻'} {t('radioChannel')}
+          </span>
+        )}
+
+        {stream.source !== 'recorded' && stream.media_mode && stream.status !== 'scheduled' && (
           <span className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
             {stream.media_mode === 'audio' ? `🎧 ${t('badgeAudio')}` : `🎥 ${t('badgeVideo')}`}
           </span>
@@ -71,6 +77,9 @@ function StreamCard({
           {stream.scheduled_at && stream.status === 'scheduled' && (
             <span>🗓 {new Date(stream.scheduled_at).toLocaleString()}</span>
           )}
+          {stream.source === 'recorded' && stream.scheduled_end_at && stream.status === 'live' && (
+            <span>{t('radioEndsAt', { time: new Date(stream.scheduled_end_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}</span>
+          )}
           {stream.ended_at && stream.status === 'ended' && (
             <span>{t('endedOn', { date: new Date(stream.ended_at).toLocaleDateString() })}</span>
           )}
@@ -87,7 +96,11 @@ export default function StreamsListFeature() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getStreams().then(setStreams).catch(console.error).finally(() => setLoading(false));
+    const load = () => getStreams().then(setStreams).catch(console.error).finally(() => setLoading(false));
+    load();
+    // Radio channels start and end on their own schedule, so keep the list fresh.
+    const timer = setInterval(load, 30000);
+    return () => clearInterval(timer);
   }, []);
 
   const live      = streams.filter(s => s.status === 'live');

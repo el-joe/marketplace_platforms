@@ -2,7 +2,23 @@ export type StreamStatus = 'scheduled' | 'live' | 'ended';
 
 export type MediaMode = 'audio' | 'video' | 'both';
 
+export type StreamSource = 'live' | 'recorded';
+
+/** Where a scheduled radio/video channel is right now (present while live, and as a replay once ended). */
+export interface RecordedPlayback {
+  url: string;
+  type: 'audio' | 'video';
+  duration_seconds: number;
+  offset_seconds: number;
+  server_time: string;
+}
+
 export interface LiveStreamCard {
+  /** 'recorded' = scheduled audio/video file (radio channel); absent on older API versions */
+  source?: StreamSource;
+  media_type?: 'audio' | 'video' | null;
+  duration_seconds?: number | null;
+  scheduled_end_at?: string | null;
   id: string;
   title: { en: string; ar: string };
   thumbnail_url: string | null;
@@ -27,6 +43,7 @@ export interface LiveStreamDetail extends LiveStreamCard {
   description: { en: string; ar: string };
   /** Only present when status === 'live' */
   stream_key: string | null;
+  playback?: RecordedPlayback | null;
   comments: StreamComment[];
 }
 

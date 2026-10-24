@@ -18,6 +18,11 @@ class LiveStream extends Model
         'description_en', 'description_ar',
         'thumbnail_path',
         'status',
+        'source',
+        'media_path',
+        'media_type',
+        'duration_seconds',
+        'scheduled_end_at',
         'scheduled_at',
         'started_at',
         'ended_at',
@@ -32,6 +37,7 @@ class LiveStream extends Model
     protected $casts = [
         'status' => LiveStreamStatus::class,
         'scheduled_at' => 'datetime',
+        'scheduled_end_at' => 'datetime',
         'started_at' => 'datetime',
         'ended_at' => 'datetime',
     ];
@@ -53,5 +59,20 @@ class LiveStream extends Model
     public function isLive(): bool
     {
         return $this->status === LiveStreamStatus::Live;
+    }
+
+    public const SOURCE_LIVE = 'live';
+
+    public const SOURCE_RECORDED = 'recorded';
+
+    /** A scheduled audio/video file ("radio channel") that goes live and ends on its own. */
+    public function isRecorded(): bool
+    {
+        return $this->source === self::SOURCE_RECORDED;
+    }
+
+    public function scopeRecorded($query)
+    {
+        return $query->where('source', self::SOURCE_RECORDED);
     }
 }

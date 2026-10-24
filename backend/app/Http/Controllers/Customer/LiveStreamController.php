@@ -8,6 +8,7 @@ use App\Events\StreamLike;
 use App\Events\StreamSignal;
 use App\Http\Controllers\Controller;
 use App\Models\LiveStream;
+use App\Services\LiveStream\RecordedStreamScheduler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -21,6 +22,8 @@ class LiveStreamController extends Controller
 
     public function index(): JsonResponse
     {
+        app(RecordedStreamScheduler::class)->sync();
+
         $streams = LiveStream::orderByDesc('scheduled_at')
             ->get()
             ->map(fn ($s) => $this->cardShape($s));
@@ -32,6 +35,11 @@ class LiveStreamController extends Controller
 
     public function show(Request $request, LiveStream $stream): JsonResponse
     {
+        if ($stream->isRecorded()) {
+            app(RecordedStreamScheduler::class)->sync();
+            $stream->refresh();
+        }
+
         // Deduplicate viewer count per IP per stream per hour (stateless — no sessions available).
         $viewKey = 'stream_view:'.$stream->id.':'.md5($request->ip() ?? 'unknown');
         if (Cache::add($viewKey, 1, now()->addHour())) {
@@ -48,6 +56,7 @@ class LiveStreamController extends Controller
                 'thumbnail_url' => $this->thumbnailUrl($stream->thumbnail_path),
                 'status' => $stream->status->value,
                 'media_mode' => $stream->media_mode,
+                ...$this->recordedShape($stream, true),
                 'scheduled_at' => $stream->scheduled_at?->toIso8601String(),
                 'started_at' => $stream->started_at?->toIso8601String(),
                 'ended_at' => $stream->ended_at?->toIso8601String(),
@@ -184,6 +193,34 @@ class LiveStreamController extends Controller
         return preg_match('#^https?://#i', $url) ? $url : url($url);
     }
 
+    /**
+     * Radio-channel fields. `playback` (file URL + where the broadcast is right now) is only
+     * exposed while live, and as a from-the-start replay once ended.
+     *
+     * @return array<string, mixed>
+     */
+    private function recordedShape(LiveStream $s, bool $withPlayback): array
+    {
+        $shape = [
+            'source' => $s->source ?? LiveStream::SOURCE_LIVE,
+            'media_type' => $s->isRecorded() ? $s->media_type : null,
+            'duration_seconds' => $s->isRecorded() ? $s->duration_seconds : null,
+            'scheduled_end_at' => $s->isRecorded() ? $s->scheduled_end_at?->toIso8601String() : null,
+        ];
+
+        if ($withPlayback) {
+            $shape['playback'] = $s->isRecorded() && $s->media_path && $s->status !== LiveStreamStatus::Scheduled ? [
+                'url' => RecordedStreamScheduler::mediaUrl($s->media_path),
+                'type' => $s->media_type,
+                'duration_seconds' => $s->duration_seconds,
+                'offset_seconds' => RecordedStreamScheduler::offsetSeconds($s),
+                'server_time' => now()->toIso8601String(),
+            ] : null;
+        }
+
+        return $shape;
+    }
+
     private function cardShape(LiveStream $s): array
     {
         return [
@@ -192,6 +229,7 @@ class LiveStreamController extends Controller
             'thumbnail_url' => $this->thumbnailUrl($s->thumbnail_path),
             'status' => $s->status->value,
             'media_mode' => $s->media_mode,
+            ...$this->recordedShape($s, false),
             'scheduled_at' => $s->scheduled_at?->toIso8601String(),
             'started_at' => $s->started_at?->toIso8601String(),
             'ended_at' => $s->ended_at?->toIso8601String(),

@@ -45,7 +45,11 @@
                                 <div class="w-12 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">📹</div>
                             @endif
                             <div>
-                                <div class="font-medium text-gray-900">{{ $stream->title_en }}</div>
+                                <div class="font-medium text-gray-900">{{ $stream->title_en }}
+                                    @if($stream->isRecorded())
+                                        <span class="ms-1 inline-flex items-center rounded-full bg-primary-100 text-primary-700 text-[10px] font-semibold px-2 py-0.5">📻 {{ __('admin.live_streams.radio_badge') }}</span>
+                                    @endif
+                                </div>
                                 <div class="text-xs text-gray-500">{{ $stream->title_ar }}</div>
                             </div>
                         </div>
