@@ -1251,8 +1251,11 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     // ─── Portal Content ───────────────────────────────────────────────────────
     Route::prefix('portal-content')->name('portal-content.')->middleware('admin.permission:portal_content.view')->group(function () {
         Route::get('/', [PortalContentController::class, 'index'])->name('index');
-        Route::get('/{pageKey}', [PortalContentController::class, 'page'])->name('page');
-        Route::post('/{pageKey}', [PortalContentController::class, 'save'])->name('save')->middleware('admin.permission:portal_content.edit');
+        Route::get('/{country}/{pageKey}', [PortalContentController::class, 'page'])->name('page');
+        Route::post('/{country}/{pageKey}', [PortalContentController::class, 'save'])->name('save')->middleware('admin.permission:portal_content.edit');
+        // Legacy (pre per-country) URLs: GET redirects to the first active country, POST kept as alias.
+        Route::get('/{pageKey}', [PortalContentController::class, 'legacyPage'])->name('legacy.page');
+        Route::post('/{pageKey}', [PortalContentController::class, 'legacySave'])->name('legacy.save')->middleware('admin.permission:portal_content.edit');
     });
 
     // ─── FAQs ─────────────────────────────────────────────────────────────────

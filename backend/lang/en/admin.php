@@ -10631,6 +10631,16 @@ return [
         'reset_image' => 'Reset to default image',
         'no_fields' => 'No fields found for this page.',
         'save_page' => 'Save Page',
+        'saved' => 'Portal content saved for :country (:count fields updated).',
+        'country' => 'Country',
+        'edit_by_country' => 'Edit by country',
+        'edit_for_country' => 'Edit content for :country',
+        'edit_subtitle_country' => 'Editing content shown to visitors in :country. Changes affect this country only. Uncheck "Active" to fall back to the global default text.',
+        'sections' => 'Sections',
+        'other_sections' => 'Other sections',
+        'click_to_enlarge' => 'Click the screenshot to enlarge',
+        'unsaved_changes' => 'You have unsaved changes',
+        'saving_for' => 'Saving for :country',
     ],
 
     'notifications_section' => [

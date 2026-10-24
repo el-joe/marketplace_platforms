@@ -10639,6 +10639,16 @@ return [
         'reset_image' => 'إعادة الصورة الافتراضية',
         'no_fields' => 'لا توجد حقول لهذه الصفحة.',
         'save_page' => 'حفظ الصفحة',
+        'saved' => 'تم حفظ محتوى البوابة لدولة :country (تم تحديث :count حقل).',
+        'country' => 'الدولة',
+        'edit_by_country' => 'التعديل حسب الدولة',
+        'edit_for_country' => 'تعديل المحتوى لدولة :country',
+        'edit_subtitle_country' => 'تعديل المحتوى الظاهر للزوار في :country. التغييرات تؤثر على هذه الدولة فقط. أزل تحديد "نشط" للعودة إلى النص الافتراضي العام.',
+        'sections' => 'الأقسام',
+        'other_sections' => 'أقسام أخرى',
+        'click_to_enlarge' => 'اضغط على الصورة للتكبير',
+        'unsaved_changes' => 'لديك تغييرات غير محفوظة',
+        'saving_for' => 'الحفظ لدولة :country',
     ],
 
     'notifications_section' => [

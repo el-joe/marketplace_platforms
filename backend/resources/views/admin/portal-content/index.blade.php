@@ -3,6 +3,7 @@
 @section('title', __('admin.portal_content.title'))
 
 @section('content')
+@php($locale = app()->getLocale() === 'ar' ? 'ar' : 'en')
 <div class="p-6 space-y-5">
 
     <div>
@@ -23,27 +24,34 @@
                     <tr>
                         <th class="px-4 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('admin.portal_content.page') }}</th>
                         <th class="px-4 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('admin.portal_content.fields') }}</th>
-                        <th class="px-4 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('admin.portal_content.last_updated') }}</th>
-                        <th class="px-4 py-3 text-end text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('common.actions') }}</th>
+                        <th class="px-4 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('admin.portal_content.edit_by_country') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($pages as $page)
+                        @php($label = $config[$page->page_key]['label_'.$locale] ?? null)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $page->page_key }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <div class="font-medium text-gray-900">{{ $label ?? $page->page_key }}</div>
+                                @if($label)<div class="text-xs font-mono text-gray-400">{{ $page->page_key }}</div>@endif
+                            </td>
                             <td class="px-4 py-3 text-sm text-gray-600">{{ $page->fields_count }}</td>
-                            <td class="px-4 py-3 text-sm text-gray-500">{{ $page->last_updated_at ? \Illuminate\Support\Carbon::parse($page->last_updated_at)->format('d M Y H:i') : '—' }}</td>
-                            <td class="px-4 py-3 text-end">
-                                <a href="{{ route('admin.portal-content.page', $page->page_key) }}"
-                                   class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                    <x-heroicon name="pencil-square" class="w-4 h-4" />
-                                    {{ __('common.edit') }}
-                                </a>
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap gap-1.5">
+                                    @foreach($countries as $country)
+                                        <a href="{{ route('admin.portal-content.page', [$country->site_code, $page->page_key]) }}"
+                                           title="{{ __('admin.portal_content.edit_for_country', ['country' => $locale === 'ar' ? ($country->name_ar ?: $country->name_en) : $country->name_en]) }}"
+                                           class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-blue-400">
+                                            @include('admin.portal-content._flag', ['country' => $country])
+                                            {{ $locale === 'ar' ? ($country->name_ar ?: $country->name_en) : $country->name_en }}
+                                        </a>
+                                    @endforeach
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-400">{{ __('admin.portal_content.empty_state') }}</td>
+                            <td colspan="3" class="px-4 py-8 text-center text-sm text-gray-400">{{ __('admin.portal_content.empty_state') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

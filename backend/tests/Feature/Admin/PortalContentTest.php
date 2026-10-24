@@ -99,8 +99,11 @@ class PortalContentTest extends TestCase
             'value_en' => 'Nawy', 'value_ar' => 'Nawy', 'value_url' => '/images/nawy_logo_transparent.png',
         ]);
         $admin = $this->admin();
+        $country = \App\Models\Country::factory()->create(['site_code' => 'kw', 'is_active' => true]);
+        app(\App\Services\PortalContentCountrySync::class)->ensureCountryRows($country, 'zz_test');
+        $row = PortalContent::where('country_code', 'kw')->where('page_key', 'zz_test')->firstOrFail();
         $save = fn (array $field) => $this->actingAs($admin, 'admin')
-            ->post(route('admin.portal-content.save', 'zz_test'), ['fields' => [$row->id => $field + ['value_en' => 'Nawy', 'value_ar' => 'Nawy', 'is_active' => '1']]])
+            ->post(route('admin.portal-content.save', ['kw', 'zz_test']), ['fields' => [$row->id => $field + ['value_en' => 'Nawy', 'value_ar' => 'Nawy', 'is_active' => '1']]])
             ->assertRedirect();
 
         $save(['value_url' => 'https://cdn.test/logo.png']);
