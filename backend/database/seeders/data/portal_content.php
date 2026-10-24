@@ -19,7 +19,7 @@
 | rows edited by an admin keep their values.
 */
 
-return [
+$rows = [
     // ─── page_key = 'account_setup' ───────────────────────────────────────────────
     ['account_setup', 'main', 'photo', 'image', 'Registration steps', 'خطوات التسجيل', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-selling.jpg', 1],
     ['account_setup', 'main', 'title', 'text', 'Set up your account', 'إعداد حسابك', null, 2],
@@ -543,6 +543,22 @@ return [
     ['nav', 'lang_option_ar', 'label', 'text', 'العربية', 'العربية', null, 19],
     ['nav', 'country_toggle', 'mobile_aria_label', 'text', 'Select country', 'اختر الدولة', null, 20],
     ['nav', 'country_toggle', 'label', 'text', 'Country', 'الدولة', null, 21],
+    ['nav', 'country_toggle', 'selector_label', 'text', 'Your country', 'دولتك', null, 22],
+    ['nav', 'country_toggle', 'choose', 'text', 'Choose your country', 'اختر دولتك', null, 23],
+    ['nav', 'language_toggle', 'choose', 'text', 'Choose your language', 'اختر لغتك', null, 7],
+    ['nav', 'section_back', 'label', 'text', 'Join options', 'خيارات الانضمام', null, 24],
+    ['nav', 'section_marketer', 'benefits', 'text', 'Why join', 'لماذا الانضمام', null, 25],
+    ['nav', 'section_marketer', 'types', 'text', 'Ways to earn', 'طرق الربح', null, 26],
+    ['nav', 'section_marketer', 'steps', 'text', 'How it works', 'كيف تبدأ', null, 27],
+    ['nav', 'section_marketer', 'register', 'text', 'Register now', 'سجّل الآن', null, 28],
+    ['nav', 'section_travel_agency', 'benefits', 'text', 'Why sell travel', 'لماذا تبيع السفر', null, 29],
+    ['nav', 'section_travel_agency', 'publish', 'text', 'What you can publish', 'ما يمكنك نشره', null, 30],
+    ['nav', 'section_travel_agency', 'steps', 'text', 'How it works', 'كيف تبدأ', null, 31],
+    ['nav', 'section_travel_agency', 'register', 'text', 'Register now', 'سجّل الآن', null, 32],
+    ['nav', 'section_open_souq', 'benefits', 'text', 'Why sell on Open Souq', 'لماذا تبيع على السوق المفتوح', null, 33],
+    ['nav', 'section_open_souq', 'publish', 'text', 'What you can list', 'ما يمكنك إدراجه', null, 34],
+    ['nav', 'section_open_souq', 'steps', 'text', 'How it works', 'كيف تبدأ', null, 35],
+    ['nav', 'section_open_souq', 'register', 'text', 'Register now', 'سجّل الآن', null, 36],
 
     // ─── page_key = 'register' ────────────────────────────────────────────────────
     ['register', 'meta', 'title', 'text', 'Register as a Seller — Nawy', 'سجّل كبائع — ناوي', null, 1],
@@ -803,21 +819,40 @@ return [
 
     // ─── page_key = 'marketers' ───────────────────────────────────────────────────
     ['marketers', 'meta', 'title', 'text', 'Influencers, Creators & Affiliates', 'المشاهير والمؤثرون والمسوقون بالعمولة', null, 1],
-    ['marketers', 'hero', 'back', 'text', 'Back to join options', 'الرجوع لاختيار نوع الانضمام', null, 1],
-    ['marketers', 'hero', 'title', 'text', 'How would you like to join?', 'كيف تريد الانضمام؟', null, 2],
-    ['marketers', 'hero', 'subtitle', 'text', 'Turn your reach into income. Choose the type that matches how you work and complete your registration.', 'حوّل جمهورك إلى دخل. اختر النوع الذي يناسب طريقة عملك وأكمل تسجيلك.', null, 3],
+    ['marketers', 'hero', 'eyebrow', 'text', 'Marketers', 'المسوّقون', null, 1],
+    ['marketers', 'hero', 'title', 'text', 'Turn your reach into income', 'حوّل جمهورك إلى دخل', null, 2],
+    ['marketers', 'hero', 'subtitle', 'text', 'Promote products and listings your way — as an influencer, an affiliate or a broker — and earn on your terms.', 'روّج للمنتجات والإعلانات بطريقتك — كمؤثر أو مسوق بالعمولة أو وسيط — واربح وفق شروطك.', null, 3],
+    ['marketers', 'hero', 'photo', 'image', 'A marketer creating content', 'مسوّق ينشئ محتوى', '/images/join/marketer-type.jpg', 4],
+    ['marketers', 'hero', 'cta_button', 'link', 'Choose your path', 'اختر مسارك', '#types', 5],
 
+    ['marketers', 'benefits', 'title', 'text', 'Why earn with Nawy?', 'لماذا تربح مع ناوي؟', null, 1],
+    ['marketers', 'benefits_item_1', 'title', 'text', 'Earn your way', 'اربح بطريقتك', null, 1],
+    ['marketers', 'benefits_item_1', 'description', 'text', 'Fixed amounts, percentages or both — choose what fits how you work.', 'مبالغ ثابتة أو نسب أو كليهما — اختر ما يناسب طريقة عملك.', null, 2],
+    ['marketers', 'benefits_item_2', 'title', 'text', 'Promote what you love', 'روّج لما تحبه', null, 1],
+    ['marketers', 'benefits_item_2', 'description', 'text', 'Pick products, listings and campaigns that match your audience.', 'اختر المنتجات والإعلانات والحملات التي تناسب جمهورك.', null, 2],
+    ['marketers', 'benefits_item_3', 'title', 'text', 'Track every riyal', 'تابع كل ريال', null, 1],
+    ['marketers', 'benefits_item_3', 'description', 'text', 'See your clicks, conversions and payouts from one dashboard.', 'شاهد نقراتك وتحويلاتك ومدفوعاتك من لوحة واحدة.', null, 2],
+
+    ['marketers', 'types', 'title', 'text', 'Ways to earn', 'طرق الربح', null, 1],
+    ['marketers', 'types', 'card_link', 'text', 'Learn more', 'اعرف المزيد', null, 2],
     ['marketers', 'card_influencer', 'description', 'text', 'Promote products and listings to your audience with a fixed amount per campaign.', 'روّج للمنتجات والإعلانات لجمهورك مقابل مبلغ ثابت لكل حملة.', null, 1],
     ['marketers', 'card_influencer', 'image', 'image', 'Influencer', 'مشهور', '/images/join/marketer-type.jpg', 2],
-
     ['marketers', 'card_affiliate', 'description', 'text', 'Earn a percentage of every sale you drive through your affiliate links.', 'اربح نسبة من كل عملية بيع تحققها عبر روابطك التسويقية.', null, 1],
     ['marketers', 'card_affiliate', 'image', 'image', 'Affiliate', 'مسوّق بالعمولة', '/images/join/marketer-type.jpg', 2],
-
     ['marketers', 'card_broker', 'description', 'text', 'Connect buyers and sellers and earn a fixed amount, a percentage, or both.', 'اربط المشترين بالبائعين واربح مبلغاً ثابتاً أو نسبة أو كليهما.', null, 1],
     ['marketers', 'card_broker', 'image', 'image', 'Broker', 'وسيط', '/images/join/marketer-type.jpg', 2],
 
-    ['marketers', 'actions', 'continue', 'text', 'Continue', 'متابعة', null, 1],
-    ['marketers', 'actions', 'select_hint', 'text', 'Select an option to continue', 'اختر أحد الخيارات للمتابعة', null, 2],
+    ['marketers', 'steps', 'title', 'text', 'Getting started is simple', 'البدء بسيط', null, 1],
+    ['marketers', 'steps', 'step_1_title', 'text', 'Create your account', 'أنشئ حسابك', null, 2],
+    ['marketers', 'steps', 'step_1_text', 'text', 'Sign up with your details and pick your marketer type.', 'سجّل بياناتك واختر نوع التسويق.', null, 3],
+    ['marketers', 'steps', 'step_2_title', 'text', 'Get approved', 'احصل على الموافقة', null, 4],
+    ['marketers', 'steps', 'step_2_text', 'text', 'Our team reviews your profile and activates your account.', 'يراجع فريقنا ملفك ويُفعّل حسابك.', null, 5],
+    ['marketers', 'steps', 'step_3_title', 'text', 'Start earning', 'ابدأ الربح', null, 6],
+    ['marketers', 'steps', 'step_3_text', 'text', 'Browse campaigns or share links and get paid.', 'تصفّح الحملات أو شارك الروابط واحصل على أرباحك.', null, 7],
+
+    ['marketers', 'cta', 'title', 'text', 'Pick how you want to earn', 'اختر كيف تريد أن تربح', null, 1],
+    ['marketers', 'cta', 'subtitle', 'text', 'Choose the marketer type that fits you and register in a few minutes.', 'اختر نوع التسويق المناسب لك وسجّل في بضع دقائق.', null, 2],
+    ['marketers', 'cta', 'button', 'link', 'See ways to earn', 'اطّلع على طرق الربح', '#types', 3],
 
     // ─── page_key = 'travel-agency' ───────────────────────────────────────────────
     // Introduction landing reached from the /companies choice screen.
@@ -959,4 +994,67 @@ return [
     ['layout', 'helpcenter', 'default_title', 'text', 'Nawy Seller Help Center', 'مركز مساعدة بائعي ناوي', null, 4],
     ['layout', 'helpcenter', 'default_description', 'text', 'Nawy Seller Help Center', 'مركز مساعدة بائعي ناوي', null, 5],
     ['layout', 'helpcenter', 'favicon', 'image', 'Favicon', 'أيقونة الموقع', '/images/helpcenter/favicon.svg', 6],
+
+    // ─── page_key = 'footer' (minimal portal footer shown on /join, /companies, /marketers, …) ───
+    ['footer', 'main', 'copyright', 'text', 'Nawy Platform - Empowering your digital business. © 2026 All Rights Reserved.', 'منصة ناوي - نمكّن أعمالك الرقمية. © 2026 جميع الحقوق محفوظة.', null, 1],
 ];
+
+// ─── page_key = 'marketer-type' — one block per marketer type (/marketers/{type}) ──────────────
+$marketerTypeCopy = [
+    'influencer' => [
+        'eyebrow' => ['Influencers', 'المؤثرون'],
+        'title' => ['Turn your audience into income', 'حوّل جمهورك إلى دخل'],
+        'subtitle' => ['Promote the products and listings you love and earn a fixed amount for every campaign you complete.', 'روّج للمنتجات والإعلانات التي تحبها واربح مبلغًا ثابتًا عن كل حملة تكملها.'],
+        'benefits' => [
+            [['Campaigns that fit you', 'حملات تناسبك'], ['Pick the brands and offers that match your audience and style.', 'اختر العلامات والعروض التي تناسب جمهورك وأسلوبك.']],
+            [['Fixed pay per campaign', 'أجر ثابت لكل حملة'], ['Know exactly what you earn before you start.', 'اعرف بالضبط ما ستكسبه قبل أن تبدأ.']],
+            [['Track your results', 'تابع نتائجك'], ['See reach, engagement and payouts from one dashboard.', 'شاهد الوصول والتفاعل والمدفوعات من لوحة واحدة.']],
+        ],
+    ],
+    'affiliate' => [
+        'eyebrow' => ['Affiliates', 'المسوقون بالعمولة'],
+        'title' => ['Earn from every sale you drive', 'اربح من كل عملية بيع تحققها'],
+        'subtitle' => ['Share affiliate links and earn a percentage of every sale — no campaigns to manage.', 'شارك روابط التسويق واربح نسبة من كل عملية بيع — دون إدارة حملات.'],
+        'benefits' => [
+            [['Unlimited earning', 'أرباح بلا حدود'], ['The more sales you drive, the more you earn.', 'كلما زادت مبيعاتك، زادت أرباحك.']],
+            [['Real-time links', 'روابط فورية'], ['Generate tracking links for any product or listing in seconds.', 'أنشئ روابط تتبع لأي منتج أو إعلان في ثوانٍ.']],
+            [['Transparent reporting', 'تقارير شفافة'], ['Follow clicks, conversions and commissions live.', 'تابع النقرات والتحويلات والعمولات لحظيًا.']],
+        ],
+    ],
+    'broker' => [
+        'eyebrow' => ['Brokers', 'الوسطاء'],
+        'title' => ['Connect deals and get paid', 'اربط الصفقات واحصل على أجرك'],
+        'subtitle' => ['Bring buyers and sellers together and earn a fixed amount, a percentage, or both.', 'اجمع المشترين بالبائعين واربح مبلغًا ثابتًا أو نسبة أو كليهما.'],
+        'benefits' => [
+            [['Flexible commission', 'عمولة مرنة'], ['Choose a fixed amount, a percentage, or a mix of both.', 'اختر مبلغًا ثابتًا أو نسبة أو مزيجًا منهما.']],
+            [['Wider reach', 'وصول أوسع'], ['Access listings and buyers across Nawy.', 'الوصول إلى الإعلانات والمشترين في ناوي.']],
+            [['Deal tracking', 'متابعة الصفقات'], ['Manage every connection and payout in one place.', 'أدر كل تواصل ومدفوعات في مكان واحد.']],
+        ],
+    ],
+];
+
+foreach ($marketerTypeCopy as $type => $c) {
+    $rows[] = ['marketer-type', $type, 'meta_title', 'text', $c['title'][0].' — Nawy', $c['title'][1].' — ناوي', null, 1];
+    $rows[] = ['marketer-type', $type, 'hero_eyebrow', 'text', $c['eyebrow'][0], $c['eyebrow'][1], null, 2];
+    $rows[] = ['marketer-type', $type, 'hero_title', 'text', $c['title'][0], $c['title'][1], null, 3];
+    $rows[] = ['marketer-type', $type, 'hero_subtitle', 'text', $c['subtitle'][0], $c['subtitle'][1], null, 4];
+    $rows[] = ['marketer-type', $type, 'hero_cta', 'link', 'Register now', 'سجّل الآن', null, 5];
+    $rows[] = ['marketer-type', $type, 'benefits_title', 'text', 'Why this fits you', 'لماذا هذا مناسب لك', null, 6];
+    foreach ($c['benefits'] as $i => [$title, $desc]) {
+        $n = $i + 1;
+        $rows[] = ['marketer-type', $type, "benefit_{$n}_title", 'text', $title[0], $title[1], null, 10 + $n * 2];
+        $rows[] = ['marketer-type', $type, "benefit_{$n}_desc", 'text', $desc[0], $desc[1], null, 11 + $n * 2];
+    }
+    $rows[] = ['marketer-type', $type, 'steps_title', 'text', 'Getting started is simple', 'البدء بسيط', null, 20];
+    $rows[] = ['marketer-type', $type, 'step_1_title', 'text', 'Create your account', 'أنشئ حسابك', null, 21];
+    $rows[] = ['marketer-type', $type, 'step_1_text', 'text', 'Sign up with your details and confirm your type.', 'سجّل بياناتك وأكّد نوعك.', null, 22];
+    $rows[] = ['marketer-type', $type, 'step_2_title', 'text', 'Get approved', 'احصل على الموافقة', null, 23];
+    $rows[] = ['marketer-type', $type, 'step_2_text', 'text', 'Our team reviews your profile and activates your account.', 'يراجع فريقنا ملفك ويُفعّل حسابك.', null, 24];
+    $rows[] = ['marketer-type', $type, 'step_3_title', 'text', 'Start earning', 'ابدأ الربح', null, 25];
+    $rows[] = ['marketer-type', $type, 'step_3_text', 'text', 'Browse campaigns or share links and get paid.', 'تصفّح الحملات أو شارك الروابط واحصل على أرباحك.', null, 26];
+    $rows[] = ['marketer-type', $type, 'cta_title', 'text', 'Ready to start earning?', 'جاهز لبدء الربح؟', null, 30];
+    $rows[] = ['marketer-type', $type, 'cta_subtitle', 'text', 'Complete the registration in a few minutes and start earning on your terms.', 'أكمل التسجيل في بضع دقائق وابدأ الربح وفق شروطك.', null, 31];
+    $rows[] = ['marketer-type', $type, 'cta_button', 'link', 'Start registration', 'ابدأ التسجيل', null, 32];
+}
+
+return $rows;

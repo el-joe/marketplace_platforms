@@ -2,10 +2,10 @@
     $isAr = session('locale', 'ar') === 'ar';
     $selectorCountries = $countries ?? collect();
     $selectorCurrent = $currentCountry ?? $selectorCountries->first();
-    $selectorLabel = portal_content('country_selector', 'main', 'label', 'Your country', 'دولتك');
-    $selectorChoose = portal_content('country_selector', 'main', 'choose', 'Choose your country', 'اختر دولتك');
+    $selectorLabel = portal_content('nav', 'country_toggle', 'selector_label', 'Your country', 'دولتك');
+    $selectorChoose = portal_content('nav', 'country_toggle', 'choose', 'Choose your country', 'اختر دولتك');
     $showLanguage = $showLanguage ?? false;
-    $languageChoose = portal_content('language_selector', 'main', 'choose', 'Choose your language', 'اختر لغتك');
+    $languageChoose = portal_content('nav', 'language_toggle', 'choose', 'Choose your language', 'اختر لغتك');
     $flagUrl = fn ($country) => filled($country?->iso_code_2)
         ? 'https://f.nooncdn.com/s/app/com/common/images/flags/'.strtolower($country->iso_code_2).'.svg'
         : null;

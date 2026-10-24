@@ -74,6 +74,10 @@ return [
             ['block' => 'lang_option_en', 'label_en' => 'Language option: English', 'label_ar' => 'خيار اللغة: الإنجليزية', 'selector' => '[data-portal-section="nav-controls"]'],
             ['block' => 'lang_option_ar', 'label_en' => 'Language option: Arabic', 'label_ar' => 'خيار اللغة: العربية', 'selector' => '[data-portal-section="nav-controls"]'],
             ['block' => 'mobile', 'label_en' => 'Mobile menu', 'label_ar' => 'قائمة الجوال', 'selector' => '[data-portal-section="nav"]'],
+            ['block' => 'section_back', 'label_en' => 'Section nav: back link', 'label_ar' => 'تنقل القسم: رابط الرجوع', 'selector' => '[data-portal-section="nav"]', 'route' => '/marketers'],
+            ['block' => 'section_marketer', 'label_en' => 'Section nav: Marketers links', 'label_ar' => 'تنقل القسم: روابط المسوقين', 'selector' => '[data-portal-section="nav"]', 'route' => '/marketers'],
+            ['block' => 'section_travel_agency', 'label_en' => 'Section nav: Travel agency links', 'label_ar' => 'تنقل القسم: روابط وكالة السفر', 'selector' => '[data-portal-section="nav"]', 'route' => '/companies/travel-agency'],
+            ['block' => 'section_open_souq', 'label_en' => 'Section nav: Open Souq links', 'label_ar' => 'تنقل القسم: روابط السوق المفتوح', 'selector' => '[data-portal-section="nav"]', 'route' => '/companies/open-souq'],
             ['block' => 'advertise_nav', 'label_en' => 'Advertise navigation bar', 'label_ar' => 'شريط تنقل الإعلانات', 'selector' => '[data-portal-section="advertise_nav"]', 'route' => '/{country}/advertise/sellers'],
         ],
     ],
@@ -98,6 +102,16 @@ return [
         'scope' => 'shared',
         'sections' => [
             ['block' => 'main', 'label_en' => 'Sign-up banner & copyright', 'label_ar' => 'لافتة التسجيل وحقوق النشر', 'selector' => '[data-portal-section="cta-footer"]'],
+        ],
+    ],
+
+    'footer' => [
+        'label_en' => 'Portal footer (join, companies & section pages)',
+        'label_ar' => 'تذييل البوابة (الانضمام والشركات وصفحات الأقسام)',
+        'route' => '/join',
+        'scope' => 'shared',
+        'sections' => [
+            ['block' => 'main', 'label_en' => 'Tagline & copyright', 'label_ar' => 'الشعار النصي وحقوق النشر', 'selector' => '[data-portal-section="portal-footer"]'],
         ],
     ],
 
@@ -332,10 +346,28 @@ return [
         'sections' => [
             ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
-            ['block' => 'card_influencer', 'label_en' => 'Card: Influencer', 'label_ar' => 'بطاقة: مشهور / مؤثر', 'selector' => '[data-portal-section="hero"]', 'route' => '/marketers/influencer'],
-            ['block' => 'card_affiliate', 'label_en' => 'Card: Affiliate', 'label_ar' => 'بطاقة: مسوق بالعمولة', 'selector' => '[data-portal-section="hero"]', 'route' => '/marketers/affiliate'],
-            ['block' => 'card_broker', 'label_en' => 'Card: Broker', 'label_ar' => 'بطاقة: وسيط', 'selector' => '[data-portal-section="hero"]', 'route' => '/marketers/broker'],
-            ['block' => 'actions', 'label_en' => 'Continue button & hint (legacy, not rendered)', 'label_ar' => 'زر المتابعة والتلميح (قديم، غير معروض)', 'selector' => null],
+            ['block' => 'benefits', 'label_en' => 'Benefits', 'label_ar' => 'المزايا', 'selector' => '[data-portal-section="benefits"]'],
+            ['block' => 'benefits_item_1', 'label_en' => 'Benefit 1', 'label_ar' => 'ميزة 1', 'selector' => '[data-portal-section="benefits"] .grid > :nth-child(1)'],
+            ['block' => 'benefits_item_2', 'label_en' => 'Benefit 2', 'label_ar' => 'ميزة 2', 'selector' => '[data-portal-section="benefits"] .grid > :nth-child(2)'],
+            ['block' => 'benefits_item_3', 'label_en' => 'Benefit 3', 'label_ar' => 'ميزة 3', 'selector' => '[data-portal-section="benefits"] .grid > :nth-child(3)'],
+            ['block' => 'types', 'label_en' => 'Ways to earn', 'label_ar' => 'طرق الربح', 'selector' => '[data-portal-section="types"]'],
+            ['block' => 'card_influencer', 'label_en' => 'Card: Influencer (also the hero photo of its page)', 'label_ar' => 'بطاقة: مشهور / مؤثر (وصورة صفحته)', 'selector' => '[data-portal-section="types"] .grid > :nth-child(1)'],
+            ['block' => 'card_affiliate', 'label_en' => 'Card: Affiliate (also the hero photo of its page)', 'label_ar' => 'بطاقة: مسوق بالعمولة (وصورة صفحته)', 'selector' => '[data-portal-section="types"] .grid > :nth-child(2)'],
+            ['block' => 'card_broker', 'label_en' => 'Card: Broker (also the hero photo of its page)', 'label_ar' => 'بطاقة: وسيط (وصورة صفحته)', 'selector' => '[data-portal-section="types"] .grid > :nth-child(3)'],
+            ['block' => 'steps', 'label_en' => 'Getting started steps', 'label_ar' => 'خطوات البدء', 'selector' => '[data-portal-section="steps"]'],
+            ['block' => 'cta', 'label_en' => 'Closing call-to-action', 'label_ar' => 'دعوة ختامية', 'selector' => '[data-portal-section="cta"]'],
+        ],
+    ],
+
+    'marketer-type' => [
+        'label_en' => 'Marketer type pages',
+        'label_ar' => 'صفحات أنواع المسوقين',
+        'route' => '/marketers/influencer',
+        'scope' => 'page',
+        'sections' => [
+            ['block' => 'influencer', 'label_en' => 'Page: Influencer (/marketers/influencer)', 'label_ar' => 'صفحة: مشهور / مؤثر', 'selector' => '[data-portal-section="hero"]', 'route' => '/marketers/influencer'],
+            ['block' => 'affiliate', 'label_en' => 'Page: Affiliate (/marketers/affiliate)', 'label_ar' => 'صفحة: مسوق بالعمولة', 'selector' => '[data-portal-section="hero"]', 'route' => '/marketers/affiliate'],
+            ['block' => 'broker', 'label_en' => 'Page: Broker (/marketers/broker)', 'label_ar' => 'صفحة: وسيط', 'selector' => '[data-portal-section="hero"]', 'route' => '/marketers/broker'],
         ],
     ],
 
@@ -418,9 +450,9 @@ return [
         'sections' => [
             ['block' => 'header', 'label_en' => 'Header & search', 'label_ar' => 'الترويسة والبحث', 'selector' => '[data-portal-section="header"]'],
             ['block' => 'index', 'label_en' => 'Collections home', 'label_ar' => 'الصفحة الرئيسية للمجموعات', 'selector' => '[data-portal-section="index"]'],
+            ['block' => 'common', 'label_en' => 'Breadcrumb', 'label_ar' => 'مسار التنقل', 'selector' => '[data-portal-section="common"]', 'route' => '/{country}/adsupport/collections/{collection}'],
             ['block' => 'collection', 'label_en' => 'Collection page', 'label_ar' => 'صفحة المجموعة', 'selector' => '[data-portal-section="collection"]', 'route' => '/{country}/adsupport/collections/{collection}'],
             ['block' => 'article', 'label_en' => 'Article page', 'label_ar' => 'صفحة المقال', 'selector' => '[data-portal-section="article"]', 'route' => '/{country}/adsupport/articles/{article}'],
-            ['block' => 'common', 'label_en' => 'Breadcrumb', 'label_ar' => 'مسار التنقل', 'selector' => '[data-portal-section="common"]', 'route' => '/{country}/adsupport/collections/{collection}'],
             ['block' => 'footer', 'label_en' => 'Footer', 'label_ar' => 'التذييل', 'selector' => '[data-portal-section="footer"]'],
         ],
     ],
@@ -433,10 +465,10 @@ return [
         'sections' => [
             ['block' => 'header', 'label_en' => 'Header & search', 'label_ar' => 'الترويسة والبحث', 'selector' => '[data-portal-section="header"]'],
             ['block' => 'index', 'label_en' => 'Categories home', 'label_ar' => 'الصفحة الرئيسية للفئات', 'selector' => '[data-portal-section="index"]'],
+            ['block' => 'common', 'label_en' => 'Breadcrumb', 'label_ar' => 'مسار التنقل', 'selector' => '[data-portal-section="common"]', 'route' => '/{country}/helpcenter/category/{category}'],
             ['block' => 'category', 'label_en' => 'Category page', 'label_ar' => 'صفحة الفئة', 'selector' => '[data-portal-section="category"]', 'route' => '/{country}/helpcenter/category/{category}'],
             ['block' => 'article', 'label_en' => 'Article page', 'label_ar' => 'صفحة المقال', 'selector' => '[data-portal-section="article"]', 'route' => '/{country}/helpcenter/article/{article}'],
             ['block' => 'search', 'label_en' => 'Search results', 'label_ar' => 'نتائج البحث', 'selector' => '[data-portal-section="search"]', 'route' => '/{country}/helpcenter/search?q=a'],
-            ['block' => 'common', 'label_en' => 'Breadcrumb', 'label_ar' => 'مسار التنقل', 'selector' => '[data-portal-section="common"]', 'route' => '/{country}/helpcenter/category/{category}'],
             ['block' => 'footer', 'label_en' => 'Footer', 'label_ar' => 'التذييل', 'selector' => '[data-portal-section="footer"]'],
         ],
     ],

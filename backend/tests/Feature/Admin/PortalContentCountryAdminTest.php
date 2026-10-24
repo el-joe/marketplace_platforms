@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\Country;
 use App\Models\PortalContent;
 use App\Services\PortalContentCountrySync;
+use Database\Seeders\PortalContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -153,5 +154,31 @@ class PortalContentCountryAdminTest extends TestCase
         ]])->assertRedirect();
 
         $this->assertSame('Legacy save', $egRow->fresh()->value_en);
+    }
+
+    public function test_every_configured_page_renders_for_each_live_country_code_in_config_order(): void
+    {
+        foreach (['egy' => 'E1', 'kwt' => 'K1', 'omn' => 'O1', 'ksa' => 'S1', 'uae' => 'A1'] as $code => $iso) {
+            Country::factory()->create(['site_code' => $code, 'iso_code_2' => $iso, 'is_active' => true]);
+        }
+        $this->seed(PortalContentSeeder::class);
+
+        $admin = $this->admin();
+
+        foreach (['egy', 'kwt', 'omn', 'ksa', 'uae'] as $code) {
+            foreach (['join', 'marketers', 'marketer-type', 'footer', 'helpcenter'] as $page) {
+                $this->actingAs($admin, 'admin')->withSession(['locale' => 'en'])
+                    ->get(route('admin.portal-content.page', [$code, $page]))->assertOk();
+            }
+        }
+
+        // Section rows follow config order (breadcrumb sits before the collection page).
+        $html = $this->actingAs($admin, 'admin')->withSession(['locale' => 'en'])
+            ->get(route('admin.portal-content.page', ['egy', 'marketers']))->getContent();
+        $positions = array_map(fn ($label) => strpos($html, $label), ['>Hero<', '>Benefits<', '>Ways to earn<', '>Getting started steps<', '>Closing call-to-action<']);
+        $this->assertNotContains(false, $positions);
+        $sorted = $positions;
+        sort($sorted);
+        $this->assertSame($sorted, $positions);
     }
 }

@@ -103,4 +103,39 @@ class PortalSectionsConfigTest extends TestCase
             }
         }
     }
+
+    public function test_every_editable_block_used_in_blade_views_is_mapped(): void
+    {
+        $config = $this->config();
+        $unmapped = [];
+
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(dirname(__DIR__, 2).'/resources/views'));
+        foreach ($it as $file) {
+            if (! str_ends_with((string) $file, '.blade.php')) {
+                continue;
+            }
+
+            preg_match_all("/portal_(?:content|link|image)\(\s*'([^']+)'\s*,\s*'([^']+)'/", file_get_contents((string) $file), $matches, PREG_SET_ORDER);
+
+            foreach ($matches as [, $page, $block]) {
+                // Blocks built dynamically in Blade ('section_'.$section, 'card_'.$type) end with "_".
+                if (str_ends_with($block, '_')) {
+                    continue;
+                }
+                $mapped = array_column($config[$page]['sections'] ?? [], 'block');
+                if (! in_array($block, $mapped, true)) {
+                    $unmapped[] = "{$page}/{$block}";
+                }
+            }
+        }
+
+        $this->assertSame([], array_values(array_unique($unmapped)), 'Blade views read portal content blocks missing from portal_sections.');
+    }
+
+    public function test_marketer_type_blocks_cover_every_marketer_type(): void
+    {
+        $blocks = array_column($this->config()['marketer-type']['sections'], 'block');
+
+        $this->assertSame(['influencer', 'affiliate', 'broker'], $blocks);
+    }
 }
