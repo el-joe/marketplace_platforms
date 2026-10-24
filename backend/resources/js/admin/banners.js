@@ -14,6 +14,7 @@
 
 import $ from 'jquery';
 import DataTable from 'datatables.net-dt';
+import { activateLangTab } from '../components/lang-tabs.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -267,6 +268,95 @@ function initDates() {
     validate();
 }
 
+
+// ─── Field-level error display ────────────────────────────────────────────────
+
+const ERR_CLASS = 'banner-field-error';
+
+function clearFieldErrors($form) {
+    $form.find('.' + ERR_CLASS).remove();
+    $form.find('.is-invalid').removeClass('is-invalid ring-2 ring-red-500 border-red-500')
+        .css({ borderColor: '', boxShadow: '' });
+    $form.find('.select2-selection').css({ borderColor: '', boxShadow: '' });
+    $form.find('[data-lang-tab]').removeClass('text-red-600').find('.lang-tab-dot').remove();
+    $form.find('#date-error').addClass('hidden');
+}
+
+function fieldElements($form, field) {
+    // "marketer_ids.0" → base "marketer_ids"; also supports name="field[]".
+    const base = field.split('.')[0];
+    const names = [field, base, base + '[]'];
+    let $els = $();
+    names.forEach((n) => { $els = $els.add($form.find('[name="' + n + '"]')); });
+    return $els;
+}
+
+function markInvalid($el, message) {
+    const redStyle = { borderColor: '#dc2626', boxShadow: '0 0 0 2px rgba(220,38,38,.25)' };
+    $el.addClass('is-invalid ring-2 ring-red-500 border-red-500').css(redStyle);
+
+    // select2 / async select render a sibling container
+    const $s2 = $el.next('.select2-container').find('.select2-selection');
+    if ($s2.length) $s2.css(redStyle);
+
+    const $msg = $('<p></p>').addClass(ERR_CLASS + ' text-xs text-red-600 mt-1').text(message);
+    const $anchor = $s2.length ? $el.next('.select2-container') : $el;
+    $anchor.last().after($msg);
+
+    // Reveal the EN/AR tab that holds the field and flag the tab button.
+    const $panel = $el.closest('[data-lang-panel]');
+    if ($panel.length) {
+        const tabsId = $panel.data('tabs-id');
+        const lang = $panel.data('lang-panel');
+        const $btn = $('[data-lang-tab="' + lang + '"][data-tabs-id="' + tabsId + '"]');
+        if (!$btn.find('.lang-tab-dot').length) {
+            $btn.addClass('text-red-600').append('<span class="lang-tab-dot inline-block w-2 h-2 rounded-full bg-red-500 ms-1 align-middle"></span>');
+        }
+        return { tabsId, lang };
+    }
+    return null;
+}
+
+/**
+ * Highlights every invalid input, shows its own message under it and returns
+ * a summary the caller can toast. `errors` is Laravel's {field: [messages]}.
+ */
+function showFieldErrors($form, errors) {
+    clearFieldErrors($form);
+    const flat = [];
+    let firstEl = null;
+    let firstTab = null;
+
+    Object.entries(errors || {}).forEach(([field, messages]) => {
+        const message = Array.isArray(messages) ? messages[0] : messages;
+        flat.push(message);
+        const $els = fieldElements($form, field);
+        if (!$els.length) return;
+        const tab = markInvalid($els.first(), message);
+        if (!firstEl) { firstEl = $els.first(); firstTab = tab; }
+    });
+
+    if (firstTab) activateLangTab(firstTab.tabsId, firstTab.lang);
+    if (firstEl && firstEl.length) {
+        const el = firstEl[0];
+        if (el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        try { el.focus({ preventScroll: true }); } catch (_) { /* hidden/file input */ }
+    }
+    return flat;
+}
+
+function toastErrors(messages) {
+    if (!messages.length) return;
+    const extra = messages.length > 1 ? ' (+' + (messages.length - 1) + ')' : '';
+    window.Toast.error(messages[0] + extra);
+}
+
+// Remove a field's error as soon as the user edits it.
+$(document).on('input change', '#banner-form .is-invalid', function () {
+    $(this).removeClass('is-invalid ring-2 ring-red-500 border-red-500').css({ borderColor: '', boxShadow: '' });
+    $(this).next('.' + ERR_CLASS).remove();
+});
+
 // ─── Form AJAX submit ─────────────────────────────────────────────────────────
 
 function initFormSubmit() {
@@ -276,12 +366,16 @@ function initFormSubmit() {
         const btn = $('#save-btn');
         const origTxt = btn.text();
 
-        // Check date validity
+        // Check date validity — report the real message and highlight the dates.
         const $endsAt = $('[name="ends_at"]');
         if ($endsAt[0] && $endsAt[0].validationMessage) {
-            window.Toast.error(t('admin.banners.fix_date_errors'));
+            const msgs = showFieldErrors($(form), { ends_at: [$endsAt[0].validationMessage] });
+            $('[name="starts_at"]').addClass('is-invalid ring-2 ring-red-500 border-red-500')
+                .css({ borderColor: '#dc2626', boxShadow: '0 0 0 2px rgba(220,38,38,.25)' });
+            toastErrors(msgs);
             return;
         }
+        clearFieldErrors($(form));
 
         btn.prop('disabled', true).text(t('shared.saving'));
 
@@ -301,8 +395,7 @@ function initFormSubmit() {
             .fail((xhr) => {
                 const body = xhr.responseJSON;
                 if (body?.errors) {
-                    const firstErr = Object.values(body.errors)[0];
-                    window.Toast.error(Array.isArray(firstErr) ? firstErr[0] : firstErr);
+                    toastErrors(showFieldErrors($(form), body.errors));
                 } else {
                     window.Toast.error(body?.message || t('shared.something_went_wrong'));
                 }
