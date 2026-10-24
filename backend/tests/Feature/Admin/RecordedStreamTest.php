@@ -120,4 +120,24 @@ class RecordedStreamTest extends TestCase
         $this->get(route('admin.live-streams.show', $channel))->assertOk()->assertSee('btn-end-channel', false);
         $this->get(route('admin.live-streams.index'))->assertOk()->assertSee('📻');
     }
+
+    public function test_an_ended_channel_rescheduled_to_the_future_airs_again_and_a_stale_ended_one_heals(): void
+    {
+        $admin = $this->admin();
+        $channel = $this->channel(['status' => 'ended', 'started_at' => now()->subHour(), 'ended_at' => now()->subMinutes(50), 'scheduled_at' => now()->subHour(), 'scheduled_end_at' => now()->subMinutes(50)]);
+        $start = now()->addDay()->startOfMinute();
+
+        $this->actingAs($admin, 'admin')->put(route('admin.live-streams.update', $channel), [
+            'title_en' => 'Radio', 'title_ar' => 'راديو', 'scheduled_at' => $start->format('Y-m-d\TH:i'),
+        ])->assertRedirect();
+
+        $fresh = $channel->fresh();
+        $this->assertSame(LiveStreamStatus::Scheduled, $fresh->status);
+        $this->assertNull($fresh->ended_at);
+        $this->assertSame($start->copy()->addSeconds(600)->timestamp, $fresh->scheduled_end_at->timestamp);
+
+        $stale = $this->channel(['status' => 'ended', 'ended_at' => now()]);
+        app(RecordedStreamScheduler::class)->sync();
+        $this->assertSame(LiveStreamStatus::Scheduled, $stale->fresh()->status);
+    }
 }

@@ -15,7 +15,7 @@
             <span class="inline-flex rounded-full bg-primary-100 text-primary-700 text-xs font-semibold px-2.5 py-0.5">📻 {{ __('admin.live_streams.radio_badge') }}</span>
         </div>
         <div class="flex items-center gap-2">
-            @if($liveStream->status->value !== 'ended')
+            @if($liveStream->status->value === 'live')
                 <button type="button" id="btn-end-channel"
                         data-url="{{ route('admin.live-streams.end', $liveStream) }}"
                         data-confirm="{{ __('admin.live_streams.confirm_end') }}"

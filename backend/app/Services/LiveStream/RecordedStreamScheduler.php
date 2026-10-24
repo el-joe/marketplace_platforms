@@ -19,6 +19,12 @@ class RecordedStreamScheduler
     {
         $now ??= now();
 
+        // Heal channels marked ended before they ever aired (e.g. re-timed to a future date).
+        LiveStream::recorded()
+            ->where('status', LiveStreamStatus::Ended->value)
+            ->where('scheduled_at', '>', $now)
+            ->update(['status' => LiveStreamStatus::Scheduled->value, 'started_at' => null, 'ended_at' => null]);
+
         $ended = LiveStream::recorded()
             ->whereIn('status', [LiveStreamStatus::Scheduled->value, LiveStreamStatus::Live->value])
             ->whereNotNull('scheduled_end_at')

@@ -95,8 +95,9 @@ class LiveStreamController extends Controller
 
     public function update(Request $request, LiveStream $liveStream): RedirectResponse
     {
-        // A recorded channel can be re-timed / re-uploaded only while it is still scheduled.
-        $editSchedule = $liveStream->isRecorded() && $liveStream->status === LiveStreamStatus::Scheduled;
+        // A recorded channel can be re-timed / re-uploaded unless it is on air right now
+        // (an ended one can be re-aired by scheduling it again).
+        $editSchedule = $liveStream->isRecorded() && $liveStream->status !== LiveStreamStatus::Live;
 
         $data = $request->validate([
             'title_en' => 'required|string|max:200',
@@ -137,6 +138,11 @@ class LiveStreamController extends Controller
                 }
 
                 $data['scheduled_end_at'] = RecordedStreamScheduler::endFor(Carbon::parse($data['scheduled_at']), $duration);
+
+                if ($liveStream->status === LiveStreamStatus::Ended) {
+                    // Re-air: back to scheduled; the scheduler ends it again if the window is already past.
+                    $data = [...$data, 'status' => LiveStreamStatus::Scheduled, 'started_at' => null, 'ended_at' => null];
+                }
             }
         }
 
@@ -216,6 +222,10 @@ class LiveStreamController extends Controller
 
     public function endStream(LiveStream $liveStream): JsonResponse
     {
+        if ($liveStream->isRecorded() && ! $liveStream->isLive()) {
+            return response()->json(['success' => false, 'message' => 'Only an on-air radio channel can be ended; edit the schedule instead.'], 422);
+        }
+
         // Idempotent: a second call on an ended stream is a successful no-op.
         if ($liveStream->status === LiveStreamStatus::Ended) {
             return response()->json(['success' => true]);
