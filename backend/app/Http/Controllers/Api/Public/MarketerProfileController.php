@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Public;
 
 use App\Enums\ClassifiedListingStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Public\MarketerBannerResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\ClassifiedListing;
 use App\Models\Country;
@@ -14,6 +15,8 @@ use App\Models\MarketerProfile;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\MarketerProfileCache;
 use App\Services\Customer\PromoBadgeResolver;
+use App\Services\Marketer\PublicMarketerDirectoryService;
+use App\Services\Marketer\PublicMarketerProfileListingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -23,59 +26,31 @@ class MarketerProfileController extends Controller
 {
     public function __construct(
         private readonly ListingQueryService $listings,
+        private readonly PublicMarketerDirectoryService $directory,
+        private readonly PublicMarketerProfileListingService $profileListings,
     ) {}
 
     /**
-     * GET /api/public/v1/marketers
-     * Paginated list of active marketers with a public profile.
+     * GET /api/public/v1/{country}/marketers
+     * Paginated list of active marketers with a public profile, or (grouped=1)
+     * one section per marketer type plus the list-page banners. Never cached.
      */
     public function index(Request $request): JsonResponse
     {
         $countryId = $request->attributes->get('country')?->id;
+        $filters = $this->directory->filtersFrom($request);
 
-        $profiles = MarketerProfile::query()
-            ->whereNotNull('profile_slug')
-            ->whereHas('marketer', fn ($q) => $q->where('global_status', 'active'))
-            ->with([
-                'marketer' => fn ($q) => $q->select('id', 'name', 'country_id', 'total_campaigns', 'total_conversions')
-                    ->withCount(['classifiedListings as classified_count' => fn ($c) => $c->where('status', 'active')]),
-                'marketer.marketerJobs',
-                'bannerFile',
-                'avatarFile',
-            ])
-            ->addSelect(['marketer_profiles.*', 'ad_price', 'ad_price_currency'])
-            ->when($request->type, fn ($q) => $q->whereHas('marketer.marketerJobs', fn ($s) => $s->where('key', $request->type)))
-            ->when($countryId, fn ($q) => $q->whereHas('marketer', fn ($s) => $s->where('country_id', $countryId)))
-            ->orderByDesc('total_conversions')
-            ->paginate((int) $request->query('per_page', 24));
+        if ($request->boolean('grouped')) {
+            return ApiResponse::success([
+                'sections' => $this->directory->sections($filters, $countryId, $request),
+                'banners' => $this->directory->listBanners($filters['gender'], $countryId, $request),
+            ]);
+        }
 
-        $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
-        $defaultLocale = config('app.frontend_default_locale', 'uae-en');
-
-        $items = $profiles->getCollection()->filter(fn (MarketerProfile $profile) => $profile->marketer !== null)->map(function (MarketerProfile $profile) use ($frontendUrl, $defaultLocale) {
-            $marketer = $profile->marketer;
-
-            return [
-                'id' => $marketer->id,
-                'name' => $marketer->name,
-                'marketer_type' => $marketer->marketerJobs->first()?->key,
-                'profile_slug' => $profile->profile_slug,
-                'profile_url' => $frontendUrl.'/'.$defaultLocale.'/marketer/'.$profile->profile_slug,
-                'banner_url' => $profile->bannerFile?->url,
-                'avatar_url' => $profile->avatarFile?->url,
-                'total_campaigns' => $marketer->total_campaigns,
-                'total_conversions' => $marketer->total_conversions,
-                'avatar_initial' => mb_substr($marketer->name, 0, 1),
-                'specialty_ar' => $profile->specialty_ar,
-                'specialty_en' => $profile->specialty_en,
-                'ad_price' => $profile->ad_price,
-                'ad_price_currency' => $profile->ad_price_currency,
-                'classified_count' => (int) ($marketer->classified_count ?? 0),
-            ];
-        })->values()->all();
+        $profiles = $this->directory->paginate($filters, $countryId, min(100, max(1, (int) $request->query('per_page', 24))), $request);
 
         return ApiResponse::success([
-            'items' => $items,
+            'items' => $this->directory->cards($profiles->getCollection(), $request, $filters['type']),
             'meta' => [
                 'current_page' => $profiles->currentPage(),
                 'last_page' => $profiles->lastPage(),
@@ -166,6 +141,12 @@ class MarketerProfileController extends Controller
         $classified = $this->classifiedListings($header['_marketer_id']);
         $response['classified_listings'] = $classified;
         $response['classified_count'] = count($classified);
+
+        // New (not cached): banners must follow their schedule, listings follow the filters.
+        $filters = $this->profileListings->filtersFrom($request);
+        $response['listings'] = $this->profileListings->listings($header['_marketer_id'], $country, $filters, $wishlistIds, MarketerBannerResource::localeFor($request));
+        $response['facets'] = $this->profileListings->facets($header['_marketer_id'], $country, $filters, MarketerBannerResource::localeFor($request));
+        $response['banners'] = $this->directory->profileBanners(Marketer::findOrFail($header['_marketer_id']), $country->id, $request);
 
         return ApiResponse::success($response);
     }
@@ -299,6 +280,7 @@ class MarketerProfileController extends Controller
             ],
             'profile' => [
                 'slug' => $profile->profile_slug,
+                'gender' => $profile->gender?->value,
                 'bio_ar' => $profile->bio_ar,
                 'bio_en' => $profile->bio_en,
                 'specialty_ar' => $profile->specialty_ar,
@@ -362,6 +344,7 @@ class MarketerProfileController extends Controller
             ->where('marketer_id', $marketerId)
             ->where('country_id', $country->id)
             ->where('status', 'active')
+            ->where('listing_category', 'product')
             ->whereNull('invitation_id');
 
         $ownListings = $ownBaseQuery()
@@ -379,6 +362,7 @@ class MarketerProfileController extends Controller
             ->where('marketer_id', $marketerId)
             ->where('country_id', $country->id)
             ->where('status', 'active')
+            ->where('listing_category', 'product')
             ->whereNotNull('invitation_id')
             ->whereHas('invitation.campaign', fn ($q) => $q->whereNotNull('vendor_id'));
 
@@ -397,6 +381,7 @@ class MarketerProfileController extends Controller
             ->where('marketer_id', $marketerId)
             ->where('country_id', $country->id)
             ->where('status', 'active')
+            ->where('listing_category', 'product')
             ->whereNotNull('invitation_id')
             ->whereHas('invitation.campaign', fn ($q) => $q->whereNull('vendor_id'));
 
@@ -417,7 +402,7 @@ class MarketerProfileController extends Controller
         PromoBadgeResolver::instance()->prime(PromoBadgeResolver::tuplesForListings($allListings));
 
         $ownCards = collect($ownListings)
-            ->unique('source_listing_id')
+            ->unique(fn (MarketerListing $l) => $l->source_listing_id ?? $l->id)
             ->map(function (MarketerListing $listing) use ($country, $wishlistIds) {
                 $card = $this->listings->toMarketerCardShape(
                     listing: $listing,
