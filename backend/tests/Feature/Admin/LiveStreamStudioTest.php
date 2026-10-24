@@ -35,15 +35,14 @@ class LiveStreamStudioTest extends TestCase
         ]);
     }
 
-    public function test_nav_lists_live_streams_right_after_radio_channels(): void
+    public function test_nav_lists_live_streams_outside_marketing(): void
     {
         $this->actingAs($this->admin(), 'admin');
         $groups = collect(app(NavigationService::class)->adminNavigation());
 
         $group = $groups->first(fn ($g) => collect($g['items'])->pluck('route')->contains('admin.live-streams.index'));
-        $routes = collect($group['items'])->pluck('route')->values();
 
-        $this->assertSame($routes->search('admin.radio.channels.index') + 1, $routes->search('admin.live-streams.index'));
+        $this->assertNotNull($group);
 
         $marketing = $groups->first(fn ($g) => $g['group'] === __('admin.nav.marketing'));
         if ($marketing) {

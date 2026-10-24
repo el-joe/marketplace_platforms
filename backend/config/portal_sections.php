@@ -39,7 +39,7 @@ return [
         'route' => '/vendors',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'fulfillment_teaser', 'label_en' => 'Shipping & fulfilment teaser', 'label_ar' => 'نبذة عن الشحن والتنفيذ', 'selector' => '[data-portal-section="fulfillment_teaser"]'],
             ['block' => 'smart_tools_teaser', 'label_en' => 'Smart tools teaser', 'label_ar' => 'نبذة عن الأدوات الذكية', 'selector' => '[data-portal-section="smart_tools_teaser"]'],
@@ -84,10 +84,10 @@ return [
         'route' => '/vendors',
         'scope' => 'shared',
         'sections' => [
-            ['block' => 'portal', 'label_en' => 'Portal layout', 'label_ar' => 'قالب البوابة', 'selector' => NULL],
-            ['block' => 'advertise', 'label_en' => 'Advertise layout', 'label_ar' => 'قالب الإعلانات', 'selector' => NULL],
-            ['block' => 'adsupport', 'label_en' => 'Ads support layout', 'label_ar' => 'قالب دعم الإعلانات', 'selector' => NULL],
-            ['block' => 'helpcenter', 'label_en' => 'Help center layout', 'label_ar' => 'قالب مركز المساعدة', 'selector' => NULL],
+            ['block' => 'portal', 'label_en' => 'Portal layout', 'label_ar' => 'قالب البوابة', 'selector' => null],
+            ['block' => 'advertise', 'label_en' => 'Advertise layout', 'label_ar' => 'قالب الإعلانات', 'selector' => null],
+            ['block' => 'adsupport', 'label_en' => 'Ads support layout', 'label_ar' => 'قالب دعم الإعلانات', 'selector' => null],
+            ['block' => 'helpcenter', 'label_en' => 'Help center layout', 'label_ar' => 'قالب مركز المساعدة', 'selector' => null],
         ],
     ],
 
@@ -117,7 +117,7 @@ return [
         'route' => '/how-it-works',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'steps', 'label_en' => 'Steps to go live', 'label_ar' => 'خطوات بدء البيع', 'selector' => '[data-portal-section="steps"]'],
             ['block' => 'seller-hub', 'label_en' => 'Seller hub', 'label_ar' => 'مركز البائع', 'selector' => '[data-portal-section="seller-hub"]'],
@@ -153,7 +153,7 @@ return [
         'route' => '/{country}/advertise/product',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'hero_feature_1', 'label_en' => 'Hero feature 1', 'label_ar' => 'ميزة القسم الرئيسي 1', 'selector' => '[data-portal-section="hero"] .items-stretch > :nth-child(1)'],
             ['block' => 'hero_feature_2', 'label_en' => 'Hero feature 2', 'label_ar' => 'ميزة القسم الرئيسي 2', 'selector' => '[data-portal-section="hero"] .items-stretch > :nth-child(2)'],
@@ -170,7 +170,7 @@ return [
         'route' => '/{country}/advertise/display',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'hero_feature_1', 'label_en' => 'Hero feature 1', 'label_ar' => 'ميزة القسم الرئيسي 1', 'selector' => '[data-portal-section="hero"] .items-stretch > :nth-child(1)'],
             ['block' => 'hero_feature_2', 'label_en' => 'Hero feature 2', 'label_ar' => 'ميزة القسم الرئيسي 2', 'selector' => '[data-portal-section="hero"] .items-stretch > :nth-child(2)'],
@@ -186,7 +186,7 @@ return [
         'route' => '/{country}/advertise/brands',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'solutions_item_1', 'label_en' => 'Solution 1', 'label_ar' => 'حل 1', 'selector' => '[data-portal-section="solutions"] .grid > :nth-child(1)'],
             ['block' => 'solutions_item_2', 'label_en' => 'Solution 2', 'label_ar' => 'حل 2', 'selector' => '[data-portal-section="solutions"] .grid > :nth-child(2)'],
@@ -207,7 +207,7 @@ return [
         'route' => '/{country}/advertise/advertisers',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'solutions_item_1', 'label_en' => 'Solution 1', 'label_ar' => 'حل 1', 'selector' => '[data-portal-section="solutions"] .grid > :nth-child(1)'],
             ['block' => 'solutions_item_2', 'label_en' => 'Solution 2', 'label_ar' => 'حل 2', 'selector' => '[data-portal-section="solutions"] .grid > :nth-child(2)'],
@@ -222,7 +222,7 @@ return [
         'route' => '/{country}/advertise/request',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'form', 'label_en' => 'Contact form', 'label_ar' => 'نموذج التواصل', 'selector' => '[data-portal-section="form"]'],
         ],
     ],
@@ -233,7 +233,7 @@ return [
         'route' => '/{country}/advertise/sellers',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'solution_product_ads', 'label_en' => 'Solution 1', 'label_ar' => 'حل 1', 'selector' => '[data-portal-section="solutions"] .grid > :nth-child(1)'],
             ['block' => 'solution_display_ads', 'label_en' => 'Solution 2', 'label_ar' => 'حل 2', 'selector' => '[data-portal-section="solutions"] .grid > :nth-child(2)'],
@@ -252,7 +252,7 @@ return [
         'route' => '/smart-tools',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'ads', 'label_en' => 'Advertising on Nawy', 'label_ar' => 'الإعلان على ناوي', 'selector' => '[data-portal-section="ads"]'],
             ['block' => 'fee-structure', 'label_en' => 'Fee structure', 'label_ar' => 'هيكل الرسوم', 'selector' => '[data-portal-section="fee-structure"]'],
@@ -272,7 +272,7 @@ return [
         'route' => '/fulfillment',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'fbn', 'label_en' => 'Fulfilled by Nawy (FBN)', 'label_ar' => 'التنفيذ من ناوي', 'selector' => '[data-portal-section="fbn"]'],
             ['block' => 'fbn_testimonial', 'label_en' => 'FBN testimonial', 'label_ar' => 'شهادة التنفيذ من ناوي', 'selector' => '[data-portal-section="fbn_testimonial"]'],
@@ -287,7 +287,7 @@ return [
         'route' => '/faq',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'header', 'label_en' => 'Header & questions', 'label_ar' => 'الترويسة والأسئلة', 'selector' => '[data-portal-section="faq-header"]'],
             ['block' => 'contact_cta', 'label_en' => 'Contact support call-to-action', 'label_ar' => 'دعوة التواصل مع الدعم', 'selector' => '[data-portal-section="contact_cta"]'],
         ],
@@ -299,7 +299,7 @@ return [
         'route' => '/join',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'logo', 'label_en' => 'Logo', 'label_ar' => 'الشعار', 'selector' => '.choice-header a'],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '.choice-hero'],
             ['block' => 'card_product_vendor', 'label_en' => 'Card: Product seller', 'label_ar' => 'بطاقة: بائع منتجات', 'selector' => '.choice-cards > :nth-child(1)'],
@@ -315,7 +315,7 @@ return [
         'route' => '/companies',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '.choice-hero'],
             ['block' => 'card_travel_agency', 'label_en' => 'Card: Travel agency', 'label_ar' => 'بطاقة: وكالة سفر', 'selector' => '.choice-cards > :nth-child(1)'],
             ['block' => 'card_open_souq', 'label_en' => 'Card: Open Souq', 'label_ar' => 'بطاقة: السوق المفتوح', 'selector' => '.choice-cards > :nth-child(2)'],
@@ -330,12 +330,12 @@ return [
         'route' => '/marketers',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'card_influencer', 'label_en' => 'Card: Influencer', 'label_ar' => 'بطاقة: مشهور / مؤثر', 'selector' => '[data-portal-section="hero"]', 'route' => '/marketers/influencer'],
             ['block' => 'card_affiliate', 'label_en' => 'Card: Affiliate', 'label_ar' => 'بطاقة: مسوق بالعمولة', 'selector' => '[data-portal-section="hero"]', 'route' => '/marketers/affiliate'],
             ['block' => 'card_broker', 'label_en' => 'Card: Broker', 'label_ar' => 'بطاقة: وسيط', 'selector' => '[data-portal-section="hero"]', 'route' => '/marketers/broker'],
-            ['block' => 'actions', 'label_en' => 'Continue button & hint (legacy, not rendered)', 'label_ar' => 'زر المتابعة والتلميح (قديم، غير معروض)', 'selector' => NULL],
+            ['block' => 'actions', 'label_en' => 'Continue button & hint (legacy, not rendered)', 'label_ar' => 'زر المتابعة والتلميح (قديم، غير معروض)', 'selector' => null],
         ],
     ],
 
@@ -345,7 +345,7 @@ return [
         'route' => '/companies/open-souq',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'benefits', 'label_en' => 'Benefits', 'label_ar' => 'المزايا', 'selector' => '[data-portal-section="benefits"]'],
             ['block' => 'benefits_item_1', 'label_en' => 'Benefit 1', 'label_ar' => 'ميزة 1', 'selector' => '[data-portal-section="benefits"] .grid > :nth-child(1)'],
@@ -363,7 +363,7 @@ return [
         'route' => '/companies/travel-agency',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
             ['block' => 'benefits', 'label_en' => 'Benefits', 'label_ar' => 'المزايا', 'selector' => '[data-portal-section="benefits"]'],
             ['block' => 'benefits_item_1', 'label_en' => 'Benefit 1', 'label_ar' => 'ميزة 1', 'selector' => '[data-portal-section="benefits"] .grid > :nth-child(1)'],
@@ -383,7 +383,7 @@ return [
         'route' => '/vendors/register',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'header', 'label_en' => 'Header', 'label_ar' => 'الترويسة', 'selector' => '[data-portal-section="header"]'],
             ['block' => 'progress', 'label_en' => 'Progress bar', 'label_ar' => 'شريط التقدم', 'selector' => '[data-portal-section="progress"]'],
             ['block' => 'step_1', 'label_en' => 'Step 1', 'label_ar' => 'الخطوة 1', 'selector' => '[data-portal-section="step_1"]', 'requires' => 'wizard step 1'],
@@ -403,7 +403,7 @@ return [
         'route' => '/blog',
         'scope' => 'page',
         'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => NULL],
+            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'header', 'label_en' => 'Header & search', 'label_ar' => 'الترويسة والبحث', 'selector' => '[data-portal-section="header"]'],
             ['block' => 'index', 'label_en' => 'Posts grid', 'label_ar' => 'شبكة المقالات', 'selector' => '[data-portal-section="index"]'],
             ['block' => 'show', 'label_en' => 'Post page (article)', 'label_ar' => 'صفحة المقال', 'selector' => '[data-portal-section="show"]', 'route' => '/blog/{slug}'],

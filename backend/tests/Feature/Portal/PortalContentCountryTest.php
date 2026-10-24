@@ -7,7 +7,9 @@ use App\Models\Country;
 use App\Models\PortalContent;
 use App\Services\PortalContentCountrySync;
 use Database\Seeders\Concerns\SyncsPortalContent;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
@@ -50,7 +52,7 @@ class PortalContentCountryTest extends TestCase
         $this->row('*', 'g');
         $this->row('kwt', 'k'); // same page/block/field, other layer: allowed
 
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(QueryException::class);
         $this->row('kwt', 'dup');
     }
 
@@ -74,7 +76,7 @@ class PortalContentCountryTest extends TestCase
 
         // route segment beats session
         $request = request()->duplicate();
-        $route = new \Illuminate\Routing\Route('GET', '/{country}/x', []);
+        $route = new Route('GET', '/{country}/x', []);
         $route->bind($request);
         $route->setParameter('country', 'uae');
         $request->setRouteResolver(fn () => $route);

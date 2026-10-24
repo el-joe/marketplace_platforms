@@ -52,9 +52,9 @@ class PortalScreenshots extends Command
         $tmp = tempnam(sys_get_temp_dir(), 'portal-shots-');
         file_put_contents($tmp, json_encode($config, JSON_UNESCAPED_UNICODE));
 
-        $cmd = ['node', base_path('scripts/portal-screenshots.mjs'), '--config=' . $tmp];
+        $cmd = ['node', base_path('scripts/portal-screenshots.mjs'), '--config='.$tmp];
         if ($this->option('page')) {
-            $cmd[] = '--page=' . $this->option('page');
+            $cmd[] = '--page='.$this->option('page');
         }
 
         $process = new Process($cmd, base_path(), null, null, 1800);
