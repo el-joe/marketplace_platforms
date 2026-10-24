@@ -62,17 +62,17 @@ class MarketerPublicDirectoryGenderTest extends TestCase
         ]);
     }
 
-    public function test_gender_filter_keeps_gender_less_marketers_in_both_tabs(): void
+    public function test_gender_filter_is_strict_and_excludes_gender_less_marketers(): void
     {
         $this->mk('Man', 'influencer', 'male');
         $this->mk('Woman', 'influencer', 'female');
         $this->mk('Unset', 'influencer', null);
 
         $men = $this->getJson($this->url('marketers?gender=male'))->assertOk();
-        $this->assertEqualsCanonicalizing(['Man', 'Unset'], collect($men->json('data.items'))->pluck('name')->all());
+        $this->assertEqualsCanonicalizing(['Man'], collect($men->json('data.items'))->pluck('name')->all());
 
         $women = $this->getJson($this->url('marketers?gender=women'))->assertOk();
-        $this->assertEqualsCanonicalizing(['Woman', 'Unset'], collect($women->json('data.items'))->pluck('name')->all());
+        $this->assertEqualsCanonicalizing(['Woman'], collect($women->json('data.items'))->pluck('name')->all());
 
         $all = $this->getJson($this->url('marketers'))->assertOk();
         $this->assertCount(3, $all->json('data.items'));

@@ -62,8 +62,8 @@ class PublicMarketerDirectoryService
                 'avatarFile',
             ])
             ->select('marketer_profiles.*')
-            // Gender-less marketers stay visible on both tabs.
-            ->when($filters['gender'], fn ($q, $g) => $q->where(fn ($w) => $w->where('marketer_profiles.gender', $g)->orWhereNull('marketer_profiles.gender')))
+            // Strict: a marketer without a gender only shows when no gender filter is applied.
+            ->when($filters['gender'], fn ($q, $g) => $q->where('marketer_profiles.gender', $g))
             ->when($type, fn ($q, $t) => $q->whereHas('marketer.marketerJobs', fn ($s) => $s->where('key', $t)))
             ->when($countryId, fn ($q, $c) => $q->whereHas('marketer', fn ($s) => $s->where('country_id', $c)))
             ->when($filters['search'], function ($q, $term) {
