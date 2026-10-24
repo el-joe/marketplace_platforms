@@ -176,6 +176,7 @@ class AppServiceProvider extends ServiceProvider
         WarrantyPurchase::observe(WarrantyPurchaseObserver::class);
         SubOrder::observe(SubOrderObserver::class);
         Coupon::observe(CouponObserver::class);
+        Country::observe(\App\Observers\CountryObserver::class);
         \App\Models\ProductImage::observe(\App\Observers\ProductImageObserver::class);
         \App\Models\MarketerListing::observe(\App\Observers\MarketerListingObserver::class);
         \App\Models\Product::observe(\App\Observers\ProductObserver::class);

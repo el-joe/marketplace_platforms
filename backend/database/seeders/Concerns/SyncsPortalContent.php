@@ -3,6 +3,8 @@
 namespace Database\Seeders\Concerns;
 
 use App\Models\PortalContent;
+use App\Services\PortalContentCountrySync;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Non-destructive upsert for Portal Content CMS rows.
@@ -14,6 +16,11 @@ use App\Models\PortalContent;
  *     is refreshed to the canonical default (type, values, sort order);
  *   - an admin-edited row keeps its values — only `type` and `sort_order`
  *     are realigned so the Blade helper keeps reading it correctly.
+ *
+ * Works on the global ('*') layer, then fans the result out to every active
+ * country's rows (PortalContentCountrySync::refreshFromGlobal): missing country
+ * rows are created and non-admin-edited ones refreshed. Before the
+ * country_code migration has run only the (legacy) single layer exists.
  */
 trait SyncsPortalContent
 {
@@ -25,13 +32,13 @@ trait SyncsPortalContent
     {
         $stats = ['created' => 0, 'refreshed' => 0, 'preserved' => 0];
         $touchedPages = [];
+        $perCountry = Schema::hasColumn('portal_contents', 'country_code');
 
         foreach ($rows as [$pageKey, $blockKey, $fieldKey, $type, $valueEn, $valueAr, $valueUrl, $sortOrder]) {
-            $row = PortalContent::firstOrNew([
-                'page_key' => $pageKey,
-                'block_key' => $blockKey,
-                'field_key' => $fieldKey,
-            ]);
+            $row = PortalContent::firstOrNew(
+                ['page_key' => $pageKey, 'block_key' => $blockKey, 'field_key' => $fieldKey]
+                + ($perCountry ? ['country_code' => '*'] : [])
+            );
 
             $structural = ['type' => $type, 'sort_order' => $sortOrder];
             $values = ['value_en' => $valueEn, 'value_ar' => $valueAr, 'value_url' => $valueUrl];
@@ -48,6 +55,10 @@ trait SyncsPortalContent
             }
 
             $touchedPages[$pageKey] = true;
+        }
+
+        if ($perCountry && $touchedPages) {
+            app(PortalContentCountrySync::class)->refreshFromGlobal(array_keys($touchedPages));
         }
 
         foreach (array_keys($touchedPages) as $pageKey) {
