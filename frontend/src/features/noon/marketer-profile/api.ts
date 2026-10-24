@@ -7,6 +7,7 @@ import type {
 import { DEFAULT_FILTERS, LISTINGS_PER_PAGE } from "./helpers/constants";
 import { filtersToApiParams } from "./helpers/filters";
 import { buildMockListings, isMockEnabled, MOCK_BANNERS } from "./helpers/mock";
+import { getLocale } from "next-intl/server";
 import resolveCookie from "@/src/helpers/resolveCookie";
 import { apiPublicBaseUrlGlobal } from "@/src/lib/utils";
 
@@ -38,10 +39,10 @@ function normalize(raw: RawProfile, filters: MarketerFilters): MarketerProfilePa
 
 /** Request-scoped dedupe: generateMetadata + page share one fetch. */
 const fetchProfile = cache(async (slug: string, qs: string): Promise<RawProfile> => {
-  const country = await resolveCookie("country");
+  const [country, locale] = await Promise.all([resolveCookie("country"), getLocale()]);
   const res = await fetch(`${apiPublicBaseUrlGlobal}/${country}/marketers/${slug}?${qs}`, {
     cache: "no-store",
-    headers: { Accept: "application/json" },
+    headers: { Accept: "application/json", "Accept-Language": locale.split("-").pop() ?? "en" },
   });
   if (res.status === 404) throw new MarketerProfileNotFoundError();
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -35,7 +35,7 @@ export default async function MarketerProfileHeader({ marketer, profile }: Props
       </div>
 
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-2xl font-black text-primary md:text-3xl">{marketer.name}</h1>
+        <h1 className="line-clamp-2 break-words text-2xl font-black text-primary md:text-3xl">{marketer.name}</h1>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-gray">
           <span className="rounded-full bg-gray-2 px-3 py-1 text-primary">{typeLabel}</span>
           <span className="inline-flex items-center gap-1">

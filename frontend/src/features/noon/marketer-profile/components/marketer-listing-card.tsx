@@ -78,7 +78,7 @@ export default function MarketerListingCard({ item, locale, labels }: Props) {
         {brand && <span className="block truncate text-xs font-bold text-primary">{brand}</span>}
         <h3 className="line-clamp-2 text-sm text-primary">{name}</h3>
         <p className="flex flex-wrap items-baseline gap-x-2 text-sm font-bold text-primary">
-          <span>{item.price_formatted || formatPrice(item.price, item.currency, locale)}</span>
+          <span>{formatPrice(item.price, item.currency, locale)}</span>
           {hasDiscount && (
             <span className="text-xs font-normal text-gray line-through">
               {formatPrice(item.compare_at_price, item.currency, locale)}
