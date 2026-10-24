@@ -20,6 +20,9 @@ class Banner extends Model
     use HasFactory;
     use HasUuids;
 
+    /** Placements that support Global / selected-marketers targeting. */
+    public const MARKETER_PLACEMENTS = ['marketers_list_hero', 'marketers_list_strip', 'marketer_profile_slider'];
+
     protected $casts = [
         'status' => BannerStatus::class,
         'link_type' => BannerLinkType::class,
@@ -82,6 +85,11 @@ class Banner extends Model
     public function files(): MorphMany
     {
         return $this->morphMany(File::class, 'model');
+    }
+
+    public function isMarketerPlacement(): bool
+    {
+        return in_array($this->placement_code, self::MARKETER_PLACEMENTS, true);
     }
 
     public function marketers(): BelongsToMany

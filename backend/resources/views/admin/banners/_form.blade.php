@@ -31,7 +31,17 @@
         'allowed_formats'  => $p->allowed_formats,
         'device_restriction' => $p->device_restriction,
         'base_rate_weekly' => $p->base_rate_weekly,
+        'description'   => $p->description,
     ])->toJson();
+
+    $marketerPlacements   = \App\Models\Banner::MARKETER_PLACEMENTS;
+    $currentIsGlobal      = (bool) old('is_global', $isEdit ? $banner->is_global : false);
+    $currentGenderScope   = old('gender_scope', $isEdit && $banner->is_global ? $banner->gender_scope?->value : 'male');
+    $selectedMarketers    = $isEdit ? $banner->marketers : collect();
+    $selectedMarketerIds  = collect(old('marketer_ids', $selectedMarketers->pluck('id')->all()));
+    if (old('marketer_ids') && $selectedMarketers->isEmpty()) {
+        $selectedMarketers = \App\Models\Marketer::whereIn('id', $selectedMarketerIds)->get(['id', 'name', 'email', 'phone']);
+    }
 
     $currentStatus       = old('status',       $isEdit ? $banner->status?->value       : 'active');
     $currentDeviceTarget = old('device_target', $isEdit ? $banner->device_target?->value : 'all');
@@ -46,6 +56,11 @@
         linkType:     '{{ $currentLinkType }}',
         placement:    '{{ $currentPlacement }}',
         placements:   {{ $placementsJson }},
+        marketerPlacements: {{ \Illuminate\Support\Js::from($marketerPlacements) }},
+        isGlobal:     {{ $currentIsGlobal ? 'true' : 'false' }},
+        get isMarketerPlacement() {
+            return this.marketerPlacements.includes(this.placement);
+        },
         get currentPlacement() {
             return this.placements[this.placement] || null;
         },
@@ -124,6 +139,41 @@
                             @endforeach
                         </select>
                         <p class="text-xs text-gray-500 mt-1" x-text="dimensionHint"></p>
+                        <p class="text-xs text-gray-400 mt-1" x-show="isMarketerPlacement && currentPlacement && currentPlacement.description" x-text="currentPlacement ? currentPlacement.description : ''"></p>
+                    </div>
+
+                    {{-- Marketer targeting (marketer placements only) --}}
+                    <div class="sm:col-span-2 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4" x-show="isMarketerPlacement" x-cloak>
+                        <label class="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                            <input type="hidden" name="is_global" value="0">
+                            <input type="checkbox" name="is_global" value="1" x-model="isGlobal" class="rounded border-gray-300" @checked($currentIsGlobal)>
+                            {{ __('admin.banners.target_global') }}
+                        </label>
+                        <p class="text-xs text-gray-500">{{ __('admin.banners.target_global_help') }}</p>
+
+                        <div x-show="isGlobal">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.banners.gender_scope') }}</label>
+                            <select name="gender_scope" class="form-input w-full">
+                                @foreach(['all', 'male', 'female'] as $scope)
+                                    <option value="{{ $scope }}" @selected($currentGenderScope === $scope)>{{ __('admin.banners.gender_scope_' . $scope) }}</option>
+                                @endforeach
+                            </select>
+                            @error('gender_scope') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div x-show="!isGlobal">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.banners.target_marketers') }}</label>
+                            <select id="banner-marketer-ids" name="marketer_ids[]" multiple class="form-input w-full"
+                                    data-async-select
+                                    data-config="{{ json_encode(['url' => route('admin.banners.marketers-search'), 'param' => 'q', 'minLength' => 0], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
+                                    placeholder="{{ __('admin.banners.target_marketers_placeholder') }}">
+                                @foreach($selectedMarketers as $m)
+                                    <option value="{{ $m->id }}" selected>{{ $m->name }} ({{ $m->phone ?: $m->email }})</option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">{{ __('admin.banners.target_marketers_help') }}</p>
+                            @error('marketer_ids') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
                     </div>
 
                 </div>

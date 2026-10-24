@@ -75,6 +75,17 @@
             </div>
 
             <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.profile.gender_label') }}</label>
+                <select name="gender" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
+                    <option value="">{{ __('marketer.profile.gender_unset') }}</option>
+                    @foreach(\App\Enums\MarketerGender::cases() as $g)
+                        <option value="{{ $g->value }}" @selected(old('gender', $profile->gender?->value) === $g->value)>{{ __('marketer.profile.gender_'.$g->value) }}</option>
+                    @endforeach
+                </select>
+                @error('gender') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.profile.bio_ar_label') }}</label>
                 <textarea name="bio_ar" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">{{ old('bio_ar', $profile->bio_ar) }}</textarea>
             </div>

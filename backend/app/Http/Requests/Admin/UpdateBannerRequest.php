@@ -6,11 +6,14 @@ use App\Enums\BannerAudience;
 use App\Enums\BannerDeviceTarget;
 use App\Enums\BannerLinkType;
 use App\Enums\BannerStatus;
+use App\Http\Requests\Admin\Concerns\HasBannerMarketerTargeting;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateBannerRequest extends FormRequest
 {
+    use HasBannerMarketerTargeting;
+
     public function authorize(): bool
     {
         return true;
@@ -18,7 +21,7 @@ class UpdateBannerRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        return $this->marketerTargetingRules() + [
             'name' => ['required', 'string', 'max:150'],
             'placement_code' => ['required', 'string', 'max:100', 'exists:banner_placement_definitions,code'],
             'country_id' => ['nullable', 'uuid', 'exists:countries,id'],
@@ -52,6 +55,7 @@ class UpdateBannerRequest extends FormRequest
         return [
             'ends_at.after' => 'End date must be after start date.',
             'placement_code.exists' => 'Please select a valid placement.',
+            'marketer_ids.required' => __('admin.banners.marketers_required'),
         ];
     }
 }

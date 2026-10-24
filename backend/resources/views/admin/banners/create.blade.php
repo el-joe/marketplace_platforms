@@ -3,7 +3,7 @@
 @section('title', __('admin.banners.new_banner_title'))
 
 @push('styles')
-    @vite(['resources/js/admin/banners.js'])
+    @vite(['resources/js/components/select2.js', 'resources/js/admin/banners.js'])
 @endpush
 
 @section('content')

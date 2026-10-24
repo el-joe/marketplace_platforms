@@ -985,6 +985,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     Route::prefix('banners')->name('banners.')->middleware('admin.permission:banners.view')->group(function () {
         Route::post('/datatable', [BannerController::class, 'datatable'])->name('datatable');
         Route::get('/placements', [BannerController::class, 'placements'])->name('placements');
+        Route::get('/marketers-search', [BannerController::class, 'marketersSearch'])->name('marketers-search');
         Route::get('/create', [BannerController::class, 'create'])->name('create');
         Route::post('/', [BannerController::class, 'store'])->name('store');
         Route::get('/', [BannerController::class, 'index'])->name('index');

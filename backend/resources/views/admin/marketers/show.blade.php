@@ -129,6 +129,16 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('admin.marketers.gender') }}</label>
+                    <select name="gender" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
+                        <option value="">{{ __('admin.marketers.gender_not_set') }}</option>
+                        @foreach(\App\Enums\MarketerGender::cases() as $g)
+                            <option value="{{ $g->value }}" @selected(old('gender', $marketer->marketerProfile?->gender?->value) === $g->value)>{{ __('admin.marketers.gender_'.$g->value) }}</option>
+                        @endforeach
+                    </select>
+                    @error('gender') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('admin.marketers.price') }}</label>
                     <input type="number" step="0.01" min="0" name="ad_price" value="{{ old('ad_price', $marketer->marketerProfile?->ad_price) }}"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">

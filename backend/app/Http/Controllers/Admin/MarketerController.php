@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\MarketerGender;
 use App\Enums\MarketerType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreMarketerCommissionRuleRequest;
 use App\Models\Category;
 use App\Models\City;
 use App\Models\ClassifiedCategory;
@@ -11,17 +13,16 @@ use App\Models\Country;
 use App\Models\Marketer;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCommissionRule;
+use App\Models\MarketerDefaultCommission;
 use App\Models\MarketerJob;
 use App\Models\MarketerMarketerJob;
 use App\Models\MarketerMarketerJobCategory;
 use App\Models\MarketerSaleSettlement;
 use App\Models\TravelCategory;
 use App\Models\Wallet;
-use App\Http\Requests\Admin\StoreMarketerCommissionRuleRequest;
-use App\Models\MarketerDefaultCommission;
 use App\Services\Marketer\MarketerDefaultCommissionResolver;
-use App\Services\Marketer\MarketerSaleSettlementService;
 use App\Services\Marketer\MarketerEarningsService;
+use App\Services\Marketer\MarketerSaleSettlementService;
 use App\Services\MarketingFeeReportService;
 use App\Support\Money;
 use Illuminate\Http\Request;
@@ -37,13 +38,21 @@ class MarketerController extends Controller
         abort_unless(auth('admin')->user()->can('marketers.view'), 403);
 
         $marketers = Marketer::query()
-            ->with(['country', 'approvedBy', 'marketerJobs'])
+            ->with(['country', 'approvedBy', 'marketerJobs', 'marketerProfile:id,marketer_id,gender'])
             ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
                     ->orWhere('email', 'like', "%{$request->search}%");
             }))
             ->when($request->type, fn ($q) => $q->whereHas('marketerJobs', fn ($jq) => $jq->where('key', $request->type)))
             ->when($request->status, fn ($q) => $q->where('global_status', $request->status))
+            ->when($request->gender, function ($q) use ($request) {
+                if ($request->gender === 'none') {
+                    return $q->where(fn ($w) => $w->whereDoesntHave('marketerProfile')
+                        ->orWhereHas('marketerProfile', fn ($p) => $p->whereNull('gender')));
+                }
+
+                return $q->whereHas('marketerProfile', fn ($p) => $p->where('gender', $request->gender));
+            })
             ->withCount('invitations')
             ->latest()
             ->paginate(20);
@@ -222,6 +231,7 @@ class MarketerController extends Controller
         abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
 
         $validated = $request->validate([
+            'gender' => ['nullable', Rule::enum(MarketerGender::class)],
             'ad_price' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
             'ad_price_currency' => ['nullable', 'string', 'size:3', Rule::exists('currencies', 'code')],
             'can_self_edit_ad_price' => ['nullable', 'boolean'],
@@ -263,6 +273,10 @@ class MarketerController extends Controller
             'specialty_ar' => $validated['specialty_ar'] ?? null,
             'specialty_en' => $validated['specialty_en'] ?? null,
         ];
+
+        if ($request->has('gender')) {
+            $data['gender'] = $validated['gender'] ?? null;
+        }
 
         // Sample-size measurement fields only apply to influencer marketers.
         if ($marketer->isInfluencer()) {

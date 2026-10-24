@@ -35,8 +35,17 @@
                     <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>{{ __('admin.marketers.status_suspended') }}</option>
                 </select>
             </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">{{ __('admin.marketers.gender') }}</label>
+                <select name="gender" class="border rounded-lg px-3 py-2 text-sm">
+                    <option value="">{{ __('admin.marketers.gender_all') }}</option>
+                    <option value="male" {{ request('gender') === 'male' ? 'selected' : '' }}>{{ __('admin.marketers.gender_male') }}</option>
+                    <option value="female" {{ request('gender') === 'female' ? 'selected' : '' }}>{{ __('admin.marketers.gender_female') }}</option>
+                    <option value="none" {{ request('gender') === 'none' ? 'selected' : '' }}>{{ __('admin.marketers.gender_not_set') }}</option>
+                </select>
+            </div>
             <button type="submit" class="px-4 py-2 bg-gray-800 text-white text-sm rounded-lg">{{ __('admin.marketers.search') }}</button>
-            @if(request()->hasAny(['search','type','status']))
+            @if(request()->hasAny(['search','type','status','gender']))
                 <a href="{{ route('admin.marketers.index') }}" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg">{{ __('admin.marketers.reset') }}</a>
             @endif
             <button type="button" x-on:click="showCreateModal = true"
@@ -125,6 +134,7 @@
                 <tr>
                     <th class="px-4 py-3 text-start">{{ __('admin.marketers.col_name') }}</th>
                     <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_type') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_gender') }}</th>
                     <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_country') }}</th>
                     <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_status') }}</th>
                     <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_campaigns') }}</th>
@@ -157,6 +167,9 @@
                             <span class="text-gray-300 text-xs">-</span>
                         @endforelse
                     </td>
+                    <td class="px-4 py-3 text-center text-xs text-gray-500">
+                        {{ $marketer->marketerProfile?->gender ? __('admin.marketers.gender_'.$marketer->marketerProfile->gender->value) : '-' }}
+                    </td>
                     <td class="px-4 py-3 text-center text-gray-500 text-xs">{{ $marketer->country?->name_ar ?? '-' }}</td>
                     <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded text-xs {{ $statusCls }}">{{ $marketer->global_status?->value }}</span></td>
                     <td class="px-4 py-3 text-center">{{ $marketer->invitations_count }}</td>
@@ -182,7 +195,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">{{ __('admin.marketers.no_results') }}</td></tr>
+                <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">{{ __('admin.marketers.no_results') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

@@ -200,6 +200,12 @@ class BannerService
         $copy->clicks_count = 0;
         $copy->save();
 
+        // Keep marketer targeting (selected marketers) on the copy.
+        $marketerIds = $source->marketers()->pluck('marketers.id')->all();
+        if ($marketerIds !== []) {
+            $copy->marketers()->sync($marketerIds);
+        }
+
         return $copy;
     }
 }

@@ -2,38 +2,47 @@
 
 namespace App\Http\Controllers\Api\Marketer;
 
+use App\Enums\MarketerGender;
 use App\Http\Controllers\Controller;
 use App\Models\File;
 use App\Models\MarketerProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
     public function show()
     {
         $marketer = Auth::guard('marketer_api')->user()->marketer;
-        $profile  = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
-        return response()->json(['success' => true, 'marketer' => $marketer, 'profile' => $profile]);
+        $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
+
+        return response()->json([
+            'success' => true,
+            'marketer' => $marketer,
+            'profile' => $profile,
+            'gender' => $profile->gender?->value,
+        ]);
     }
 
     public function update(Request $request)
     {
         $request->validate([
-            'bio_ar'          => 'nullable|string|max:1000',
-            'bio_en'          => 'nullable|string|max:1000',
-            'video_url'       => 'nullable|url|max:500',
+            'gender' => ['nullable', Rule::enum(MarketerGender::class)],
+            'bio_ar' => 'nullable|string|max:1000',
+            'bio_en' => 'nullable|string|max:1000',
+            'video_url' => 'nullable|url|max:500',
             'whatsapp_for_campaigns' => 'nullable|string|max:30',
-            'avatar'          => 'nullable|image|max:5120',
-            'banner'          => 'nullable|image|max:5120',
-            'broker_category_id'       => 'nullable|uuid|exists:categories,id',
-            'broker_city_id'           => 'nullable|uuid|exists:cities,id',
+            'avatar' => 'nullable|image|max:5120',
+            'banner' => 'nullable|image|max:5120',
+            'broker_category_id' => 'nullable|uuid|exists:categories,id',
+            'broker_city_id' => 'nullable|uuid|exists:cities,id',
             'broker_serves_all_cities' => 'nullable|boolean',
         ]);
         $marketer = Auth::guard('marketer_api')->user()->marketer;
         $marketer->update(['whatsapp_for_campaigns' => $request->whatsapp_for_campaigns]);
-        $profile  = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
+        $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
 
         if ($request->hasFile('avatar')) {
             $profile->avatar_file_id = $this->storeProfileImage($request, 'avatar', 'marketer-avatars', $profile)->id;
@@ -47,31 +56,36 @@ class ProfileController extends Controller
         if ($marketer->isBroker()) {
             $serveAll = $request->boolean('broker_serves_all_cities');
             $profile->fill([
-                'broker_category_id'       => $request->input('broker_category_id') ?: null,
+                'broker_category_id' => $request->input('broker_category_id') ?: null,
                 'broker_serves_all_cities' => $serveAll,
-                'broker_city_id'           => $serveAll ? null : ($request->input('broker_city_id') ?: null),
+                'broker_city_id' => $serveAll ? null : ($request->input('broker_city_id') ?: null),
             ]);
         }
 
+        if ($request->has('gender')) {
+            $profile->gender = $request->input('gender') ?: null;
+        }
+
         $profile->fill($request->only(['bio_ar', 'bio_en', 'video_url', 'social_links', 'contact_details']))->save();
+
         return response()->json(['success' => true, 'message' => 'تم تحديث البروفايل.']);
     }
 
     private function storeProfileImage(Request $request, string $field, string $directory, MarketerProfile $profile): File
     {
         $upload = $request->file($field);
-        $path   = $upload->store($directory . '/' . $profile->marketer_id, 'public');
+        $path = $upload->store($directory.'/'.$profile->marketer_id, 'public');
 
         return File::create([
-            'key'          => Str::uuid(),
-            'path'         => $path,
+            'key' => Str::uuid(),
+            'path' => $path,
             'storage_type' => 'public',
-            'file_type'    => 'image',
-            'mime_type'    => $upload->getClientMimeType(),
-            'extension'    => $upload->getClientOriginalExtension(),
-            'size'         => $upload->getSize(),
-            'model_type'   => MarketerProfile::class,
-            'model_id'     => $profile->id,
+            'file_type' => 'image',
+            'mime_type' => $upload->getClientMimeType(),
+            'extension' => $upload->getClientOriginalExtension(),
+            'size' => $upload->getSize(),
+            'model_type' => MarketerProfile::class,
+            'model_id' => $profile->id,
         ]);
     }
 }

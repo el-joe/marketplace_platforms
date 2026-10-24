@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Marketer;
 
+use App\Enums\MarketerGender;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\City;
@@ -46,6 +47,7 @@ class ProfileController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $request->validate([
+            'gender' => ['nullable', Rule::enum(MarketerGender::class)],
             'bio_ar' => 'nullable|string|max:1000',
             'bio_en' => 'nullable|string|max:1000',
             'specialty_ar' => 'nullable|string|max:150',
@@ -77,6 +79,10 @@ class ProfileController extends Controller
 
         if ($request->hasFile('banner')) {
             $profile->banner_file_id = $this->storeProfileImage($request, 'banner', 'marketer-banners', $profile)->id;
+        }
+
+        if ($request->has('gender')) {
+            $profile->gender = $request->input('gender') ?: null;
         }
 
         $profile->fill($request->only(['bio_ar', 'bio_en', 'specialty_ar', 'specialty_en', 'video_url', 'social_links', 'contact_details']));

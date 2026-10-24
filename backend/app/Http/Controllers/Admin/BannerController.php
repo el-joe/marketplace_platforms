@@ -9,13 +9,18 @@ use App\Http\Requests\Admin\UpdateBannerRequest;
 use App\Models\Banner;
 use App\Models\BannerPlacementDefinition;
 use App\Models\Country;
+use App\Models\Marketer;
 use App\Models\Product;
 use App\Services\BannerService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Note: the `banners` table itself has no image column. Banner images (desktop/mobile)
@@ -28,13 +33,11 @@ class BannerController extends Controller
     use HasDataTable;
     use HasExport;
 
-    public function __construct(private readonly BannerService $bannerService)
-    {
-    }
+    public function __construct(private readonly BannerService $bannerService) {}
 
     // ─── Index ────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('banners.view'), 403);
@@ -68,33 +71,33 @@ class BannerController extends Controller
      * below. The view's search box currently posts as `search_value`; both param names are
      * accepted here so existing and new callers both work.
      */
-    private function buildBannersQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildBannersQuery(Request $request): Builder
     {
-        $query = Banner::query()->with(['country', 'files']);
+        $query = Banner::query()->with(['country', 'files'])->withCount('marketers');
 
         return $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('status', $v),
-            'placement_code' => fn($q, $v) => $q->where('placement_code', $v),
-            'country_id' => fn($q, $v) => $q->where('country_id', $v),
-            'device_target' => fn($q, $v) => $q->where('device_target', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('starts_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('ends_at', '<=', $v),
+            'status' => fn ($q, $v) => $q->where('status', $v),
+            'placement_code' => fn ($q, $v) => $q->where('placement_code', $v),
+            'country_id' => fn ($q, $v) => $q->where('country_id', $v),
+            'device_target' => fn ($q, $v) => $q->where('device_target', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('starts_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('ends_at', '<=', $v),
             // Substitution: no banners.is_active column exists; "active" maps to status = active.
-            'is_active' => fn($q, $v) => $v
+            'is_active' => fn ($q, $v) => $v
                 ? $q->where('banners.status', 'active')
                 : $q->where('banners.status', '!=', 'active'),
-            'search' => fn($q, $v) => $q->where('banners.name', 'like', "%{$v}%"),
-            'search_value' => fn($q, $v) => $q->where('banners.name', 'like', "%{$v}%"),
+            'search' => fn ($q, $v) => $q->where('banners.name', 'like', "%{$v}%"),
+            'search_value' => fn ($q, $v) => $q->where('banners.name', 'like', "%{$v}%"),
         ]);
     }
 
-    private function exportBanners(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportBanners(Request $request): StreamedResponse
     {
         $banners = $this->buildBannersQuery($request)->orderByDesc('starts_at')->get();
 
         $headers = ['Name', 'Placement', 'Active', 'Start', 'End'];
 
-        $rows = $banners->map(fn(Banner $row) => [
+        $rows = $banners->map(fn (Banner $row) => [
             $row->name,
             $row->placement_code,
             $row->status?->value === 'active' ? 'Yes' : 'No',
@@ -149,7 +152,7 @@ class BannerController extends Controller
         return $this->dataTableResponse($request, $query, $columns, function (Banner $row) use ($statusColors, $deviceColors, $audienceColors, $now, $canEdit, $canDelete) {
             // Desktop image thumbnail
             $desktopImg = $row->files->firstWhere('file_type', 'banner_desktop_en');
-            $thumbUrl = $desktopImg ? \Illuminate\Support\Facades\Storage::disk($desktopImg->storage_type ?: 'public')->url($desktopImg->path) : null;
+            $thumbUrl = $desktopImg ? Storage::disk($desktopImg->storage_type ?: 'public')->url($desktopImg->path) : null;
 
             // Status badge with expiry countdown
             $statusColor = $statusColors[$row->status->value] ?? 'gray';
@@ -157,7 +160,7 @@ class BannerController extends Controller
             if ($row->status === BannerStatus::Active && $row->ends_at) {
                 $diff = $now->diffInDays(Carbon::parse($row->ends_at), false);
                 if ($diff >= 0 && $diff <= 3) {
-                    $statusLabel .= ' (expires in ' . $diff . 'd)';
+                    $statusLabel .= ' (expires in '.$diff.'d)';
                 }
             }
 
@@ -168,21 +171,21 @@ class BannerController extends Controller
 
             // Country
             $countryDisplay = $row->country
-                ? ($row->country->flag_emoji ? $row->country->flag_emoji . ' ' : '') . e($row->country->name_en)
+                ? ($row->country->flag_emoji ? $row->country->flag_emoji.' ' : '').e($row->country->name_en)
                 : '<span class="text-gray-400 text-xs">All</span>';
 
             return [
                 'image' => $thumbUrl,
-                'name' => e($row->name),
+                'name' => e($row->name).$this->marketerTargetBadge($row),
                 'placement_code' => e($row->placement_code),
                 'country' => $countryDisplay,
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-' . $statusColor . '-100 text-' . $statusColor . '-700">' . $statusLabel . '</span>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-'.$statusColor.'-100 text-'.$statusColor.'-700">'.$statusLabel.'</span>',
                 'device_target' => $this->badgeHtml($deviceColors[$row->device_target->value] ?? 'gray', $row->device_target->label()),
                 'audience' => $this->badgeHtml($audienceColors[$row->audience->value] ?? 'gray', $row->audience->label()),
-                'date_range' => Carbon::parse($row->starts_at)->format('d M') . ' – ' . Carbon::parse($row->ends_at)->format('d M Y'),
+                'date_range' => Carbon::parse($row->starts_at)->format('d M').' – '.Carbon::parse($row->ends_at)->format('d M Y'),
                 'impressions' => number_format($row->impressions_count),
                 'clicks' => number_format($row->clicks_count),
-                'ctr' => $ctr . '%',
+                'ctr' => $ctr.'%',
                 'priority' => $row->priority,
                 'actions' => $this->buildRowActions($row, $canEdit, $canDelete),
                 'DT_RowData' => ['id' => $row->id, 'status' => $row->status?->value],
@@ -190,9 +193,71 @@ class BannerController extends Controller
         });
     }
 
+    private function marketerTargetBadge(Banner $row): string
+    {
+        if (! $row->isMarketerPlacement()) {
+            return '';
+        }
+
+        if ($row->is_global) {
+            $label = __('admin.banners.target_global').' ('.__('admin.banners.gender_scope_'.$row->gender_scope->value).')';
+
+            return '<div class="mt-1">'.$this->badgeHtml('primary', e($label)).'</div>';
+        }
+
+        $label = __('admin.banners.target_n_marketers', ['count' => $row->marketers_count]);
+
+        return '<div class="mt-1">'.$this->badgeHtml('gray', e($label)).'</div>';
+    }
+
+    /**
+     * Normalise the marketer-targeting inputs. Non-marketer placements never keep targeting;
+     * a global banner defaults to the Men scope and holds no selected marketers.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{0: array<string, mixed>, 1: list<string>}
+     */
+    private function normalizeMarketerTargeting(array $data): array
+    {
+        $ids = array_values(array_unique($data['marketer_ids'] ?? []));
+        unset($data['marketer_ids']);
+
+        $isMarketer = in_array($data['placement_code'] ?? null, Banner::MARKETER_PLACEMENTS, true);
+        $isGlobal = $isMarketer && (bool) ($data['is_global'] ?? false);
+
+        $data['is_global'] = $isGlobal;
+        $data['gender_scope'] = $isGlobal ? ($data['gender_scope'] ?? 'male') : 'all';
+
+        return [$data, $isMarketer && ! $isGlobal ? $ids : []];
+    }
+
+    public function marketersSearch(Request $request): JsonResponse
+    {
+        $admin = auth('admin')->user();
+        abort_unless($admin->hasPermissionTo('banners.view'), 403);
+
+        $term = trim((string) $request->input('q', ''));
+
+        $results = Marketer::query()
+            ->when($term !== '', fn ($q) => $q->where(function ($w) use ($term) {
+                $w->where('name', 'like', "%{$term}%")
+                    ->orWhere('phone', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
+            }))
+            ->orderBy('name')
+            ->limit(30)
+            ->get(['id', 'name', 'email', 'phone'])
+            ->map(fn (Marketer $m) => [
+                'id' => $m->id,
+                'text' => trim($m->name.' ('.($m->phone ?: $m->email).')'),
+            ]);
+
+        return response()->json(['results' => $results]);
+    }
+
     private function badgeHtml(string $color, string $label): string
     {
-        return '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-' . $color . '-100 text-' . $color . '-700">' . $label . '</span>';
+        return '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-'.$color.'-100 text-'.$color.'-700">'.$label.'</span>';
     }
 
     private function buildRowActions(Banner $banner, bool $canEdit, bool $canDelete): string
@@ -203,13 +268,14 @@ class BannerController extends Controller
 
         $html = '<div class="flex items-center gap-1">';
         if ($canEdit) {
-            $html .= '<a href="' . $editUrl . '" class="btn btn-xs btn-secondary">Edit</a>';
-            $html .= '<button type="button" class="btn btn-xs btn-ghost js-duplicate-btn" data-url="' . $duplicateUrl . '" data-name="' . e($banner->name) . '">Duplicate</button>';
+            $html .= '<a href="'.$editUrl.'" class="btn btn-xs btn-secondary">Edit</a>';
+            $html .= '<button type="button" class="btn btn-xs btn-ghost js-duplicate-btn" data-url="'.$duplicateUrl.'" data-name="'.e($banner->name).'">Duplicate</button>';
         }
         if ($canDelete) {
-            $html .= '<button type="button" class="btn btn-xs btn-danger js-delete-btn" data-url="' . $deleteUrl . '" data-name="' . e($banner->name) . '">Delete</button>';
+            $html .= '<button type="button" class="btn btn-xs btn-danger js-delete-btn" data-url="'.$deleteUrl.'" data-name="'.e($banner->name).'">Delete</button>';
         }
         $html .= '</div>';
+
         return $html;
     }
 
@@ -229,7 +295,7 @@ class BannerController extends Controller
 
     // ─── Create ───────────────────────────────────────────────────────────────
 
-    public function create(): \Illuminate\View\View
+    public function create(): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('banners.create'), 403);
@@ -261,7 +327,10 @@ class BannerController extends Controller
         // Remove file keys from data array
         unset($data['desktop_image_en'], $data['desktop_image_ar'], $data['mobile_image_en'], $data['mobile_image_ar']);
 
+        [$data, $marketerIds] = $this->normalizeMarketerTargeting($data);
+
         $banner = Banner::create($data);
+        $banner->marketers()->sync($marketerIds);
 
         // Handle image uploads
         foreach (['desktop_en', 'desktop_ar', 'mobile_en', 'mobile_ar'] as $slot) {
@@ -280,12 +349,12 @@ class BannerController extends Controller
 
     // ─── Edit ─────────────────────────────────────────────────────────────────
 
-    public function edit(Banner $banner): \Illuminate\View\View
+    public function edit(Banner $banner): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('banners.edit'), 403);
 
-        $banner->load('files');
+        $banner->load(['files', 'marketers:id,name,email,phone']);
         $desktopImageEn = $this->bannerService->getImage($banner, 'desktop_en');
         $desktopImageAr = $this->bannerService->getImage($banner, 'desktop_ar');
         $mobileImageEn = $this->bannerService->getImage($banner, 'mobile_en');
@@ -317,7 +386,10 @@ class BannerController extends Controller
         // Remove file keys from data array
         unset($data['desktop_image_en'], $data['desktop_image_ar'], $data['mobile_image_en'], $data['mobile_image_ar']);
 
+        [$data, $marketerIds] = $this->normalizeMarketerTargeting($data);
+
         $banner->update($data);
+        $banner->marketers()->sync($marketerIds);
 
         // Handle image uploads
         foreach (['desktop_en', 'desktop_ar', 'mobile_en', 'mobile_ar'] as $slot) {
@@ -400,7 +472,7 @@ class BannerController extends Controller
 
         $deleted = $this->bannerService->deleteFileRecord((int) $request->input('file_id'));
 
-        if (!$deleted) {
+        if (! $deleted) {
             return response()->json(['message' => __('admin.banners.file_not_found')], 404);
         }
 
@@ -436,12 +508,12 @@ class BannerController extends Controller
             $count++;
         }
 
-        return response()->json(['message' => __('admin.banners.bulk_result', ['count' => $count, 'actioned' => $action . 'd'])]);
+        return response()->json(['message' => __('admin.banners.bulk_result', ['count' => $count, 'actioned' => $action.'d'])]);
     }
 
     private function doDelete(Banner $banner, $admin): void
     {
-        if (!$admin->hasPermissionTo('banners.delete')) {
+        if (! $admin->hasPermissionTo('banners.delete')) {
             return;
         }
         $this->bannerService->deleteAllImages($banner);
