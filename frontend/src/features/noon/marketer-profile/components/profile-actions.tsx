@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import { getImageURL } from "@/src/helpers/get-image-url";
 import { Share2, QrCode, Download, X } from "lucide-react";
 
 interface Labels {
@@ -68,7 +69,7 @@ export default function ProfileActions({ profileUrl, qrCodeUrl, marketerName, la
             </button>
             <h3 className="mb-3 text-lg font-bold text-primary">{labels.qrTitle}</h3>
             <Image
-              src={qrCodeUrl}
+              src={getImageURL(qrCodeUrl)}
               alt={labels.qrCodeAlt}
               width={200}
               height={200}

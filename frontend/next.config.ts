@@ -36,6 +36,8 @@ const nextConfig: NextConfig = {
       },
       { protocol: "https", hostname: "api.noon.codefanz.com" },
       { protocol: "https", hostname: "**" },
+      // Backend may return http:// media URLs behind a reverse proxy; next/image throws on unlisted protocols.
+      { protocol: "http", hostname: "**" },
     ],
   },
 };

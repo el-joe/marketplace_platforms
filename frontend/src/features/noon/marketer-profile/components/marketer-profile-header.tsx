@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { ShoppingBag, TrendingUp } from "lucide-react";
+import { getImageURL } from "@/src/helpers/get-image-url";
 import ProfileActions from "./profile-actions";
 import type { MarketerProfileInfo, MarketerProfileMarketer } from "../helpers/types";
 
@@ -25,7 +26,7 @@ export default async function MarketerProfileHeader({ marketer, profile }: Props
       <div className="relative size-16 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-amber-300 via-main to-yellow-200 p-0.5 md:size-20">
         <div className="relative size-full overflow-hidden rounded-full bg-white">
           {profile.avatar_url ? (
-            <Image src={profile.avatar_url} alt={marketer.name} fill sizes="80px" className="object-cover" />
+            <Image src={getImageURL(profile.avatar_url)} alt={marketer.name} fill sizes="80px" className="object-cover" />
           ) : (
             <div className="flex size-full items-center justify-center bg-gradient-to-br from-amber-400 to-amber-600 text-2xl font-black text-white">
               {marketer.name.charAt(0)}
