@@ -69,6 +69,18 @@ class PortalContentCountryAdminTest extends TestCase
             ->assertSee('ZZ Test Page', false);
     }
 
+    public function test_page_including_shared_cta_shows_link_to_cta_footer_editor(): void
+    {
+        config()->set('portal_sections.zz_test.shared_includes', ['cta_footer']);
+        config()->set('portal_sections.cta_footer', ['label_en' => 'CTA footer', 'label_ar' => 'تذييل', 'route' => '/faq', 'scope' => 'shared', 'sections' => []]);
+
+        $this->actingAs($this->admin(), 'admin')->withSession(['locale' => 'en'])
+            ->get(route('admin.portal-content.page', ['kw', 'zz_test']))
+            ->assertOk()
+            ->assertSee('data-shared-link="cta_footer"', false)
+            ->assertSee(route('admin.portal-content.page', ['kw', 'cta_footer']), false);
+    }
+
     public function test_page_renders_for_each_country_with_sections_in_config_order(): void
     {
         $admin = $this->admin();

@@ -89,6 +89,7 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-5 gap-0 lg:divide-x lg:divide-gray-100 rtl:lg:divide-x-reverse">
                     {{-- Screenshot column (first grid column: left in LTR, right in RTL) --}}
+                    @if($band['has_image'])
                     <div class="lg:col-span-3 p-4 bg-gray-50/50">
                         <div class="lg:sticky lg:top-16">
                             <button type="button" class="block w-full cursor-zoom-in rounded-lg border border-gray-200 bg-white overflow-hidden"
@@ -99,8 +100,10 @@
                         </div>
                     </div>
 
+                    @endif
+
                     {{-- Fields column --}}
-                    <div class="lg:col-span-2 divide-y divide-gray-100">
+                    <div @class(['divide-y divide-gray-100', 'lg:col-span-2' => $band['has_image'], 'lg:col-span-5' => ! $band['has_image']])>
                         @foreach($band['blocks'] as $block)
                         <div data-block="{{ $block['page'] }}.{{ $block['block'] }}">
                         <div class="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
@@ -181,6 +184,19 @@
                 {{ __('admin.portal_content.no_fields') }}
             </div>
         @endforelse
+
+        @foreach($sharedLinks as $shared)
+            <div data-shared-link="{{ $shared['page'] }}" class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-teal-300 bg-teal-50 px-4 py-3">
+                <div>
+                    <p class="text-sm font-semibold text-teal-800">{{ __('admin.portal_content.shared_cta_title') }}</p>
+                    <p class="text-xs text-teal-700 mt-0.5">{{ __('admin.portal_content.shared_cta_hint', ['page' => $shared['label']]) }}</p>
+                </div>
+                <a href="{{ $shared['url'] }}" class="inline-flex items-center gap-1.5 rounded-lg border border-teal-600 bg-white px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-100">
+                    {{ __('admin.portal_content.shared_cta_edit', ['key' => $shared['page']]) }}
+                    <x-heroicon name="arrow-top-right-on-square" class="w-4 h-4" />
+                </a>
+            </div>
+        @endforeach
 
         <div class="sticky bottom-0 z-10 -mx-6 border-t border-gray-200 bg-white px-6 py-4 shadow-md flex items-center justify-between gap-3">
             <span x-show="dirty" x-cloak class="text-xs font-medium text-amber-600">{{ __('admin.portal_content.unsaved_changes') }}</span>

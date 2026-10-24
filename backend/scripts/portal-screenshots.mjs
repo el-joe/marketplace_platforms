@@ -179,6 +179,48 @@ const DETECT = ({ selectors, MIN_BAND_H }) => {
   };
 };
 
+
+// ───────────────────────────── remote assets (CDNs are unreachable in the sandbox) ─────────────────────────────
+// A remote image is served from a local file with the same basename when one exists (public/images, storage,
+// frontend/public, resources); otherwise a neutral on-brand placeholder is generated so no broken-image icon is
+// rendered. Remote images without a local equivalent are reported in the JSON summary (`remoteImagesMissing`).
+const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const LOCAL_DIRS = ['public/images', 'public/storage', 'storage/app/public', 'resources/images', '../frontend/public']
+  .map(d => path.resolve(ROOT, d)).filter(d => fs.existsSync(d));
+const localIndex = new Map(); // basename -> absolute path
+(function scan(dirs, depth = 0) {
+  for (const d of dirs) {
+    if (depth > 6) continue;
+    let ents = []; try { ents = fs.readdirSync(d, { withFileTypes: true }); } catch { continue; }
+    for (const e of ents) {
+      const full = path.join(d, e.name);
+      if (e.isDirectory()) { if (!/^(portal-sections|qr|qrcodes|node_modules)$/.test(e.name)) scan([full], depth + 1); }
+      else if (/\.(png|jpe?g|svg|webp|gif|avif)$/i.test(e.name) && !localIndex.has(e.name.toLowerCase())) localIndex.set(e.name.toLowerCase(), full);
+    }
+  }
+})(LOCAL_DIRS);
+const MIME = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', svg: 'image/svg+xml', webp: 'image/webp', gif: 'image/gif', avif: 'image/avif' };
+const remoteServed = new Map();   // url -> local path
+const remoteMissing = new Set();  // urls shown as generated placeholders
+const esc = t => String(t).replace(/[<>&"]/g, '');
+function placeholderSvg(url) {
+  const name = esc(decodeURIComponent(url.split('?')[0].split('/').pop() || 'image'));
+  const flag = url.match(/\/flags\/([a-z]{2})\.svg/i);
+  if (flag) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 18" preserveAspectRatio="none"><rect width="24" height="18" fill="#e5e7eb"/><text x="12" y="12" font-family="system-ui,sans-serif" font-size="7" font-weight="700" text-anchor="middle" fill="#6b7280">${esc(flag[1].toUpperCase())}</text></svg>`;
+  if (/\.svg$/i.test(name) && /icon|play|rewind|forward|logo/i.test(name)) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#cbd5e1"/><path d="M19 15l14 9-14 9z" fill="#fff"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e2e8f0"/><stop offset="1" stop-color="#cbd5e1"/></linearGradient></defs><rect width="800" height="600" fill="url(#g)"/><g fill="none" stroke="#94a3b8" stroke-width="10" stroke-linejoin="round"><rect x="300" y="215" width="200" height="150" rx="14"/><circle cx="355" cy="262" r="17"/><path d="M300 345l60-55 45 40 35-30 60 50"/></g></svg>`;
+}
+async function serveRemote(route) {
+  const req = route.request();
+  const url = req.url();
+  const ext = (url.split('?')[0].match(/\.([a-z0-9]+)$/i) || [])[1]?.toLowerCase();
+  if (req.resourceType() !== 'image' && !MIME[ext]) return route.abort();
+  const local = localIndex.get(decodeURIComponent(url.split('?')[0].split('/').pop() || '').toLowerCase());
+  if (local) { remoteServed.set(url, local); return route.fulfill({ status: 200, contentType: MIME[path.extname(local).slice(1).toLowerCase()] || 'image/png', body: fs.readFileSync(local) }); }
+  remoteMissing.add(url);
+  return route.fulfill({ status: 200, contentType: 'image/svg+xml', body: placeholderSvg(url) });
+}
+
 // ───────────────────────────── render ─────────────────────────────
 const browser = await chromium.launch({
   executablePath: fs.existsSync(EXE) ? EXE : undefined,
@@ -222,7 +264,7 @@ for (const locale of LOCALES) {
   const page = await ctx.newPage();
   page.setDefaultTimeout(10000);
   // external CDNs are unreachable in the sandbox: fail fast instead of hanging
-  await page.route(/^https?:\/\/(?!(portal\.localhost|127\.0\.0\.1|localhost))/, r => r.abort());
+  await page.route(/^https?:\/\/(?!(portal\.localhost|127\.0\.0\.1|localhost))/, serveRemote);
   await page.goto(`${base}/language/${locale}`, { waitUntil: 'domcontentloaded' }).catch(() => {});
   await page.goto(`${base}/country/${cfg.country}`, { waitUntil: 'domcontentloaded' }).catch(() => {});
 
@@ -360,4 +402,4 @@ for (const l of LOCALES) fs.writeFileSync(path.join(OUT, `_placeholder.${l}.svg`
 if (BANDS_OUT) fs.writeFileSync(BANDS_OUT, JSON.stringify(result, null, 2));
 await browser.close();
 fs.rmSync(TMP, { recursive: true, force: true });
-console.log(JSON.stringify({ captured: stats.captured, placeholders: stats.placeholders, bandsPerPage: stats.perPage, settingsBlocks: stats.settingsBlocks, warnings, failures }));
+console.log(JSON.stringify({ captured: stats.captured, placeholders: stats.placeholders, bandsPerPage: stats.perPage, settingsBlocks: stats.settingsBlocks, warnings, failures, remoteImagesServedLocally: [...remoteServed.keys()], remoteImagesMissing: [...remoteMissing].filter(u => !/\/flags\//.test(u)).sort(), remoteFlagsPlaceholder: [...remoteMissing].filter(u => /\/flags\//.test(u)).length }));

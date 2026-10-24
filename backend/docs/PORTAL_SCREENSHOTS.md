@@ -30,7 +30,9 @@ The live portal is not reachable from the sandbox, so shots are rendered from a 
   (config order) or to `00-page-settings` (`image => null`).
 - Band labels come from the first heading per locale (fallback: first block label). Images are resized to <= 1200px
   wide and quantised to ~200 KB.
-- Images of remote CDNs (not reachable in the sandbox) render as broken images; replace the PNG manually if needed.
+- Remote CDN images are intercepted by Playwright: served from a local file with the same basename when one exists (public/images, storage, frontend/public), otherwise a neutral generated placeholder (never a broken icon). The run summary lists `remoteImagesMissing`; supply those files to get real shots.
+- Without internet, `npm run build` fails on the Bunny font fetch: build with a temporary copy of vite.config.js without the `fonts` option (output goes to the ignored public/build).
+- Pages that include the shared final CTA band list it in `shared_includes` (config/portal_sections.php); the editor links to the `cta_footer` page instead of duplicating its blocks.
 
 ## Replace a screenshot manually
 

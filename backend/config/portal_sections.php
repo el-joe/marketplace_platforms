@@ -17,6 +17,10 @@
 |   scope                'page'   -> content shows on that one page.
 |                        'shared' -> content is rendered on many pages (nav, footer, layouts);
 |                                    capture it from `route`.
+|   shared_includes      (optional) Shared page_keys whose partial is rendered on this page
+|                        (e.g. ['cta_footer'] = the final teal CTA band). Their blocks are NOT
+|                        edited here (each pair lives in exactly one band); the admin editor
+|                        shows a link row pointing to that shared page instead.
 |   sections             Ordered list, one entry per block_key:
 |     block              block_key in portal_contents.
 |     label_en / label_ar
@@ -38,6 +42,7 @@ return [
         'label_ar' => 'الصفحة الرئيسية (للبائعين)',
         'route' => '/vendors',
         'scope' => 'page',
+        'shared_includes' => ['cta_footer'],
         'sections' => [
             ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
@@ -130,6 +135,7 @@ return [
         'label_ar' => 'كيف يعمل',
         'route' => '/how-it-works',
         'scope' => 'page',
+        'shared_includes' => ['cta_footer'],
         'sections' => [
             ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
@@ -265,6 +271,7 @@ return [
         'label_ar' => 'الأدوات الذكية',
         'route' => '/smart-tools',
         'scope' => 'page',
+        'shared_includes' => ['cta_footer'],
         'sections' => [
             ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
@@ -285,6 +292,7 @@ return [
         'label_ar' => 'التنفيذ',
         'route' => '/fulfillment',
         'scope' => 'page',
+        'shared_includes' => ['cta_footer'],
         'sections' => [
             ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '[data-portal-section="hero"]'],
@@ -300,6 +308,7 @@ return [
         'label_ar' => 'الأسئلة الشائعة',
         'route' => '/faq',
         'scope' => 'page',
+        'shared_includes' => ['cta_footer'],
         'sections' => [
             ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'header', 'label_en' => 'Header & questions', 'label_ar' => 'الترويسة والأسئلة', 'selector' => '[data-portal-section="faq-header"]'],
@@ -434,6 +443,7 @@ return [
         'label_ar' => 'المدونة',
         'route' => '/blog',
         'scope' => 'page',
+        'shared_includes' => ['cta_footer'],
         'sections' => [
             ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
             ['block' => 'header', 'label_en' => 'Header & search', 'label_ar' => 'الترويسة والبحث', 'selector' => '[data-portal-section="header"]'],

@@ -58,19 +58,27 @@ return [
             ],
             [
                 'key' => '04-trader-banner',
-                'label_en' => 'Shipping and Fulfilment',
-                'label_ar' => 'الشحن والتوصيل',
+                'label_en' => 'Traders banner (shown on the landing page)',
+                'label_ar' => 'لافتة التجار (تظهر في الصفحة الرئيسية)',
                 'image' => 'home/04-trader-banner',
                 'blocks' => [
                     ['how-it-works', 'trader_banner'],
+                ],
+            ],
+            [
+                'key' => '05-fulfillment-teaser',
+                'label_en' => 'Shipping and Fulfilment',
+                'label_ar' => 'الشحن والتوصيل',
+                'image' => 'home/05-fulfillment-teaser',
+                'blocks' => [
                     ['home', 'fulfillment_teaser'],
                 ],
             ],
             [
-                'key' => '05-smart-tools-teaser',
+                'key' => '06-smart-tools-teaser',
                 'label_en' => 'Grow smarter',
                 'label_ar' => 'نمِّ أعمالك بذكاء',
-                'image' => 'home/05-smart-tools-teaser',
+                'image' => 'home/06-smart-tools-teaser',
                 'blocks' => [
                     ['home', 'smart_tools_teaser'],
                     ['home', 'smart_tools_teaser_item_1'],
@@ -79,10 +87,10 @@ return [
                 ],
             ],
             [
-                'key' => '06-testimonials',
+                'key' => '07-testimonials',
                 'label_en' => 'Testimonials',
                 'label_ar' => 'شهادات',
-                'image' => 'home/06-testimonials',
+                'image' => 'home/07-testimonials',
                 'blocks' => [
                     ['home', 'testimonials'],
                     ['home', 'testimonial_1'],
@@ -93,10 +101,10 @@ return [
                 ],
             ],
             [
-                'key' => '07-help',
+                'key' => '08-help',
                 'label_en' => 'Need Help?',
                 'label_ar' => 'هل تحتاج للمساعدة؟',
-                'image' => 'home/07-help',
+                'image' => 'home/08-help',
                 'blocks' => [
                     ['home', 'help'],
                 ],
@@ -809,6 +817,14 @@ return [
                 'image' => 'companies/01-hero',
                 'blocks' => [
                     ['companies', 'hero'],
+                ],
+            ],
+            [
+                'key' => '02-card-travel-agency',
+                'label_en' => 'Travel Agency',
+                'label_ar' => 'وكالة سفر',
+                'image' => 'companies/02-card-travel-agency',
+                'blocks' => [
                     ['companies', 'card_travel_agency'],
                     ['companies', 'card_open_souq'],
                     ['companies', 'actions'],
@@ -1030,14 +1046,22 @@ return [
                 'image' => 'travel-agency/04-cta',
                 'blocks' => [
                     ['travel-agency', 'cta'],
+                ],
+            ],
+            [
+                'key' => '05-register',
+                'label_en' => 'Register your travel agency (/companies/travel-agency/register)',
+                'label_ar' => 'سجّل وكالة السفر الخاصة بك (/companies/travel-agency/register)',
+                'image' => 'travel-agency/05-register',
+                'blocks' => [
                     ['travel-agency', 'register'],
                 ],
             ],
             [
-                'key' => '05-success',
+                'key' => '06-success',
                 'label_en' => 'Thank you for registering! (/companies/travel-agency/register/success)',
                 'label_ar' => 'شكراً لتسجيلك! (/companies/travel-agency/register/success)',
-                'image' => 'travel-agency/05-success',
+                'image' => 'travel-agency/06-success',
                 'blocks' => [
                     ['travel-agency', 'success'],
                 ],

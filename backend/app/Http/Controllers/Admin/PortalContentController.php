@@ -91,6 +91,7 @@ class PortalContentController extends Controller
                 'key' => $band['key'],
                 'label' => $band['label_'.$locale] ?? $band['label_en'] ?? $band['key'],
                 'image' => $this->screenshotUrl($band['image'] ?? null, $locale),
+                'has_image' => ! ($band['key'] === '00-page-settings' && empty($band['image'])),
                 'other' => $band['other'] ?? false,
                 'blocks' => $blocks,
             ];
@@ -103,6 +104,7 @@ class PortalContentController extends Controller
             'pageLabel' => $pageConfig['label_'.$locale] ?? $pageConfig['label_en'] ?? $pageKey,
             'pages' => $this->pageOptions($locale),
             'bands' => $bands,
+            'sharedLinks' => $this->sharedLinks($pageKey, $code, $locale),
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => __('admin.portal_content.title'), 'url' => route('admin.portal-content.index')],
@@ -239,6 +241,28 @@ class PortalContentController extends Controller
     private function countryName(Country $country): string
     {
         return app()->getLocale() === 'ar' ? ($country->name_ar ?: $country->name_en) : $country->name_en;
+    }
+
+    /**
+     * Shared partials (e.g. the final CTA band) rendered on this page but edited under their own page key.
+     *
+     * @return list<array{page: string, label: string, url: string}>
+     */
+    private function sharedLinks(string $pageKey, string $code, string $locale): array
+    {
+        $links = [];
+        foreach (config("portal_sections.{$pageKey}.shared_includes", []) as $shared) {
+            if (! config()->has("portal_sections.{$shared}")) {
+                continue;
+            }
+            $links[] = [
+                'page' => $shared,
+                'label' => config("portal_sections.{$shared}.label_{$locale}") ?? config("portal_sections.{$shared}.label_en") ?? $shared,
+                'url' => route('admin.portal-content.page', [$code, $shared]),
+            ];
+        }
+
+        return $links;
     }
 
     /** @return array<string, string> page_key => label, in portal order (for the page switcher) */
