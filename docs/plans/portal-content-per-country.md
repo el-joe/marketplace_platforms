@@ -65,3 +65,34 @@ Prompt:
 - Content volume ×N countries (≈1k rows × countries) — acceptable; cache per country+page keeps reads cheap.
 - Screenshots reflect local default data, not live production edits; owner may replace PNGs in `public/images/portal-sections/`.
 - `portal.nawyweb.com` could not be reached from the sandbox, so live-site screenshots were not used.
+
+---
+
+# Addendum (2026-10-24 PM) — "Bands": one screenshot per visual page section
+
+Feedback: the per-block crops (WP4) are too granular. The admin must show **one row per visual band of the portal page** (hero band, "why join" cards band, getting-started band, banner+fulfilment band, smart-tools band, testimonials band, help band, final CTA band …) — each row = full-width screenshot of that band (en/ar) + inputs of **all blocks that render inside that band**, in the **same order as the portal page** (DOM order). `portal.nawyweb.com` is still unreachable from the sandbox shell/browser, so bands are captured from a local render of the same code (identical to what was deployed).
+
+## New config schema — `config/portal_bands.php` (generated, committed)
+```php
+return [
+  'home' => [                       // admin page key (same keys as config/portal_sections.php)
+    'label_en' => '…', 'label_ar' => '…', 'route' => '/vendors', 'scope' => 'page',
+    'bands' => [                    // DOM order of the portal page
+      [
+        'key'      => '02-why-join',          // unique within page, "NN-slug"
+        'label_en' => 'Why join us', 'label_ar' => 'لماذا تنضم إلينا؟',
+        'image'    => 'home/02-why-join',     // file stem; files = public/images/portal-sections/{image}.{en|ar}.png
+        'blocks'   => [ ['home','why_join'], ['how-it-works','why-sell'] ],   // [page_key, block_key]; may point to other page keys
+      ],
+      // first band may be 'key'=>'00-page-settings' with image=>null (meta/title blocks that render no visible element)
+    ],
+  ],
+];
+```
+Rules: a `[page_key, block_key]` pair appears in exactly one band across the whole file (coverage = every seeded block in `database/seeders/data/portal_content.php`); `image => null` → placeholder. `config/portal_sections.php` stays as the block-level source of truth (labels/selectors/routes) and as fallback when a page has no entry in `portal_bands.php` (each block = its own band, no image).
+
+## Work packages
+- **WP6 (Dev, admin)** — controller/views/tests adopt bands: editor rows = bands (screenshot col + fields col with block sub-headings), cross-page-key blocks editable/saveable (row lookup by `[country_code, page_key, block_key]`, only pairs declared in that admin page's bands), section anchor chips = bands, saving still scoped to the country; old per-block images no longer referenced.
+- **WP7 (Dev/QA, screenshots+generator)** — delete all old PNGs under `public/images/portal-sections/`, rewrite `scripts/portal-screenshots.mjs` to detect bands per rendered page (both locales; width 1700px; top-level content children of the layout's main container + header + footer; merge elements shorter than ~120px into neighbours; skip hidden/zero-height), screenshot each band element, map blocks → bands via `data-portal-section` containment (blocks with `selector => null`/not found attach to the preceding band by config order, or to `00-page-settings`), derive bilingual band labels from the first heading text per locale (fallback: first block label), write images + `config/portal_bands.php`, add `tests/Unit/PortalBandsConfigTest.php` (coverage, uniqueness, files exist en+ar, order sanity).
+- **WP8 (QA)** — independent verification + push.
+WP6 ‖ WP7 (WP6 tests use an in-test `config(['portal_bands' => …])` fixture; integration check by WP8).
