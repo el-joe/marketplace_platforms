@@ -98,9 +98,11 @@ async function fetchWithAuth<T>(
 export async function fetchInstance<T>(
   path: string,
   init?: RequestInit,
+  isPublic?: boolean,
 ): Promise<T> {
   const country = await resolveCookie("country");
-  return fetchWithAuth<T>(`${apiBaseUrlGlobal}/${country}`, path, init);
+  const baseApiUrl = isPublic ? apiPublicBaseUrlGlobal : apiBaseUrlGlobal;
+  return fetchWithAuth<T>(`${baseApiUrl}/${country}`, path, init);
 }
 
 /** Same as {@link fetchInstance}, but targets the country-agnostic `/v1/...` routes (see `apiBaseUrlGlobal`). */

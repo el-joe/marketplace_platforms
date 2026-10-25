@@ -2,9 +2,11 @@
 import { useCartContext } from "@/src/providers/cart-provider";
 import CartItem from "./cart-item";
 import { ShippingMethod } from "@/types/cart.type";
+import useLocale from "@/src/hooks/use-locale";
 
 export default function CartItems() {
   const { cart } = useCartContext();
+  const locale = useLocale();
 
   return (
     <>
@@ -16,7 +18,7 @@ export default function CartItems() {
           <div
             className="z-0 absolute inset-x-0 top-0 h-17 bg-white "
             style={{
-              background: `linear-gradient(90deg,${group?.shipping_method?.badge_color_hex} 0%,${group?.shipping_method?.badge_color_hex}33 10%,var(--color-white) 100%)`,
+              background: `linear-gradient(${locale === "ar" ? "270deg" : "90deg"},${group?.shipping_method?.badge_color_hex} 0%,${group?.shipping_method?.badge_color_hex}33 10%,var(--color-white) 100%)`,
             }}
           >
             <div

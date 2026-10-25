@@ -3,6 +3,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 import usePagination from "./helpers/use-pagination";
+import useLocale from "@/src/hooks/use-locale";
 
 type Props = {
   totalPages: number;
@@ -10,6 +11,7 @@ type Props = {
 
 const Pagination = ({ totalPages }: Props) => {
   const { currentPage, goToPage } = usePagination();
+  const locale = useLocale();
 
   return (
     <nav className="flex items-center justify-center gap-2 py-6">
@@ -24,7 +26,11 @@ const Pagination = ({ totalPages }: Props) => {
             : "hover:bg-gray-2"
         }`}
       >
-        <ChevronLeftIcon className="size-4" />
+        {locale === "ar" ? (
+          <ChevronRightIcon className="size-4" />
+        ) : (
+          <ChevronLeftIcon className="size-4" />
+        )}
       </button>
       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
         <button
@@ -51,7 +57,11 @@ const Pagination = ({ totalPages }: Props) => {
             : "hover:bg-gray-2"
         }`}
       >
-        <ChevronRightIcon className="size-4" />
+        {locale === "ar" ? (
+          <ChevronLeftIcon className="size-4" />
+        ) : (
+          <ChevronRightIcon className="size-4" />
+        )}
       </button>
     </nav>
   );

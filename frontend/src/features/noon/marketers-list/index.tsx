@@ -1,45 +1,41 @@
-import { getTranslations } from "next-intl/server";
-import { getGroupedMarketers, getMarketersByType } from "./api";
-import AdStrip from "./components/ad-strip";
-import GenderTabs from "./components/gender-tabs";
-import HeroBanners from "./components/hero-banners";
-import MarketerTypeSection from "./components/marketer-type-section";
-import MarketersEmpty from "./components/marketers-empty";
-import MarketersGridView from "./components/marketers-grid-view";
-import type { ListSearchParams } from "./helpers/types";
+import React from "react";
+import { getMarketersList } from "./api";
+import GenderTabs from "./gender-tabs";
+import MarketersList from "./marketers-list";
+import { IMarketerItem } from "./helpers/types";
+import { redirect } from "next/navigation";
+import HeroBanner from "./hero-banner";
+import EmptyState from "./empty-state";
+import Pagination from "@/src/components/shared/pagination";
 
-export default async function MarketersListView({ gender, type, page }: ListSearchParams) {
-  const t = await getTranslations("marketers");
+type Props = {
+  gender?: string;
+  type?: string;
+  page?: string;
+};
 
-  // "View all" mode: paginated grid of one type, no hero/strip.
-  if (type) {
-    const data = await getMarketersByType({ gender, type, page });
-    return (
-      <div className="container mx-auto px-4 py-6 sm:py-8">
-        <h1 className="sr-only">{t("heading")}</h1>
-        <GenderTabs active={gender} type={type} />
-        <MarketersGridView data={data} gender={gender} type={type} />
-      </div>
-    );
+export default async function MarketersListView({ gender, type, page }: Props) {
+  if (!gender) {
+    redirect("/marketers?gender=female");
   }
+  const searchParams = new URLSearchParams({
+    gender: gender ?? "",
+    type: type ?? "",
+    page: page ?? "",
+  });
 
-  const { sections, banners } = await getGroupedMarketers(gender);
-
+  const marketersList = await getMarketersList(searchParams);
   return (
-    <div className="container mx-auto px-4 py-6 sm:py-8">
-      <h1 className="sr-only">{t("heading")}</h1>
-      <HeroBanners banners={banners.hero} />
-      <div className="mt-8">
-        <GenderTabs active={gender} />
-      </div>
-      {sections.length === 0 ? (
-        <MarketersEmpty />
-      ) : (
-        sections.map((section) => (
-          <MarketerTypeSection key={section.type} section={section} gender={gender} />
-        ))
-      )}
-      <AdStrip banners={banners.strip} />
+    <div className="container">
+      <HeroBanner />
+      <GenderTabs active={gender ?? ""} />
+      {!marketersList.data.items.length && <EmptyState />}
+      {Object.entries(
+        Object.groupBy(marketersList.data.items, (m) => m.type),
+      ).map(([key, value]) => (
+        <MarketersList key={key} list={value as IMarketerItem[]} type={key} />
+      ))}
+      {!!type && <Pagination totalPages={marketersList.data.meta.last_page} />}
     </div>
   );
 }
