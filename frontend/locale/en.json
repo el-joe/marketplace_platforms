@@ -1512,7 +1512,12 @@
     "exclusiveBadge": "Exclusive",
     "classifiedBadge": "Ad",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "active": "Active",
+    "brands": "Brands",
+    "categories": "Categories",
+    "kinds": "Kinds",
+    "sources": "Sources"
   },
   "nawyOptions": {
     "label": "Nawy Options",

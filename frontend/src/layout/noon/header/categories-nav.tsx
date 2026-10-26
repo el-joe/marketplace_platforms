@@ -103,7 +103,7 @@ function buildNavTree(
     id: "virtual-marketers",
     type: Type.Product,
     name: labels.marketers,
-    slug: "marketers",
+    slug: "marketers?gender=female",
     parent_id: null,
     children: [],
   });

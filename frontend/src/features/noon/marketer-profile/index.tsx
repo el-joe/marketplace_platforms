@@ -1,103 +1,70 @@
-import { getLocale, getTranslations } from "next-intl/server";
-import { Breadcrumb } from "@/src/components/ui/breadcrumb";
-import MarketerBannersCarousel from "./components/marketer-banners-carousel";
-import MarketerCatalog from "./components/marketer-catalog";
-import MarketerProfileAbout from "./components/marketer-profile-about";
-import MarketerProfileHeader from "./components/marketer-profile-header";
-import { KIND_OPTIONS, SORT_OPTIONS, SOURCE_OPTIONS } from "./helpers/constants";
-import type { MarketerFilters, MarketerProfilePageData } from "./helpers/types";
+import React from "react";
+import { getMarketerProfile } from "./api";
+import Image from "next/image";
+import HeroBanner from "./hero-banner";
+import ProductCard from "@/src/components/shared/product-card";
+import Filters from "./filters";
+import Pagination from "@/src/components/shared/pagination";
+import SmallScreenFiltersSheet from "./small-screen-filters";
 
-interface Props {
-  data: MarketerProfilePageData;
-  filters: MarketerFilters;
-}
-
-export default async function MarketerProfileView({ data, filters }: Props) {
-  const { marketer, profile, banners, listings, facets } = data;
-  const t = await getTranslations("marketerProfile");
-  const isAr = (await getLocale()).endsWith("ar");
-  const contracts = data.exclusive_contracts ?? [];
-
-  const sourceKeys: Record<string, string> = { all: "sourceAll", own: "sourceOwn", for_sellers: "sourceForSellers" };
-  const kindKeys: Record<string, string> = { all: "kindAll", products: "kindProducts", classified: "kindClassified" };
-  const sortKeys: Record<string, string> = { newest: "sortNewest", price_asc: "sortPriceAsc", price_desc: "sortPriceDesc" };
-
-  const labels = {
-    panel: {
-      source: t("filterSource"),
-      sourceOptions: Object.fromEntries(SOURCE_OPTIONS.map((k) => [k, t(sourceKeys[k])])),
-      kind: t("filterKind"),
-      kindOptions: Object.fromEntries(KIND_OPTIONS.map((k) => [k, t(kindKeys[k])])),
-      category: t("filterCategory"),
-      brand: t("filterBrand"),
-      price: t("filterPrice"),
-      priceMin: t("priceMin"),
-      priceMax: t("priceMax"),
-      applyPrice: t("applyPrice"),
-      discounts: t("filterDiscounts"),
-      discountedOnly: t("discountedOnly"),
-      showMore: t("showMore"),
-      showLess: t("showLess"),
-      searchFacet: t("searchFacet"),
-    },
-    toolbar: {
-      searchPlaceholder: t("searchPlaceholder"),
-      sortBy: t("sortBy"),
-      sortOptions: Object.fromEntries(SORT_OPTIONS.map((k) => [k, t(sortKeys[k])])),
-      openFilter: t("openFilter"),
-    },
-    resultsCount: t("resultsCount", { count: listings.meta.total }),
-    filtersTitle: t("filtersTitle"),
-    closeFilter: t("closeFilter"),
-    clearAll: t("clearAll"),
-    removeFilter: t("removeFilter"),
-    grid: {
-      empty: t("noResults"),
-      emptyHint: t("noResultsHint"),
-      loadMore: t("loadMore"),
-      retry: t("retry"),
-      exclusive: t("exclusiveBadge"),
-      negotiable: t("priceNegotiable"),
-      classified: t("classifiedBadge"),
-    },
-  };
-
+export default async function MarketerProfile({
+  slug,
+  params,
+}: {
+  slug: string;
+  params: Record<string, string>;
+}) {
+  const marketerProfile = await getMarketerProfile(
+    slug,
+    new URLSearchParams(params),
+  );
+  console.log("new URLSearchParams(params),", new URLSearchParams(params));
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto space-y-5 px-4 py-6">
-        <Breadcrumb
-          list={[
-            { label: t("breadcrumbHome"), href: "/" },
-            { label: t("breadcrumbMarketers"), href: "/marketers" },
-            { label: marketer.name, href: "" },
-          ]}
-        />
-
-        <MarketerProfileHeader marketer={marketer} profile={profile} />
-
-        {contracts.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-amber-700">
-            <span>{t("activeExclusiveContracts")}:</span>
-            {contracts.map((c, i) => (
-              <span key={i} className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1">
-                {(c.scope === "listing"
-                  ? isAr ? c.listing_title : c.listing_title_en ?? c.listing_title
-                  : isAr ? c.category_name : c.category_name_en ?? c.category_name) ?? ""}
-              </span>
-            ))}
+    <div>
+      <Image
+        src={
+          marketerProfile.data.profile.banner_url ??
+          "/images/no-image-available-icon.jpg"
+          // "https://v2cdn.boutiqaat.com/media/boutiqaat_celebrity/W/e/Web-Ar_2025_03_27_16_37_29_700.jpg"
+        }
+        alt=""
+        width={4400}
+        height={1860}
+        className="mx-auto mb-4 max-h-[70vh]"
+      />
+      <div className="container">
+        <div className="flex items-start gap-3 relative">
+          <div className="lg:min-w-50 xl:min-w-75 hidden lg:block">
+            <Filters facets={marketerProfile.data.facets} />
           </div>
-        )}
-
-        <MarketerProfileAbout marketer={marketer} profile={profile} />
-
-        <MarketerCatalog slug={profile.slug} filters={filters} listings={listings} facets={facets} labels={labels}>
-          {banners.length > 0 ? (
-            <MarketerBannersCarousel banners={banners} prevLabel={t("previous")} nextLabel={t("next")} />
-          ) : profile.banner_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.banner_url} alt={marketer.name} className="aspect-[1000/280] w-full rounded-xl object-cover" />
-          ) : null}
-        </MarketerCatalog>
+          <div className="flex-1 overflow-hidden">
+            <HeroBanner banners={marketerProfile.data.banners} />{" "}
+            <SmallScreenFiltersSheet facets={marketerProfile.data.facets} />
+            <div className="flex flex-wrap gap-3 mt-3">
+              {marketerProfile.data.listings.items.map((p) => (
+                <ProductCard
+                  key={p.listing_id}
+                  productData={p}
+                  className="h-auto w-[calc((100%-12px)/2)] xl:w-[calc((100%-48px)/5)]"
+                />
+              ))}
+            </div>
+            {!marketerProfile.data.listings.items.length && (
+              <Image
+                src="/images/empty-result.webp"
+                alt=""
+                width={1280}
+                height={1280}
+                className="w-md mx-auto"
+              />
+            )}
+            {!!marketerProfile.data.listings.items.length && (
+              <Pagination
+                totalPages={marketerProfile.data.listings.meta.last_page}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

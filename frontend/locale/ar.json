@@ -1512,7 +1512,12 @@
     "exclusiveBadge": "حصري",
     "classifiedBadge": "إعلان",
     "previous": "السابق",
-    "next": "التالي"
+    "next": "التالي",
+    "active": "نشط",
+    "brands": "العلامات التجارية",
+    "categories": "الفئات",
+    "kinds": "الأنواع",
+    "sources": "المصادر"
   },
   "nawyOptions": {
     "label": "ناوي الآن",
