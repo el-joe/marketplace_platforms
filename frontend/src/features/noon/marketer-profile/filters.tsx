@@ -11,7 +11,7 @@ import { useSearchParams } from "next/navigation";
 import useLocale from "@/src/hooks/use-locale";
 import { DotIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import PriceFilter from "../shop/filter/sections/price";
+import PriceFilter from "./price-filter";
 
 type FilterSidebarProps = {
   facets: Facets;
@@ -116,32 +116,27 @@ const ListingFilter = ({
           {options.map((opt) => {
             const isSelected = current === opt.value;
             return (
-              <button
+              <label
                 key={opt.value || "all"}
-                onClick={() => setFilter(paramKey, opt.value)}
+                // className="flex cursor-pointer items-center gap-2 py-1 text-sm text-primary"
                 className={[
                   "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm transition-colors",
                   isSelected
                     ? "bg-primary/10 font-semibold text-primary"
                     : "text-primary hover:bg-gray-2",
                 ].join(" ")}
-                aria-pressed={isSelected}
               >
-                <span
-                  className={[
-                    "inline-flex h-4 w-4 shrink-0 rounded-full border-2 items-center justify-center",
-                    isSelected ? "border-primary" : "border-gray-400",
-                  ].join(" ")}
-                >
-                  {isSelected && (
-                    <span className="h-2 w-2 rounded-full bg-primary" />
-                  )}
-                </span>
-                {opt.label}
-                <span className="ms-auto bg-gray-2 block rounded-full text-sm w-4 h-4 text-center leading-4">
-                  {opt.count}
-                </span>
-              </button>
+                <input
+                  type="radio"
+                  checked={isSelected}
+                  onChange={() => setFilter(paramKey, opt.value)}
+                  className="size-4 accent-main"
+                />
+                <span className="min-w-0 flex-1 truncate"> {opt.label}</span>
+                {opt.count != null && (
+                  <span className="text-xs text-gray">{opt.count}</span>
+                )}
+              </label>
             );
           })}
         </div>

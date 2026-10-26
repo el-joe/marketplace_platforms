@@ -6,6 +6,7 @@ import ProductCard from "@/src/components/shared/product-card";
 import Filters from "./filters";
 import Pagination from "@/src/components/shared/pagination";
 import SmallScreenFiltersSheet from "./small-screen-filters";
+import ProfileActions from "./profile-actions";
 
 export default async function MarketerProfile({
   slug,
@@ -21,6 +22,13 @@ export default async function MarketerProfile({
   console.log("new URLSearchParams(params),", new URLSearchParams(params));
   return (
     <div>
+      <div className="container flex justify-end py-2">
+        <ProfileActions
+          marketerName={marketerProfile.data.marketer.name}
+          profileUrl={marketerProfile.data.profile.profile_url}
+          qrCodeUrl={marketerProfile.data.profile.qr_code_url}
+        />
+      </div>
       <Image
         src={
           marketerProfile.data.profile.banner_url ??
@@ -34,7 +42,7 @@ export default async function MarketerProfile({
       />
       <div className="container">
         <div className="flex items-start gap-3 relative">
-          <div className="lg:min-w-50 xl:min-w-75 hidden lg:block">
+          <div className="lg:min-w-50 xl:min-w-75 w-75 hidden lg:block">
             <Filters facets={marketerProfile.data.facets} />
           </div>
           <div className="flex-1 overflow-hidden">
