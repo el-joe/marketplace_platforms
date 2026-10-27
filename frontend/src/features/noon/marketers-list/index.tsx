@@ -31,9 +31,15 @@ export default async function MarketersListView({ gender, type, page }: Props) {
       <GenderTabs active={gender ?? ""} />
       {!marketersList.data.items.length && <EmptyState />}
       {Object.entries(
-        Object.groupBy(marketersList.data.items, (m) => m.type),
+        marketersList.data.items.reduce<Record<string, IMarketerItem[]>>(
+          (acc, m) => {
+            (acc[m.type] ??= []).push(m);
+            return acc;
+          },
+          {},
+        ),
       ).map(([key, value]) => (
-        <MarketersList key={key} list={value as IMarketerItem[]} type={key} />
+        <MarketersList key={key} list={value} type={key} />
       ))}
       {!!type && <Pagination totalPages={marketersList.data.meta.last_page} />}
     </div>
