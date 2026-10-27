@@ -56,16 +56,17 @@ export default function MarketersList({ list, type }: Props) {
         <Swiper
           modules={[Navigation]}
           navigation
-          slidesPerView={2}
+          // slidesPerView={2}
+          slidesPerView={"auto"}
           spaceBetween={12}
-          breakpoints={{
-            576: { slidesPerView: 3 },
-            992: { slidesPerView: 4 },
-            1200: { slidesPerView: 6 },
-          }}
+          // breakpoints={{
+          //   576: { slidesPerView: 3 },
+          //   992: { slidesPerView: 4 },
+          //   1200: { slidesPerView: 6 },
+          // }}
         >
           {list.map((m) => (
-            <SwiperSlide key={m.id} className="w-fit!s">
+            <SwiperSlide key={m.id} className="w-fit!">
               <MarketerCard data={m} />
             </SwiperSlide>
           ))}
@@ -76,8 +77,11 @@ export default function MarketersList({ list, type }: Props) {
 }
 
 const MarketerCard = ({ data }: { data: IMarketerItem }) => (
-  <Link href={`/marketer/${data.slug}`} className="block group">
-    <div className="overflow-hidden mb-2">
+  <Link
+    href={`/marketer/${data.slug}`}
+    className="block group w-40 md:w-45 lg:w-65 xl:w-75"
+  >
+    <div className="overflow-hidden mb-2 border border-border p-0.5">
       <Image
         src={
           (data.avatar_url ?? data.gender === "male")

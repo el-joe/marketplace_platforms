@@ -1517,7 +1517,12 @@
     "brands": "العلامات التجارية",
     "categories": "الفئات",
     "kinds": "الأنواع",
-    "sources": "المصادر"
+    "sources": "المصادر",
+    "listings": "الإعلانات",
+    "ownListings": "إعلانات المالك",
+    "campaignListings": "إعلانات الحملات",
+    "vendorCampaignListings": "إعلانات حملات البائعين",
+    "marketerCampaignListings": "إعلانات حملات المسوّقين"
   },
   "nawyOptions": {
     "label": "ناوي الآن",

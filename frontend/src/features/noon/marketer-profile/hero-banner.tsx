@@ -34,7 +34,7 @@ export default function HeroBanner({ banners }: { banners: Banners[] }) {
               alt={b.title}
               width={2440}
               height={860}
-              className="max-h-125"
+              className="max-h-112"
             />
           </picture>
         </SwiperSlide>

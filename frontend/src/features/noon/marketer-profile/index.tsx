@@ -2,12 +2,11 @@ import React from "react";
 import { getMarketerProfile } from "./api";
 import Image from "next/image";
 import HeroBanner from "./hero-banner";
-import ProductCard from "@/src/components/shared/product-card";
 import Filters from "./filters";
-import Pagination from "@/src/components/shared/pagination";
 import SmallScreenFiltersSheet from "./small-screen-filters";
 import ProfileActions from "./profile-actions";
 import ProductsList from "./products-list";
+import { getTranslations } from "next-intl/server";
 
 export default async function MarketerProfile({
   slug,
@@ -16,11 +15,11 @@ export default async function MarketerProfile({
   slug: string;
   params: Record<string, string>;
 }) {
+  const t = await getTranslations("marketerProfile");
   const marketerProfile = await getMarketerProfile(
     slug,
     new URLSearchParams(params),
   );
-  console.log("new URLSearchParams(params),", new URLSearchParams(params));
   return (
     <div>
       <div className="container flex justify-end py-2">
@@ -39,7 +38,7 @@ export default async function MarketerProfile({
         alt=""
         width={4400}
         height={1860}
-        className="mx-auto mb-4 max-h-[70vh]"
+        className="mx-auto mb-4 max-h-[50vh] object-contains"
       />
       <div className="container">
         <div className="flex items-start gap-3 relative">
@@ -54,36 +53,36 @@ export default async function MarketerProfile({
             <ProductsList
               list={marketerProfile.data.listings.items}
               listType="listing"
-              title="listing items"
-              meta={marketerProfile?.data?.listings?.meta}
+              title={t("listings")}
+              // meta={marketerProfile?.data?.listings?.meta}
             />
             {/* own listings */}
             <ProductsList
               list={marketerProfile.data.own_listings.items}
               listType="own-listing"
-              title="own listing items"
-              meta={marketerProfile?.data?.own_listings?.meta}
+              title={t("ownListings")}
+              // meta={marketerProfile?.data?.own_listings?.meta}
             />
             {/* campaign listings */}
             <ProductsList
               list={marketerProfile.data.campaign_listings.items}
               listType="campaign-listing"
-              title="campaign listing items"
-              meta={marketerProfile?.data?.campaign_listings?.meta}
+              title={t("campaignListings")}
+              // meta={marketerProfile?.data?.campaign_listings?.meta}
             />
             {/* vendor campaign listings */}
             <ProductsList
               list={marketerProfile.data.vendor_campaign_listings.items}
               listType="vendor-campaign-listing"
-              title="vendor campaign listing items"
-              meta={marketerProfile?.data?.vendor_campaign_listings?.meta}
+              title={t("vendorCampaignListings")}
+              // meta={marketerProfile?.data?.vendor_campaign_listings?.meta}
             />
             {/* marketer campaign listings */}
             <ProductsList
               list={marketerProfile.data.marketer_campaign_listings.items}
               listType="marketer-campaign-listing"
-              title="marketer campaign listing items"
-              meta={marketerProfile?.data?.marketer_campaign_listings?.meta}
+              title={t("marketerCampaignListings")}
+              // meta={marketerProfile?.data?.marketer_campaign_listings?.meta}
             />
             {!marketerProfile.data.listings.items.length && (
               <Image

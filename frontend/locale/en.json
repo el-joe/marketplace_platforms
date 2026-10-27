@@ -1517,7 +1517,12 @@
     "brands": "Brands",
     "categories": "Categories",
     "kinds": "Kinds",
-    "sources": "Sources"
+    "sources": "Sources",
+    "listings": "Listings",
+    "ownListings": "Owner listings",
+    "campaignListings": "Campaign listings",
+    "vendorCampaignListings": "Vendor campaign listings",
+    "marketerCampaignListings": "Marketer campaign listings"
   },
   "nawyOptions": {
     "label": "Nawy Options",
