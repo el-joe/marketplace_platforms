@@ -79,7 +79,7 @@ export interface Measurements {
 }
 
 export interface OwnListings {
-  items: unknown[];
+  items: IProduct[];
   meta: Meta;
 }
 
@@ -147,7 +147,7 @@ export interface Campaign {
 }
 
 export interface MarketerCampaignListings {
-  items: unknown[];
+  items: IProduct[];
   meta: Meta;
 }
 

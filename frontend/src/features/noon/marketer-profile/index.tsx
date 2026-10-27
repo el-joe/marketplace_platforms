@@ -7,6 +7,7 @@ import Filters from "./filters";
 import Pagination from "@/src/components/shared/pagination";
 import SmallScreenFiltersSheet from "./small-screen-filters";
 import ProfileActions from "./profile-actions";
+import ProductsList from "./products-list";
 
 export default async function MarketerProfile({
   slug,
@@ -46,17 +47,44 @@ export default async function MarketerProfile({
             <Filters facets={marketerProfile.data.facets} />
           </div>
           <div className="flex-1 overflow-hidden">
-            <HeroBanner banners={marketerProfile.data.banners} />{" "}
+            <HeroBanner banners={marketerProfile.data.banners} />
             <SmallScreenFiltersSheet facets={marketerProfile.data.facets} />
-            <div className="flex flex-wrap gap-3 mt-3">
-              {marketerProfile.data.listings.items.map((p) => (
-                <ProductCard
-                  key={p.listing_id}
-                  productData={p}
-                  className="h-auto w-[calc((100%-12px)/2)] xl:w-[calc((100%-48px)/5)]"
-                />
-              ))}
-            </div>
+            {/* listings */}
+            {}
+            <ProductsList
+              list={marketerProfile.data.listings.items}
+              listType="listing"
+              title="listing items"
+              meta={marketerProfile?.data?.listings?.meta}
+            />
+            {/* own listings */}
+            <ProductsList
+              list={marketerProfile.data.own_listings.items}
+              listType="own-listing"
+              title="own listing items"
+              meta={marketerProfile?.data?.own_listings?.meta}
+            />
+            {/* campaign listings */}
+            <ProductsList
+              list={marketerProfile.data.campaign_listings.items}
+              listType="campaign-listing"
+              title="campaign listing items"
+              meta={marketerProfile?.data?.campaign_listings?.meta}
+            />
+            {/* vendor campaign listings */}
+            <ProductsList
+              list={marketerProfile.data.vendor_campaign_listings.items}
+              listType="vendor-campaign-listing"
+              title="vendor campaign listing items"
+              meta={marketerProfile?.data?.vendor_campaign_listings?.meta}
+            />
+            {/* marketer campaign listings */}
+            <ProductsList
+              list={marketerProfile.data.marketer_campaign_listings.items}
+              listType="marketer-campaign-listing"
+              title="marketer campaign listing items"
+              meta={marketerProfile?.data?.marketer_campaign_listings?.meta}
+            />
             {!marketerProfile.data.listings.items.length && (
               <Image
                 src="/images/empty-result.webp"
@@ -64,11 +92,6 @@ export default async function MarketerProfile({
                 width={1280}
                 height={1280}
                 className="w-md mx-auto"
-              />
-            )}
-            {!!marketerProfile.data.listings.items.length && (
-              <Pagination
-                totalPages={marketerProfile.data.listings.meta.last_page}
               />
             )}
           </div>
