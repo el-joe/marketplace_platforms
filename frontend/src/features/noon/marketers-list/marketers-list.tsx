@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { Navigation } from "swiper/modules";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { getImageURL } from "@/src/helpers/get-image-url";
 
 type Props = {
   list: IMarketerItem[];
@@ -76,22 +77,27 @@ export default function MarketersList({ list, type }: Props) {
   );
 }
 
+const FALLBACK_AVATAR = {
+  male: "/images/male-avatar.webp",
+  female: "/images/female-avatar.webp",
+} as const;
+
 const MarketerCard = ({ data }: { data: IMarketerItem }) => (
   <Link
     href={`/marketer/${data.slug}`}
     className="block group w-40 md:w-45 lg:w-65 xl:w-75"
   >
-    <div className="overflow-hidden mb-2 border border-border p-0.5">
+    <div className="relative aspect-square overflow-hidden mb-2 border border-border p-0.5">
       <Image
         src={
-          (data.avatar_url ?? data.gender === "male")
-            ? "/images/male-avatar.webp"
-            : "/images/female-avatar.webp"
+          data.avatar_url
+            ? getImageURL(data.avatar_url)
+            : FALLBACK_AVATAR[data.gender === "male" ? "male" : "female"]
         }
-        alt=""
-        width={600}
-        height={600}
-        className="group-hover:scale-110 transition duration-500"
+        alt={data.name}
+        fill
+        sizes="(min-width: 1280px) 300px, (min-width: 1024px) 260px, 180px"
+        className="object-cover group-hover:scale-110 transition duration-500"
       />
     </div>
     <p>{data.name}</p>
