@@ -6,6 +6,7 @@ import { IMarketerItem } from "./helpers/types";
 import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import HeroBanner from "./hero-banner";
+import StripBanners from "./strip-banners";
 import EmptyState from "./empty-state";
 import Pagination from "@/src/components/shared/pagination";
 
@@ -32,6 +33,7 @@ export default async function MarketersListView({ gender, type, page }: Props) {
   return (
     <div className="container">
       <HeroBanner banners={bannersRes.data.banners.hero} />
+      <StripBanners banners={bannersRes.data.banners.strip} />
       <GenderTabs active={gender ?? ""} />
       {!marketersList.data.items.length && <EmptyState />}
       {Object.entries(

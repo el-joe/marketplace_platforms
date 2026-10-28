@@ -21,7 +21,7 @@ export default function HeroBanner({
       modules={[Navigation, EffectFade]}
       effect="fade"
       navigation={slides.length > 1}
-      className="mb-4"
+      className="mb-4 h-[292px] sm:h-[356px] lg:h-[484px]"
       loop={slides.length > 1}
       slidesPerView={1}
     >
@@ -29,7 +29,7 @@ export default function HeroBanner({
         const desktop = b.image_desktop || b.image_mobile || FALLBACK_IMAGE;
         const mobile = b.image_mobile || desktop;
         const picture = (
-          <picture>
+          <picture className="block h-full w-full">
             <source media="(min-width: 768px)" srcSet={desktop} />
             <source media="(max-width: 767px)" srcSet={mobile} />
             <Image
@@ -37,13 +37,20 @@ export default function HeroBanner({
               alt={b.title ?? ""}
               width={2440}
               height={860}
+              className="h-full w-full object-cover"
             />
           </picture>
         );
         const href = b.link || b.click_url;
         return (
-          <SwiperSlide key={b.id}>
-            {href ? <Link href={href}>{picture}</Link> : picture}
+          <SwiperSlide key={b.id} className="!h-full">
+            {href ? (
+              <Link href={href} className="block h-full">
+                {picture}
+              </Link>
+            ) : (
+              picture
+            )}
           </SwiperSlide>
         );
       })}

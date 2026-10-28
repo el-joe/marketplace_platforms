@@ -1,17 +1,18 @@
 "use client";
 import Image from "next/image";
 import React from "react";
-import { Navigation } from "swiper/modules";
+import { Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Banners } from "./helpers/types";
 
 export default function HeroBanner({ banners }: { banners: Banners[] }) {
   return (
     <Swiper
-      modules={[Navigation]}
-      navigation
+      modules={[Navigation, Pagination]}
+      navigation={banners.length > 1}
+      pagination={banners.length > 1 ? { clickable: true } : false}
       className="mb-4"
-      loop
+      loop={banners.length > 1}
       slidesPerView={1}
     >
       {banners.map((b) => (

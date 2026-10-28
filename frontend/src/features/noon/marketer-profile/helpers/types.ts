@@ -34,13 +34,13 @@ export interface Profile {
   gender: string;
   bio_ar: string;
   bio_en: string;
-  specialty_ar?: null;
-  specialty_en?: null;
+  specialty_ar?: string | null;
+  specialty_en?: string | null;
   video_url?: null;
   social_links: SocialLinks;
   contact_details: ContactDetails;
-  banner_url?: null;
-  avatar_url?: null;
+  banner_url?: string | null;
+  avatar_url?: string | null;
   qr_code_url: string;
   profile_url: string;
   ad_price: number;
