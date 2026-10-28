@@ -1,5 +1,6 @@
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { playChatSound } from "@/src/lib/chat-sound";
 import { useAuthContext } from "@/src/providers/auth-provider";
 import { getChatUnreadCount } from "../api/chat.actions";
 import { useChatChannel } from "./use-chat-channel";
@@ -19,6 +20,7 @@ export function useChatUnread() {
   useChatChannel((event) => {
     if (event.message.sender_type === "marketer") {
       queryClient.invalidateQueries({ queryKey: CHAT_UNREAD_KEY });
+      playChatSound();
     }
   });
 

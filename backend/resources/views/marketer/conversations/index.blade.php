@@ -75,6 +75,26 @@
         box.scrollTop = box.scrollHeight;
     }
 
+    let audioCtx = null;
+    function playPop() {
+        try {
+            audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            [[660, 0], [990, 0.09]].forEach(([freq, start]) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.0001, now + start);
+                gain.gain.exponentialRampToValueAtTime(0.2, now + start + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + start + 0.18);
+                osc.connect(gain).connect(audioCtx.destination);
+                osc.start(now + start);
+                osc.stop(now + start + 0.2);
+            });
+        } catch (e) {}
+    }
+
     function csrf() { return document.querySelector('meta[name="csrf-token"]')?.content ?? ''; }
 
     if (box) { box.scrollTop = box.scrollHeight; }
@@ -120,6 +140,7 @@
     window.Echo?.private('marketer-chat.' + marketerId).listen('.message.sent', (e) => {
         const m = e.message;
         if (m.sender_type !== 'customer') return;
+        playPop();
         if (e.conversation_id === activeId) {
             bubble(m);
             fetch(@json($active ? route('marketer.conversations.show', $active->id) : ''), { headers: { 'Accept': 'text/html' } }).catch(() => {});
