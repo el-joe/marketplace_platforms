@@ -3,6 +3,7 @@
 namespace App\Services\Marketer;
 
 use App\Enums\ClassifiedListingStatus;
+use App\Enums\TravelPackageStatus;
 use App\Http\Resources\Public\MarketerBannerResource;
 use App\Models\Country;
 use App\Models\ExclusiveContract;
@@ -12,28 +13,32 @@ use App\Services\Customer\PromoBadgeResolver;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Filtered, unified listing grid + facets for GET /marketers/{slug}.
  *
  * Own listings = MarketerListing without invitation (products only).
- * For-sellers = listings born from a vendor or marketer campaign; kind=classified are the
- * campaign-promoted classified ads (listing_category=classified), everything else is a product.
+ * For-sellers = listings born from a vendor or marketer campaign (source=vendor_campaign | marketer_campaign
+ * narrows to one of the two; product cards carry the matching `section`); kind=classified are the
+ * campaign-promoted classified ads (listing_category=classified), kind=travel the campaign-promoted
+ * travel packages (listing_category=travel), everything else is a product. `category` means a product
+ * category, or a classified category when kind=classified; `destination` only applies to kind=travel.
  * Never cached: depends on filters, pagination and the customer's wishlist.
  */
 class PublicMarketerProfileListingService
 {
-    public const SOURCES = ['all', 'own', 'for_sellers'];
+    public const SOURCES = ['all', 'own', 'for_sellers', 'vendor_campaign', 'marketer_campaign'];
 
-    public const KINDS = ['all', 'products', 'classified'];
+    public const KINDS = ['all', 'products', 'classified', 'travel'];
 
     public const SORTS = ['popular', 'newest', 'price_asc', 'price_desc'];
 
     public function __construct(private readonly ListingQueryService $listings) {}
 
     /**
-     * @return array{source: string, kind: string, q: ?string, category: list<string>, brand: list<string>, price_min: int|float|null, price_max: int|float|null, discount: bool, sort: string, page: int, per_page: int}
+     * @return array{source: string, kind: string, q: ?string, category: list<string>, brand: list<string>, destination: list<string>, price_min: int|float|null, price_max: int|float|null, discount: bool, sort: string, page: int, per_page: int}
      */
     public function filtersFrom(Request $request): array
     {
@@ -49,6 +54,7 @@ class PublicMarketerProfileListingService
             'q' => $q !== '' ? $q : null,
             'category' => $ids('category'),
             'brand' => $ids('brand'),
+            'destination' => $ids('destination'),
             'price_min' => $money('price_min'),
             'price_max' => $money('price_max'),
             'discount' => $request->boolean('discount'),
@@ -66,7 +72,7 @@ class PublicMarketerProfileListingService
     public function isFiltered(array $f): bool
     {
         return $f['source'] !== 'all' || $f['kind'] !== 'all' || $f['q'] !== null || $f['category'] !== []
-            || $f['brand'] !== [] || $f['price_min'] !== null || $f['price_max'] !== null || $f['discount'];
+            || $f['brand'] !== [] || $f['destination'] !== [] || $f['price_min'] !== null || $f['price_max'] !== null || $f['discount'];
     }
 
     /**
@@ -85,6 +91,13 @@ class PublicMarketerProfileListingService
                         $c->where('marketer_listings.listing_category', 'classified')
                             ->whereNotNull('marketer_listings.invitation_id')
                             ->whereHas('classifiedListing', fn ($l) => $l->where('status', ClassifiedListingStatus::Active));
+                    })
+                    ->orWhere(function (Builder $t) {
+                        $t->where('marketer_listings.listing_category', 'travel')
+                            ->whereNotNull('marketer_listings.invitation_id')
+                            ->whereHas('travelPackage', fn ($p) => $p
+                                ->where('status', TravelPackageStatus::Active->value)
+                                ->where('departure_date', '>=', Carbon::today()));
                     });
             })
             ->where(function (Builder $w) {
@@ -98,12 +111,19 @@ class PublicMarketerProfileListingService
                 ->whereColumn('dup.id', '<', 'marketer_listings.id')
                 ->where(fn ($m) => $m
                     ->where(fn ($s) => $s->whereNotNull('marketer_listings.source_listing_id')->whereColumn('dup.source_listing_id', 'marketer_listings.source_listing_id'))
-                    ->orWhere(fn ($c) => $c->whereNotNull('marketer_listings.classified_listing_id')->whereColumn('dup.classified_listing_id', 'marketer_listings.classified_listing_id'))));
+                    ->orWhere(fn ($c) => $c->whereNotNull('marketer_listings.classified_listing_id')->whereColumn('dup.classified_listing_id', 'marketer_listings.classified_listing_id'))
+                    ->orWhere(fn ($t) => $t->whereNotNull('marketer_listings.travel_package_id')->whereColumn('dup.travel_package_id', 'marketer_listings.travel_package_id'))));
 
         if (! in_array('source', $skip, true)) {
             match ($f['source']) {
                 'own' => $query->whereNull('marketer_listings.invitation_id'),
                 'for_sellers' => $query->whereNotNull('marketer_listings.invitation_id'),
+                'vendor_campaign' => $query->where('marketer_listings.listing_category', 'product')
+                    ->whereNotNull('marketer_listings.invitation_id')
+                    ->whereHas('invitation.campaign', fn ($c) => $c->whereNotNull('vendor_id')),
+                'marketer_campaign' => $query->where('marketer_listings.listing_category', 'product')
+                    ->whereNotNull('marketer_listings.invitation_id')
+                    ->whereHas('invitation.campaign', fn ($c) => $c->whereNull('vendor_id')),
                 default => null,
             };
         }
@@ -112,6 +132,7 @@ class PublicMarketerProfileListingService
             match ($f['kind']) {
                 'products' => $query->where('marketer_listings.listing_category', 'product'),
                 'classified' => $query->where('marketer_listings.listing_category', 'classified'),
+                'travel' => $query->where('marketer_listings.listing_category', 'travel'),
                 default => null,
             };
         }
@@ -122,11 +143,21 @@ class PublicMarketerProfileListingService
                 ->whereHas('productVariant', fn ($v) => $v
                     ->where('variant_name', 'like', $like)->orWhere('variant_name_ar', 'like', $like)
                     ->orWhereHas('product', fn ($p) => $p->where('name_en', 'like', $like)->orWhere('name_ar', 'like', $like)))
-                ->orWhereHas('classifiedListing', fn ($c) => $c->where('title_en', 'like', $like)->orWhere('title_ar', 'like', $like)));
+                ->orWhereHas('classifiedListing', fn ($c) => $c->where('title_en', 'like', $like)->orWhere('title_ar', 'like', $like))
+                ->orWhereHas('travelPackage', fn ($t) => $t->where('title_en', 'like', $like)->orWhere('title_ar', 'like', $like)
+                    ->orWhere('destination_city', 'like', $like)->orWhere('destination_country', 'like', $like)));
         }
 
         if ($f['category'] !== [] && ! in_array('category', $skip, true)) {
-            $query->whereHas('productVariant.product', fn ($p) => $p->whereIn('category_id', $f['category']));
+            if ($f['kind'] === 'classified') {
+                $query->whereHas('classifiedListing', fn ($c) => $c->whereIn('classified_category_id', $f['category']));
+            } else {
+                $query->whereHas('productVariant.product', fn ($p) => $p->whereIn('category_id', $f['category']));
+            }
+        }
+
+        if ($f['destination'] !== [] && ! in_array('destination', $skip, true)) {
+            $query->whereHas('travelPackage', fn ($t) => $t->whereIn('destination_travel_country_id', $f['destination']));
         }
 
         if ($f['brand'] !== [] && ! in_array('brand', $skip, true)) {
@@ -186,6 +217,11 @@ class PublicMarketerProfileListingService
                 'classifiedListing.classifiedCategory:id,name_ar,name_en',
                 'classifiedListing.city:id,name_ar,name_en',
                 'classifiedListing.images',
+                'travelPackage.agency:id,name',
+                'travelPackage.categories:id,name_en,name_ar,slug',
+                'travelPackage.destinationCountry:id,name_en,name_ar',
+                'travelPackage.destinationCity:id,name_en,name_ar',
+                'travelPackage.media' => fn ($m) => $m->orderBy('position'),
             ])
             ->forPage($f['page'], $f['per_page'])
             ->get();
@@ -213,13 +249,16 @@ class PublicMarketerProfileListingService
     {
         $cid = $country->id;
         $name = $locale === 'ar' ? 'name_ar' : 'name_en';
+        $kind = $f['kind'];
 
-        $sources = collect(['all' => ['source'], 'own' => ['source'], 'for_sellers' => ['source']])
-            ->map(fn ($skip, $key) => ['key' => $key, 'count' => $this->baseQuery($marketerId, $cid, ['source' => $key] + $f, [])->count()])
+        $sources = collect(['all', 'own', 'vendor_campaign', 'marketer_campaign'])
+            ->map(fn ($key) => ['key' => $key, 'count' => $this->baseQuery($marketerId, $cid, ['source' => $key] + $f, [])->count()])
             ->values()->all();
 
-        $kinds = collect(['all', 'products', 'classified'])
-            ->map(fn ($key) => ['key' => $key, 'count' => $this->baseQuery($marketerId, $cid, ['kind' => $key] + $f, [])->count()])
+        // Tab counts ignore every other filter so the tabs stay stable while filtering inside one.
+        $unfiltered = ['source' => 'all', 'q' => null, 'category' => [], 'brand' => [], 'destination' => [], 'price_min' => null, 'price_max' => null, 'discount' => false] + $f;
+        $kinds = collect(self::KINDS)
+            ->map(fn ($key) => ['key' => $key, 'count' => $this->baseQuery($marketerId, $cid, ['kind' => $key] + $unfiltered, [])->count()])
             ->values()->all();
 
         $grouped = fn (string $skip, string $table, string $fk) => $this->baseQuery($marketerId, $cid, $f, [$skip])
@@ -234,19 +273,46 @@ class PublicMarketerProfileListingService
             ->map(fn ($r) => ['id' => $r->id, 'name' => $r->name, 'count' => (int) $r->cnt])
             ->values()->all();
 
+        $classifiedCategories = fn () => $this->baseQuery($marketerId, $cid, $f, ['category'])
+            ->join('classified_listings as cl', 'cl.id', '=', 'marketer_listings.classified_listing_id')
+            ->join('classified_categories as cc', 'cc.id', '=', 'cl.classified_category_id')
+            ->groupBy('cc.id', 'cc.name_ar', 'cc.name_en')
+            ->orderByDesc(DB::raw('count(*)'))
+            ->toBase()
+            ->get(['cc.id', "cc.{$name} as name", DB::raw('count(*) as cnt')])
+            ->map(fn ($r) => ['id' => $r->id, 'name' => $r->name, 'count' => (int) $r->cnt])
+            ->values()->all();
+
+        $destinations = fn () => $this->baseQuery($marketerId, $cid, $f, ['destination'])
+            ->join('travel_packages as tp', 'tp.id', '=', 'marketer_listings.travel_package_id')
+            ->join('travel_countries as tc', 'tc.id', '=', 'tp.destination_travel_country_id')
+            ->groupBy('tc.id', 'tc.name_ar', 'tc.name_en')
+            ->orderByDesc(DB::raw('count(*)'))
+            ->toBase()
+            ->get(['tc.id', "tc.{$name} as name", DB::raw('count(*) as cnt')])
+            ->map(fn ($r) => ['id' => $r->id, 'name' => $r->name, 'count' => (int) $r->cnt])
+            ->values()->all();
+
         $priceRange = $this->baseQuery($marketerId, $cid, $f, ['price'])
             ->selectRaw('min(marketer_listings.price) as lo, max(marketer_listings.price) as hi')->toBase()->first();
+
+        $isProducts = ! in_array($kind, ['classified', 'travel'], true);
 
         return [
             'sources' => $sources,
             'kinds' => $kinds,
-            'categories' => $grouped('category', 'categories', 'category_id'),
-            'brands' => $grouped('brand', 'brands', 'brand_id'),
+            'categories' => match ($kind) {
+                'classified' => $classifiedCategories(),
+                'travel' => [],
+                default => $grouped('category', 'categories', 'category_id'),
+            },
+            'brands' => $isProducts ? $grouped('brand', 'brands', 'brand_id') : [],
+            'destinations' => $kind === 'travel' ? $destinations() : [],
             'price' => [
                 'min' => $priceRange?->lo !== null ? Money::number($priceRange->lo) : null,
                 'max' => $priceRange?->hi !== null ? Money::number($priceRange->hi) : null,
             ],
-            'discounted_count' => $this->baseQuery($marketerId, $cid, ['discount' => true] + $f)->count(),
+            'discounted_count' => $isProducts ? $this->baseQuery($marketerId, $cid, ['discount' => true] + $f)->count() : 0,
         ];
     }
 
@@ -262,7 +328,21 @@ class PublicMarketerProfileListingService
             'id' => $campaign->id,
             'title' => $campaign->title,
             'vendor_name' => $campaign->vendor?->store_name,
+            'is_vendor' => $campaign->vendor_id !== null,
         ] : null;
+
+        if ($listing->listing_category === 'travel') {
+            return [
+                'id' => $listing->id,
+                'kind' => 'travel',
+                'source' => $source,
+                'is_exclusive' => false,
+                'discount_percent' => null,
+                'listing_id' => $listing->id,
+                'listing_type' => 'travel',
+                'referral_code' => $listing->referral_code,
+            ] + $this->listings->toTravelCardShape($listing->travelPackage) + ['campaign' => $campaignShape];
+        }
 
         if ($listing->listing_category === 'classified') {
             $ad = $listing->classifiedListing;
@@ -312,6 +392,11 @@ class PublicMarketerProfileListingService
             'id' => $listing->id,
             'kind' => 'product',
             'source' => $source,
+            'section' => match (true) {
+                $listing->invitation_id === null => 'own',
+                $campaign?->vendor_id !== null => 'vendor_campaign',
+                default => 'marketer_campaign',
+            },
             'is_exclusive' => false,
             'discount_percent' => $percent,
         ] + $card + ['campaign' => $campaignShape];

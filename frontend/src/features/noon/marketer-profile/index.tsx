@@ -1,12 +1,18 @@
 import React from "react";
 import { getMarketerProfile } from "./api";
-import Image from "next/image";
 import HeroBanner from "./hero-banner";
 import Filters from "./filters";
-import SmallScreenFiltersSheet from "./small-screen-filters";
 import ProfileHeader from "./profile-header";
-import ProductsList from "./products-list";
-import { getTranslations } from "next-intl/server";
+import ListingTabs from "./listing-tabs";
+import ListingToolbar from "./listing-toolbar";
+import ListingsGrid from "./listings-grid";
+import Pagination from "@/src/components/shared/pagination";
+import { ProfileKind } from "./helpers/types";
+
+const KINDS: ProfileKind[] = ["products", "classified", "travel"];
+
+const isKind = (value?: string): value is ProfileKind =>
+  KINDS.includes(value as ProfileKind);
 
 export default async function MarketerProfile({
   slug,
@@ -15,66 +21,46 @@ export default async function MarketerProfile({
   slug: string;
   params: Record<string, string>;
 }) {
-  const t = await getTranslations("marketerProfile");
-  const marketerProfile = await getMarketerProfile(
-    slug,
-    new URLSearchParams(params),
-  );
+  const requestedKind = isKind(params.kind) ? params.kind : undefined;
+  const fetchProfile = (kind: ProfileKind) =>
+    getMarketerProfile(slug, new URLSearchParams({ ...params, kind }));
+
+  let kind: ProfileKind = requestedKind ?? "products";
+  let marketerProfile = await fetchProfile(kind);
+
+  // No explicit tab and nothing under Products: open the first tab that has content.
+  if (!requestedKind) {
+    const counts = Object.fromEntries(
+      marketerProfile.data.facets.kinds.map((k) => [k.key, k.count]),
+    );
+    const firstWithContent = KINDS.find((k) => counts[k]);
+    if (!counts.products && firstWithContent) {
+      kind = firstWithContent;
+      marketerProfile = await fetchProfile(kind);
+    }
+  }
+
+  const { listings, facets, banners } = marketerProfile.data;
+
   return (
     <div>
       <ProfileHeader data={marketerProfile.data} />
       <div className="container">
-        <div className="flex items-start gap-3 relative">
-          <div className="lg:min-w-50 xl:min-w-75 w-75 hidden lg:block">
-            <Filters facets={marketerProfile.data.facets} />
+        <div className="relative flex items-start gap-3">
+          <div className="hidden w-75 lg:block lg:min-w-50 xl:min-w-75">
+            <Filters facets={facets} kind={kind} />
           </div>
           <div className="flex-1 overflow-hidden">
-            <HeroBanner banners={marketerProfile.data.banners} />
-            <SmallScreenFiltersSheet facets={marketerProfile.data.facets} />
-            {/* listings */}
-            {}
-            <ProductsList
-              list={marketerProfile.data.listings.items}
-              listType="listing"
-              title={t("listings")}
-              // meta={marketerProfile?.data?.listings?.meta}
+            <HeroBanner banners={banners} />
+            <ListingTabs active={kind} kinds={facets.kinds} />
+            <ListingToolbar
+              facets={facets}
+              kind={kind}
+              total={listings.meta.total}
             />
-            {/* own listings */}
-            <ProductsList
-              list={marketerProfile.data.own_listings.items}
-              listType="own-listing"
-              title={t("ownListings")}
-              // meta={marketerProfile?.data?.own_listings?.meta}
-            />
-            {/* campaign listings */}
-            <ProductsList
-              list={marketerProfile.data.campaign_listings.items}
-              listType="campaign-listing"
-              title={t("campaignListings")}
-              // meta={marketerProfile?.data?.campaign_listings?.meta}
-            />
-            {/* vendor campaign listings */}
-            <ProductsList
-              list={marketerProfile.data.vendor_campaign_listings.items}
-              listType="vendor-campaign-listing"
-              title={t("vendorCampaignListings")}
-              // meta={marketerProfile?.data?.vendor_campaign_listings?.meta}
-            />
-            {/* marketer campaign listings */}
-            <ProductsList
-              list={marketerProfile.data.marketer_campaign_listings.items}
-              listType="marketer-campaign-listing"
-              title={t("marketerCampaignListings")}
-              // meta={marketerProfile?.data?.marketer_campaign_listings?.meta}
-            />
-            {!marketerProfile.data.listings.items.length && (
-              <Image
-                src="/images/empty-result.webp"
-                alt=""
-                width={1280}
-                height={1280}
-                className="w-md mx-auto"
-              />
+            <ListingsGrid items={listings.items} kind={kind} />
+            {listings.meta.last_page > 1 && (
+              <Pagination totalPages={listings.meta.last_page} />
             )}
           </div>
         </div>

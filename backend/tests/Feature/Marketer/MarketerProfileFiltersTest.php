@@ -11,6 +11,7 @@ use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerListing;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\TravelCountry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -124,7 +125,7 @@ class MarketerProfileFiltersTest extends TestCase
         $this->assertSame([], $data['banners']);
         $this->assertSame(['items', 'meta'], array_keys($data['listings']));
         $this->assertSame(['current_page', 'last_page', 'per_page', 'total'], array_keys($data['listings']['meta']));
-        $this->assertSame(['sources', 'kinds', 'categories', 'brands', 'price', 'discounted_count'], array_keys($data['facets']));
+        $this->assertSame(['sources', 'kinds', 'categories', 'brands', 'destinations', 'price', 'discounted_count'], array_keys($data['facets']));
         $this->assertCount(2, $data['own_listings']['items']);
         $this->assertSame(4, $data['listings']['meta']['total']);
     }
@@ -153,8 +154,16 @@ class MarketerProfileFiltersTest extends TestCase
         $products = $this->items(['source' => 'for_sellers', 'kind' => 'products']);
         $this->assertSame([$r['promoted']->id], array_column($products, 'id'));
         $this->assertSame('product', $products[0]['kind']);
+        $this->assertTrue($products[0]['campaign']['is_vendor']);
+        $this->assertNull($this->items(['source' => 'own', 'kind' => 'products'])[0]['campaign']);
 
         $this->assertSame([], $this->items(['source' => 'own', 'kind' => 'classified']));
+
+        // Sections: a vendor-campaign product is narrowed by source and labelled by `section`.
+        $this->assertSame([$r['promoted']->id], array_column($this->items(['source' => 'vendor_campaign']), 'id'));
+        $this->assertSame([], $this->items(['source' => 'marketer_campaign']));
+        $this->assertSame('vendor_campaign', $products[0]['section']);
+        $this->assertSame('own', $this->items(['source' => 'own', 'kind' => 'products'])[0]['section']);
     }
 
     public function test_search_category_brand_price_and_discount_filters(): void
@@ -192,8 +201,8 @@ class MarketerProfileFiltersTest extends TestCase
         $this->seedListings();
         $f = $this->getJson($this->url())->json('data.facets');
 
-        $this->assertSame(['all' => 4, 'own' => 2, 'for_sellers' => 2], collect($f['sources'])->pluck('count', 'key')->all());
-        $this->assertSame(['all' => 4, 'products' => 3, 'classified' => 1], collect($f['kinds'])->pluck('count', 'key')->all());
+        $this->assertSame(['all' => 4, 'own' => 2, 'vendor_campaign' => 1, 'marketer_campaign' => 0], collect($f['sources'])->pluck('count', 'key')->all());
+        $this->assertSame(['all' => 4, 'products' => 3, 'classified' => 1, 'travel' => 0], collect($f['kinds'])->pluck('count', 'key')->all());
         $this->assertSame(['Electronics' => 2, 'Fashion' => 1], collect($f['categories'])->pluck('count', 'name')->all());
         $this->assertSame(['Acme' => 2, 'Zed' => 1], collect($f['brands'])->pluck('count', 'name')->all());
         $this->assertSame(['min' => 1050, 'max' => 90000], $f['price']);
@@ -202,9 +211,67 @@ class MarketerProfileFiltersTest extends TestCase
         $ar = $this->getJson($this->url(['locale' => 'ar']))->json('data.facets.categories');
         $this->assertContains('أزياء', array_column($ar, 'name'));
 
-        // Kind counts follow the active source filter; source counts stay stable.
+        // Tab (kind) counts ignore the other filters so the tabs stay stable.
         $own = $this->getJson($this->url(['source' => 'own']))->json('data.facets');
-        $this->assertSame(['all' => 2, 'products' => 2, 'classified' => 0], collect($own['kinds'])->pluck('count', 'key')->all());
+        $this->assertSame(['all' => 4, 'products' => 3, 'classified' => 1, 'travel' => 0], collect($own['kinds'])->pluck('count', 'key')->all());
+    }
+
+    private function travelListing(string $title, array $packageOverrides = []): MarketerListing
+    {
+        $package = MarketerV3Fixtures::package(MarketerV3Fixtures::agency($this->s), array_merge(['title_en' => $title, 'price' => 3000], $packageOverrides));
+        $campaign = $this->s->marketerCampaign->replicate();
+        $campaign->forceFill(['vendor_listing_id' => null, 'travel_package_id' => $package->id, 'campaign_category' => 'travel'])->save();
+        $invitation = MarketerCampaignInvitation::create([
+            'campaign_id' => $campaign->id, 'marketer_id' => $this->m->id, 'status' => 'accepted',
+            'responded_at' => now(), 'referral_code' => 'REF-'.Str::upper(Str::random(8)),
+        ]);
+
+        return $this->listing(['listing_category' => 'travel', 'travel_package_id' => $package->id, 'invitation_id' => $invitation->id, 'price' => $package->price]);
+    }
+
+    public function test_travel_tab_lists_active_upcoming_campaign_packages_with_their_own_filters(): void
+    {
+        $r = $this->seedListings();
+        $turkey = TravelCountry::create(['iso_code_2' => 'TR', 'iso_code_3' => 'TUR', 'name_en' => 'Turkey', 'name_ar' => 'تركيا']);
+        $this->travelListing('Istanbul escape', ['destination_country' => 'Turkey', 'destination_city' => 'Istanbul', 'destination_travel_country_id' => $turkey->id]);
+        $this->travelListing('Old trip', ['departure_date' => now()->subDay(), 'return_date' => now()->addDay()]);
+
+        $travel = $this->items(['kind' => 'travel']);
+        $this->assertCount(1, $travel);
+        $this->assertSame('travel', $travel[0]['kind']);
+        $this->assertSame('travel', $travel[0]['listing_type']);
+        $this->assertSame('Istanbul escape', $travel[0]['title_en']);
+        $this->assertSame('Istanbul', $travel[0]['destination_city']);
+        $this->assertNotEmpty($travel[0]['slug']);
+
+        $this->assertCount(1, $this->items(['kind' => 'travel', 'destination' => $turkey->id]));
+        $this->assertCount(0, $this->items(['kind' => 'travel', 'destination' => (string) Str::uuid()]));
+        $this->assertCount(1, $this->items(['kind' => 'travel', 'q' => 'istanbul']));
+        $this->assertCount(0, $this->items(['kind' => 'travel', 'price_min' => 5000]));
+
+        // Other tabs never include travel; the unfiltered grid does.
+        $this->assertNotContains('travel', array_column($this->items(['kind' => 'products']), 'kind'));
+        $this->assertNotContains('travel', array_column($this->items(['kind' => 'classified']), 'kind'));
+        $this->assertContains('travel', array_column($this->items(), 'kind'));
+
+        $f = $this->getJson($this->url(['kind' => 'travel']))->json('data.facets');
+        $this->assertSame(['all' => 5, 'products' => 3, 'classified' => 1, 'travel' => 1], collect($f['kinds'])->pluck('count', 'key')->all());
+        $this->assertSame(['Turkey' => 1], collect($f['destinations'])->pluck('count', 'name')->all());
+        $this->assertSame([], $f['categories']);
+        $this->assertSame([], $f['brands']);
+    }
+
+    public function test_classified_tab_category_filter_uses_classified_categories(): void
+    {
+        $r = $this->seedListings();
+        $categoryId = $r['ad']->classified_category_id;
+
+        $f = $this->getJson($this->url(['kind' => 'classified']))->json('data.facets');
+        $this->assertSame([$categoryId => 1], collect($f['categories'])->pluck('count', 'id')->all());
+        $this->assertSame([], $f['brands']);
+
+        $this->assertCount(1, $this->items(['kind' => 'classified', 'category' => $categoryId]));
+        $this->assertCount(0, $this->items(['kind' => 'classified', 'category' => (string) Str::uuid()]));
     }
 
     public function test_exclusive_classified_cards_and_other_countries_are_scoped(): void

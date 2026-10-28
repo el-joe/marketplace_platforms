@@ -6,18 +6,20 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Banners } from "./helpers/types";
 
 export default function HeroBanner({ banners }: { banners: Banners[] }) {
+  if (!banners.length) return null;
+
   return (
     <Swiper
       modules={[Navigation, Pagination]}
       navigation={banners.length > 1}
       pagination={banners.length > 1 ? { clickable: true } : false}
-      className="mb-4"
+      className="mb-4 h-[300px]"
       loop={banners.length > 1}
       slidesPerView={1}
     >
       {banners.map((b) => (
-        <SwiperSlide key={b.id}>
-          <picture>
+        <SwiperSlide key={b.id} className="!h-full">
+          <picture className="block h-full w-full">
             <source
               media="(min-width: 768px)"
               srcSet={b.image_desktop || "/images/no-image-available-icon.jpg"}
@@ -35,7 +37,7 @@ export default function HeroBanner({ banners }: { banners: Banners[] }) {
               alt={b.title}
               width={2440}
               height={860}
-              className="max-h-112"
+              className="h-full w-full object-cover"
             />
           </picture>
         </SwiperSlide>

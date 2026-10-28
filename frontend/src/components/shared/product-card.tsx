@@ -33,9 +33,11 @@ import { ShippingBadgePill } from "./shipping-badge-pill";
 type Props = {
   productData: Product | IProduct;
   className?: string;
+  /** Optional label over the image corner (e.g. which section a marketer's product belongs to). */
+  sectionBadge?: string;
 };
 
-const ProductCard = ({ productData, className }: Props) => {
+const ProductCard = ({ productData, className, sectionBadge }: Props) => {
   const [isWishlisted, setIsWishlisted] = useState<boolean>(
     productData.is_wishlisted,
   );
@@ -87,6 +89,12 @@ const ProductCard = ({ productData, className }: Props) => {
           >
             {productData?.category_name?.[locale]}
           </div>
+        )}
+        {/* section badge */}
+        {!!sectionBadge && (
+          <span className="absolute bottom-7 inset-s-1.5 z-10 max-w-[85%] truncate rounded-full bg-primary/85 px-2 py-0.5 text-[10px] font-bold text-white md:text-xs">
+            {sectionBadge}
+          </span>
         )}
         {/* wishlist button */}
         <Button

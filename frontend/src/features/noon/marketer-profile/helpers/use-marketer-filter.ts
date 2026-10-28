@@ -23,6 +23,9 @@ const useMarketerFilter = () => {
       }
     });
 
+    // Any filter/tab/sort change starts again from the first page.
+    if (!entries.some(([key]) => key === "page")) params.delete("page");
+
     const queryString = params.toString();
     startNavigationLoading();
     router.push(queryString ? `${pathname}?${queryString}` : pathname);

@@ -1,4 +1,19 @@
 import { IProduct } from "@/types";
+import { TravelPackageSummary } from "@/src/features/flights/helpers/types";
+
+export type ProfileKind = "products" | "classified" | "travel";
+
+export type TravelListingItem = TravelPackageSummary & {
+  kind: "travel";
+  listing_id: string;
+  listing_type: "travel";
+};
+
+export type ListingSection = "own" | "vendor_campaign" | "marketer_campaign";
+
+export type ProfileProductItem = IProduct & { section?: ListingSection | null };
+
+export type ProfileListingItem = ProfileProductItem | TravelListingItem;
 
 export interface IMarketer {
   marketer: Marketer;
@@ -157,7 +172,7 @@ export interface CampaignListings {
 }
 
 export interface Listings {
-  items: IProduct[];
+  items: ProfileListingItem[];
   meta: Meta;
 }
 
@@ -166,6 +181,7 @@ export interface Facets {
   kinds: Kinds[];
   categories: Categories[];
   brands: Brands[];
+  destinations: Destinations[];
   price: Price;
   discounted_count: number;
 }
@@ -181,6 +197,12 @@ export interface Kinds {
 }
 
 export interface Categories {
+  id: string;
+  name: string;
+  count: number;
+}
+
+export interface Destinations {
   id: string;
   name: string;
   count: number;
