@@ -638,7 +638,8 @@
       "pending": "قيد الانتظار",
       "cancelled": "ملغى"
     },
-    "specialRequests": "الطلبات الخاصة"
+    "specialRequests": "الطلبات الخاصة",
+    "chats": "المحادثات"
   },
   "giftCards": {
     "home": "الرئيسية",

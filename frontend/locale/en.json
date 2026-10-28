@@ -638,7 +638,8 @@
       "pending": "Pending",
       "cancelled": "Cancelled"
     },
-    "specialRequests": "Special Requests"
+    "specialRequests": "Special Requests",
+    "chats": "Chats"
   },
   "giftCards": {
     "home": "Home",

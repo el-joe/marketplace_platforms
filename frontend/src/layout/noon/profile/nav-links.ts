@@ -61,7 +61,7 @@ export const myAccountNavItems: NavItem[] = [
   {
     labelKey: "specialRequests",
     href: "/special-requests",
-    icon: "/images/profile/disputes.svg",
+    icon: "/images/profile/special-requests-icon.svg",
   },
   {
     labelKey: "giftCards",
@@ -81,6 +81,11 @@ export const myAccountNavItems: NavItem[] = [
 ];
 
 export const othersNavItems: NavItem[] = [
+  {
+    labelKey: "chats",
+    href: "/chats",
+    icon: "/images/profile/chats-icon.svg",
+  },
   {
     labelKey: "notifications",
     href: "/notifications",
