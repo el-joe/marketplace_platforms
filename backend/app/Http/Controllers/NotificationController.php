@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 /**
  * Shared notification controller used by every panel.
@@ -28,12 +28,12 @@ class NotificationController extends Controller
 {
     /** Ordered list of panel guards — only one is authenticated per subdomain request. */
     private const GUARDS = [
-        'admin'               => 'layouts.admin',
-        'vendor'              => 'layouts.partner',
+        'admin' => 'layouts.admin',
+        'vendor' => 'layouts.partner',
         'shipping_supervisor' => 'layouts.carrier',
-        'travel_agency'       => 'layouts.travel-agency',
-        'delivery'            => 'layouts.delivery',
-        'marketer'            => 'layouts.marketer',
+        'travel_agency' => 'layouts.travel-agency',
+        'delivery' => 'layouts.delivery',
+        'marketer' => 'layouts.marketer',
     ];
 
     private function notifiable(): ?object
@@ -43,6 +43,7 @@ class NotificationController extends Controller
                 return $user;
             }
         }
+
         return null;
     }
 
@@ -53,10 +54,11 @@ class NotificationController extends Controller
                 return $layout;
             }
         }
+
         return 'layouts.admin';
     }
 
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
         $user = $this->notifiable();
         $layout = $this->layout();
@@ -68,12 +70,13 @@ class NotificationController extends Controller
             ->paginate(20)
             ->through(function ($n) {
                 $data = is_string($n->data) ? json_decode($n->data, true) : (array) $n->data;
+
                 return (object) [
                     'id' => $n->id,
                     'title' => $data['title'] ?? 'Notification',
                     'message' => $data['message'] ?? '',
-                    'url' => $data['url'] ?? '#',
-                    'read' => !is_null($n->read_at),
+                    'url' => $this->localizeUrl($data['url'] ?? '#'),
+                    'read' => ! is_null($n->read_at),
                     'created_at' => $n->created_at,
                 ];
             });
@@ -98,7 +101,7 @@ class NotificationController extends Controller
             ->orderByDesc('created_at')
             ->limit(10)
             ->get()
-            ->map(fn($n) => $this->formatRow($n));
+            ->map(fn ($n) => $this->formatRow($n));
 
         return response()->json(['data' => ['count' => $count, 'items' => $items]]);
     }
@@ -108,7 +111,7 @@ class NotificationController extends Controller
     {
         $user = $this->notifiable();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['data' => ['count' => 0]]);
         }
 
@@ -133,7 +136,7 @@ class NotificationController extends Controller
             ->orderByDesc('created_at')
             ->limit(20)
             ->get()
-            ->map(fn($n) => $this->formatRow($n));
+            ->map(fn ($n) => $this->formatRow($n));
 
         return response()->json(['data' => ['items' => $items]]);
     }
@@ -165,15 +168,35 @@ class NotificationController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Stored notification URLs are absolute and keep the domain they were created on.
+     * Re-point them at the host the panel is currently served from.
+     */
+    private function localizeUrl(string $url): string
+    {
+        $parts = parse_url($url);
+
+        if (! is_array($parts) || empty($parts['host'])) {
+            return $url;
+        }
+
+        $path = ($parts['path'] ?? '/')
+            .(isset($parts['query']) ? '?'.$parts['query'] : '')
+            .(isset($parts['fragment']) ? '#'.$parts['fragment'] : '');
+
+        return request()->getSchemeAndHttpHost().$path;
+    }
+
     private function formatRow(object $n): array
     {
         $data = is_string($n->data) ? json_decode($n->data, true) : (array) $n->data;
+
         return [
             'id' => $n->id,
             'title' => $data['title'] ?? 'Notification',
             'message' => $data['message'] ?? '',
-            'url' => $data['url'] ?? '#',
-            'read' => !is_null($n->read_at),
+            'url' => $this->localizeUrl($data['url'] ?? '#'),
+            'read' => ! is_null($n->read_at),
             'created_at' => $n->created_at,
         ];
     }
