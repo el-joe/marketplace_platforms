@@ -8,28 +8,24 @@
         ?? $product->images->first();
 
     $statusMap = [
-        \App\Enums\MarketerListingStatus::Active->value => ['bg-green-100 text-green-700', 'نشط'],
-        \App\Enums\MarketerListingStatus::Paused->value => ['bg-gray-100 text-gray-600', 'موقوف مؤقتاً'],
-        \App\Enums\MarketerListingStatus::PendingReview->value => ['bg-yellow-100 text-yellow-700', 'قيد المراجعة'],
-        \App\Enums\MarketerListingStatus::Draft->value => ['bg-gray-100 text-gray-500', 'مسودة'],
-        \App\Enums\MarketerListingStatus::Rejected->value => ['bg-red-100 text-red-700', 'مرفوض'],
-        \App\Enums\MarketerListingStatus::OutOfStock->value => ['bg-red-50 text-red-500', 'نفد المخزون'],
-        \App\Enums\MarketerListingStatus::Archived->value => ['bg-gray-100 text-gray-400', 'مؤرشف'],
+        \App\Enums\MarketerListingStatus::Active->value => ['bg-green-100 text-green-700', __('marketer.listing_status.active')],
+        \App\Enums\MarketerListingStatus::Paused->value => ['bg-gray-100 text-gray-600', __('marketer.listing_status.paused_long')],
+        \App\Enums\MarketerListingStatus::PendingReview->value => ['bg-yellow-100 text-yellow-700', __('marketer.listing_status.pending_review')],
+        \App\Enums\MarketerListingStatus::Draft->value => ['bg-gray-100 text-gray-500', __('marketer.listing_status.draft')],
+        \App\Enums\MarketerListingStatus::Rejected->value => ['bg-red-100 text-red-700', __('marketer.listing_status.rejected')],
+        \App\Enums\MarketerListingStatus::OutOfStock->value => ['bg-red-50 text-red-500', __('marketer.listing_status.out_of_stock')],
+        \App\Enums\MarketerListingStatus::Archived->value => ['bg-gray-100 text-gray-400', __('marketer.listing_status.archived')],
     ];
     $statusVal = $listing->status instanceof \App\Enums\MarketerListingStatus ? $listing->status->value : $listing->status;
     [$statusClass, $statusLabel] = $statusMap[$statusVal] ?? ['bg-gray-100 text-gray-600', $statusVal];
 
-    $conditionLabels = [
-        'new' => 'جديد',
-        'like_new' => 'كالجديد',
-        'good' => 'جيد',
-        'acceptable' => 'مقبول',
-        'refurbished' => 'مُجدَّد',
-    ];
+    $conditionLabels = collect(['new', 'like_new', 'good', 'acceptable', 'refurbished'])
+        ->mapWithKeys(fn ($c) => [$c => __('marketer.condition.'.$c)])
+        ->all();
 @endphp
 
 @section('title', $product->name_ar ?: $product->name_en)
-@section('page-title', 'تفاصيل القائمة')
+@section('page-title', __('marketer.listing_ui.details_title'))
 
 @section('content')
 
@@ -90,7 +86,7 @@
                         <div class="mt-3 flex flex-wrap gap-4 text-sm text-gray-600">
                             <div>
                                 <span class="text-xs text-gray-400 block">{{ __('marketer.static_text.marketer_listings_show.variant') }}</span>
-                                <span class="font-medium">{{ $variant->variant_name ?: 'النسخة الافتراضية' }}</span>
+                                <span class="font-medium">{{ $variant->variant_name ?: __('marketer.default_variant') }}</span>
                             </div>
                             <div>
                                 <span class="text-xs text-gray-400 block">SKU</span>
@@ -172,7 +168,7 @@
                 @if(in_array($statusVal, [\App\Enums\MarketerListingStatus::Draft->value, \App\Enums\MarketerListingStatus::PendingReview->value]))
                     <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                         <p class="text-sm text-yellow-800">
-                            <strong>{{ __('marketer.static_text.marketer_listings_show.note') }}</strong> قائمتك {{ $statusVal === \App\Enums\MarketerListingStatus::Draft->value ? 'مسودة' : 'قيد المراجعة' }}. ستظهر للعملاء بعد موافقة الإدارة.
+                            <strong>{{ __('marketer.static_text.marketer_listings_show.note') }}</strong> {{ __('marketer.listing_ui.note_review_hint', ['status' => $statusVal === \App\Enums\MarketerListingStatus::Draft->value ? __('marketer.listing_status.draft') : __('marketer.listing_status.pending_review')]) }}
                         </p>
                     </div>
                 @endif
@@ -334,7 +330,7 @@
                             @csrf
                             <button type="submit"
                                 class="w-full {{ $statusVal === \App\Enums\MarketerListingStatus::Active->value ? 'border border-gray-200 hover:bg-gray-50 text-gray-700' : 'bg-green-600 hover:bg-green-700 text-white' }} text-sm font-semibold py-2.5 rounded-xl transition-colors">
-                                {{ $statusVal === \App\Enums\MarketerListingStatus::Active->value ? 'إيقاف مؤقت' : 'تفعيل القائمة' }}
+                                {{ $statusVal === \App\Enums\MarketerListingStatus::Active->value ? __('marketer.listing_ui.pause') : __('marketer.listing_ui.activate') }}
                             </button>
                         </form>
                     @endif
@@ -350,7 +346,7 @@
                     @endif
 
                     <form method="POST" action="{{ route('marketer.listings.destroy', $listing) }}"
-                          onsubmit="return confirm('هل أنت متأكد من حذف هذه القائمة؟');">
+                          onsubmit="return confirm(@js(__('marketer.listings.confirm_delete')));">
                         @csrf
                         @method('DELETE')
                         <button type="submit"
@@ -387,7 +383,7 @@
                     <p id="adjust-current-qty" class="text-2xl font-bold text-gray-900"></p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('marketer.static_text.marketer_listings_show.adjustment') }} <span class="text-xs text-gray-400">(موجب للإضافة، سالب للخصم)</span></label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('marketer.static_text.marketer_listings_show.adjustment') }} <span class="text-xs text-gray-400">{{ __('marketer.listing_ui.adjust_hint') }}</span></label>
                     <input type="number" name="adjustment" required
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
                         placeholder="{{ __('marketer.static_text.marketer_listings_show.e_g_10_or_5') }}">
@@ -481,7 +477,7 @@
                         errorEl.classList.remove('hidden');
                     }
                 } catch {
-                    errorEl.textContent = 'حدث خطأ. يرجى المحاولة مرة أخرى.';
+                    errorEl.textContent = @js(__('marketer.listing_ui.generic_error'));
                     errorEl.classList.remove('hidden');
                 }
             });

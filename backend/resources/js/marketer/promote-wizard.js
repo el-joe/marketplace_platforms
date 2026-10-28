@@ -43,8 +43,8 @@ window.promoteWizard = function () {
         },
 
         init() {
-            if (this.slot.pricing_model === 'fixed_weekly') this.dateHint = 'المدة يجب أن تكون من مضاعفات 7 أيام.';
-            if (this.slot.pricing_model === 'fixed_monthly') this.dateHint = 'المدة يجب أن تكون من مضاعفات 30 يوماً.';
+            if (this.slot.pricing_model === 'fixed_weekly') this.dateHint = t('marketer.promote.duration_weekly');
+            if (this.slot.pricing_model === 'fixed_monthly') this.dateHint = t('marketer.promote.duration_monthly');
             this.chooseDestinationType('marketer_profile');
         },
 
@@ -52,11 +52,11 @@ window.promoteWizard = function () {
             this.error = '';
             if (this.step === 1) {
                 if (!this.form.booked_from || !this.form.booked_until) {
-                    this.error = 'يرجى اختيار التواريخ.';
+                    this.error = t('marketer.promote.pick_dates');
                     return;
                 }
                 if (this.isMetered && (!this.form.budget || this.form.budget < (this.slot.min_budget || 0))) {
-                    this.error = `الميزانية يجب ألا تقل عن ${this.slot.min_budget} ${this.slot.currency}.`;
+                    this.error = t('marketer.promote.min_budget', { amount: this.slot.min_budget, currency: this.slot.currency });
                     return;
                 }
                 await this.fetchQuote();
@@ -68,11 +68,11 @@ window.promoteWizard = function () {
             if (this.step === 2) { this.step = 3; return; }
             if (this.step === 3) {
                 if (this.form.destination_type === 'marketer_profile' && !this.profileReady) {
-                    this.error = 'يرجى إكمال ملفك الشخصي أولاً.';
+                    this.error = t('marketer.promote.complete_profile');
                     return;
                 }
                 if (this.form.destination_type === 'campaign' && !this.form.destination_reference_id) {
-                    this.error = 'يرجى اختيار حملة.';
+                    this.error = t('marketer.promote.pick_campaign');
                     return;
                 }
                 await this.createDraft();
@@ -82,7 +82,7 @@ window.promoteWizard = function () {
             }
             if (this.step === 4) {
                 if (!this.files.desktop_en || !this.files.mobile_en) {
-                    this.error = 'صورتا كمبيوتر (EN) وجوال (EN) مطلوبتان.';
+                    this.error = t('marketer.promote.images_required');
                     return;
                 }
                 await this.uploadCreative();
@@ -131,7 +131,7 @@ window.promoteWizard = function () {
                 if (!data.success) { this.error = data.message; return; }
                 this.quote = data.data;
             } catch (e) {
-                this.error = 'خطأ في الاتصال بالشبكة.';
+                this.error = t('marketer.promote.network_error');
             } finally { this.loading = false; }
         },
 
@@ -161,7 +161,7 @@ window.promoteWizard = function () {
                 if (!data.success) { this.error = data.message; return; }
                 this.bookingId = data.data.id;
             } catch (e) {
-                this.error = 'خطأ في الاتصال بالشبكة.';
+                this.error = t('marketer.promote.network_error');
             } finally { this.loading = false; }
         },
 
@@ -173,7 +173,7 @@ window.promoteWizard = function () {
             const url = URL.createObjectURL(file);
             img.onload = () => {
                 if (required && (img.width !== required.w || img.height !== required.h)) {
-                    this.error = `${slotKey} يجب أن يكون بالضبط ${required.w}x${required.h}px (الحالي ${img.width}x${img.height}).`;
+                    this.error = t('marketer.promote.image_size', { slot: slotKey, required: `${required.w}x${required.h}`, actual: `${img.width}x${img.height}` });
                     event.target.value = '';
                     delete this.files[slotKey];
                 } else {
@@ -204,7 +204,7 @@ window.promoteWizard = function () {
                 const data = await res.json();
                 if (!data.success) { this.error = data.message; return; }
             } catch (e) {
-                this.error = 'خطأ في الاتصال بالشبكة.';
+                this.error = t('marketer.promote.network_error');
             } finally { this.loading = false; }
         },
 
@@ -219,10 +219,10 @@ window.promoteWizard = function () {
                     toast(data.message, 'error');
                     return;
                 }
-                toast('تم إرسال الحجز للمراجعة.');
+                toast(t('marketer.promote.submitted'));
                 window.location.href = cfg.bookingShowUrlTemplate.replace('__ID__', this.bookingId);
             } catch (e) {
-                this.error = 'خطأ في الاتصال بالشبكة.';
+                this.error = t('marketer.promote.network_error');
             } finally { this.loading = false; }
         },
     };

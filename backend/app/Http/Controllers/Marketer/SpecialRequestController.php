@@ -48,7 +48,7 @@ class SpecialRequestController extends Controller
         $ok = $request->startProgress();
 
         return redirect()->route('marketer.special-requests.index')
-            ->with($ok ? 'success' : 'error', $ok ? 'OK' : 'Only open requests can be started.');
+            ->with($ok ? 'success' : 'error', $ok ? __('marketer.msg.special_request_started') : __('marketer.msg.special_request_not_open'));
     }
 
     public function show(string $id): View

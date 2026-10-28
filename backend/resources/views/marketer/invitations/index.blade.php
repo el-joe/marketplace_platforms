@@ -34,7 +34,7 @@
                     </div>
                     <h4 class="font-bold text-gray-900">{{ $product?->name_ar ?? $invitation->campaign->getPromotedTitle() }}</h4>
                     <div class="text-sm text-gray-500 mt-1">
-                        {{ $invitation->campaign->vendor->name ?? 'ناوي' }} •
+                        {{ $invitation->campaign->vendor->name ?? __('marketer.brand_name') }} •
                         {{ $invitation->campaign->country->name_ar ?? '' }} •
                         {{ __('marketer.invitations.commission_type_label') }}
                         {{ ($invitation->influencer_fixed_status ?? 'none') !== 'none' ? __('marketer_campaigns.marketer_panel.terms_fixed') : __('marketer_campaigns.marketer_panel.terms_percentage') }}

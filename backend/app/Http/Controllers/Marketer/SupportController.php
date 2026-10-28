@@ -89,7 +89,7 @@ class SupportController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'تم فتح التذكرة بنجاح',
+            'message' => __('marketer.msg.ticket_opened'),
             'ticket_number' => $ticketNumber,
             'redirect' => route('marketer.support.show', $ticketNumber),
         ], 201);
@@ -105,7 +105,7 @@ class SupportController extends Controller
             ->firstOrFail();
 
         if (in_array($ticket->status, [SupportTicketStatus::Resolved, SupportTicketStatus::Closed], true)) {
-            return response()->json(['message' => 'لا يمكن الرد على تذكرة مغلقة أو محلولة'], 422);
+            return response()->json(['message' => __('marketer.msg.ticket_reply_blocked')], 422);
         }
 
         $validated = $request->validate([
@@ -125,7 +125,7 @@ class SupportController extends Controller
         }
 
         return response()->json([
-            'message' => 'تم إرسال ردك بنجاح',
+            'message' => __('marketer.msg.ticket_reply_sent'),
             'msg' => [
                 'id' => $msg->id,
                 'message' => $msg->message,
@@ -145,7 +145,7 @@ class SupportController extends Controller
 
         $ticket->update(['status' => SupportTicketStatus::Closed]);
 
-        return response()->json(['message' => 'تم إغلاق التذكرة']);
+        return response()->json(['message' => __('marketer.msg.ticket_closed')]);
     }
 
     private function generateTicketNumber(): string

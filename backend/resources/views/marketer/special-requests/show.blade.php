@@ -1,7 +1,7 @@
 @extends('layouts.marketer')
 @php $ar = session('locale', 'ar') === 'ar'; $nm = fn($m) => $m ? ($ar ? ($m->name_ar ?? $m->name_en) : ($m->name_en ?? $m->name_ar)) : null; @endphp
-@section('title', $ar ? 'تفاصيل الطلب' : 'Request details')
-@section('page-title', $ar ? 'تفاصيل الطلب' : 'Request details')
+@section('title', __('marketer.special_requests.details_title'))
+@section('page-title', __('marketer.special_requests.details_title'))
 
 @section('content')
 <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
@@ -15,31 +15,31 @@
 
     <div class="grid grid-cols-2 gap-4 text-sm">
         <div>
-            <div class="text-gray-400">{{ $ar ? 'المدينة' : 'City' }}</div>
-            <div class="font-semibold">{{ $nm($specialRequest->city) ?? ($ar ? 'كل المدن' : 'All cities') }}</div>
+            <div class="text-gray-400">{{ __('marketer.special_requests.city') }}</div>
+            <div class="font-semibold">{{ $nm($specialRequest->city) ?? (__('marketer.special_requests.all_cities')) }}</div>
         </div>
         @if($specialRequest->budget)
         <div>
-            <div class="text-gray-400">{{ $ar ? 'الميزانية' : 'Budget' }}</div>
+            <div class="text-gray-400">{{ __('marketer.special_requests.budget') }}</div>
             <div class="font-semibold">{{ number_format($specialRequest->budget) }} {{ $specialRequest->budget_currency }}</div>
         </div>
         @endif
         <div>
-            <div class="text-gray-400">{{ $ar ? 'العميل' : 'Customer' }}</div>
+            <div class="text-gray-400">{{ __('marketer.special_requests.customer') }}</div>
             <div class="font-semibold">{{ \Illuminate\Support\Str::before(trim((string) ($specialRequest->customer->name ?? '')), ' ') ?: '—' }}</div>
         </div>
         <div>
-            <div class="text-gray-400">{{ $ar ? 'الحالة' : 'Status' }}</div>
-            <div class="font-semibold">{{ $specialRequest->status }}</div>
+            <div class="text-gray-400">{{ __('marketer.special_requests.status') }}</div>
+            <div class="font-semibold">{{ __('marketer.special_requests.status_'.$specialRequest->status) }}</div>
         </div>
     </div>
 
     @if($specialRequest->status === 'open')
         <form method="POST" action="{{ route('marketer.special-requests.start', $specialRequest->id) }}">
             @csrf @method('PATCH')
-            <button class="px-3 py-2 bg-blue-600 text-white rounded text-sm">{{ $ar ? 'بدء المعالجة' : 'Start working' }}</button>
+            <button class="px-3 py-2 bg-blue-600 text-white rounded text-sm">{{ __('marketer.special_requests.start_working') }}</button>
         </form>
     @endif
-    <a href="{{ route('marketer.special-requests.index') }}" class="inline-block mt-2 text-sm text-blue-600">{{ $ar ? '← العودة للقائمة' : '← Back to list' }}</a>
+    <a href="{{ route('marketer.special-requests.index') }}" class="inline-block mt-2 text-sm text-blue-600">{{ __('marketer.special_requests.back') }}</a>
 </div>
 @endsection

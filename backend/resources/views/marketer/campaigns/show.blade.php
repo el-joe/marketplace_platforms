@@ -10,7 +10,7 @@
 @section('content')
 <div class="space-y-4">
     <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-        <div class="text-sm text-gray-500">{{ $campaign->vendor->name ?? 'ناوي' }} • {{ $campaign->country->name_ar ?? '' }}</div>
+        <div class="text-sm text-gray-500">{{ $campaign->vendor->name ?? __('marketer.brand_name') }} • {{ $campaign->country->name_ar ?? '' }}</div>
         <div class="grid grid-cols-3 gap-3 text-center">
             <div class="bg-gray-50 rounded-lg p-3">
                 <div class="text-lg font-black text-gray-900">{{ number_format($invitation->conversions_count ?? 0) }}</div>

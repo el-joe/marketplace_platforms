@@ -54,11 +54,11 @@ class InvitationController extends Controller
     {
         $marketer = $this->marketer();
         abort_unless($invitation->marketer_id === $marketer->id, 403);
-        abort_unless($invitation->isPending(), 422, 'الدعوة لم تعد قابلة للقبول.');
+        abort_unless($invitation->isPending(), 422, __('marketer.msg.invitation_not_acceptable'));
 
         $this->service->acceptInvitation($invitation, $request->input('note'));
 
-        return back()->with('success', 'تم قبول دعوة الحملة بنجاح. يمكنك الآن مشاركة رابط الإحالة.');
+        return back()->with('success', __('marketer.msg.invitation_accepted'));
     }
 
     /**
@@ -68,7 +68,7 @@ class InvitationController extends Controller
     {
         $marketer = $this->marketer();
         abort_unless($invitation->marketer_id === $marketer->id, 403);
-        abort_unless($invitation->isPending(), 422, 'الدعوة لم تعد قابلة للرفض.');
+        abort_unless($invitation->isPending(), 422, __('marketer.msg.invitation_not_rejectable'));
 
         $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
@@ -76,6 +76,6 @@ class InvitationController extends Controller
 
         $this->service->rejectInvitation($invitation, $request->input('reason'));
 
-        return back()->with('success', 'تم رفض الدعوة.');
+        return back()->with('success', __('marketer.msg.invitation_rejected'));
     }
 }

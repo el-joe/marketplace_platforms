@@ -1,7 +1,7 @@
 @extends('layouts.marketer')
 
-@section('title', 'إدارة المخزون')
-@section('page-title', 'إدارة المخزون')
+@section('title', __('marketer.inventory_ui.title'))
+@section('page-title', __('marketer.inventory_ui.title'))
 
 @section('content')
 
@@ -42,7 +42,7 @@
                 'border-orange-400 text-orange-600' => request('filter') === 'low_stock',
                 'border-transparent text-gray-500 hover:text-gray-700' => request('filter') !== 'low_stock',
             ])>
-                ⚠ مخزون منخفض
+                {{ __('marketer.inventory_ui.tab_low') }}
                 @if($lowStockCount > 0)
                     <span class="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">{{ $lowStockCount }}</span>
                 @endif
@@ -53,7 +53,7 @@
                 'border-red-400 text-red-600' => request('filter') === 'out_of_stock',
                 'border-transparent text-gray-500 hover:text-gray-700' => request('filter') !== 'out_of_stock',
             ])>
-                🚫 نفد المخزون
+                {{ __('marketer.inventory_ui.tab_out') }}
                 @if($outOfStockCount > 0)
                     <span class="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">{{ $outOfStockCount }}</span>
                 @endif
@@ -104,7 +104,7 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-4">
-                                    <p class="text-gray-700 text-xs">{{ $row->variant_name ?: 'النسخة الافتراضية' }}</p>
+                                    <p class="text-gray-700 text-xs">{{ $row->variant_name ?: __('marketer.default_variant') }}</p>
                                     <p class="font-mono text-gray-400 text-xs">{{ $row->sku }}</p>
                                 </td>
                                 <td class="py-3 px-4 text-gray-600 text-xs">{{ $row->warehouse_name }}</td>

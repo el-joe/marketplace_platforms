@@ -1,7 +1,7 @@
 @extends('layouts.marketer')
 
-@section('title', 'مخزون منخفض')
-@section('page-title', 'مخزون منخفض')
+@section('title', __('marketer.inventory_ui.low_title'))
+@section('page-title', __('marketer.inventory_ui.low_title'))
 
 @section('content')
 
@@ -54,7 +54,7 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-4">
-                                    <p class="text-gray-700 text-xs">{{ $row->variant_name ?: 'النسخة الافتراضية' }}</p>
+                                    <p class="text-gray-700 text-xs">{{ $row->variant_name ?: __('marketer.default_variant') }}</p>
                                     <p class="font-mono text-gray-400 text-xs">{{ $row->sku }}</p>
                                 </td>
                                 <td class="py-3 px-4 text-gray-600 text-xs">{{ $row->warehouse_name }}</td>

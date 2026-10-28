@@ -1043,6 +1043,24 @@ return [
 
     // ─── Marketer portal ────────────────────────────────────────────────────
     'marketer' => [
+        'promote' => [
+            'duration_weekly' => 'Duration must be a multiple of 7 days.',
+            'duration_monthly' => 'Duration must be a multiple of 30 days.',
+            'pick_dates' => 'Please select the dates.',
+            'min_budget' => 'Budget must be at least {amount} {currency}.',
+            'complete_profile' => 'Please complete your profile first.',
+            'pick_campaign' => 'Please select a campaign.',
+            'images_required' => 'Both desktop (EN) and mobile (EN) images are required.',
+            'network_error' => 'Network connection error.',
+            'image_size' => '{slot} must be exactly {required}px (current {actual}).',
+            'submitted' => 'Booking submitted for review.',
+            'balance_hint' => 'Balance {balance} / required {required} {currency}',
+            'payment_collected' => 'Payment collected.',
+            'cancel_reason_prompt' => 'Cancellation reason:',
+            'impressions' => 'Impressions',
+            'clicks' => 'Clicks',
+            'showing' => 'Showing {from}-{to} of {total}',
+        ],
         'qr_generator' => [
             'generating' => 'Generating…',
             'could_not_generate' => 'Could not generate QR',

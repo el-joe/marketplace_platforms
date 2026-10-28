@@ -11,8 +11,8 @@
     ]);
 @endphp
 
-@section('title', 'تعديل القائمة')
-@section('page-title', 'تعديل القائمة')
+@section('title', __('marketer.listing_ui.edit_title'))
+@section('page-title', __('marketer.listing_ui.edit_title'))
 
 @section('content')
 
@@ -36,9 +36,9 @@
     @if($isLocked)
         <div class="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-3 rounded mb-4 text-sm">
             @if($statusVal === \App\Enums\MarketerListingStatus::Active->value)
-                القائمة نشطة حالياً. يرجى إيقافها مؤقتاً قبل التعديل.
+                {{ __('marketer.listing_ui.locked_active') }}
             @else
-                القائمة قيد المراجعة حالياً ولا يمكن تعديلها.
+                {{ __('marketer.listing_ui.locked_review') }}
             @endif
         </div>
     @endif
@@ -61,7 +61,7 @@
                     </div>
                     <div class="min-w-0 flex-1">
                         <p class="font-semibold text-gray-900 text-sm">{{ $product->name_ar ?: $product->name_en }}</p>
-                        <p class="text-xs text-gray-500 mt-0.5">{{ $variant->variant_name ?: 'النسخة الافتراضية' }}</p>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ $variant->variant_name ?: __('marketer.default_variant') }}</p>
                         <p class="text-xs font-mono text-gray-400 mt-0.5">{{ $variant->sku }}</p>
                     </div>
                 </div>

@@ -91,7 +91,7 @@
                             $snap = $order->shipping_address_snapshot ?? [];
                             $city = $snap['city'] ?? null;
                             $country = $order->country?->{'name_' . app()->getLocale()} ?? $order->country?->name_en ?? null;
-                            $location = collect([$city, $country])->filter()->implode('، ');
+                            $location = collect([$city, $country])->filter()->implode(__('marketer.list_separator'));
 
                             $statusMap = [
                                 'placed'           => ['cls' => 'bg-blue-100 text-blue-700'],

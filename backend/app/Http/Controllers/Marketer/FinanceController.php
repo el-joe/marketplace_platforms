@@ -94,7 +94,7 @@ class FinanceController extends Controller
                 'wallet' => null,
                 'transactions' => collect(),
                 'withdrawalRequests' => collect(),
-                'error' => 'لم يتم تحديد الدولة لهذا الحساب، لا يمكن تحديد عملة المحفظة.',
+                'error' => __('marketer.msg.wallet_country_missing'),
             ]);
         }
 
@@ -123,7 +123,7 @@ class FinanceController extends Controller
         $currency = $marketer->country?->currency_code;
 
         if (! $currency) {
-            return back()->with('error', 'لم يتم تحديد الدولة لهذا الحساب، لا يمكن تحديد عملة المحفظة.');
+            return back()->with('error', __('marketer.msg.wallet_country_missing'));
         }
 
         $wallet = $this->walletService->getOrCreateWallet('marketer', $marketer->id, $currency);
@@ -143,6 +143,6 @@ class FinanceController extends Controller
         $marketerAdmin = Auth::guard('marketer')->user();
         $marketerAdmin->notify(new PayoutScheduled($withdrawal, $marketerAdmin->id));
 
-        return back()->with('success', 'تم تقديم طلب السحب بنجاح');
+        return back()->with('success', __('marketer.msg.withdrawal_submitted'));
     }
 }

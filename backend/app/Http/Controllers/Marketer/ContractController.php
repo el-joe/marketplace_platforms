@@ -39,7 +39,7 @@ class ContractController extends Controller
         $marketer = $this->marketer();
         $contract = $marketer->contract()->with('activeVersion')->first();
 
-        abort_unless($contract && $contract->activeVersion, 422, 'No contract to accept.');
+        abort_unless($contract && $contract->activeVersion, 422, __('marketer.msg.no_contract'));
 
         MarketerContractAcceptance::firstOrCreate(
             [
@@ -54,6 +54,6 @@ class ContractController extends Controller
             ]
         );
 
-        return back()->with('success', 'Contract accepted.');
+        return back()->with('success', __('marketer.msg.contract_accepted'));
     }
 }

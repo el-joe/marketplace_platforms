@@ -4,13 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'لوحة الماركتر') | ناوي</title>
+    <title>@yield('title', __('marketer.portal_title')) | {{ __('marketer.brand_name') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=cairo:400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/marketer/app.js'])
     @stack('head')
     @stack('styles')
     <style>[x-cloak]{display:none!important}</style>
+    <script>
+    window.trans = @json(['marketer' => __('js.marketer'), 'shared' => __('js.shared')]);
+    window.t = window.t || function (path, vars) {
+        const parts = String(path).split('.');
+        let cur = window.trans || {};
+        for (const part of parts) {
+            cur = cur == null ? undefined : cur[part];
+            if (cur === undefined) return path;
+        }
+        if (typeof cur === 'string' && vars) {
+            return cur.replace(/\{(\w+)\}/g, (_, key) => (vars[key] ?? ''));
+        }
+        return cur;
+    };
+    </script>
 </head>
 <body class="bg-gray-100 antialiased" style="font-family: 'Cairo', sans-serif;">
 
@@ -51,7 +66,7 @@
             <div class="px-5 py-2 border-b border-gray-700">
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold
                     {{ $marketer->isInfluencer() ? 'bg-purple-900 text-purple-200' : ($marketer->isBroker() ? 'bg-emerald-900 text-emerald-200' : 'bg-blue-900 text-blue-200') }}">
-                    {{ $marketer->isInfluencer() ? '🎬 مؤثر (Influencer)' : ($marketer->isBroker() ? '🤝 وسيط (Broker)' : '🔗 أفيليت (Affiliate)') }}
+                    {{ $marketer->isInfluencer() ? __('marketer.nav.type_influencer') : ($marketer->isBroker() ? __('marketer.nav.type_broker') : __('marketer.nav.type_affiliate')) }}
                 </span>
             </div>
             @endif
@@ -71,7 +86,7 @@
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                           {{ request()->routeIs('marketer.special-requests.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8M8 14h5M5 4h14a2 2 0 012 2v10a2 2 0 01-2 2h-5l-4 4v-4H5a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>
-                    {{ session('locale', 'ar') === 'ar' ? 'طلبات العملاء' : 'Special Requests' }}
+                    {{ __('marketer.nav.special_requests') }}
                     @if($openSpecialRequests > 0)
                         <span class="ms-auto bg-red-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center">{{ $openSpecialRequests }}</span>
                     @endif
@@ -82,7 +97,7 @@
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                           {{ request()->routeIs('marketer.invitations.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                    دعوات الحملات
+                    {{ __('marketer.nav.campaign_invitations') }}
                     @if($pendingInvitations > 0)
                         <span class="ms-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ $pendingInvitations }}</span>
                     @endif
@@ -200,7 +215,7 @@
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                           {{ request()->routeIs('marketer.flash-sales.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    التخفيضات السريعة
+                    {{ __('marketer.nav.flash_sales') }}
                     @if($pendingFlashSaleInvites > 0)
                         <span class="ms-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ $pendingFlashSaleInvites }}</span>
                     @endif
@@ -253,7 +268,7 @@
 
             {{-- Topbar --}}
             <header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-                <h1 class="text-lg font-bold text-gray-800">@yield('page-title', 'لوحة الماركتر')</h1>
+                <h1 class="text-lg font-bold text-gray-800">@yield('page-title', __('marketer.portal_title'))</h1>
                 <div class="flex items-center gap-3">
                     {{-- Pending status badge --}}
                     @if($marketer && $marketer->global_status?->value === 'pending')

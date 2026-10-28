@@ -67,7 +67,7 @@ class SampleController extends Controller
             403
         );
 
-        abort_unless($sample->status === 'pending', 422, 'العينة غير قابلة للتعديل.');
+        abort_unless($sample->status === 'pending', 422, __('marketer.msg.sample_not_editable'));
 
         $request->validate([
             'address_line_1' => ['required', 'string', 'max:255'],
@@ -84,7 +84,7 @@ class SampleController extends Controller
             ]),
         ]);
 
-        return back()->with('success', 'تم حفظ عنوان التوصيل. سيتواصل معك الفريق لإرسال العينة.');
+        return back()->with('success', __('marketer.msg.sample_address_saved'));
     }
 
     /**
@@ -98,10 +98,10 @@ class SampleController extends Controller
                 ->exists(),
             403
         );
-        abort_unless($sample->status === 'dispatched', 422, 'العينة غير قابلة للتأكيد.');
+        abort_unless($sample->status === 'dispatched', 422, __('marketer.msg.sample_not_confirmable'));
 
         $sample->update(['status' => 'delivered', 'delivered_at' => $sample->delivered_at ?? now()]);
 
-        return back()->with('success', 'تم تأكيد استلام العينة.');
+        return back()->with('success', __('marketer.msg.sample_received'));
     }
 }

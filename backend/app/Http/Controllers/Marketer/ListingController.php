@@ -160,13 +160,13 @@ class ListingController extends Controller
         $warehouse = Warehouse::findOrFail($request->warehouse_id);
 
         if ($warehouse->type !== WarehouseType::PlatformFbn) {
-            return back()->withErrors(['warehouse_id' => 'يجب اختيار مستودع FBN تابع للمنصة.'])->withInput();
+            return back()->withErrors(['warehouse_id' => __('marketer.msg.fbn_warehouse_required')])->withInput();
         }
 
         $variant = ProductVariant::with('product')->findOrFail($request->product_variant_id);
 
         if (! $variant->is_active || $variant->trashed() || $variant->is_hidden || $variant->product?->is_hidden) {
-            return back()->withErrors(['product_variant_id' => 'هذا المنتج غير متاح للإضافة كقائمة.'])->withInput();
+            return back()->withErrors(['product_variant_id' => __('marketer.msg.variant_unavailable')])->withInput();
         }
 
         $country = Country::findOrFail($request->country_id);
@@ -188,7 +188,7 @@ class ListingController extends Controller
         ]);
 
         return redirect()->route('marketer.listings.index')
-            ->with('success', 'تم إضافة القائمة بنجاح. ستظهر للعملاء بعد مراجعة الإدارة.');
+            ->with('success', __('marketer.msg.listing_created'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -241,13 +241,9 @@ class ListingController extends Controller
             'warehouse',
         ]);
 
-        $conditions = [
-            'new' => 'جديد',
-            'like_new' => 'كالجديد',
-            'good' => 'جيد',
-            'acceptable' => 'مقبول',
-            'refurbished' => 'مُجدَّد',
-        ];
+        $conditions = collect(['new', 'like_new', 'good', 'acceptable', 'refurbished'])
+            ->mapWithKeys(fn ($c) => [$c => __('marketer.condition.'.$c)])
+            ->all();
 
         return view('marketer.listings.edit', compact('listing', 'conditions'));
     }
@@ -271,7 +267,7 @@ class ListingController extends Controller
         ];
 
         if (! in_array($listing->status, $editableStatuses, true)) {
-            return back()->withErrors(['status' => 'لا يمكن تعديل القائمة في حالتها الحالية. يرجى إيقافها مؤقتاً أولاً.'])->withInput();
+            return back()->withErrors(['status' => __('marketer.msg.listing_not_editable')])->withInput();
         }
 
         $validated = $request->validate([
@@ -293,7 +289,7 @@ class ListingController extends Controller
         ]);
 
         return redirect()->route('marketer.listings.show', $listing)
-            ->with('success', 'تم تحديث القائمة بنجاح.');
+            ->with('success', __('marketer.msg.listing_updated'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -324,7 +320,7 @@ class ListingController extends Controller
                 $newOnHand = $inventory->quantity_on_hand + (int) $request->adjustment;
 
                 if ($newOnHand < 0) {
-                    throw new \InvalidArgumentException('لا يمكن أن يكون المخزون بالسالب.');
+                    throw new \InvalidArgumentException(__('marketer.msg.stock_negative'));
                 }
 
                 $inventory->update(['quantity_on_hand' => $newOnHand]);
@@ -347,12 +343,12 @@ class ListingController extends Controller
         } catch (\Throwable $e) {
             Log::error('marketer adjustStock failed', ['error' => $e->getMessage()]);
 
-            return response()->json(['success' => false, 'message' => 'حدث خطأ أثناء التعديل.'], 500);
+            return response()->json(['success' => false, 'message' => __('marketer.msg.adjust_error')], 500);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'تم تعديل المخزون بنجاح.',
+            'message' => __('marketer.msg.stock_adjusted'),
             'new_quantity' => $result,
         ]);
     }
@@ -370,7 +366,7 @@ class ListingController extends Controller
         abort_unless($listing->marketer_id === $marketer->id, 403);
 
         if ($listing->status !== MarketerListingStatus::Rejected) {
-            return back()->withErrors(['status' => 'لا يمكن إعادة تقديم هذه القائمة.']);
+            return back()->withErrors(['status' => __('marketer.msg.listing_not_resubmittable')]);
         }
 
         $listing->update([
@@ -379,7 +375,7 @@ class ListingController extends Controller
         ]);
 
         return redirect()->route('marketer.listings.show', $listing)
-            ->with('success', 'تم إعادة تقديم القائمة للمراجعة.');
+            ->with('success', __('marketer.msg.listing_resubmitted'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -401,7 +397,7 @@ class ListingController extends Controller
             'paused_reason' => $listing->status === MarketerListingStatus::Active ? 'manual' : null,
         ]);
 
-        return back()->with('success', 'تم تحديث حالة القائمة.');
+        return back()->with('success', __('marketer.msg.listing_status_updated'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -431,13 +427,13 @@ class ListingController extends Controller
                 : null;
 
             if (! $listingPrice || ! $listingPrice->allow_marketer_override) {
-                return back()->withErrors(['price' => 'لا يمكن تعديل سعر هذا الإعلان — السعر مثبّت من الإدارة.']);
+                return back()->withErrors(['price' => __('marketer.msg.price_locked')]);
             }
 
             if (! $listingPrice->isPriceInBounds(Money::number($request->price))) {
                 $bounds = collect([$listingPrice->min_price, $listingPrice->max_price])->filter()->implode(' - ');
 
-                return back()->withErrors(['price' => 'السعر يجب أن يكون ضمن الحدود المسموح بها'.($bounds ? " ({$bounds})" : '').'.']);
+                return back()->withErrors(['price' => __('marketer.msg.price_out_of_bounds').($bounds ? " ({$bounds})" : '').'.']);
             }
         }
 
@@ -447,7 +443,7 @@ class ListingController extends Controller
             'compare_at_price' => $request->compare_at_price ? Money::number($request->compare_at_price) : null,
         ]);
 
-        return back()->with('success', 'تم تحديث السعر.');
+        return back()->with('success', __('marketer.msg.price_updated'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -490,6 +486,6 @@ class ListingController extends Controller
 
         $listing->delete();
 
-        return back()->with('success', 'تم حذف القائمة.');
+        return back()->with('success', __('marketer.msg.listing_deleted'));
     }
 }

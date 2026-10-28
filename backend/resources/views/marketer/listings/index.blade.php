@@ -11,11 +11,11 @@
             @php
                 $filterLabels = [
                     ''               => __('marketer.listings.filter_all'),
-                    'active'         => 'نشط',
-                    'pending_review' => 'قيد المراجعة',
-                    'paused'         => 'موقوف',
-                    'rejected'       => 'مرفوض',
-                    'draft'          => 'مسودة',
+                    'active'         => __('marketer.listing_status.active'),
+                    'pending_review' => __('marketer.listing_status.pending_review'),
+                    'paused'         => __('marketer.listing_status.paused'),
+                    'rejected'       => __('marketer.listing_status.rejected'),
+                    'draft'          => __('marketer.listing_status.draft'),
                 ];
             @endphp
             @foreach($filterLabels as $s => $label)
@@ -112,13 +112,13 @@
                         </td>
                         @php
                             $statusMap = [
-                                'draft'          => ['bg-gray-100 text-gray-500',    'مسودة'],
-                                'pending_review' => ['bg-yellow-100 text-yellow-700','قيد المراجعة'],
-                                'active'         => ['bg-green-100 text-green-700',  'نشط'],
-                                'paused'         => ['bg-gray-100 text-gray-500',    'موقوف'],
-                                'rejected'       => ['bg-red-100 text-red-700',      'مرفوض'],
-                                'out_of_stock'   => ['bg-orange-100 text-orange-600','نفد المخزون'],
-                                'archived'       => ['bg-gray-100 text-gray-400',    'مؤرشف'],
+                                'draft'          => ['bg-gray-100 text-gray-500',    __('marketer.listing_status.draft')],
+                                'pending_review' => ['bg-yellow-100 text-yellow-700',__('marketer.listing_status.pending_review')],
+                                'active'         => ['bg-green-100 text-green-700',  __('marketer.listing_status.active')],
+                                'paused'         => ['bg-gray-100 text-gray-500',    __('marketer.listing_status.paused')],
+                                'rejected'       => ['bg-red-100 text-red-700',      __('marketer.listing_status.rejected')],
+                                'out_of_stock'   => ['bg-orange-100 text-orange-600',__('marketer.listing_status.out_of_stock')],
+                                'archived'       => ['bg-gray-100 text-gray-400',    __('marketer.listing_status.archived')],
                             ];
                             $sv = $listing->status instanceof \BackedEnum ? $listing->status->value : (string) $listing->status;
                             [$statusClass, $statusLabel] = $statusMap[$sv] ?? ['bg-gray-100 text-gray-500', $sv];

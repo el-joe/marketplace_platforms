@@ -119,7 +119,7 @@ class PromoteController extends Controller
             $profile = MarketerProfile::where('marketer_id', $marketer->id)->first();
 
             if (! $profile?->profile_slug) {
-                return response()->json(['success' => true, 'data' => [], 'message' => 'Profile page is not set up yet.']);
+                return response()->json(['success' => true, 'data' => [], 'message' => __('marketer.msg.profile_page_missing')]);
             }
 
             return response()->json(['success' => true, 'data' => [[
@@ -157,7 +157,7 @@ class PromoteController extends Controller
         $currency = $marketer->country?->currency_code;
 
         if (! $currency) {
-            return response()->json(['success' => false, 'message' => 'Wallet currency is not set for this account.'], 422);
+            return response()->json(['success' => false, 'message' => __('marketer.msg.wallet_currency_missing')], 422);
         }
 
         $wallet = app(WalletService::class)->getOrCreateWallet('marketer', $marketer->id, $currency);

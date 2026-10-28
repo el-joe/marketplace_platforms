@@ -60,9 +60,9 @@ class AuthController extends Controller
             'whatsapp_for_campaigns' => ['nullable', 'string', 'max:30'],
             'country_id' => ['required', 'exists:countries,id'],
         ], [
-            'email.unique' => 'البريد الإلكتروني مسجّل مسبقاً.',
-            'marketer_type.in' => 'نوع الماركتر غير صحيح.',
-            'country_id.exists' => 'الدولة غير صحيحة.',
+            'email.unique' => __('marketer.msg.email_taken'),
+            'marketer_type.in' => __('marketer.msg.type_invalid'),
+            'country_id.exists' => __('marketer.msg.country_invalid'),
         ]);
 
         DB::transaction(function () use ($request) {
@@ -91,7 +91,7 @@ class AuthController extends Controller
         });
 
         return redirect()->route('marketer.login')
-            ->with('status', 'تم تسجيل حسابك بنجاح! سيتم مراجعة طلبك والتواصل معك قريباً.');
+            ->with('status', __('marketer.msg.registered'));
     }
 
     // ── Login ─────────────────────────────────────────────────────────────
@@ -140,7 +140,7 @@ class AuthController extends Controller
         RateLimiter::hit($throttleKey, self::DECAY_SECONDS);
 
         throw ValidationException::withMessages([
-            'email' => 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+            'email' => __('marketer.msg.login_failed'),
         ]);
     }
 
@@ -169,7 +169,7 @@ class AuthController extends Controller
         );
 
         if ($status === Password::RESET_LINK_SENT) {
-            return back()->with('status', 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.');
+            return back()->with('status', __('marketer.msg.reset_link_sent'));
         }
 
         throw ValidationException::withMessages(['email' => __($status)]);
@@ -201,7 +201,7 @@ class AuthController extends Controller
 
         if ($status === Password::PASSWORD_RESET) {
             return redirect()->route('marketer.login')
-                ->with('status', 'تم إعادة تعيين كلمة المرور بنجاح.');
+                ->with('status', __('marketer.msg.password_reset'));
         }
 
         throw ValidationException::withMessages(['email' => __($status)]);

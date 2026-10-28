@@ -129,13 +129,13 @@
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_create.condition_notes') }}</label>
                 <textarea name="condition_notes" rows="2" maxlength="500"
-                          placeholder="صف حالة المنتج بتفصيل أكثر (اختياري)"
+                          placeholder="{{ __('marketer.listing_ui.condition_placeholder') }}"
                           class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">{{ old('condition_notes') }}</textarea>
             </div>
 
             {{-- Vendor SKU --}}
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_create.your_sku') }} <span class="text-xs text-gray-400">(اختياري)</span></label>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_create.your_sku') }} <span class="text-xs text-gray-400">{{ __('marketer.optional') }}</span></label>
                 <input type="text" name="vendor_sku" value="{{ old('vendor_sku') }}" maxlength="100"
                        placeholder="{{ __('marketer.static_text.marketer_listings_create.product_code_in_your_internal_system') }}"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
@@ -143,7 +143,7 @@
 
             {{-- Low Stock Threshold --}}
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_create.stock_alert_threshold') }} <span class="text-xs text-gray-400">(افتراضي: 5)</span></label>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_create.stock_alert_threshold') }} <span class="text-xs text-gray-400">{{ __('marketer.default_value', ['value' => 5]) }}</span></label>
                 <input type="number" name="low_stock_threshold" value="{{ old('low_stock_threshold', 5) }}" min="0" max="9999"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
                 <p class="text-xs text-gray-400 mt-1">{{ __('marketer.static_text.marketer_listings_create.you_will_be_notified_when_stock') }}</p>

@@ -14,7 +14,7 @@ function buildPaginationDrawCallback(tableId) {
 
         const infoEl = el(`${tableId}-info`);
         if (infoEl) {
-            infoEl.textContent = info.recordsTotal === 0 ? '' : `Showing ${info.start + 1}-${info.end} of ${info.recordsTotal}`;
+            infoEl.textContent = info.recordsTotal === 0 ? '' : t('marketer.promote.showing', { from: info.start + 1, to: info.end, total: info.recordsTotal });
         }
 
         const pagEl = el(`${tableId}-pagination`);

@@ -1,7 +1,7 @@
 @extends('layouts.marketer')
 
-@section('title', 'نفد المخزون')
-@section('page-title', 'نفد المخزون')
+@section('title', __('marketer.inventory_ui.out_title'))
+@section('page-title', __('marketer.inventory_ui.out_title'))
 
 @section('content')
 
@@ -49,12 +49,12 @@
                                 $available = $row->quantity_on_hand - $row->quantity_reserved;
                                 $sv = $row->listing_status instanceof \BackedEnum ? $row->listing_status->value : (string) $row->listing_status;
                                 $statusMap = [
-                                    'active'         => ['bg-green-100 text-green-700', 'نشط'],
-                                    'paused'         => ['bg-gray-100 text-gray-600',   'موقوف'],
-                                    'pending_review' => ['bg-yellow-100 text-yellow-700','قيد المراجعة'],
-                                    'out_of_stock'   => ['bg-red-100 text-red-700',     'نفد المخزون'],
-                                    'rejected'       => ['bg-red-100 text-red-700',     'مرفوض'],
-                                    'draft'          => ['bg-gray-100 text-gray-500',   'مسودة'],
+                                    'active'         => ['bg-green-100 text-green-700', __('marketer.listing_status.active')],
+                                    'paused'         => ['bg-gray-100 text-gray-600',   __('marketer.listing_status.paused')],
+                                    'pending_review' => ['bg-yellow-100 text-yellow-700',__('marketer.listing_status.pending_review')],
+                                    'out_of_stock'   => ['bg-red-100 text-red-700',     __('marketer.listing_status.out_of_stock')],
+                                    'rejected'       => ['bg-red-100 text-red-700',     __('marketer.listing_status.rejected')],
+                                    'draft'          => ['bg-gray-100 text-gray-500',   __('marketer.listing_status.draft')],
                                 ];
                                 [$statusCls, $statusLabel] = $statusMap[$sv] ?? ['bg-gray-100 text-gray-500', $sv];
                             @endphp
@@ -66,7 +66,7 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-4">
-                                    <p class="text-gray-700 text-xs">{{ $row->variant_name ?: 'النسخة الافتراضية' }}</p>
+                                    <p class="text-gray-700 text-xs">{{ $row->variant_name ?: __('marketer.default_variant') }}</p>
                                     <p class="font-mono text-gray-400 text-xs">{{ $row->sku }}</p>
                                 </td>
                                 <td class="py-3 px-4 text-gray-600 text-xs">{{ $row->warehouse_name }}</td>

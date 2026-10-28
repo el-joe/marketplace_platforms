@@ -1028,6 +1028,24 @@ return [
 
     // ─── بوابة المسوّق ───
     'marketer' => [
+        'promote' => [
+            'duration_weekly' => 'المدة يجب أن تكون من مضاعفات 7 أيام.',
+            'duration_monthly' => 'المدة يجب أن تكون من مضاعفات 30 يوماً.',
+            'pick_dates' => 'يرجى اختيار التواريخ.',
+            'min_budget' => 'الميزانية يجب ألا تقل عن {amount} {currency}.',
+            'complete_profile' => 'يرجى إكمال ملفك الشخصي أولاً.',
+            'pick_campaign' => 'يرجى اختيار حملة.',
+            'images_required' => 'صورتا كمبيوتر (EN) وجوال (EN) مطلوبتان.',
+            'network_error' => 'خطأ في الاتصال بالشبكة.',
+            'image_size' => '{slot} يجب أن يكون بالضبط {required}px (الحالي {actual}).',
+            'submitted' => 'تم إرسال الحجز للمراجعة.',
+            'balance_hint' => 'الرصيد {balance} / المطلوب {required} {currency}',
+            'payment_collected' => 'تم تحصيل الدفعة.',
+            'cancel_reason_prompt' => 'سبب الإلغاء:',
+            'impressions' => 'مرات الظهور',
+            'clicks' => 'النقرات',
+            'showing' => 'عرض {from}-{to} من {total}',
+        ],
         'qr_generator' => [
             'generating' => 'جارٍ الإنشاء…',
             'could_not_generate' => 'تعذّر إنشاء رمز QR',

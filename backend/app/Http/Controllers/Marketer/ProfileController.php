@@ -105,7 +105,7 @@ class ProfileController extends Controller
         // Public profile cache is busted automatically by MarketerProfile's
         // model events (see MarketerProfile::booted()) on the $profile->save() above.
 
-        return back()->with('success', 'تم حفظ البروفايل.');
+        return back()->with('success', __('marketer.msg.profile_saved'));
     }
 
     /**
@@ -117,7 +117,7 @@ class ProfileController extends Controller
         $marketer = $this->marketer();
         $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
 
-        abort_unless($profile->can_self_edit_ad_price, 403, 'غير مسموح لك بتعديل سعر الإعلان.');
+        abort_unless($profile->can_self_edit_ad_price, 403, __('marketer.msg.ad_price_forbidden'));
 
         $request->validate([
             'ad_price' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
@@ -129,7 +129,7 @@ class ProfileController extends Controller
             'ad_price_currency' => $request->input('ad_price_currency', $profile->ad_price_currency),
         ]);
 
-        return back()->with('success', 'تم تحديث سعر الإعلان.');
+        return back()->with('success', __('marketer.msg.ad_price_updated'));
     }
 
     private function storeProfileImage(Request $request, string $field, string $directory, MarketerProfile $profile): File

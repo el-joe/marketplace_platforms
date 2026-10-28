@@ -22,15 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch(cfg.payUrl, { method: 'POST', headers: { 'X-CSRF-TOKEN': csrfToken(), Accept: 'application/json' } });
         const data = await res.json();
         if (!data.success) {
-            toast(data.message + (data.balance !== undefined ? ` (الرصيد ${data.balance} / المطلوب ${data.required} ${data.currency})` : ''), 'error');
+            toast(data.message + (data.balance !== undefined ? ` (${t('marketer.promote.balance_hint', { balance: data.balance, required: data.required, currency: data.currency })})` : ''), 'error');
             return;
         }
-        toast('تم تحصيل الدفعة.');
+        toast(t('marketer.promote.payment_collected'));
         window.location.reload();
     });
 
     document.getElementById('btn-cancel')?.addEventListener('click', async () => {
-        const reason = prompt('سبب الإلغاء:');
+        const reason = prompt(t('marketer.promote.cancel_reason_prompt'));
         if (!reason) return;
         const res = await fetch(cfg.cancelUrl, {
             method: 'POST',
@@ -58,8 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: cfg.stats.daily.map((d) => d.date),
                 datasets: [
-                    { label: 'Impressions', data: cfg.stats.daily.map((d) => d.impressions), borderColor: '#6366f1' },
-                    { label: 'Clicks', data: cfg.stats.daily.map((d) => d.clicks), borderColor: '#22c55e' },
+                    { label: t('marketer.promote.impressions'), data: cfg.stats.daily.map((d) => d.impressions), borderColor: '#6366f1' },
+                    { label: t('marketer.promote.clicks'), data: cfg.stats.daily.map((d) => d.clicks), borderColor: '#22c55e' },
                 ],
             },
         });

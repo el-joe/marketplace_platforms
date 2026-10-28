@@ -58,7 +58,7 @@ class FlashSaleController extends Controller
             'responded_at' => now(),
         ]);
 
-        return back()->with('success', 'تم قبول دعوة التخفيضات السريعة');
+        return back()->with('success', __('marketer.msg.flash_accepted'));
     }
 
     public function decline(FlashSaleMarketerInvitation $invitation): RedirectResponse
@@ -70,7 +70,7 @@ class FlashSaleController extends Controller
             'responded_at' => now(),
         ]);
 
-        return back()->with('success', 'تم رفض دعوة التخفيضات السريعة');
+        return back()->with('success', __('marketer.msg.flash_rejected'));
     }
 
     private function authorizeInvitation(FlashSaleMarketerInvitation $invitation): void

@@ -117,7 +117,7 @@ class PromoteBookingController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
-        return response()->json(['success' => true, 'message' => 'Draft created.', 'data' => ['id' => $booking->id]], 201);
+        return response()->json(['success' => true, 'message' => __('marketer.msg.booking_draft_created'), 'data' => ['id' => $booking->id]], 201);
     }
 
     public function show(string $booking): View
@@ -161,7 +161,7 @@ class PromoteBookingController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
-        return response()->json(['success' => true, 'message' => 'Creative uploaded.']);
+        return response()->json(['success' => true, 'message' => __('marketer.msg.booking_creative_uploaded')]);
     }
 
     public function submit(string $booking): JsonResponse
@@ -174,7 +174,7 @@ class PromoteBookingController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
-        return response()->json(['success' => true, 'message' => 'Submitted for review.']);
+        return response()->json(['success' => true, 'message' => __('marketer.msg.booking_submitted')]);
     }
 
     public function pay(string $booking): JsonResponse
@@ -197,7 +197,7 @@ class PromoteBookingController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
-        return response()->json(['success' => true, 'message' => 'Payment collected.']);
+        return response()->json(['success' => true, 'message' => __('marketer.msg.booking_paid')]);
     }
 
     public function cancel(Request $request, string $booking): JsonResponse
@@ -212,7 +212,7 @@ class PromoteBookingController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
-        return response()->json(['success' => true, 'message' => 'Booking cancelled.']);
+        return response()->json(['success' => true, 'message' => __('marketer.msg.booking_cancelled')]);
     }
 
     public function stats(string $booking): JsonResponse
