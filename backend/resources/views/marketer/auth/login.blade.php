@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,6 +8,11 @@
     @vite(['resources/css/app.css'])
 </head>
 <body class="min-h-screen bg-gray-100 flex items-center justify-center" style="font-family:'Cairo',sans-serif;">
+<form method="POST" action="{{ route('marketer.locale.switch') }}" class="fixed top-4 end-4 z-50">
+    @csrf
+    <input type="hidden" name="locale" value="{{ app()->getLocale() === 'ar' ? 'en' : 'ar' }}">
+    <button type="submit" class="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-100">{{ app()->getLocale() === 'ar' ? 'English' : 'العربية' }}</button>
+</form>
     <div class="w-full max-w-md">
 
         <div class="text-center mb-8">

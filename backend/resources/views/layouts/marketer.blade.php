@@ -277,6 +277,11 @@
                         </span>
                     @endif
                     <x-notification-bell guard="marketer" />
+                <form method="POST" action="{{ route('marketer.locale.switch') }}">
+                    @csrf
+                    <input type="hidden" name="locale" value="{{ app()->getLocale() === 'ar' ? 'en' : 'ar' }}">
+                    <button type="submit" class="px-3 py-1 rounded-lg border border-gray-300 text-xs font-semibold text-gray-600 hover:bg-gray-100">{{ app()->getLocale() === 'ar' ? 'English' : 'العربية' }}</button>
+                </form>
                     <span class="text-sm text-gray-500">{{ $marketerAdmin?->name }}</span>
                 </div>
             </header>
