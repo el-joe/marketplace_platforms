@@ -178,9 +178,8 @@
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                           {{ request()->routeIs('marketer.conversations.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                     {{ __('marketer.conversations') }}
-                    @if(($unreadMessages ?? 0) > 0)
-                        <span class="ms-auto bg-red-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center">{{ $unreadMessages }}</span>
-                    @endif
+                    <span id="chat-unread-badge" data-count="{{ (int) ($unreadMessages ?? 0) }}"
+                          class="ms-auto bg-red-500 text-white text-xs rounded-full min-w-5 h-5 px-1 items-center justify-center {{ ($unreadMessages ?? 0) > 0 ? 'flex' : 'hidden' }}">{{ $unreadMessages ?? 0 }}</span>
                 </a>
 
                 <a href="{{ route('marketer.exclusive-contracts.index') }}"
@@ -287,6 +286,72 @@
 
     </div>
 
+    @auth('marketer')
+    <script>
+    (function () {
+        // Global chat alerts: pop sound + sidebar badge on every panel page.
+        let ctx = null;
+        function audio() {
+            try {
+                ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+            } catch (e) {}
+            return ctx;
+        }
+        // Browsers keep audio locked until a user gesture, so unlock on first interaction.
+        ['pointerdown', 'keydown', 'touchstart'].forEach((ev) =>
+            window.addEventListener(ev, audio, { once: true, passive: true }));
+
+        window.playChatPop = function () {
+            const c = audio();
+            if (!c || c.state !== 'running') return;
+            const now = c.currentTime;
+            [[660, 0], [990, 0.09]].forEach(([freq, start]) => {
+                const osc = c.createOscillator();
+                const gain = c.createGain();
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.0001, now + start);
+                gain.gain.exponentialRampToValueAtTime(0.25, now + start + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + start + 0.18);
+                osc.connect(gain).connect(c.destination);
+                osc.start(now + start);
+                osc.stop(now + start + 0.2);
+            });
+        };
+
+        const badge = document.getElementById('chat-unread-badge');
+        // The server is the source of truth (counts unread conversations, not messages).
+        window.refreshChatBadge = function () {
+            if (!badge) return;
+            fetch(@json(route('marketer.conversations.unread-count')), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            })
+                .then((r) => (r.ok ? r.json() : null))
+                .then((j) => {
+                    if (!j) return;
+                    badge.dataset.count = j.count;
+                    badge.textContent = j.count > 9 ? '9+' : j.count;
+                    badge.classList.toggle('hidden', j.count === 0);
+                    badge.classList.toggle('flex', j.count > 0);
+                })
+                .catch(() => {});
+        };
+
+        const marketerId = @json((string) auth('marketer')->user()->marketer_id);
+        const subscribe = () => {
+            if (!window.Echo) return false;
+            window.Echo.private('marketer-chat.' + marketerId).listen('.message.sent', (e) => {
+                if (e.message.sender_type !== 'customer') return;
+                window.playChatPop();
+                // Slight delay lets the open thread mark itself read before we recount.
+                setTimeout(window.refreshChatBadge, e.conversation_id === window.activeChatConversationId ? 800 : 0);
+            });
+            return true;
+        };
+        if (!subscribe()) window.addEventListener('load', subscribe);
+    })();
+    </script>
+    @endauth
     @stack('scripts')
 </body>
 </html>

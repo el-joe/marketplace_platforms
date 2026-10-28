@@ -39,6 +39,12 @@ class ConversationController extends Controller
         return view('marketer.conversations.index', ['conversations' => $this->list(), 'active' => null, 'messages' => collect()]);
     }
 
+    public function unreadCount(): JsonResponse
+    {
+        return response()->json(['count' => MarketerConversation::where('marketer_id', $this->marketer()->id)
+            ->where('marketer_has_unread', true)->count()]);
+    }
+
     public function show(string $conversation): View
     {
         $active = $this->owned($conversation);

@@ -1,12 +1,29 @@
 let audioContext: AudioContext | null = null;
 
+function getContext(): AudioContext | null {
+  try {
+    audioContext ??= new AudioContext();
+    if (audioContext.state === "suspended") void audioContext.resume();
+    return audioContext;
+  } catch {
+    return null;
+  }
+}
+
+// Browsers keep audio locked until a user gesture, so unlock on first interaction.
+if (typeof window !== "undefined") {
+  ["pointerdown", "keydown", "touchstart"].forEach((event) =>
+    window.addEventListener(event, getContext, { once: true, passive: true }),
+  );
+}
+
 /** Short two-note "pop" played when a chat message arrives. Silent if the browser blocks audio. */
 export function playChatSound() {
   if (typeof window === "undefined") return;
   try {
-    audioContext ??= new AudioContext();
-    const ctx = audioContext;
-    if (ctx.state === "suspended") void ctx.resume();
+    const ctx = getContext();
+    // still locked (no interaction yet): skip rather than play late
+    if (!ctx || ctx.state !== "running") return;
 
     const now = ctx.currentTime;
     [
