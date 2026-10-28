@@ -38,6 +38,19 @@ if (_reverbKey) {
 }
 
 /**
+ * Notification URLs are stored absolute; re-point them at the current origin.
+ */
+function localizeUrl(url) {
+    if (!url) return '#';
+    try {
+        const u = new URL(url, window.location.origin);
+        return window.location.origin + u.pathname + u.search + u.hash;
+    } catch (e) {
+        return url;
+    }
+}
+
+/**
  * Alpine component factory for the notification bell.
  * Registered as window.notificationBell() so the Blade component can call it
  * inline without requiring a separate @vite entry per panel.
@@ -79,7 +92,7 @@ window.notificationBell = function (echoChannel) {
                         id:         e.id ?? null,
                         title:      e.title ?? t('shared.notifications.new_notification'),
                         message:    e.message ?? '',
-                        url:        e.url ?? '#',
+                        url:        localizeUrl(e.url),
                         read:       false,
                         created_at: new Date().toLocaleString(),
                     });
