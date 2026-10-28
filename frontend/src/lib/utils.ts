@@ -42,6 +42,10 @@ async function fetchWithAuth<T>(
   init?: RequestInit,
   _isRetry = false,
 ): Promise<T> {
+  // Login/register never carry a session: a stale Bearer token can make the API
+  // reject valid credentials, and their 401s mean "bad credentials", not "expired".
+  const isAuthEndpoint = /^\/auth\/(login|register|otp|forgot|reset)/.test(path);
+
   const [token, refreshToken, cartToken] = await Promise.all([
     resolveCookie("access_token"),
     resolveCookie("refresh_token"),
@@ -53,7 +57,9 @@ async function fetchWithAuth<T>(
     headers.set("Content-Type", "application/json");
   }
   headers.set("Accept", "application/json");
-  if (!!token) {
+  if (isAuthEndpoint) {
+    // no Authorization header
+  } else if (!!token) {
     headers.set("Authorization", `Bearer ${token}`);
   } else if (refreshToken) {
     const newAccessToken = await refreshAccessToken();
@@ -72,7 +78,7 @@ async function fetchWithAuth<T>(
     headers,
   });
 
-  if (res.status === 401 && !_isRetry) {
+  if (res.status === 401 && !_isRetry && !isAuthEndpoint) {
     const newAccessToken = await refreshAccessToken();
     if (!newAccessToken) {
       throw new ApiRequestError("Session expired", 401);
