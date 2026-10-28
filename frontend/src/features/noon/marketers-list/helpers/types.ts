@@ -32,3 +32,24 @@ export interface Meta {
   per_page: number;
   total: number;
 }
+
+export interface IMarketerBanner {
+  id: string;
+  title: string | null;
+  subtitle: string | null;
+  cta_label: string | null;
+  link: string | null;
+  link_type: string | null;
+  link_reference_id?: string | null;
+  image_desktop: string | null;
+  image_mobile: string | null;
+  priority: number;
+  click_url: string | null;
+}
+
+export interface IMarketersBannersResponse {
+  banners: {
+    hero: IMarketerBanner[];
+    strip: IMarketerBanner[];
+  };
+}

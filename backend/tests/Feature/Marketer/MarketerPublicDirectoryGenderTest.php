@@ -122,6 +122,17 @@ class MarketerPublicDirectoryGenderTest extends TestCase
         $this->assertSame('En influencer', $data['sections'][0]['label']);
     }
 
+    public function test_banners_only_returns_gendered_banners_without_sections(): void
+    {
+        Banner::factory()->marketerGlobal('marketers_list_hero', 'male')->create(['title_en' => 'Hero men']);
+        Banner::factory()->marketerGlobal('marketers_list_hero', 'female')->create(['title_en' => 'Hero women']);
+
+        $data = $this->getJson($this->url('marketers?banners_only=1&gender=male&locale=uae-en'))->assertOk()->json('data');
+
+        $this->assertSame(['banners'], array_keys($data));
+        $this->assertSame(['Hero men'], array_column($data['banners']['hero'], 'title'));
+    }
+
     public function test_grouped_sections_cap_at_twelve_most_popular_first(): void
     {
         foreach (range(1, 14) as $i) {

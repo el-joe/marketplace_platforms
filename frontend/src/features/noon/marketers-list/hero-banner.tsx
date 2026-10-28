@@ -1,27 +1,52 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 import { EffectFade, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { IMarketerBanner } from "./helpers/types";
 
-export default function HeroBanner() {
+const FALLBACK_IMAGE = "/images/no-image-available-icon.jpg";
+
+export default function HeroBanner({
+  banners,
+}: {
+  banners: IMarketerBanner[];
+}) {
+  const slides = banners.filter((b) => b.image_desktop || b.image_mobile);
+  if (!slides.length) return null;
+
   return (
     <Swiper
       modules={[Navigation, EffectFade]}
       effect="fade"
-      navigation
+      navigation={slides.length > 1}
       className="mb-4"
-      loop
+      loop={slides.length > 1}
       slidesPerView={1}
     >
-      {[
-        "https://images.boutiqaat.com/opticalshrink/v1/image/BF_2026___Top_Picks___Best_Deals___All_Countries_2606d5bc_5c45_4366_8f37_a2da889e94df.webp?resource=page1&type=slider",
-        "https://images.boutiqaat.com/opticalshrink/v1/image/BF_2026___Top_Picks___Best_Deals___All_Countries_40a3f34f_e7e9_4465_9aee_dbf0d00ffffb.webp?resource=page1&type=slider",
-      ].map((e) => (
-        <SwiperSlide key={e}>
-          <Image src={e} alt="" width={2440} height={860} />
-        </SwiperSlide>
-      ))}
+      {slides.map((b) => {
+        const desktop = b.image_desktop || b.image_mobile || FALLBACK_IMAGE;
+        const mobile = b.image_mobile || desktop;
+        const picture = (
+          <picture>
+            <source media="(min-width: 768px)" srcSet={desktop} />
+            <source media="(max-width: 767px)" srcSet={mobile} />
+            <Image
+              src={desktop}
+              alt={b.title ?? ""}
+              width={2440}
+              height={860}
+            />
+          </picture>
+        );
+        const href = b.link || b.click_url;
+        return (
+          <SwiperSlide key={b.id}>
+            {href ? <Link href={href}>{picture}</Link> : picture}
+          </SwiperSlide>
+        );
+      })}
     </Swiper>
   );
 }

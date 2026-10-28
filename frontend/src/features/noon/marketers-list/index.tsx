@@ -1,8 +1,9 @@
 import React from "react";
-import { getMarketersList } from "./api";
+import { getMarketersBanners, getMarketersList } from "./api";
 import GenderTabs from "./gender-tabs";
 import MarketersList from "./marketers-list";
 import { IMarketerItem } from "./helpers/types";
+import { getLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import HeroBanner from "./hero-banner";
 import EmptyState from "./empty-state";
@@ -24,10 +25,13 @@ export default async function MarketersListView({ gender, type, page }: Props) {
     page: page ?? "",
   });
 
-  const marketersList = await getMarketersList(searchParams);
+  const [marketersList, bannersRes] = await Promise.all([
+    getMarketersList(searchParams),
+    getLocale().then((locale) => getMarketersBanners(gender, locale)),
+  ]);
   return (
     <div className="container">
-      <HeroBanner />
+      <HeroBanner banners={bannersRes.data.banners.hero} />
       <GenderTabs active={gender ?? ""} />
       {!marketersList.data.items.length && <EmptyState />}
       {Object.entries(

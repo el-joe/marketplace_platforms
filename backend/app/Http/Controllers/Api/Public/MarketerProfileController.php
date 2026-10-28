@@ -40,6 +40,12 @@ class MarketerProfileController extends Controller
         $countryId = $request->attributes->get('country')?->id;
         $filters = $this->directory->filtersFrom($request);
 
+        if ($request->boolean('banners_only')) {
+            return ApiResponse::success([
+                'banners' => $this->directory->listBanners($filters['gender'], $countryId, $request),
+            ]);
+        }
+
         if ($request->boolean('grouped')) {
             return ApiResponse::success([
                 'sections' => $this->directory->sections($filters, $countryId, $request),
