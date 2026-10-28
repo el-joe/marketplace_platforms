@@ -1302,7 +1302,16 @@
     "noProductsFound": "لا توجد منتجات",
     "viewAd": "عرض الإعلان",
     "listView": "قائمة",
-    "mapView": "خريطة"
+    "mapView": "خريطة",
+    "adsInArea": "{count, plural, one {# إعلان} other {# إعلانات}} في هذه المنطقة",
+    "updatingArea": "جارٍ التحديث…",
+    "noAdsInArea": "لا توجد إعلانات في هذه المنطقة",
+    "noAdsInAreaHint": "حرّك الخريطة أو قم بالتكبير لاستكشاف مناطق أخرى.",
+    "nearMe": "بالقرب مني",
+    "nearMeHint": "اعرض الإعلانات حول موقعك",
+    "radiusKm": "{km} كم",
+    "locationDenied": "تم رفض إذن الموقع. اسمح به من إعدادات المتصفح.",
+    "locationUnavailable": "تعذّر تحديد موقعك. حاول مرة أخرى."
   },
   "classifiedSidebar": {
     "chat": "محادثة",

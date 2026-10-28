@@ -238,25 +238,38 @@
                         </div>
                     </div>
 
-                    {{-- Location map (shown if category requires_location_map) --}}
+                    {{-- Location picker (required for every listing): search, current location, or pin on the map --}}
                     <div id="cl-location-section" class="space-y-3">
-                        <label class="block text-sm font-semibold text-gray-800">{{ __('partner.classifieds_extra.wizard.location_title') }}</label>
+                        <label class="block text-sm font-semibold text-gray-800">
+                            {{ __('partner.classifieds_extra.wizard.location_title') }}
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <p class="text-xs text-gray-500">{{ __('partner.classifieds_extra.wizard.location_hint') }}</p>
 
-                        {{-- Places search input --}}
-                        <div class="relative">
+                        <div class="flex flex-col gap-2 sm:flex-row">
+                            {{-- Places search input --}}
                             <input type="text" id="cl-map-search"
-                                class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                                class="w-full flex-1 rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                                 placeholder="{{ __('partner.classifieds_extra.wizard.map_search_placeholder', ['default' => 'Search for a location…']) }}">
+                            <button type="button" id="cl-use-my-location"
+                                class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v3m0 14v3M2 12h3m14 0h3"/><circle cx="12" cy="12" r="8"/></svg>
+                                <span>{{ __('partner.classifieds_extra.wizard.use_current_location') }}</span>
+                            </button>
                         </div>
 
                         {{-- Map container --}}
                         <div id="cl-map" style="height: 380px; border-radius: 12px; overflow: hidden; background: #e5e7eb;"></div>
 
-                        {{-- Coordinate confirmation row --}}
-                        <div class="flex items-center gap-4 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
-                            <span>Lat: <span id="cl-lat-display" class="font-mono font-medium text-gray-700">—</span></span>
-                            <span>Lng: <span id="cl-lng-display" class="font-mono font-medium text-gray-700">—</span></span>
+                        {{-- Selection status: placeholder until a point is chosen, then the coordinates --}}
+                        <div id="cl-location-status" class="flex items-center gap-4 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500">
+                            <span id="cl-location-empty">{{ __('partner.classifieds_extra.wizard.location_not_selected') }}</span>
+                            <span id="cl-location-coords" class="hidden items-center gap-4">
+                                <span>Lat: <span id="cl-lat-display" class="font-mono font-medium text-gray-700">—</span></span>
+                                <span>Lng: <span id="cl-lng-display" class="font-mono font-medium text-gray-700">—</span></span>
+                            </span>
                         </div>
+                        <p id="cl-location-error" class="hidden text-xs text-red-600"></p>
 
                         {{-- Hidden inputs — same IDs as before so form JS still works --}}
                         <input type="hidden" id="cl-latitude">

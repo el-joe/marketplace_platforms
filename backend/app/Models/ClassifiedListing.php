@@ -2,6 +2,13 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
+use App\Enums\ClassifiedListingAttachmentStatus;
+use App\Enums\ClassifiedListingStatus;
+use App\Helpers\CurrencyFormatter;
+use App\Services\Customer\UnifiedCategoryService;
+use App\Services\MarketerCampaignService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,27 +37,27 @@ class ClassifiedListing extends Model
 
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
     protected $casts = [
-        'attributes'           => 'array',
-        'price'          => \App\Casts\DecimalMoney::class,
-        'latitude'             => 'decimal:7',
-        'longitude'            => 'decimal:7',
+        'attributes' => 'array',
+        'price' => DecimalMoney::class,
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
         'contract_accepted_at' => 'datetime',
-        'approved_at'          => 'datetime',
-        'sold_price'           => \App\Casts\DecimalMoney::class,
-        'sold_at'              => 'datetime',
-        'expires_at'           => 'date',
-        'price_negotiable'     => 'boolean',
-        'is_vendor_listing'    => 'boolean',
-        'campaign_enabled'     => 'boolean',
-        'status'               => \App\Enums\ClassifiedListingStatus::class,
+        'approved_at' => 'datetime',
+        'sold_price' => DecimalMoney::class,
+        'sold_at' => 'datetime',
+        'expires_at' => 'date',
+        'price_negotiable' => 'boolean',
+        'is_vendor_listing' => 'boolean',
+        'campaign_enabled' => 'boolean',
+        'status' => ClassifiedListingStatus::class,
     ];
 
     protected static function booted(): void
     {
         static::creating(function (self $listing) {
-            $base   = Str::slug($listing->title_en ?? 'listing');
-            $suffix = 'clsf-' . Str::lower($listing->listing_number ?? Str::random(6));
-            $listing->slug = $base . '-' . $suffix;
+            $base = Str::slug($listing->title_en ?? 'listing');
+            $suffix = 'clsf-'.Str::lower($listing->listing_number ?? Str::random(6));
+            $listing->slug = $base.'-'.$suffix;
         });
 
         static::saving(function (self $listing) {
@@ -60,7 +67,7 @@ class ClassifiedListing extends Model
 
         static::saved(function (self $listing) {
             if ($listing->isDirty('status')) {
-                \App\Services\Customer\UnifiedCategoryService::flushCache();
+                UnifiedCategoryService::flushCache();
             }
         });
     }
@@ -95,6 +102,27 @@ class ClassifiedListing extends Model
         return $this->belongsTo(City::class);
     }
 
+    /**
+     * Listings whose coordinates fall within $radiusKm of a point: a bounding box (index-friendly)
+     * narrowed by the exact great-circle distance.
+     *
+     * @param  Builder<ClassifiedListing>  $query
+     * @return Builder<ClassifiedListing>
+     */
+    public function scopeWithinRadius(Builder $query, float $lat, float $lng, float $radiusKm): Builder
+    {
+        $latDelta = $radiusKm / 111.045;
+        $lngDelta = $radiusKm / (111.045 * max(cos(deg2rad($lat)), 0.01));
+
+        return $query
+            ->whereBetween('latitude', [$lat - $latDelta, $lat + $latDelta])
+            ->whereBetween('longitude', [$lng - $lngDelta, $lng + $lngDelta])
+            ->whereRaw(
+                '(6371 * acos(least(1, cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))) <= ?',
+                [$lat, $lng, $lat, $radiusKm],
+            );
+    }
+
     public function contractTemplate(): BelongsTo
     {
         return $this->belongsTo(ClassifiedContractTemplate::class, 'contract_template_id');
@@ -108,7 +136,7 @@ class ClassifiedListing extends Model
     public function images(): HasMany
     {
         return $this->hasMany(ClassifiedListingImage::class, 'classified_listing_id')
-                    ->orderBy('position');
+            ->orderBy('position');
     }
 
     public function inquiries(): HasMany
@@ -118,7 +146,7 @@ class ClassifiedListing extends Model
 
     public function getPriceFormattedAttribute(): string
     {
-        return \App\Helpers\CurrencyFormatter::formatPrice($this->price, $this->currency);
+        return CurrencyFormatter::formatPrice($this->price, $this->currency);
     }
 
     public function getPrimaryImageUrlAttribute(): ?string
@@ -144,7 +172,7 @@ class ClassifiedListing extends Model
         }
 
         $verified = $this->attachments
-            ->where('status', \App\Enums\ClassifiedListingAttachmentStatus::Verified)
+            ->where('status', ClassifiedListingAttachmentStatus::Verified)
             ->pluck('attachment_type')
             ->toArray();
 
@@ -162,20 +190,20 @@ class ClassifiedListing extends Model
     }
 
     /** Campaign through which this listing was sold (set when marked sold with an attributed marketer). */
-    public function soldViaCampaign(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function soldViaCampaign(): BelongsTo
     {
         return $this->belongsTo(MarketerCampaign::class, 'sold_via_campaign_id');
     }
 
     /** Marketer campaigns promoting this listing. */
-    public function campaigns(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function campaigns(): HasMany
     {
         return $this->hasMany(MarketerCampaign::class, 'classified_listing_id');
     }
 
     /** The campaign currently open to marketers (live or awaiting review), if any. */
-    public function openCampaigns(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function openCampaigns(): HasMany
     {
-        return $this->campaigns()->whereNotIn('status', \App\Services\MarketerCampaignService::TERMINAL_STATUSES);
+        return $this->campaigns()->whereNotIn('status', MarketerCampaignService::TERMINAL_STATUSES);
     }
 }

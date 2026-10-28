@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Customer;
 
-use App\Support\Money;
 use App\Enums\ClassifiedListingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Customer\ClassifiedBrowseCategoryResource;
 use App\Http\Resources\Customer\ProductBrowseCategoryResource;
 use App\Http\Resources\Customer\TravelBrowseCategoryResource;
 use App\Http\Resources\Customer\TravelCategorySummaryResource;
+use App\Http\Resources\Public\MarketerBannerResource;
 use App\Models\Category;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
@@ -19,9 +19,11 @@ use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\ProductQueryService;
 use App\Services\Customer\UnifiedCategoryService;
 use App\Services\Shared\PageBuilderService;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class BrowseController extends Controller
@@ -111,6 +113,10 @@ class BrowseController extends Controller
 
         if ($request->filled('city_id')) {
             $query->where('city_id', $request->input('city_id'));
+        }
+
+        if ($geo = $this->classifiedGeoFilter($request)) {
+            $query->withinRadius((float) $geo['lat'], (float) $geo['lng'], (float) $geo['radius_km']);
         }
 
         if ($request->filled('country')) {
@@ -230,7 +236,8 @@ class BrowseController extends Controller
             : null;
 
         $perPage = $request->integer('per_page', 20);
-        $filters = $request->only(['listing_purpose', 'seller_type', 'min_price', 'max_price']);
+        $filters = $request->only(['listing_purpose', 'seller_type', 'min_price', 'max_price', 'city_id'])
+            + $this->classifiedGeoFilter($request);
 
         $paginator = $this->listings->paginateForClassifiedCategory($category?->id, $perPage, $filters);
 
@@ -256,6 +263,53 @@ class BrowseController extends Controller
                 ],
             ],
         ]);
+    }
+
+    /**
+     * GET /classified/cities
+     * Cities that currently have active classified listings in this country, busiest first.
+     */
+    public function classifiedCities(Request $request): JsonResponse
+    {
+        $country = $request->attributes->get('country');
+        // The storefront sends its page language as `locale` (e.g. uae-en), same as the marketer endpoints.
+        $name = MarketerBannerResource::localeFor($request) === 'ar' ? 'name_ar' : 'name_en';
+
+        $cities = ClassifiedListing::query()
+            ->where('classified_listings.status', ClassifiedListingStatus::Active->value)
+            ->when($country, fn ($q) => $q->where('classified_listings.country_id', $country->id))
+            ->whereNotNull('classified_listings.city_id')
+            ->join('cities', 'cities.id', '=', 'classified_listings.city_id')
+            ->groupBy('cities.id', 'cities.name_ar', 'cities.name_en')
+            ->orderByDesc(DB::raw('count(*)'))
+            ->toBase()
+            ->get(['cities.id', "cities.{$name} as name", DB::raw('count(*) as count')])
+            ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'count' => (int) $c->count])
+            ->values();
+
+        return response()->json(['data' => $cities]);
+    }
+
+    /**
+     * Validated `lat`/`lng`/`radius_km` query params (a point plus a radius, default 25 km, 1-200).
+     * Empty when no valid point was sent.
+     *
+     * @return array{lat?: float, lng?: float, radius_km?: float}
+     */
+    private function classifiedGeoFilter(Request $request): array
+    {
+        $lat = $request->query('lat');
+        $lng = $request->query('lng');
+
+        if (! is_numeric($lat) || ! is_numeric($lng) || abs((float) $lat) > 90 || abs((float) $lng) > 180) {
+            return [];
+        }
+
+        return [
+            'lat' => (float) $lat,
+            'lng' => (float) $lng,
+            'radius_km' => min(200, max(1, (float) $request->query('radius_km', 25))),
+        ];
     }
 
     // ── Travel ────────────────────────────────────────────────────────────────

@@ -2,14 +2,21 @@
 
 namespace Tests\Feature\Panels;
 
+use App\Enums\TravelAgencyStatus;
+use App\Enums\VendorType;
 use App\Models\Admin;
+use App\Models\CartItem;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
+use App\Models\MarketerAdmin;
+use App\Models\Order;
 use App\Models\ShippingCompanySupervisor;
 use App\Models\TravelAgency;
 use App\Models\TravelAgencyMember;
 use App\Models\Vendor;
 use App\Models\VendorAdmin;
+use App\Models\WarrantyPurchase;
+use App\Services\Customer\CartService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
@@ -81,11 +88,11 @@ class PanelSmokeV2Test extends TestCase
     {
         $vendorAdmin = VendorAdmin::create([
             'vendor_id' => ($vendor ?? $this->scenario->vendor)->id,
-            'name'      => 'Panel Smoke V2 Vendor Admin',
-            'email'     => 'panel-smoke-v2-' . Str::random(8) . '@example.test',
-            'password'  => bcrypt('password'),
-            'role'      => 'owner',
-            'is_owner'  => true,
+            'name' => 'Panel Smoke V2 Vendor Admin',
+            'email' => 'panel-smoke-v2-'.Str::random(8).'@example.test',
+            'password' => bcrypt('password'),
+            'role' => 'owner',
+            'is_owner' => true,
             'is_active' => true,
         ]);
 
@@ -176,33 +183,33 @@ class PanelSmokeV2Test extends TestCase
      */
     public function test_admin_warranty_purchases_show_resolves_real_id(): void
     {
-        $this->scenario->country->update(['site_code' => 'ae-' . Str::lower(Str::random(6))]);
+        $this->scenario->country->update(['site_code' => 'ae-'.Str::lower(Str::random(6))]);
 
         $this->actingAs($this->scenario->customer, 'customer');
-        $cart = app(\App\Services\Customer\CartService::class)
+        $cart = app(CartService::class)
             ->getOrCreateCart($this->scenario->customer, $this->scenario->country->id, $this->scenario->country->currency_code);
 
-        \App\Models\CartItem::create([
-            'cart_id'            => $cart->id,
-            'vendor_listing_id'  => $this->scenario->vendorListingFbp->id,
-            'quantity'           => 1,
-            'unit_price'         => (int) $this->scenario->vendorListingFbp->getRawOriginal('price'),
-            'warranty_plan_id'   => $this->scenario->warrantyPlanFlat->id,
-            'added_at'           => now(),
+        CartItem::create([
+            'cart_id' => $cart->id,
+            'vendor_listing_id' => $this->scenario->vendorListingFbp->id,
+            'quantity' => 1,
+            'unit_price' => (int) $this->scenario->vendorListingFbp->getRawOriginal('price'),
+            'warranty_plan_id' => $this->scenario->warrantyPlanFlat->id,
+            'added_at' => now(),
         ]);
 
         $response = $this->postJson("/api/customer/v1/{$this->scenario->country->site_code}/checkout/place-order", [
-            'address_id'                  => $this->scenario->customerAddress->id,
-            'country_payment_gateway_id'  => $this->scenario->countryPaymentGateways['wallet']->id,
-            'idempotency_key'             => (string) Str::uuid(),
+            'address_id' => $this->scenario->customerAddress->id,
+            'country_payment_gateway_id' => $this->scenario->countryPaymentGateways['wallet']->id,
+            'idempotency_key' => (string) Str::uuid(),
         ]);
         $response->assertStatus(201);
 
         $orderNumber = $response->json('data.order.order_number') ?? $response->json('data.order_number');
-        $order = \App\Models\Order::where('order_number', $orderNumber)->firstOrFail();
+        $order = Order::where('order_number', $orderNumber)->firstOrFail();
         $subOrder = $order->subOrders()->where('seller_type', 'vendor')->first();
         $item = $subOrder->items()->first();
-        $purchase = \App\Models\WarrantyPurchase::where('order_item_id', $item->id)->firstOrFail();
+        $purchase = WarrantyPurchase::where('order_item_id', $item->id)->firstOrFail();
 
         $admin = $this->superAdmin();
         $show = $this->actingAs($admin, 'admin')
@@ -320,18 +327,18 @@ class PanelSmokeV2Test extends TestCase
     private function classifiedVendorAdmin(): VendorAdmin
     {
         $vendor = Vendor::create([
-            'name'            => 'Classified Test Vendor',
-            'email'           => 'classified-vendor-' . Str::lower(Str::random(8)) . '@example.test',
-            'phone'           => '+9715' . fake()->numerify('########'),
-            'password'        => bcrypt('password'),
-            'store_name'      => 'Classified Store ' . Str::random(6),
-            'store_slug'      => 'classified-store-' . Str::lower(Str::random(6)),
-            'business_type'   => 'individual',
+            'name' => 'Classified Test Vendor',
+            'email' => 'classified-vendor-'.Str::lower(Str::random(8)).'@example.test',
+            'phone' => '+9715'.fake()->numerify('########'),
+            'password' => bcrypt('password'),
+            'store_name' => 'Classified Store '.Str::random(6),
+            'store_slug' => 'classified-store-'.Str::lower(Str::random(6)),
+            'business_type' => 'individual',
             'payout_schedule' => 'monthly',
-            'global_status'   => 'active',
-            'country_id'      => $this->scenario->country->id,
-            'approved_at'     => now(),
-            'vendor_type'     => \App\Enums\VendorType::ClassifiedVendor,
+            'global_status' => 'active',
+            'country_id' => $this->scenario->country->id,
+            'approved_at' => now(),
+            'vendor_type' => VendorType::ClassifiedVendor,
         ]);
 
         return $this->superVendorAdmin($vendor);
@@ -346,7 +353,7 @@ class PanelSmokeV2Test extends TestCase
         // working path — not a fabricated value. Proven end-to-end below.
         $vendorAdmin = $this->classifiedVendorAdmin();
 
-        $this->assertSame(\App\Enums\VendorType::ClassifiedVendor, $vendorAdmin->vendor->vendor_type);
+        $this->assertSame(VendorType::ClassifiedVendor, $vendorAdmin->vendor->vendor_type);
     }
 
     public function test_vendor_classified_listings_index_does_not_500(): void
@@ -366,6 +373,22 @@ class PanelSmokeV2Test extends TestCase
             ->postJson(route('partner.classifieds.store'), []);
 
         $response->assertStatus(422);
+    }
+
+    public function test_vendor_classified_listing_store_requires_a_location(): void
+    {
+        $vendorAdmin = $this->classifiedVendorAdmin();
+
+        $this->actingAs($vendorAdmin, 'vendor')
+            ->postJson(route('partner.classifieds.store'), ['title_en' => 'Flat', 'title_ar' => 'شقة'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['latitude', 'longitude']);
+
+        // Out-of-range coordinates are rejected too.
+        $this->actingAs($vendorAdmin, 'vendor')
+            ->postJson(route('partner.classifieds.store'), ['latitude' => 120, 'longitude' => 500])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['latitude', 'longitude']);
     }
 
     public function test_vendor_type_gate_hides_product_only_menu_for_classified_vendor(): void
@@ -393,26 +416,26 @@ class PanelSmokeV2Test extends TestCase
 
         $category = ClassifiedCategory::create([
             'name_en' => 'Real Estate', 'name_ar' => 'عقارات',
-            'slug'    => 'real-estate-' . Str::lower(Str::random(6)),
+            'slug' => 'real-estate-'.Str::lower(Str::random(6)),
             'is_active' => true, 'sort_order' => 0,
         ]);
 
         $listing = ClassifiedListing::create([
-            'listing_number'          => 'CL-' . Str::upper(Str::random(8)),
-            'slug'                    => 'listing-' . Str::lower(Str::random(8)),
-            'seller_type'             => Vendor::class,
-            'seller_id'               => $vendorAdmin->vendor_id,
-            'classified_category_id'  => $category->id,
-            'country_id'              => $this->scenario->country->id,
-            'city_id'                 => $this->scenario->city->id,
-            'listing_purpose'         => 'sale',
-            'title_en'                => 'Test Classified',
-            'title_ar'                => 'إعلان تجريبي',
-            'description_en'          => 'A test classified listing.',
-            'description_ar'          => 'إعلان تجريبي.',
-            'price'                   => 100000,
-            'currency'                => 'AED',
-            'status'                  => 'active',
+            'listing_number' => 'CL-'.Str::upper(Str::random(8)),
+            'slug' => 'listing-'.Str::lower(Str::random(8)),
+            'seller_type' => Vendor::class,
+            'seller_id' => $vendorAdmin->vendor_id,
+            'classified_category_id' => $category->id,
+            'country_id' => $this->scenario->country->id,
+            'city_id' => $this->scenario->city->id,
+            'listing_purpose' => 'sale',
+            'title_en' => 'Test Classified',
+            'title_ar' => 'إعلان تجريبي',
+            'description_en' => 'A test classified listing.',
+            'description_ar' => 'إعلان تجريبي.',
+            'price' => 100000,
+            'currency' => 'AED',
+            'status' => 'active',
         ]);
 
         $response = $this->actingAs($vendorAdmin, 'vendor')
@@ -428,13 +451,13 @@ class PanelSmokeV2Test extends TestCase
         // The marketer web guard authenticates a MarketerAdmin (session
         // login row), not the Marketer record itself.
         $this->scenario->marketer->forceFill(['onboarding_completed_at' => now()])->save();
-        $marketerAdmin = \App\Models\MarketerAdmin::create([
+        $marketerAdmin = MarketerAdmin::create([
             'marketer_id' => $this->scenario->marketer->id,
-            'name'        => 'Marketer Owner',
-            'email'       => 'marketer-admin-' . Str::lower(Str::random(8)) . '@example.test',
-            'password'    => bcrypt('password'),
-            'is_owner'    => true,
-            'is_active'   => true,
+            'name' => 'Marketer Owner',
+            'email' => 'marketer-admin-'.Str::lower(Str::random(8)).'@example.test',
+            'password' => bcrypt('password'),
+            'is_owner' => true,
+            'is_active' => true,
         ]);
 
         $response = $this->actingAs($marketerAdmin, 'marketer')->get(route('marketer.dashboard'));
@@ -447,25 +470,25 @@ class PanelSmokeV2Test extends TestCase
     private function travelAgencyOwner(): TravelAgencyMember
     {
         $agency = TravelAgency::create([
-            'name'           => 'Test Travel Agency',
-            'email'          => 'travel-' . Str::lower(Str::random(8)) . '@example.test',
-            'phone'          => '+9715' . fake()->numerify('########'),
-            'password'       => bcrypt('password'),
-            'license_number' => 'TL-' . Str::upper(Str::random(8)),
-            'country_id'     => $this->scenario->country->id,
-            'status'         => \App\Enums\TravelAgencyStatus::Active,
-            'approved_at'    => now(),
+            'name' => 'Test Travel Agency',
+            'email' => 'travel-'.Str::lower(Str::random(8)).'@example.test',
+            'phone' => '+9715'.fake()->numerify('########'),
+            'password' => bcrypt('password'),
+            'license_number' => 'TL-'.Str::upper(Str::random(8)),
+            'country_id' => $this->scenario->country->id,
+            'status' => TravelAgencyStatus::Active,
+            'approved_at' => now(),
         ]);
 
         return TravelAgencyMember::create([
             'travel_agency_id' => $agency->id,
-            'name'              => 'Owner Member',
-            'email'             => 'owner-' . Str::lower(Str::random(8)) . '@example.test',
-            'phone'             => '+9715' . fake()->numerify('########'),
-            'password'          => bcrypt('password'),
-            'role'              => 'owner',
-            'is_owner'          => true,
-            'is_active'         => true,
+            'name' => 'Owner Member',
+            'email' => 'owner-'.Str::lower(Str::random(8)).'@example.test',
+            'phone' => '+9715'.fake()->numerify('########'),
+            'password' => bcrypt('password'),
+            'role' => 'owner',
+            'is_owner' => true,
+            'is_active' => true,
         ]);
     }
 
@@ -473,13 +496,13 @@ class PanelSmokeV2Test extends TestCase
     {
         return TravelAgencyMember::create([
             'travel_agency_id' => $agency->id,
-            'name'              => 'Regular Member',
-            'email'             => 'member-' . Str::lower(Str::random(8)) . '@example.test',
-            'phone'             => '+9715' . fake()->numerify('########'),
-            'password'          => bcrypt('password'),
-            'role'              => 'staff',
-            'is_owner'          => false,
-            'is_active'         => true,
+            'name' => 'Regular Member',
+            'email' => 'member-'.Str::lower(Str::random(8)).'@example.test',
+            'phone' => '+9715'.fake()->numerify('########'),
+            'password' => bcrypt('password'),
+            'role' => 'staff',
+            'is_owner' => false,
+            'is_active' => true,
         ]);
     }
 

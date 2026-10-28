@@ -1302,7 +1302,16 @@
     "noProductsFound": "No products found",
     "viewAd": "View ad",
     "listView": "List",
-    "mapView": "Map"
+    "mapView": "Map",
+    "adsInArea": "{count, plural, one {# ad} other {# ads}} in this area",
+    "updatingArea": "Updating…",
+    "noAdsInArea": "No ads in this area",
+    "noAdsInAreaHint": "Move or zoom the map to explore other areas.",
+    "nearMe": "Near me",
+    "nearMeHint": "Show ads around your location",
+    "radiusKm": "{km} km",
+    "locationDenied": "Location permission was denied. Allow it in your browser settings.",
+    "locationUnavailable": "Couldn't get your location. Please try again."
   },
   "classifiedSidebar": {
     "chat": "Chat",

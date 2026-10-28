@@ -1,45 +1,85 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   APIProvider,
   Map,
   AdvancedMarker,
   MapCameraChangedEvent,
+  useMap,
 } from "@vis.gl/react-google-maps";
-import Image from "next/image";
-import { useTranslations } from "next-intl";
-import { X } from "lucide-react";
-import { Link } from "@/i18n/navigation";
+import useLocale from "@/src/hooks/use-locale";
 import { MapPin } from "./api/get";
 
 interface ClassifiedMapViewProps {
   pins: MapPin[];
+  /** Pins the map zooms to fit whenever this array changes (the items matching the current filters). */
+  fitPins: MapPin[];
   onBoundsChange: (bounds: {
     south: number;
     north: number;
     east: number;
     west: number;
   }) => void;
+  /** Pin highlighted because its card is hovered. */
   hoveredId?: string | null;
-  onPinClick?: (pin: MapPin) => void;
+  /** Pin the user clicked; the map pans to it. */
+  activeId?: string | null;
+  onPinSelect?: (id: string) => void;
 }
 
-function formatPrice(price: number, currency: string) {
-  return new Intl.NumberFormat("ar-SA", { notation: "compact" }).format(
-    price / 100,
-  ) + " " + currency;
+const MAX_FIT_ZOOM = 16;
+
+/** Zooms to fit every matching item, then pans to the pin the user picks. */
+function MapController({
+  pins,
+  fitPins,
+  activeId,
+}: {
+  pins: MapPin[];
+  fitPins: MapPin[];
+  activeId?: string | null;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !fitPins.length) return;
+    const bounds = new google.maps.LatLngBounds();
+    fitPins.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+    map.fitBounds(bounds, 48);
+    // One item (or items on the same spot) would otherwise zoom in to street level.
+    google.maps.event.addListenerOnce(map, "idle", () => {
+      if ((map.getZoom() ?? 0) > MAX_FIT_ZOOM) map.setZoom(MAX_FIT_ZOOM);
+    });
+  }, [map, fitPins]);
+
+  useEffect(() => {
+    const pin = pins.find((p) => p.id === activeId);
+    if (map && pin) map.panTo({ lat: pin.lat, lng: pin.lng });
+    // Only react to a new selection, not to every pin refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, activeId]);
+
+  return null;
 }
 
 export default function ClassifiedMapView({
   pins,
+  fitPins,
   onBoundsChange,
   hoveredId,
-  onPinClick,
+  activeId,
+  onPinSelect,
 }: ClassifiedMapViewProps) {
-  const t = useTranslations("classified");
-  const [activePin, setActivePin] = useState<MapPin | null>(null);
+  const locale = useLocale();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Pin prices are already whole amounts from the API (no minor-unit scaling).
+  const formatPrice = (price: number, currency: string) =>
+    `${new Intl.NumberFormat(locale === "ar" ? "ar-AE" : "en-US", {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(price)} ${currency}`;
 
   const handleBoundsChanged = useCallback(
     (e: MapCameraChangedEvent) => {
@@ -53,85 +93,46 @@ export default function ClassifiedMapView({
           east: bounds.east,
           west: bounds.west,
         });
-      }, 600);
+      }, 500);
     },
     [onBoundsChange],
   );
 
-  const handlePinClick = (pin: MapPin) => {
-    setActivePin(pin);
-    onPinClick?.(pin);
-  };
-
   return (
     <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
-      <div className="relative h-full w-full">
-        <Map
-          defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
-          defaultZoom={11}
-          mapId="classified-map"
-          gestureHandling="greedy"
-          onBoundsChanged={handleBoundsChanged}
-          className="h-full w-full"
-        >
-          {pins.map((pin) => (
+      <Map
+        defaultCenter={{ lat: 24.7136, lng: 46.6753 }}
+        defaultZoom={11}
+        mapId="classified-map"
+        gestureHandling="greedy"
+        disableDefaultUI
+        zoomControl
+        onBoundsChanged={handleBoundsChanged}
+        className="h-full w-full"
+      >
+        <MapController pins={pins} fitPins={fitPins} activeId={activeId} />
+        {pins.map((pin) => {
+          const highlighted = hoveredId === pin.id || activeId === pin.id;
+          return (
             <AdvancedMarker
               key={pin.id}
               position={{ lat: pin.lat, lng: pin.lng }}
-              onClick={() => handlePinClick(pin)}
+              zIndex={highlighted ? 10 : undefined}
+              onClick={() => onPinSelect?.(pin.id)}
             >
               <div
-                className={`px-2 py-1 rounded-full text-xs font-semibold shadow-md cursor-pointer whitespace-nowrap border transition-colors ${
-                  hoveredId === pin.id || activePin?.id === pin.id
-                    ? "bg-gray-900 text-white border-gray-900"
-                    : "bg-white text-gray-900 border-gray-200 hover:bg-gray-900 hover:text-white"
+                className={`cursor-pointer whitespace-nowrap rounded-full border px-2 py-1 text-xs font-semibold shadow-md transition-all ${
+                  highlighted
+                    ? "scale-110 border-gray-900 bg-gray-900 text-white"
+                    : "border-gray-200 bg-white text-gray-900 hover:bg-gray-900 hover:text-white"
                 }`}
               >
                 {formatPrice(pin.price, pin.currency)}
               </div>
             </AdvancedMarker>
-          ))}
-        </Map>
-
-        {/* Popup card */}
-        {activePin && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl w-72 overflow-hidden z-10">
-            <button
-              type="button"
-              onClick={() => setActivePin(null)}
-              className="absolute top-2 end-2 bg-white/80 hover:bg-white rounded-full p-0.5 shadow z-20"
-              aria-label="Close"
-            >
-              <X className="w-4 h-4 text-gray-700" />
-            </button>
-            {activePin.thumbnail && (
-              <div className="relative w-full h-36">
-                <Image
-                  src={activePin.thumbnail}
-                  alt={activePin.title}
-                  fill
-                  className="object-cover"
-                  sizes="288px"
-                />
-              </div>
-            )}
-            <div className="p-3">
-              <p className="text-sm font-semibold text-gray-900 line-clamp-2 mb-1">
-                {activePin.title}
-              </p>
-              <p className="text-sm font-bold text-blue-600 mb-2">
-                {formatPrice(activePin.price, activePin.currency)}
-              </p>
-              <Link
-                href={`/classified/find/${activePin.slug}`}
-                className="block text-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-1.5 rounded-lg transition-colors"
-              >
-                {t("viewAd")}
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
+          );
+        })}
+      </Map>
     </APIProvider>
   );
 }

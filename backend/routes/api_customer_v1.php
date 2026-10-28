@@ -103,6 +103,7 @@ Route::get('travel', [BrowseController::class, 'travelIndex'])->name('customer.t
 Route::get('classified', [BrowseController::class, 'classifiedIndex'])->name('customer.classified.index');
 
 // GET /classified/map-pins — lightweight pin data for active classified listings with coordinates
+Route::get('classified/cities', [BrowseController::class, 'classifiedCities'])->name('customer.classified.cities');
 Route::get('classified/map-pins', [BrowseController::class, 'classifiedMapPins'])->name('customer.classified.map-pins');
 
 // ── Payment gateways (public) ──────────────────────────────────────────

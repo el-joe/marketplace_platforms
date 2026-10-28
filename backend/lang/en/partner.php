@@ -1969,6 +1969,9 @@ return [
             'step_labels_full' => ['Category', 'Basics', 'Location & Attributes', 'Images & Attachments', 'Contract', 'Review'],
             'step_labels_no_contract' => ['Category', 'Basics', 'Location & Attributes', 'Images & Attachments', 'Review'],
             'map_search_placeholder' => 'Search for a location…',
+            'location_hint' => 'Set the ad location by searching, using your current location, or dropping a pin on the map.',
+            'use_current_location' => 'Use my current location',
+            'location_not_selected' => 'No location selected yet',
         ],
     ],
 

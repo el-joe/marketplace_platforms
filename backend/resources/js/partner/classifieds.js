@@ -272,7 +272,8 @@ const STEP_LABELS_NO_CONTRACT = cfg().stepLabelsNoContract  || ['Category', 'Bas
 
 // Server decides per vendor: a contract already signed for the current version is not shown again.
 function wizHasContract()      { return !!wizSelectedCategory?.contract_pending; }
-function wizNeedsLocation()    { return !!wizSelectedCategory?.requires_location_map; }
+// Every vendor listing needs a location (drives the map and nearby search), whatever the category.
+function wizNeedsLocation()    { return true; }
 function wizNeedsSketch()      { return !!wizSelectedCategory?.requires_sketch_upload; }
 function wizNeedsAttachments() { return (wizSelectedCategory?.required_attachment_types?.length ?? 0) > 0; }
 function wizStepLabels()       { return wizHasContract() ? STEP_LABELS_FULL : STEP_LABELS_NO_CONTRACT; }
@@ -426,8 +427,9 @@ function wizRenderAttributeFields() {
     const attrSection = el('cl-attributes-section');
     const attrFields  = el('cl-attributes-fields');
 
-    if (wizNeedsLocation()) locSection?.classList.remove('hidden');
-    else                    locSection?.classList.add('hidden');
+    locSection?.classList.remove('hidden');
+    // The map was created while its step was hidden; let it re-measure now that it is visible.
+    setTimeout(() => window.clMapRefresh?.(), 50);
 
     // Use category attribute_schema if present, else generic free-form key-value builder
     const schema = wizSelectedCategory?.attribute_schema;
@@ -675,6 +677,13 @@ function wizRenderReview() {
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
+const WIZ_LOCATION_REQUIRED = 'يرجى تحديد موقع الإعلان على الخريطة.';
+function wizHasLocation() {
+    const lat = parseFloat(el('cl-latitude')?.value);
+    const lng = parseFloat(el('cl-longitude')?.value);
+    return Number.isFinite(lat) && Number.isFinite(lng);
+}
+
 function wizValidate(domStep) {
     if (domStep === 1 && !wizSelectedCategory) return 'يرجى اختيار فئة للإعلان.';
     if (domStep === 2) {
@@ -684,6 +693,7 @@ function wizValidate(domStep) {
         if (!el('cl-title-en')?.value.trim()) return 'العنوان بالإنجليزية مطلوب.';
         if (!el('cl-price')?.value || Number(el('cl-price').value) < 0) return 'يرجى إدخال سعر صحيح.';
     }
+    if (domStep === 3 && !wizHasLocation()) return WIZ_LOCATION_REQUIRED;
     if (domStep === 4 && wizImageFiles.length === 0) return 'يرجى رفع صورة واحدة على الأقل.';
     if (domStep === 5 && wizHasContract()) {
         if (!el('cl-signature-name')?.value.trim()) return 'يرجى إدخال الاسم للتوقيع.';
@@ -697,6 +707,7 @@ async function wizSubmit() {
     if (wizSubmitting) return;
     wizSetError(null);
 
+    if (!wizHasLocation())                                  { wizSetError(WIZ_LOCATION_REQUIRED); return; }
     if (!wizImageFiles.length)                              { wizSetError('يرجى رفع صورة واحدة على الأقل.'); return; }
     if (wizHasContract() && !el('cl-contract-agree')?.checked) { wizSetError('يجب الموافقة على العقد.'); return; }
 
@@ -718,12 +729,8 @@ async function wizSubmit() {
     fd.append('currency',               el('cl-currency')?.value || 'SAR');
     fd.append('price_negotiable',            el('cl-negotiable')?.checked ? '1' : '0');
 
-    if (wizNeedsLocation()) {
-        const lat = el('cl-latitude')?.value;
-        const lng = el('cl-longitude')?.value;
-        if (lat) fd.append('latitude', lat);
-        if (lng) fd.append('longitude', lng);
-    }
+    fd.append('latitude',  el('cl-latitude')?.value  || '');
+    fd.append('longitude', el('cl-longitude')?.value || '');
 
     Object.entries(wizAttributes).forEach(([k, v]) => {
         fd.append(`attributes[${k}]`, v);
@@ -782,6 +789,7 @@ function wizOpen() {
      'cl-latitude','cl-longitude','cl-signature-name'].forEach(id => {
         const e = el(id); if (e) e.value = '';
     });
+    window.clMapReset?.();
     const neg     = el('cl-negotiable');     if (neg)     neg.checked  = false;
     const agree   = el('cl-contract-agree'); if (agree)   agree.checked = false;
     const purpose  = el('cl-purpose');        if (purpose)  purpose.value = 'sale';
@@ -1422,50 +1430,83 @@ window.initClassifiedMap = function () {
     const mapEl = el('cl-map');
     if (!mapEl) return; // Not on the classified wizard page
 
-    const existingLat = parseFloat(el('cl-latitude')?.value) || null;
-    const existingLng = parseFloat(el('cl-longitude')?.value) || null;
-
-    const defaultCenter = { lat: 24.7136, lng: 46.6753 }; // Riyadh
-    const center        = (existingLat && existingLng) ? { lat: existingLat, lng: existingLng } : defaultCenter;
-    const zoom          = (existingLat && existingLng) ? 15 : 12;
-
-    const map = new google.maps.Map(mapEl, { center, zoom });
-
-    const marker = new google.maps.Marker({
-        position: center,
-        map,
-        draggable: true,
+    const defaultCenter = { lat: 24.7136, lng: 46.6753 }; // Riyadh, only where the map opens
+    const map = new google.maps.Map(mapEl, {
+        center: defaultCenter,
+        zoom: 11,
+        streetViewControl: false,
+        mapTypeControl: false,
+        fullscreenControl: false,
     });
 
-    // Pre-populate display if editing an existing listing
-    if (existingLat && existingLng) {
-        setCoords(existingLat, existingLng);
+    // No pin until the vendor actually chooses a spot, so a drawn pin always means a saved location.
+    const marker = new google.maps.Marker({ map, draggable: true, visible: false });
+
+    function showError(message) {
+        const err = el('cl-location-error');
+        if (!err) return;
+        err.textContent = message || '';
+        err.classList.toggle('hidden', !message);
     }
 
-    function setCoords(lat, lng) {
-        const latInput = el('cl-latitude');
-        const lngInput = el('cl-longitude');
-        if (latInput) latInput.value = lat;
-        if (lngInput) lngInput.value = lng;
-
-        const latDisplay = el('cl-lat-display');
-        const lngDisplay = el('cl-lng-display');
-        if (latDisplay) latDisplay.textContent = lat.toFixed(6);
-        if (lngDisplay) lngDisplay.textContent = lng.toFixed(6);
+    function setCoords(lat, lng, { pan = false } = {}) {
+        const position = { lat, lng };
+        el('cl-latitude').value  = lat;
+        el('cl-longitude').value = lng;
+        el('cl-lat-display').textContent = lat.toFixed(6);
+        el('cl-lng-display').textContent = lng.toFixed(6);
+        el('cl-location-empty')?.classList.add('hidden');
+        const coords = el('cl-location-coords');
+        coords?.classList.remove('hidden');
+        coords?.classList.add('inline-flex');
+        marker.setPosition(position);
+        marker.setVisible(true);
+        if (pan) { map.panTo(position); map.setZoom(15); }
+        showError('');
+        wizSetError(null);
     }
 
-    // Map click → move marker + update coords
-    map.addListener('click', (e) => {
-        const lat = e.latLng.lat();
-        const lng = e.latLng.lng();
-        marker.setPosition(e.latLng);
-        setCoords(lat, lng);
-    });
+    function clearCoords() {
+        ['cl-latitude', 'cl-longitude'].forEach(id => { const e = el(id); if (e) e.value = ''; });
+        marker.setVisible(false);
+        el('cl-location-empty')?.classList.remove('hidden');
+        const coords = el('cl-location-coords');
+        coords?.classList.add('hidden');
+        coords?.classList.remove('inline-flex');
+        showError('');
+        const search = el('cl-map-search'); if (search) search.value = '';
+    }
 
-    // Marker drag end → update coords
+    // Map click → drop the pin there
+    map.addListener('click', (e) => setCoords(e.latLng.lat(), e.latLng.lng()));
+
+    // Drag the pin to fine-tune
     marker.addListener('dragend', () => {
         const pos = marker.getPosition();
         setCoords(pos.lat(), pos.lng());
+    });
+
+    // Current location (browser geolocation)
+    el('cl-use-my-location')?.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+            showError('المتصفح لا يدعم تحديد الموقع الحالي. اختر الموقع على الخريطة.');
+            return;
+        }
+        const btn = el('cl-use-my-location');
+        btn.disabled = true;
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                btn.disabled = false;
+                setCoords(pos.coords.latitude, pos.coords.longitude, { pan: true });
+            },
+            (err) => {
+                btn.disabled = false;
+                showError(err.code === err.PERMISSION_DENIED
+                    ? 'تم رفض إذن الموقع. اسمح به من إعدادات المتصفح أو اختر الموقع على الخريطة.'
+                    : 'تعذّر تحديد موقعك الحالي. اختر الموقع على الخريطة.');
+            },
+            { enableHighAccuracy: true, timeout: 10000 },
+        );
     });
 
     // Google Places Autocomplete wired to search input
@@ -1477,13 +1518,18 @@ window.initClassifiedMap = function () {
         autocomplete.addListener('place_changed', () => {
             const place = autocomplete.getPlace();
             if (!place.geometry || !place.geometry.location) return;
-
-            map.panTo(place.geometry.location);
-            map.setZoom(15);
-            marker.setPosition(place.geometry.location);
-            setCoords(place.geometry.location.lat(), place.geometry.location.lng());
+            setCoords(place.geometry.location.lat(), place.geometry.location.lng(), { pan: true });
         });
     }
+
+    // Hooks for the wizard: re-measure once the step is visible, and clear when a new listing starts.
+    window.clMapRefresh = () => {
+        google.maps.event.trigger(map, 'resize');
+        const lat = parseFloat(el('cl-latitude')?.value);
+        const lng = parseFloat(el('cl-longitude')?.value);
+        map.setCenter(Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : defaultCenter);
+    };
+    window.clMapReset = clearCoords;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

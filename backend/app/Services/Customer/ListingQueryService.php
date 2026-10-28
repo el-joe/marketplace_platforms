@@ -2,7 +2,6 @@
 
 namespace App\Services\Customer;
 
-use App\Support\Money;
 use App\Enums\ClassifiedListingStatus;
 use App\Enums\GlobalSystemType;
 use App\Enums\ProductStatus;
@@ -25,6 +24,7 @@ use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Services\Media\ListingImageResolver;
 use App\Support\Bilingual;
+use App\Support\Money;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
@@ -814,6 +814,14 @@ class ListingQueryService
 
         if (! empty($filters['seller_type'])) {
             $query->where('seller_type', $filters['seller_type'] === 'vendor' ? Vendor::class : Customer::class);
+        }
+
+        if (! empty($filters['city_id'])) {
+            $query->where('city_id', $filters['city_id']);
+        }
+
+        if (isset($filters['lat'], $filters['lng'])) {
+            $query->withinRadius((float) $filters['lat'], (float) $filters['lng'], (float) ($filters['radius_km'] ?? 25));
         }
 
         if (! empty($filters['min_price'])) {
