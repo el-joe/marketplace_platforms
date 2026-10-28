@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import getLocale from "@/src/helpers/getLocale";
 import { getImageURL } from "@/src/helpers/get-image-url";
 import ProfileActions from "./profile-actions";
+import StartChatButton from "@/src/features/noon/chat/components/start-chat-button";
 import { IMarketer } from "./helpers/types";
 
 const FALLBACK_AVATAR = {
@@ -110,6 +111,7 @@ export default async function ProfileHeader({ data }: { data: IMarketer }) {
               profileUrl={profile.profile_url}
               qrCodeUrl={profile.qr_code_url}
             />
+            <StartChatButton marketerSlug={profile.slug} />
           </div>
         </div>
       </div>

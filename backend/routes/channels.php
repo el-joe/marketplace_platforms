@@ -40,3 +40,13 @@ Broadcast::channel('marketer.{marketerAdminId}', function ($user, $marketerAdmin
 Broadcast::channel('customer.{customerId}', function ($user, $customerId) {
     return (string) $user->id === (string) $customerId;
 }, ['guards' => ['customer']]);
+
+// Marketer<->customer chat. Marketer side is scoped per marketer account (all of
+// its panel admins share the inbox); customer side per customer.
+Broadcast::channel('marketer-chat.{marketerId}', function ($user, $marketerId) {
+    return (string) $user->marketer_id === (string) $marketerId;
+}, ['guards' => ['marketer']]);
+
+Broadcast::channel('customer-chat.{customerId}', function ($user, $customerId) {
+    return (string) $user->id === (string) $customerId;
+}, ['guards' => ['customer']]);

@@ -1660,5 +1660,19 @@
   },
   "sellerRatings": {
     "title": "Seller Ratings & Reviews"
+  },
+  "chat": {
+    "title": "Chats",
+    "linkLabel": "My chats",
+    "chatWithMarketer": "Chat",
+    "startFailed": "Couldn't start the chat. Please try again.",
+    "loading": "Loading…",
+    "loadFailed": "Couldn't load your chats.",
+    "empty": "No conversations yet. Open a marketer's profile and tap Chat to start one.",
+    "back": "Back to chats",
+    "noMessages": "Say hello 👋",
+    "typeMessage": "Type a message…",
+    "send": "Send",
+    "sendFailed": "Message not sent. Please try again."
   }
 }

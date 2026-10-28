@@ -42,6 +42,7 @@ import { useAddressesContext } from "@/src/providers/addresses-provider";
 import { getRegion } from "@/src/helpers/handleRegionAndLocal";
 // eslint-disable-next-line no-restricted-imports
 import { useLocale as useClientLocale } from "next-intl";
+import ChatHeaderButton from "@/src/features/noon/chat/components/chat-header-button";
 import { getCountriesService } from "@/src/services/countries";
 
 const profileDropdownLinks: {
@@ -284,6 +285,8 @@ const Header = () => {
             title={t("wishlistLinkLabel")}
             href="/wishlist"
           />
+          {/* chats link (logged-in only, live unread badge) */}
+          <ChatHeaderButton />
           {/* cart link */}
           <HeaderButton
             Icon={ShoppingCartIcon}

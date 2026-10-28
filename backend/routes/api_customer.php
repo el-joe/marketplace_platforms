@@ -10,7 +10,9 @@ use App\Http\Controllers\Api\Customer\ProductDetailController;
 use App\Http\Controllers\Api\Customer\ReturnRequestController as ApiReturnRequestController;
 use App\Http\Controllers\Api\Customer\ReviewController as ApiReviewController;
 use App\Http\Controllers\Customer\AppConfigController;
+use App\Http\Controllers\Customer\ListingDetailController;
 use App\Models\Country;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,15 +23,18 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+// ── Reverb private-channel auth for the customer JWT guard (POST /api/customer/broadcasting/auth) ──
+Broadcast::routes(['middleware' => ['api', 'auth:customer'], 'prefix' => '']);
+
 Route::prefix('v1/{country}')
     ->middleware('detect.country')
     ->group(function (): void {
 
-        require __DIR__ . '/api_customer_v1.php';
+        require __DIR__.'/api_customer_v1.php';
     });
 
 // ── Product by type-id shorthand (country-agnostic) ──────────────────────────
-Route::get('v1/products/{typeAndId}', [\App\Http\Controllers\Customer\ListingDetailController::class, 'showByTypeId'])
+Route::get('v1/products/{typeAndId}', [ListingDetailController::class, 'showByTypeId'])
     ->where('typeAndId', '(v|p)-[0-9a-f-]{36}')
     ->middleware('auth:customer')
     ->name('customer.products.by-type-id.agnostic');

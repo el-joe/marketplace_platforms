@@ -6,14 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassifiedInquiry;
 use App\Models\Marketer;
 use App\Models\MarketerConversation;
+use App\Services\Marketer\MarketerChatService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ConversationController extends Controller
 {
+    public function __construct(private readonly MarketerChatService $chat) {}
+
     private function marketer(): Marketer
     {
         return Auth::guard('marketer')->user()->marketer;
@@ -39,10 +42,7 @@ class ConversationController extends Controller
     public function show(string $conversation): View
     {
         $active = $this->owned($conversation);
-        $active->messages()->where('sender_type', 'customer')->whereNull('read_at')->update(['read_at' => now()]);
-        if ($active->marketer_has_unread) {
-            $active->forceFill(['marketer_has_unread' => false])->saveQuietly();
-        }
+        $this->chat->markRead($active, 'marketer');
         $active->load(['customer', 'classifiedListing']);
 
         return view('marketer.conversations.index', [
@@ -50,11 +50,15 @@ class ConversationController extends Controller
         ]);
     }
 
-    public function sendMessage(Request $request, string $conversation): RedirectResponse
+    public function sendMessage(Request $request, string $conversation): RedirectResponse|JsonResponse
     {
         $conv = $this->owned($conversation);
         $data = $request->validate(['body' => 'required|string|max:5000']);
-        $this->post($conv, $data['body']);
+        $message = $this->post($conv, $data['body']);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => MarketerChatService::presentMessage($message)], 201);
+        }
 
         return redirect()->route('marketer.conversations.show', $conv->id);
     }
@@ -74,7 +78,7 @@ class ConversationController extends Controller
 
         $conv = MarketerConversation::firstOrCreate(
             ['marketer_id' => $marketer->id, 'customer_id' => $inquiry->customer_id,
-             'classified_listing_id' => $inquiry->classified_listing_id],
+                'classified_listing_id' => $inquiry->classified_listing_id],
             ['classified_inquiry_id' => $inquiry->id]
         );
 
@@ -85,13 +89,8 @@ class ConversationController extends Controller
         return redirect()->route('marketer.conversations.show', $conv->id);
     }
 
-    private function post(MarketerConversation $conv, string $body): void
+    private function post(MarketerConversation $conv, string $body)
     {
-        DB::transaction(function () use ($conv, $body) {
-            $conv->messages()->create([
-                'sender_type' => 'marketer', 'sender_id' => $this->marketer()->id, 'body' => $body,
-            ]);
-            $conv->forceFill(['last_message_at' => now(), 'customer_has_unread' => true, 'marketer_has_unread' => false])->save();
-        });
+        return $this->chat->post($conv, 'marketer', Auth::guard('marketer')->user()->marketer_id, $body, request()->header('X-Socket-ID'));
     }
 }

@@ -6,13 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassifiedInquiry;
 use App\Models\Marketer;
 use App\Models\MarketerConversation;
+use App\Services\Marketer\MarketerChatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class ConversationController extends Controller
 {
+    public function __construct(private readonly MarketerChatService $chat) {}
+
     private function marketer(): Marketer
     {
         return Auth::guard('marketer_api')->user()->marketer;
@@ -53,10 +55,7 @@ class ConversationController extends Controller
     public function show(string $id): JsonResponse
     {
         $c = $this->owned($id)->load('customer');
-        $c->messages()->where('sender_type', 'customer')->whereNull('read_at')->update(['read_at' => now()]);
-        if ($c->marketer_has_unread) {
-            $c->forceFill(['marketer_has_unread' => false])->saveQuietly();
-        }
+        $this->chat->markRead($c, 'marketer');
 
         return response()->json(['success' => true, 'data' => $this->present($c) + [
             'messages' => $c->messages()->get()->map(fn ($m) => $this->msg($m))->values(),
@@ -85,7 +84,7 @@ class ConversationController extends Controller
 
         $conv = MarketerConversation::firstOrCreate(
             ['marketer_id' => $marketer->id, 'customer_id' => $inquiry->customer_id,
-             'classified_listing_id' => $inquiry->classified_listing_id],
+                'classified_listing_id' => $inquiry->classified_listing_id],
             ['classified_inquiry_id' => $inquiry->id]
         );
         if (! empty($data['body'])) {
@@ -107,19 +106,13 @@ class ConversationController extends Controller
     public function markRead(string $id): JsonResponse
     {
         $c = $this->owned($id);
-        $n = $c->messages()->where('sender_type', 'customer')->whereNull('read_at')->update(['read_at' => now()]);
-        $c->forceFill(['marketer_has_unread' => false])->saveQuietly();
+        $n = $this->chat->markRead($c, 'marketer');
 
         return response()->json(['success' => true, 'data' => ['marked' => $n]]);
     }
 
     private function post(MarketerConversation $conv, string $body)
     {
-        return DB::transaction(function () use ($conv, $body) {
-            $m = $conv->messages()->create(['sender_type' => 'marketer', 'sender_id' => $this->marketer()->id, 'body' => $body]);
-            $conv->forceFill(['last_message_at' => now(), 'customer_has_unread' => true, 'marketer_has_unread' => false])->save();
-
-            return $m;
-        });
+        return $this->chat->post($conv, 'marketer', $this->marketer()->id, $body, request()->header('X-Socket-ID'));
     }
 }

@@ -42,6 +42,7 @@ use App\Http\Controllers\Customer\HelpCenterController;
 use App\Http\Controllers\Customer\HomeController;
 use App\Http\Controllers\Customer\ListingController;
 use App\Http\Controllers\Customer\ListingDetailController;
+use App\Http\Controllers\Customer\MarketerChatController;
 use App\Http\Controllers\Customer\NavigationController;
 use App\Http\Controllers\Customer\OrderController;
 use App\Http\Controllers\Customer\PageController;
@@ -545,6 +546,16 @@ Route::middleware('auth:customer')->group(function (): void {
         Route::get('{ticket_number}', [SupportTicketController::class, 'show'])->name('show');
         Route::post('{ticket_number}/messages', [SupportTicketController::class, 'addMessage'])->name('messages.store');
         Route::put('{ticket_number}/rate', [SupportTicketController::class, 'rate'])->name('rate');
+    });
+
+    // Marketer chat (REST; live updates come over Reverb private-customer-chat.{id})
+    Route::prefix('chats')->name('customer.chats.')->group(function (): void {
+        Route::get('/', [MarketerChatController::class, 'index'])->name('index');
+        Route::get('unread-count', [MarketerChatController::class, 'unreadCount'])->name('unread-count');
+        Route::post('/', [MarketerChatController::class, 'start'])->middleware('throttle:20,1')->name('start');
+        Route::get('{id}', [MarketerChatController::class, 'show'])->whereUuid('id')->name('show');
+        Route::post('{id}/messages', [MarketerChatController::class, 'sendMessage'])->whereUuid('id')->middleware('throttle:60,1')->name('messages.store');
+        Route::post('{id}/read', [MarketerChatController::class, 'markRead'])->whereUuid('id')->name('read');
     });
 
     // Notifications
