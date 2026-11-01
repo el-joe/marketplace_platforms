@@ -230,6 +230,26 @@ class PortalContentCountryAdminTest extends TestCase
         $this->assertSame('zeta en', PortalContent::forPage('zz_test', 'eg')->get('zeta.title')->value_en);
     }
 
+    public function test_image_field_keeps_stored_image_when_saved_in_file_mode_without_upload(): void
+    {
+        app(PortalContentCountrySync::class)->copyGlobalToAllCountries();
+        $admin = $this->admin();
+        $row = PortalContent::where('country_code', 'kw')->where('block_key', 'alpha')->first();
+        $row->update(['type' => 'image', 'value_url' => 'portal-content/zz_test/old.png']);
+
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.portal-content.save', ['kw', 'zz_test']), ['fields' => [
+                $row->id => ['value_en' => 'a', 'value_ar' => 'a', 'is_active' => '1'],
+            ]]);
+        $this->assertSame('portal-content/zz_test/old.png', $row->fresh()->value_url);
+
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.portal-content.save', ['kw', 'zz_test']), ['fields' => [
+                $row->id => ['value_en' => 'a', 'value_ar' => 'a', 'is_active' => '1', 'value_url' => '/images/x.png'],
+            ]]);
+        $this->assertSame('/images/x.png', $row->fresh()->value_url);
+    }
+
     public function test_permissions_are_enforced(): void
     {
         $viewer = $this->admin(['portal_content.view']);

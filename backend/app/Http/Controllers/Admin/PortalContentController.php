@@ -169,8 +169,9 @@ class PortalContentController extends Controller
                 } elseif (! empty($data['reset_image'])) {
                     // Empty value_url makes portal_image() fall back to the Blade default.
                     $update['value_url'] = null;
-                } else {
-                    $update['value_url'] = $data['value_url'] ?? null;
+                } elseif (array_key_exists('value_url', $data)) {
+                    // URL mode only: file mode submits no value_url, so the stored image is kept.
+                    $update['value_url'] = $data['value_url'];
                 }
             }
 

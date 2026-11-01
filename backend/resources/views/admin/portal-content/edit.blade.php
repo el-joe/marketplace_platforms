@@ -148,14 +148,16 @@
                                 @endif
 
                                 @if($row->type === \App\Enums\PortalContentType::Image)
-                                    <div class="space-y-2">
-                                        <div>
-                                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.portal_content.image_url') }}</label>
-                                            <input type="text" name="fields[{{ $row->id }}][value_url]" value="{{ old("fields.{$row->id}.value_url", $row->value_url) }}" placeholder="{{ __('admin.portal_content.image_url_hint') }}" class="w-full rounded-lg border-gray-300 text-sm font-mono" dir="ltr">
+                                    <div class="space-y-2" x-data="{ mode: @js(preg_match('#^(https?:)?//|^/#', (string) $row->value_url) ? 'url' : 'file') }">
+                                        <div class="inline-flex rounded-lg border border-gray-300 overflow-hidden text-xs">
+                                            <button type="button" @click="mode = 'file'" :class="mode === 'file' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600'" class="px-3 py-1.5">{{ __('admin.portal_content.image_file') }}</button>
+                                            <button type="button" @click="mode = 'url'" :class="mode === 'url' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600'" class="px-3 py-1.5">{{ __('admin.portal_content.image_url') }}</button>
                                         </div>
-                                        <div>
-                                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.portal_content.image_file') }}</label>
-                                            <input type="file" name="fields[{{ $row->id }}][value_file]" accept="image/*" class="w-full rounded-lg border-gray-300 text-sm">
+                                        <div x-show="mode === 'url'" x-cloak>
+                                            <input type="text" name="fields[{{ $row->id }}][value_url]" :disabled="mode !== 'url'" value="{{ old("fields.{$row->id}.value_url", $row->value_url) }}" placeholder="{{ __('admin.portal_content.image_url_hint') }}" class="w-full rounded-lg border-gray-300 text-sm font-mono" dir="ltr">
+                                        </div>
+                                        <div x-show="mode === 'file'" x-cloak>
+                                            <input type="file" name="fields[{{ $row->id }}][value_file]" :disabled="mode !== 'file'" accept="image/*" class="w-full rounded-lg border-gray-300 text-sm">
                                             @error("fields.{$row->id}.value_file")
                                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                             @enderror
