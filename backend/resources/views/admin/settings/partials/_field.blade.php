@@ -22,6 +22,11 @@ Renders the appropriate input type based on the setting's decoded PHP value.
     $isEmail = str_contains($key, 'email') && !$isBool;
     $isUrl = (str_contains($key, 'url') || str_contains($key, 'host')) && !$isBool;
     $isCents = (str_contains($key, 'cents') || str_contains($key, 'amount')) && $isNum;
+
+    // Settings restricted to a fixed set of values render as a select
+    $selectOptions = [
+        'whatsapp_provider' => ['meta' => 'Meta (Cloud API)', 'log' => 'Log (nothing delivered, only logged)'],
+    ][$key] ?? null;
 @endphp
 
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 py-5 first:pt-0 last:pb-0">
@@ -67,6 +72,13 @@ Renders the appropriate input type based on the setting's decoded PHP value.
                     </button>
                 </div>
             </div>
+
+        @elseif($selectOptions)
+            <select id="{{ $inputId }}" name="{{ $inputName }}" class="form-input w-full sm:max-w-sm text-sm">
+                @foreach($selectOptions as $value => $optionLabel)
+                    <option value="{{ $value }}" @selected((string) $display === (string) $value)>{{ $optionLabel }}</option>
+                @endforeach
+            </select>
 
         @elseif($isBool)
             {{-- ── Boolean toggle (Alpine) ── --}}
