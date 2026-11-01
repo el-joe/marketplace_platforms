@@ -99,26 +99,6 @@ $(function () {
         });
     });
 
-    // ── Test payment gateway ─────────────────────────────────────────────────
-    $('#btn-test-gateway').on('click', function () {
-        const $btn = $(this);
-
-        const jqXhr = $.ajax({
-            url:     '/settings/test-gateway',
-            method:  'POST',
-            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        });
-
-        withLoading($btn, jqXhr);
-
-        jqXhr.done(function (res) {
-            window.Toast.success(res.message || t('admin.settings.gateway_reachable'));
-        });
-        jqXhr.fail(function (xhr) {
-            window.Toast.error(xhr.responseJSON?.message || t('admin.settings.gateway_test_failed'));
-        });
-    });
-
     // ── Currency: save individual rate ───────────────────────────────────────
     $(document).on('click', '.btn-save-rate', function () {
         const $btn  = $(this);

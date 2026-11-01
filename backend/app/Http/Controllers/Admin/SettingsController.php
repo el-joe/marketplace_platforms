@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Country;
 use App\Models\Currency;
 use App\Models\Setting;
 use App\Services\SettingsService;
@@ -29,12 +28,11 @@ class SettingsController extends Controller
             ->map(fn($category) => $category instanceof \App\Enums\SettingCategory ? $category->value : $category);
         $activeCategory = request('tab', 'general');
         $settings = Setting::where('category', $activeCategory)->orderBy('key')->get();
-        $countries = Country::where('is_active', 1)->get();
         $currencies = Currency::where('is_active', 1)->get();
 
         return view(
             'admin.settings.index',
-            compact('categories', 'settings', 'activeCategory', 'countries', 'currencies')
+            compact('categories', 'settings', 'activeCategory', 'currencies')
         );
     }
 
@@ -96,22 +94,6 @@ class SettingsController extends Controller
         Cache::forget('settings:' . $setting->category->value);
 
         return response()->json(['message' => "Setting [{$key}] cache cleared."]);
-    }
-
-    // ─── Test payment gateway ─────────────────────────────────────────────────
-
-    public function testGateway(): JsonResponse
-    {
-        $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('settings.view'), 403);
-
-        $provider = Setting::get('payment_gateway_provider', 'paymob');
-        $liveMode = Setting::get('payment_gateway_live_mode', false);
-
-        // Stub: real implementation would call the gateway's test endpoint
-        return response()->json([
-            'message' => "Gateway [{$provider}] is reachable. Mode: " . ($liveMode ? 'LIVE' : 'sandbox') . '.',
-        ]);
     }
 
     // ─── Clear application cache ──────────────────────────────────────────────

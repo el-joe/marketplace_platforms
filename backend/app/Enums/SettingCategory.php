@@ -13,8 +13,6 @@ enum SettingCategory: string
     case General = 'general';
     case Integrations = 'integrations';
     case Marketer = 'marketer';
-    case Notifications = 'notifications';
     case Orders = 'orders';
-    case Security = 'security';
     case Vendors = 'vendors';
 }

@@ -6,42 +6,18 @@
     <p>{!! str_replace(':encrypted', '<strong>' . __('admin.settings_section.encrypted_at_rest') . '</strong>', __('admin.settings_section.security_notice')) !!}</p>
 </div>
 
-{{-- Payment Gateway --}}
-<x-card class="mb-6">
-    <div class="mb-4 flex items-center justify-between">
-        <div>
-            <h2 class="text-base font-semibold text-gray-900">{{ __('admin.settings_section.payment_gateway') }}</h2>
-            <p class="text-sm text-gray-500">{{ __('admin.settings_section.payment_gateway_desc') }}</p>
-        </div>
-        <button
-            type="button"
-            id="btn-test-gateway"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-        >
-            <x-heroicon name="bolt" class="w-3.5 h-3.5" />
-            {{ __('admin.settings_section.test_connection') }}
-        </button>
-    </div>
-    <div class="divide-y divide-gray-100">
-
-        @foreach($settings as $setting)
-            @include('admin.settings.partials._field', ['setting' => $setting])
-        @endforeach
-
-    </div>
-</x-card>
-
-{{-- SMS Gateway --}}
+{{-- WhatsApp --}}
 <x-card class="mb-6">
     <div class="mb-4">
-        <h2 class="text-base font-semibold text-gray-900">{{ __('admin.settings_section.sms_gateway') }}</h2>
-        <p class="text-sm text-gray-500">{{ __('admin.settings_section.sms_gateway_desc') }}</p>
+        <h2 class="text-base font-semibold text-gray-900">{{ __('admin.settings_section.whatsapp') }}</h2>
+        <p class="text-sm text-gray-500">{{ __('admin.settings_section.whatsapp_desc') }}</p>
     </div>
     <div class="divide-y divide-gray-100">
 
         @foreach($settings->whereIn('key', [
-            'sms_gateway_provider',
-            'sms_gateway_api_key',
+            'whatsapp_provider',
+            'whatsapp_meta_phone_number_id',
+            'whatsapp_meta_access_token',
         ]) as $setting)
             @include('admin.settings.partials._field', ['setting' => $setting])
         @endforeach
@@ -60,27 +36,6 @@
         @foreach($settings->whereIn('key', [
             'mail_mailer', 'mail_host', 'mail_port', 'mail_encryption',
             'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name',
-        ]) as $setting)
-            @include('admin.settings.partials._field', ['setting' => $setting])
-        @endforeach
-
-    </div>
-</x-card>
-
-{{-- Other APIs --}}
-<x-card class="mb-6">
-    <div class="mb-4">
-        <h2 class="text-base font-semibold text-gray-900">{{ __('admin.settings_section.other_apis') }}</h2>
-        <p class="text-sm text-gray-500">{{ __('admin.settings_section.other_apis_desc') }}</p>
-    </div>
-    <div class="divide-y divide-gray-100">
-
-        @foreach($settings->whereIn('key', [
-            'firebase_server_key',
-            'google_maps_api_key',
-            'meilisearch_host',
-            'meilisearch_key',
-            'exchange_rate_api_key',
         ]) as $setting)
             @include('admin.settings.partials._field', ['setting' => $setting])
         @endforeach

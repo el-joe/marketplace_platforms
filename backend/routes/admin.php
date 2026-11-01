@@ -1228,7 +1228,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/group/{category}', [SettingsController::class, 'getGroup'])->name('group');
         Route::post('/group/{category}', [SettingsController::class, 'saveGroup'])->name('save')->middleware('admin.permission:settings.edit');
         Route::post('/reset', [SettingsController::class, 'reset'])->name('reset')->middleware('admin.permission:settings.edit');
-        Route::post('/test-gateway', [SettingsController::class, 'testGateway'])->name('test-gateway');
         Route::post('/clear-cache', [SettingsController::class, 'clearCache'])->name('clear-cache')->middleware('admin.permission:settings.edit');
     });
 
