@@ -156,7 +156,7 @@ const Header = () => {
             text={t("otherLang")}
             title={t("switchLangLabel")}
             onClick={handleToggleLang}
-            className="hidden md:inline-flex"
+            className="inline-flex ms-auto md:ms-0"
           />
           {/* login button if no auth */}
           {!isLogged && (
