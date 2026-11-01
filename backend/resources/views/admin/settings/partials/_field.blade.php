@@ -26,7 +26,20 @@ Renders the appropriate input type based on the setting's decoded PHP value.
     // Settings restricted to a fixed set of values render as a select
     $selectOptions = [
         'whatsapp_provider' => ['meta' => 'Meta (Cloud API)', 'log' => 'Log (nothing delivered, only logged)'],
+        'mail_mailer' => ['smtp' => 'SMTP', 'sendmail' => 'Sendmail', 'log' => 'Log (nothing delivered, only logged)'],
+        'mail_encryption' => ['tls' => 'TLS', 'ssl' => 'SSL', 'none' => 'None'],
+        'mail_port' => [
+            '587' => '587 (SMTP, TLS/STARTTLS)',
+            '465' => '465 (SMTPS, SSL)',
+            '25' => '25 (SMTP, usually unencrypted)',
+            '2525' => '2525 (alternative SMTP)',
+        ],
     ][$key] ?? null;
+
+    // Keep a previously saved custom value selectable instead of silently replacing it
+    if ($selectOptions && filled($display) && !array_key_exists((string) $display, $selectOptions)) {
+        $selectOptions[(string) $display] = $display;
+    }
 @endphp
 
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 py-5 first:pt-0 last:pb-0">
