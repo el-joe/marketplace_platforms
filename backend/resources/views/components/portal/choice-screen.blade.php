@@ -26,7 +26,11 @@
     $alpineState = array_merge(['selected' => $selected], $alpine);
     $logo = $logo ?? portal_image('nav', 'logo', 'image', asset('images/nawy_logo_transparent.png'), 'Nawy', 'ناوي');
     $hasReveal = $slot->isNotEmpty();
-    $gridCols = count($cards) > 2 ? 'lg:grid-cols-3' : 'lg:grid-cols-2';
+    $gridCols = match (true) {
+        count($cards) >= 4 => 'lg:grid-cols-4',
+        count($cards) === 3 => 'lg:grid-cols-3',
+        default => 'lg:grid-cols-2',
+    };
     $cardsGridClass = $noScroll
         ? "choice-cards grid grid-cols-1 gap-5 sm:gap-6 {$gridCols}"
         : "choice-cards grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 {$gridCols}";

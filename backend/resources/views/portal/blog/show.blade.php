@@ -17,7 +17,7 @@
 
 @section('content')
 
-<div class="bg-gray-950 min-h-screen pt-[104px] pb-10">
+<div class="bg-gray-950 min-h-screen pb-10" style="padding-top: 104px;">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- ── Breadcrumb ───────────────────────────────────────────── --}}
