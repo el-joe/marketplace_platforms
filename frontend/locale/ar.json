@@ -1545,10 +1545,10 @@
     "marketerCampaignListings": "إعلانات حملات المسوّقين"
   },
   "nawyOptions": {
-    "label": "ناوي الآن",
-    "ariaLabel": "تسوق ناوي الآن",
+    "label": "Nawy Options",
+    "ariaLabel": "تسوق Nawy Options",
     "justForYou": "فقط من أجلك",
-    "nawyToPPicks": "اختيارات ناوي الآن",
+    "nawyToPPicks": "اختيارات Nawy Options",
     "recentlyViewedCategories": "الفئات التي تم عرضها مؤخرًا"
   },
   "liveStreams": {

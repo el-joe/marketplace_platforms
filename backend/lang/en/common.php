@@ -190,7 +190,7 @@ return [
     ],
 
     'nav' => [
-        'now_nawy' => 'Now Nawy',
+        'now_nawy' => 'Nawy Options',
     ],
 
     'storefront' => [

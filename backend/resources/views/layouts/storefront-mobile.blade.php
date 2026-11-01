@@ -64,7 +64,7 @@
                     <span class="text-[10px] leading-none">{{ __('common.storefront_nav.categories') }}</span>
                 </a>
 
-                {{-- Now Nawy (replaces "Now Watch") --}}
+                {{-- Nawy Options (replaces "Now Watch") --}}
                 <a href="{{ isset($countryModel) ? route('nawy.index', $countryModel->slug ?? $countryModel->iso_code_2) : '#' }}"
                    class="flex flex-col items-center justify-center gap-0.5 flex-1
                           {{ request()->routeIs('nawy.*') ? 'text-primary-600' : 'text-gray-400' }}">

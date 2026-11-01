@@ -8,7 +8,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Idempotent "Nawy Now" custom page: admin listings only, all categories.
+ * Idempotent "Nawy Options" custom page: admin listings only, all categories.
  * Re-running never duplicates rows and never overwrites admin edits: existing
  * pages are left untouched (only a missing slug record is restored).
  */
@@ -23,7 +23,7 @@ class NawyNowCustomPageSeeder extends Seeder
 
             if ($slug && $slug->sluggable_type !== CustomPage::class) {
                 throw new \RuntimeException(
-                    "Cannot seed Nawy Now: slug '" . self::SLUG . "' is already owned by {$slug->sluggable_type} ({$slug->sluggable_id})."
+                    "Cannot seed Nawy Options: slug '" . self::SLUG . "' is already owned by {$slug->sluggable_type} ({$slug->sluggable_id})."
                 );
             }
 
@@ -31,7 +31,7 @@ class NawyNowCustomPageSeeder extends Seeder
 
             if (!$page) {
                 $page = CustomPage::create([
-                    'name_en' => 'Nawy Now',
+                    'name_en' => 'Nawy Options',
                     'name_ar' => 'نوي الآن',
                     'description_en' => 'Fast picks sold and fulfilled directly by Nawy.',
                     'description_ar' => 'منتجات مختارة تباع وتُشحن مباشرة من نوي.',
@@ -40,7 +40,7 @@ class NawyNowCustomPageSeeder extends Seeder
                     'all_categories' => true,
                     'is_active' => true,
                     'sort_order' => 0,
-                    'seo_title_en' => 'Nawy Now | Shop Nawy direct offers',
+                    'seo_title_en' => 'Nawy Options | Shop Nawy direct offers',
                     'seo_title_ar' => 'نوي الآن | عروض نوي المباشرة',
                     'seo_description_en' => 'Shop products sold directly by Nawy across every category.',
                     'seo_description_ar' => 'تسوق منتجات تباع مباشرة من نوي في جميع الفئات.',

@@ -116,7 +116,7 @@
                 </div>
                 <div>
                     <label for="promotion_tier4_monthly_minimum" class="block text-sm font-medium text-gray-700 mb-1">
-                        Tier 4 (Nawy Now)
+                        Tier 4 (Nawy Options)
                     </label>
                     <input type="number" min="0" step="1" name="promotion_tier4_monthly_minimum"
                         id="promotion_tier4_monthly_minimum"
