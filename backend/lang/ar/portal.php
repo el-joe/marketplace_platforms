@@ -165,22 +165,10 @@ return [
 
     'join' => [
         'country_unavailable' => 'الدولة المحددة غير متاحة للانضمام حالياً.',
+        'section_unavailable' => 'هذا الخيار غير متاح حالياً.',
         'section_invalid' => 'القسم المحدد غير صالح.',
-        'category_unavailable' => 'التخصص المحدد غير متاح حالياً.',
-        'category_required' => 'يرجى اختيار التخصص.',
-        'entity_type_invalid' => 'نوع الانضمام المحدد غير صالح.',
-        'entity_type_required' => 'يرجى تحديد إن كنت شركة أم وسيطاً.',
         'marketer_type_invalid' => 'نوع المسوّق المحدد غير صالح.',
         'marketer_type_required' => 'يرجى اختيار نوع التسجيل.',
-        'classified_pending' => 'تسجيل الشركات التخصصية والوسطاء قيد التجهيز وسيتم إتاحته قريباً.',
-    ],
-
-    'companies' => [
-        'choice_invalid' => 'الخيار المحدد غير صالح.',
-        'category_required' => 'يرجى اختيار التخصص.',
-        'category_unavailable' => 'التخصص المحدد غير متاح حالياً.',
-        'travel_pending' => 'تسجيل وكالات السفر قيد التجهيز وسيتم إتاحته قريباً.',
-        'souq_pending' => 'تسجيل السوق المفتوح قيد التجهيز وسيتم إتاحته قريباً.',
     ],
 
     'marketers' => [

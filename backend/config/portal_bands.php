@@ -214,7 +214,7 @@ return [
         ],
     ],
     'footer' => [
-        'label_en' => 'Portal footer (join, companies & section pages)',
+        'label_en' => 'Portal footer (join & section pages)',
         'label_ar' => 'تذييل البوابة (الانضمام والشركات وصفحات الأقسام)',
         'route' => '/join',
         'scope' => 'shared',
@@ -788,47 +788,10 @@ return [
                 'blocks' => [
                     ['join', 'hero'],
                     ['join', 'card_product_vendor'],
-                    ['join', 'card_classified_vendor'],
+                    ['join', 'card_open_souq'],
+                    ['join', 'card_travel_agency'],
                     ['join', 'card_marketer'],
                     ['join', 'actions'],
-                ],
-            ],
-        ],
-    ],
-    'companies' => [
-        'label_en' => 'Companies & brokers',
-        'label_ar' => 'الشركات والوسطاء',
-        'route' => '/companies',
-        'scope' => 'page',
-        'bands' => [
-            [
-                'key' => '00-page-settings',
-                'label_en' => 'Page settings & SEO',
-                'label_ar' => 'إعدادات الصفحة والـ SEO',
-                'image' => null,
-                'blocks' => [
-                    ['companies', 'meta'],
-                ],
-            ],
-            [
-                'key' => '01-hero',
-                'label_en' => 'How would you like to join?',
-                'label_ar' => 'كيف تريد الانضمام؟',
-                'image' => 'companies/01-hero',
-                'blocks' => [
-                    ['companies', 'hero'],
-                ],
-            ],
-            [
-                'key' => '02-card-travel-agency',
-                'label_en' => 'Travel Agency',
-                'label_ar' => 'وكالة سفر',
-                'image' => 'companies/02-card-travel-agency',
-                'blocks' => [
-                    ['companies', 'card_travel_agency'],
-                    ['companies', 'card_open_souq'],
-                    ['companies', 'actions'],
-                    ['companies', 'form'],
                 ],
             ],
         ],

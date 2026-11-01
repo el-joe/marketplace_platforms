@@ -21,11 +21,20 @@ enum JoinSection: string
     /** Sell physical/digital products through vendor listings (existing /register wizard). */
     case ProductVendor = 'product_vendor';
 
-    /** Specialized companies and intermediaries (brokers) that operate on classified categories. */
-    case ClassifiedVendor = 'classified_vendor';
+    /** Open Souq: list across the classified categories (real estate, cars, chalets, ...). */
+    case OpenSouq = 'open_souq';
+
+    /** Travel agencies publishing trips, packages and bookings. */
+    case TravelAgency = 'travel_agency';
 
     /** Influencers/creators and commission-based marketers (existing marketer registration). */
     case Marketer = 'marketer';
+
+    /** Admin-managed visibility setting key (Settings → General), one boolean per section. */
+    public function settingKey(): string
+    {
+        return 'join_option_'.$this->value.'_enabled';
+    }
 
     /** @return list<string> */
     public static function values(): array

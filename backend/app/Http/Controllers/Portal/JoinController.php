@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Portal;
 
 use App\Enums\JoinSection;
 use App\Http\Controllers\Controller;
+use App\Models\Country;
 use App\Services\Portal\JoinService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -49,6 +50,10 @@ class JoinController extends Controller
             'section.in' => __('portal.join.section_invalid'),
         ]);
 
+        if (! $this->joinService->isSectionEnabled($validated['section'])) {
+            return redirect()->route('portal.join')->withErrors(['section' => __('portal.join.section_unavailable')]);
+        }
+
         $this->joinService->storeSection($validated['section']);
 
         return redirect()->route($this->joinService->sectionLandingRoute($validated['section']));
@@ -74,10 +79,6 @@ class JoinController extends Controller
         return response()->json([
             'success' => true,
             'country_id' => $country->id,
-            'classified_categories' => $this->joinService->classifiedCategories()->map(fn ($category) => [
-                'id' => $category->id,
-                'name' => $category->name,
-            ])->values(),
             'marketer_types' => $this->joinService->marketerTypes(),
         ]);
     }

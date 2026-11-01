@@ -165,22 +165,10 @@ return [
 
     'join' => [
         'country_unavailable' => 'The selected country is not available for joining right now.',
+        'section_unavailable' => 'This option is not available right now.',
         'section_invalid' => 'The selected section is invalid.',
-        'category_unavailable' => 'The selected specialization is not available right now.',
-        'category_required' => 'Please select a specialization.',
-        'entity_type_invalid' => 'The selected join type is invalid.',
-        'entity_type_required' => 'Please specify whether you are a company or a broker.',
         'marketer_type_invalid' => 'The selected marketer type is invalid.',
         'marketer_type_required' => 'Please select a registration type.',
-        'classified_pending' => 'Registration for specialized companies and brokers is being prepared and will be available soon.',
-    ],
-
-    'companies' => [
-        'choice_invalid' => 'The selected option is invalid.',
-        'category_required' => 'Please select a specialization.',
-        'category_unavailable' => 'The selected specialization is not available right now.',
-        'travel_pending' => 'Travel agency registration is being prepared and will be available soon.',
-        'souq_pending' => 'Open Souq registration is being prepared and will be available soon.',
     ],
 
     'marketers' => [

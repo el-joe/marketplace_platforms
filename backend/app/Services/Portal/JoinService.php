@@ -7,6 +7,7 @@ use App\Enums\MarketerType;
 use App\Models\ClassifiedCategory;
 use App\Models\Country;
 use App\Models\MarketerJob;
+use App\Models\Setting;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -109,7 +110,35 @@ class JoinService
      */
     public function sections(): array
     {
-        return JoinSection::options();
+        return array_intersect_key(
+            JoinSection::options(),
+            array_flip(array_map(fn (JoinSection $s) => $s->value, $this->enabledSections())),
+        );
+    }
+
+    /**
+     * Sections the admin has left visible on /join (Settings → General).
+     * A missing setting counts as visible so a fresh install never hides options.
+     *
+     * @return list<JoinSection>
+     */
+    public function enabledSections(): array
+    {
+        return array_values(array_filter(
+            JoinSection::cases(),
+            fn (JoinSection $s) => (bool) Setting::get($s->settingKey(), true),
+        ));
+    }
+
+    public function isSectionEnabled(string $section): bool
+    {
+        foreach ($this->enabledSections() as $enabled) {
+            if ($enabled->value === $section) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -121,7 +150,8 @@ class JoinService
     {
         return match ($section) {
             JoinSection::ProductVendor->value => 'portal.vendors',
-            JoinSection::ClassifiedVendor->value => 'portal.companies',
+            JoinSection::OpenSouq->value => 'portal.companies.open-souq',
+            JoinSection::TravelAgency->value => 'portal.companies.travel-agency',
             JoinSection::Marketer->value => 'portal.marketers',
             default => 'portal.join',
         };
@@ -171,7 +201,7 @@ class JoinService
      * shape. Throws a ValidationException for any invalid or unavailable choice.
      *
      * @param  array<string, mixed>  $input
-     * @return array{country_id: string, section: string, classified_category_id: ?string, marketer_type: ?string, entity_type: ?string}
+     * @return array{country_id: string, section: string, marketer_type: ?string}
      */
     public function validate(array $input): array
     {
@@ -182,16 +212,6 @@ class JoinService
                 Rule::exists('countries', 'id')->where('is_active', true),
             ],
             'section' => ['required', 'string', Rule::in(JoinSection::values())],
-            'classified_category_id' => [
-                'nullable',
-                'string',
-                Rule::exists('classified_categories', 'id')->where('is_active', true),
-            ],
-            'entity_type' => [
-                'nullable',
-                'string',
-                Rule::in(['company', 'broker']),
-            ],
             'marketer_type' => [
                 'nullable',
                 'string',
@@ -200,20 +220,14 @@ class JoinService
         ], [
             'country_id.exists' => __('portal.join.country_unavailable'),
             'section.in' => __('portal.join.section_invalid'),
-            'classified_category_id.exists' => __('portal.join.category_unavailable'),
-            'entity_type.in' => __('portal.join.entity_type_invalid'),
             'marketer_type.in' => __('portal.join.marketer_type_invalid'),
         ]);
 
         $validator->after(function ($validator) use ($input): void {
             $section = $input['section'] ?? null;
 
-            if ($section === JoinSection::ClassifiedVendor->value && empty($input['classified_category_id'])) {
-                $validator->errors()->add('classified_category_id', __('portal.join.category_required'));
-            }
-
-            if ($section === JoinSection::ClassifiedVendor->value && empty($input['entity_type'])) {
-                $validator->errors()->add('entity_type', __('portal.join.entity_type_required'));
+            if (is_string($section) && JoinSection::tryFrom($section) && ! $this->isSectionEnabled($section)) {
+                $validator->errors()->add('section', __('portal.join.section_unavailable'));
             }
 
             if ($section === JoinSection::Marketer->value && empty($input['marketer_type'])) {
@@ -226,8 +240,6 @@ class JoinService
         return [
             'country_id' => $validated['country_id'],
             'section' => $validated['section'],
-            'classified_category_id' => $validated['classified_category_id'] ?? null,
-            'entity_type' => $validated['entity_type'] ?? null,
             'marketer_type' => $validated['marketer_type'] ?? null,
         ];
     }
@@ -261,11 +273,17 @@ class JoinService
                 ],
                 'message' => null,
             ],
-            JoinSection::ClassifiedVendor->value => [
-                'status' => 'pending',
-                'route' => null,
+            JoinSection::OpenSouq->value => [
+                'status' => 'ready',
+                'route' => 'portal.companies.open-souq',
                 'params' => [],
-                'message' => __('portal.join.classified_pending'),
+                'message' => null,
+            ],
+            JoinSection::TravelAgency->value => [
+                'status' => 'ready',
+                'route' => 'portal.companies.travel-agency',
+                'params' => [],
+                'message' => null,
             ],
         };
     }

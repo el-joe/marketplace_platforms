@@ -37,7 +37,7 @@
 @section('nav')
     @include('portal.partials.section-nav', [
         'section' => 'travel_agency',
-        'backUrl' => route('portal.companies'),
+        'backUrl' => route('portal.join'),
         'links' => $travelNav,
     ])
 @endsection

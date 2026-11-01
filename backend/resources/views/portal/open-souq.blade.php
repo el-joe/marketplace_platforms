@@ -39,7 +39,7 @@
 @section('nav')
     @include('portal.partials.section-nav', [
         'section' => 'open_souq',
-        'backUrl' => route('portal.companies'),
+        'backUrl' => route('portal.join'),
         'links' => $souqNav,
     ])
 @endsection

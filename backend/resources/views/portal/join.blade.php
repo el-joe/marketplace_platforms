@@ -11,10 +11,16 @@
             'image' => portal_image('join', 'card_product_vendor', 'image', asset('images/join/seller.svg'), 'Product seller', 'بائع منتجات'),
         ],
         [
-            'value' => 'classified_vendor',
-            'title' => portal_content('join', 'card_classified_vendor', 'title', 'Specialized Companies & Brokers', 'شركات تخصصية ووسطاء'),
-            'description' => portal_content('join', 'card_classified_vendor', 'description', 'Join as a specialized company or an intermediary across real estate, cars, travel, chalets and more.', 'انضم كشركة تخصصية أو وسيط في العقارات والسيارات والسفر والشاليهات وغيرها.'),
-            'image' => portal_image('join', 'card_classified_vendor', 'image', asset('images/join/companies.svg'), 'Specialized companies and brokers', 'شركات تخصصية ووسطاء'),
+            'value' => 'open_souq',
+            'title' => portal_content('join', 'card_open_souq', 'title', 'Open Souq', 'السوق المفتوح'),
+            'description' => portal_content('join', 'card_open_souq', 'description', 'List across our classified categories — real estate, cars, chalets and more.', 'أدرج إعلاناتك في فئات السوق المفتوح — العقارات والسيارات والشاليهات وغيرها.'),
+            'image' => portal_image('join', 'card_open_souq', 'image', asset('images/join/open-souq.jpg'), 'Open Souq', 'السوق المفتوح'),
+        ],
+        [
+            'value' => 'travel_agency',
+            'title' => portal_content('join', 'card_travel_agency', 'title', 'Travel Agency', 'وكالة سفر'),
+            'description' => portal_content('join', 'card_travel_agency', 'description', 'Register your travel agency to publish trips, packages and bookings on Nawy.', 'سجّل وكالة السفر الخاصة بك لنشر الرحلات والباقات والحجوزات على ناوي.'),
+            'image' => portal_image('join', 'card_travel_agency', 'image', asset('images/join/travel-agency.jpg'), 'Travel agency', 'وكالة سفر'),
         ],
         [
             'value' => 'marketer',
@@ -23,6 +29,9 @@
             'image' => portal_image('join', 'card_marketer', 'image', asset('images/join/marketer.svg'), 'Influencers, creators and affiliates', 'مشاهير ومؤثرون ومسوقون بالعمولة'),
         ],
     ];
+
+    // Admin-managed visibility (Settings → General): hide the cards switched off.
+    $cards = array_values(array_filter($cards, fn ($card) => array_key_exists($card['value'], $sections)));
 
     // Re-select the section on validation round-trips, ignoring stale/invalid values.
     $selectedSection = old('section', $selection['section'] ?? null);

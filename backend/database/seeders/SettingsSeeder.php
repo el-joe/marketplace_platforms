@@ -19,6 +19,10 @@ class SettingsSeeder extends Seeder
             ['key' => 'default_country_code', 'value' => 'egy', 'category' => 'general', 'description' => 'Default country site_code for redirect', 'is_public' => 0],
             ['key' => 'default_locale', 'value' => 'ar', 'category' => 'general', 'description' => 'Default language (en or ar)', 'is_public' => 1],
             ['key' => 'platform_base_currency', 'value' => 'USD', 'category' => 'general', 'description' => 'Base currency for exchange rate calculations', 'is_public' => 0],
+            ['key' => 'join_option_product_vendor_enabled', 'value' => true, 'category' => 'general', 'description' => 'Show "Product Seller" on the /join page', 'is_public' => 0],
+            ['key' => 'join_option_open_souq_enabled', 'value' => true, 'category' => 'general', 'description' => 'Show "Open Souq" (classifieds) on the /join page', 'is_public' => 0],
+            ['key' => 'join_option_travel_agency_enabled', 'value' => true, 'category' => 'general', 'description' => 'Show "Travel Agency" on the /join page', 'is_public' => 0],
+            ['key' => 'join_option_marketer_enabled', 'value' => true, 'category' => 'general', 'description' => 'Show "Influencer / Marketer" on the /join page', 'is_public' => 0],
             ['key' => 'maintenance_mode', 'value' => false, 'category' => 'general', 'description' => 'When true, show maintenance page to customers', 'is_public' => 0],
             ['key' => 'maintenance_message', 'value' => 'We are performing scheduled maintenance. Back soon!', 'category' => 'general', 'description' => 'Message shown during maintenance mode', 'is_public' => 1],
             ['key' => 'logo_file_id', 'value' => '', 'category' => 'general', 'description' => 'Platform logo file ID (from files table)', 'is_public' => 1],
@@ -111,10 +115,6 @@ class SettingsSeeder extends Seeder
             ['key' => 'sms_gateway_api_key', 'value' => '', 'category' => 'integrations', 'description' => 'SMS gateway API key', 'is_encrypted' => 1],
             ['key' => 'firebase_server_key', 'value' => '', 'category' => 'integrations', 'description' => 'Firebase FCM server key for push notifications', 'is_encrypted' => 1],
             ['key' => 'google_maps_api_key', 'value' => '', 'category' => 'integrations', 'description' => 'Google Maps API key for address geocoding', 'is_encrypted' => 1],
-            ['key' => 'meilisearch_host', 'value' => 'http://localhost:7700', 'category' => 'integrations', 'description' => 'Meilisearch server host URL'],
-            ['key' => 'meilisearch_key', 'value' => '', 'category' => 'integrations', 'description' => 'Meilisearch master key', 'is_encrypted' => 1],
-            ['key' => 'exchange_rate_api_key', 'value' => '', 'category' => 'integrations', 'description' => 'API key for automatic exchange rate updates', 'is_encrypted' => 1],
-
             ['key' => 'mail_mailer', 'value' => 'smtp', 'category' => 'integrations', 'description' => 'Mail driver (smtp/log/sendmail)'],
             ['key' => 'mail_host', 'value' => '', 'category' => 'integrations', 'description' => 'SMTP host'],
             ['key' => 'mail_port', 'value' => 587, 'category' => 'integrations', 'description' => 'SMTP port'],
@@ -123,6 +123,10 @@ class SettingsSeeder extends Seeder
             ['key' => 'mail_password', 'value' => '', 'category' => 'integrations', 'description' => 'SMTP password', 'is_encrypted' => 1],
             ['key' => 'mail_from_address', 'value' => '', 'category' => 'integrations', 'description' => 'Sender email address'],
             ['key' => 'mail_from_name', 'value' => '', 'category' => 'integrations', 'description' => 'Sender display name'],
+            ['key' => 'meilisearch_host', 'value' => 'http://localhost:7700', 'category' => 'integrations', 'description' => 'Meilisearch server host URL'],
+            ['key' => 'meilisearch_key', 'value' => '', 'category' => 'integrations', 'description' => 'Meilisearch master key', 'is_encrypted' => 1],
+            ['key' => 'exchange_rate_api_key', 'value' => '', 'category' => 'integrations', 'description' => 'API key for automatic exchange rate updates', 'is_encrypted' => 1],
+
             // ─── appearance ───────────────────────────────────────────────────
             ['key' => 'primary_color', 'value' => '#0284c7', 'category' => 'appearance', 'description' => 'Primary brand color (hex)', 'is_public' => 1],
             ['key' => 'secondary_color', 'value' => '#0f172a', 'category' => 'appearance', 'description' => 'Secondary brand color (hex)', 'is_public' => 1],
@@ -148,6 +152,11 @@ class SettingsSeeder extends Seeder
         ];
 
         foreach ($settings as $data) {
+            // Admin-toggled visibility flags must survive a re-seed.
+            if (str_starts_with($data['key'], 'join_option_') && Setting::where('key', $data['key'])->exists()) {
+                continue;
+            }
+
             Setting::updateOrCreate(
                 ['key' => $data['key']],
                 [

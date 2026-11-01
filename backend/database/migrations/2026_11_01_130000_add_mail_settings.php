@@ -6,7 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 return new class extends Migration
 {
     private const KEYS = [
-        'mail_mailer' => ['smtp', 'Mail driver (smtp/log/sendmail)', false],
+        'mail_mailer' => ['log', 'Mail driver (smtp/log/sendmail)', false],
         'mail_host' => ['', 'SMTP host', false],
         'mail_port' => [587, 'SMTP port', false],
         'mail_encryption' => ['tls', 'SMTP encryption (tls/ssl/none)', false],

@@ -111,7 +111,7 @@ return [
     ],
 
     'footer' => [
-        'label_en' => 'Portal footer (join, companies & section pages)',
+        'label_en' => 'Portal footer (join & section pages)',
         'label_ar' => 'تذييل البوابة (الانضمام والشركات وصفحات الأقسام)',
         'route' => '/join',
         'scope' => 'shared',
@@ -326,23 +326,9 @@ return [
             ['block' => 'logo', 'label_en' => 'Logo', 'label_ar' => 'الشعار', 'selector' => '.choice-header a'],
             ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '.choice-hero'],
             ['block' => 'card_product_vendor', 'label_en' => 'Card: Product seller', 'label_ar' => 'بطاقة: بائع منتجات', 'selector' => '.choice-cards > :nth-child(1)'],
-            ['block' => 'card_classified_vendor', 'label_en' => 'Card: Companies & brokers', 'label_ar' => 'بطاقة: الشركات والوسطاء', 'selector' => '.choice-cards > :nth-child(2)'],
-            ['block' => 'card_marketer', 'label_en' => 'Card: Marketers', 'label_ar' => 'بطاقة: المسوقون', 'selector' => '.choice-cards > :nth-child(3)'],
-            ['block' => 'actions', 'label_en' => 'Continue button & hint', 'label_ar' => 'زر المتابعة والتلميح', 'selector' => '.choice-actions'],
-        ],
-    ],
-
-    'companies' => [
-        'label_en' => 'Companies & brokers',
-        'label_ar' => 'الشركات والوسطاء',
-        'route' => '/companies',
-        'scope' => 'page',
-        'sections' => [
-            ['block' => 'meta', 'label_en' => 'Page title & SEO', 'label_ar' => 'عنوان الصفحة والـ SEO', 'selector' => null],
-            ['block' => 'hero', 'label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'selector' => '.choice-hero'],
-            ['block' => 'card_travel_agency', 'label_en' => 'Card: Travel agency', 'label_ar' => 'بطاقة: وكالة سفر', 'selector' => '.choice-cards > :nth-child(1)'],
             ['block' => 'card_open_souq', 'label_en' => 'Card: Open Souq', 'label_ar' => 'بطاقة: السوق المفتوح', 'selector' => '.choice-cards > :nth-child(2)'],
-            ['block' => 'form', 'label_en' => 'Specialization picker', 'label_ar' => 'اختيار التخصص', 'selector' => '.choice-reveal'],
+            ['block' => 'card_travel_agency', 'label_en' => 'Card: Travel agency', 'label_ar' => 'بطاقة: وكالة سفر', 'selector' => '.choice-cards > :nth-child(3)'],
+            ['block' => 'card_marketer', 'label_en' => 'Card: Influencers & marketers', 'label_ar' => 'بطاقة: المؤثرون والمسوقون', 'selector' => '.choice-cards > :nth-child(4)'],
             ['block' => 'actions', 'label_en' => 'Continue button & hint', 'label_ar' => 'زر المتابعة والتلميح', 'selector' => '.choice-actions'],
         ],
     ],

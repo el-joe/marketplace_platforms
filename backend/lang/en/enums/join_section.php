@@ -2,6 +2,7 @@
 
 return [
     'product_vendor' => 'Product Seller',
-    'classified_vendor' => 'Specialized Companies & Brokers',
+    'open_souq' => 'Open Souq (Classifieds)',
+    'travel_agency' => 'Travel Agency',
     'marketer' => 'Influencers, Creators & Affiliates',
 ];

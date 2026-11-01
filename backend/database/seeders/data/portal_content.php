@@ -786,9 +786,13 @@ $rows = [
     ['join', 'card_product_vendor', 'description', 'text', 'Sell physical or digital products and manage your own store on Nawy.', 'بِع منتجاتك المادية أو الرقمية وأدر متجرك الخاص على ناوي.', null, 2],
     ['join', 'card_product_vendor', 'image', 'image', 'Product seller', 'بائع منتجات', '/images/join/seller.svg', 3],
 
-    ['join', 'card_classified_vendor', 'title', 'text', 'Specialized Companies & Brokers', 'شركات تخصصية ووسطاء', null, 1],
-    ['join', 'card_classified_vendor', 'description', 'text', 'Join as a specialized company or an intermediary across real estate, cars, travel, chalets and more.', 'انضم كشركة تخصصية أو وسيط في العقارات والسيارات والسفر والشاليهات وغيرها.', null, 2],
-    ['join', 'card_classified_vendor', 'image', 'image', 'Specialized companies and brokers', 'شركات تخصصية ووسطاء', '/images/join/companies.svg', 3],
+    ['join', 'card_open_souq', 'title', 'text', 'Open Souq', 'السوق المفتوح', null, 1],
+    ['join', 'card_open_souq', 'description', 'text', 'List across our classified categories — real estate, cars, chalets and more.', 'أدرج إعلاناتك في فئات السوق المفتوح — العقارات والسيارات والشاليهات وغيرها.', null, 2],
+    ['join', 'card_open_souq', 'image', 'image', 'Open Souq', 'السوق المفتوح', '/images/join/open-souq.jpg', 3],
+
+    ['join', 'card_travel_agency', 'title', 'text', 'Travel Agency', 'وكالة سفر', null, 1],
+    ['join', 'card_travel_agency', 'description', 'text', 'Register your travel agency to publish trips, packages and bookings on Nawy.', 'سجّل وكالة السفر الخاصة بك لنشر الرحلات والباقات والحجوزات على ناوي.', null, 2],
+    ['join', 'card_travel_agency', 'image', 'image', 'Travel agency', 'وكالة سفر', '/images/join/travel-agency.jpg', 3],
 
     ['join', 'card_marketer', 'title', 'text', 'Influencers, Creators & Affiliates', 'مشاهير ومؤثرون ومسوقون بالعمولة', null, 1],
     ['join', 'card_marketer', 'description', 'text', 'Promote products and listings as an influencer, creator or commission-based marketer.', 'روّج للمنتجات والإعلانات كمشهور أو مؤثر أو مسوق بالعمولة.', null, 2],
@@ -796,26 +800,6 @@ $rows = [
 
     ['join', 'actions', 'continue', 'text', 'Continue', 'متابعة', null, 1],
     ['join', 'actions', 'select_hint', 'text', 'Select an option to continue', 'اختر أحد الخيارات للمتابعة', null, 2],
-
-    // ─── page_key = 'companies' ───────────────────────────────────────────────────
-    ['companies', 'meta', 'title', 'text', 'Specialized Companies & Brokers', 'الشركات التخصصية والوسطاء', null, 1],
-    ['companies', 'hero', 'back', 'text', 'Back to join options', 'الرجوع لاختيار نوع الانضمام', null, 1],
-    ['companies', 'hero', 'title', 'text', 'How would you like to join?', 'كيف تريد الانضمام؟', null, 2],
-    ['companies', 'hero', 'subtitle', 'text', 'Choose the option that fits your business, then continue.', 'اختر الخيار المناسب لنشاطك، ثم تابع.', null, 3],
-
-    ['companies', 'card_travel_agency', 'title', 'text', 'Travel Agency', 'وكالة سفر', null, 1],
-    ['companies', 'card_travel_agency', 'description', 'text', 'Register your travel agency to publish trips, packages and bookings on Nawy.', 'سجّل وكالة السفر الخاصة بك لنشر الرحلات والباقات والحجوزات على ناوي.', null, 2],
-    ['companies', 'card_travel_agency', 'image', 'image', 'Travel agency', 'وكالة سفر', '/images/join/travel-agency.jpg', 3],
-
-    ['companies', 'card_open_souq', 'title', 'text', 'Open Souq', 'السوق المفتوح', null, 1],
-    ['companies', 'card_open_souq', 'description', 'text', 'List across our classified categories — real estate, cars, chalets and more.', 'أدرج إعلاناتك في فئات السوق المفتوح — العقارات والسيارات والشاليهات وغيرها.', null, 2],
-    ['companies', 'card_open_souq', 'image', 'image', 'Open Souq', 'السوق المفتوح', '/images/join/open-souq.jpg', 3],
-
-    ['companies', 'form', 'category_label', 'text', 'Your specialization', 'التخصص', null, 1],
-    ['companies', 'form', 'category_empty', 'text', 'Specializations are being updated, please check back soon.', 'يتم تحديث التخصصات حالياً، يرجى المحاولة قريباً.', null, 2],
-
-    ['companies', 'actions', 'continue', 'text', 'Continue', 'متابعة', null, 1],
-    ['companies', 'actions', 'select_hint', 'text', 'Select an option to continue', 'اختر أحد الخيارات للمتابعة', null, 2],
 
     // ─── page_key = 'marketers' ───────────────────────────────────────────────────
     ['marketers', 'meta', 'title', 'text', 'Influencers, Creators & Affiliates', 'المشاهير والمؤثرون والمسوقون بالعمولة', null, 1],

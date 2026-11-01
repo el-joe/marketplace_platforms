@@ -3,7 +3,6 @@
 use App\Http\Controllers\Portal\AdSupportController;
 use App\Http\Controllers\Portal\AdvertiseRequestController;
 use App\Http\Controllers\Portal\BlogController;
-use App\Http\Controllers\Portal\CompaniesController;
 use App\Http\Controllers\Portal\HelpCenterController;
 use App\Http\Controllers\Portal\JoinController;
 use App\Http\Controllers\Portal\LandingController;
@@ -93,9 +92,9 @@ Route::prefix('helpcenter')->group(function () use ($resolvedCountry) {
     Route::get('/article/{article}', fn ($article) => redirect()->route('portal.helpcenter.article.show', [$resolvedCountry(), $article]));
 });
 
-// Join landing page — pick the account section first (product seller,
-// specialized companies & brokers, or influencers/creators/affiliates).
-// Country and specialization are chosen inside each section's own journey.
+// Join landing page — pick the account section first (product seller, Open Souq,
+// travel agency, or influencer/creator/affiliate). Which cards show is controlled
+// by admin settings (join_option_*_enabled).
 Route::get('/join', [JoinController::class, 'index'])->name('join');
 Route::post('/join/select', [JoinController::class, 'select'])->name('join.select');
 Route::get('/join/options', [JoinController::class, 'options'])->name('join.options');
@@ -104,17 +103,17 @@ Route::post('/join/continue', [JoinController::class, 'continue'])->name('join.c
 // Section landing pages reached after a validated section choice.
 // /vendors reuses the legacy product-seller portal content unchanged.
 Route::get('/vendors', [LandingController::class, 'vendors'])->name('vendors');
-Route::get('/companies', [CompaniesController::class, 'index'])->name('companies');
-Route::post('/companies/continue', [CompaniesController::class, 'continue'])->name('companies.continue');
+// The old /companies choice screen was folded into /join; keep old links alive.
+Route::redirect('/companies', '/join', 301)->name('companies');
 Route::get('/marketers', [MarketersController::class, 'index'])->name('marketers');
 Route::get('/marketers/{marketerType}', [MarketersController::class, 'show'])->name('marketers.type');
 
-// Open Souq section reached from the /companies choice screen: an introduction
+// Open Souq section reached from the /join choice screen: an introduction
 // landing page. It reuses the product-seller /vendors/register wizard until
 // Open Souq has its own registration flow.
 Route::get('/companies/open-souq', [OpenSouqController::class, 'landing'])->name('companies.open-souq');
 
-// Travel-agency section reached from the /companies choice screen: an
+// Travel-agency section reached from the /join choice screen: an
 // introduction landing page plus the multi-step registration wizard that
 // creates a pending TravelAgency and its owner account.
 Route::get('/companies/travel-agency', [TravelAgencyController::class, 'landing'])->name('companies.travel-agency');
