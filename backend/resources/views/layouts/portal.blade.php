@@ -35,6 +35,7 @@
     </script>
 
     @vite(['resources/css/app.css', 'resources/js/portal/app.js'])
+    @include('portal.partials.safari-fixes')
 </head>
 
 <body class="bg-black text-white antialiased" style="font-family: 'Cairo', 'Figtree', sans-serif;">

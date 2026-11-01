@@ -35,6 +35,7 @@
 
 
     @vite(['resources/css/app.css', 'resources/js/portal/app.js'])
+    @include('portal.partials.safari-fixes')
 
     <style>
         .hc-fade-header {
