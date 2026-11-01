@@ -317,7 +317,7 @@ class AppServiceProvider extends ServiceProvider
             return; // settings table not migrated yet (fresh install / CI)
         }
 
-        $val = fn (string $key) => ($v = $rows[$key]?->getRawValue()) === '' ? null : $v;
+        $val = fn (string $key) => ($v = $rows->get($key)?->getRawValue()) === '' ? null : $v;
 
         if ($mailer = $val('mail_mailer')) {
             config(['mail.default' => $mailer]);
