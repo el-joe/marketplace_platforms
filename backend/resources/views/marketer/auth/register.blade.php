@@ -119,6 +119,22 @@
                         </div>
                     </div>
 
+                    {{-- Gender --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1.5">
+                            {{ __('marketer.auth.gender_label') }} <span class="text-red-400">*</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            @foreach (\App\Enums\MarketerGender::cases() as $g)
+                                <label class="flex items-center justify-center gap-2 cursor-pointer bg-gray-800 border border-gray-700 has-[:checked]:border-[#feee00] rounded-xl px-4 py-3 text-sm text-white">
+                                    <input type="radio" name="gender" value="{{ $g->value }}" required class="sr-only" @checked(old('gender') === $g->value)>
+                                    {{ __('marketer.auth.gender_'.$g->value) }}
+                                </label>
+                            @endforeach
+                        </div>
+                        @error('gender') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    </div>
+
                     {{-- Password + Confirmation --}}
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>

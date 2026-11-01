@@ -38,7 +38,7 @@ function registrationWizard() {
         // Form data
         form: {
             // Step 1
-            name: '', email: '', phone: '', country_id: '',
+            name: '', email: '', phone: '', gender: '', country_id: '',
             password: '', password_confirmation: '',
             // Step 2
             store_name: '', store_slug: '', store_description: '',
@@ -216,6 +216,7 @@ function registrationWizard() {
                     name: this.form.name,
                     email: this.form.email,
                     phone: this.form.phone,
+                    gender: this.form.gender,
                     country_id: this.form.country_id,
                     password: this.form.password,
                     password_confirmation: this.form.password_confirmation,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Marketer;
 
+use App\Enums\MarketerGender;
 use App\Enums\MarketerType;
 use App\Http\Controllers\Controller;
 use App\Models\Marketer;
@@ -72,6 +73,7 @@ class AuthController extends Controller
             'password' => 'required|min:8',
             'marketer_type' => ['required', Rule::in(MarketerType::values())],
             'country_id' => 'required|exists:countries,id',
+            'gender' => ['required', Rule::enum(MarketerGender::class)],
             'phone' => 'nullable|string|max:30',
             'whatsapp_for_campaigns' => 'nullable|string|max:30',
         ]);
@@ -85,6 +87,8 @@ class AuthController extends Controller
                 'country_id' => $request->country_id,
                 'global_status' => 'pending',
             ]);
+
+            $m->marketerProfile()->create(['gender' => $request->gender]);
 
             $marketerJobId = MarketerJob::where('key', $request->marketer_type)->value('id');
             if ($marketerJobId) {

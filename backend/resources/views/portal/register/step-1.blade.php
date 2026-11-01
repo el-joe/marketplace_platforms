@@ -33,6 +33,21 @@
         <p x-show="errors.phone" x-text="errors.phone?.[0]" class="mt-1 text-xs text-red-400" x-cloak></p>
     </div>
 
+    {{-- Gender --}}
+    <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1.5">{{ portal_content('register', 'step_1', 'gender_label', 'Store Owner Gender', 'جنس مالك المتجر') }} <span class="text-red-400">*</span></label>
+        <div class="grid grid-cols-2 gap-3">
+            @foreach (['male' => ['Male', 'ذكر'], 'female' => ['Female', 'أنثى']] as $value => $labels)
+                <label class="flex items-center justify-center gap-2 cursor-pointer bg-gray-800 border rounded-xl px-4 py-3 text-sm text-white transition-colors"
+                    :class="form.gender === '{{ $value }}' ? 'border-[#feee00]' : (errors.gender ? 'border-red-500' : 'border-gray-700')">
+                    <input type="radio" value="{{ $value }}" x-model="form.gender" class="sr-only">
+                    {{ portal_content('register', 'step_1', 'gender_'.$value, $labels[0], $labels[1]) }}
+                </label>
+            @endforeach
+        </div>
+        <p x-show="errors.gender" x-text="errors.gender?.[0]" class="mt-1 text-xs text-red-400" x-cloak></p>
+    </div>
+
     {{-- Country --}}
     <div>
         <label class="block text-sm font-medium text-gray-300 mb-1.5">{{ portal_content('register', 'step_1', 'country_label', 'Country', 'الدولة') }} <span class="text-red-400">*</span></label>

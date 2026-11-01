@@ -191,6 +191,18 @@ $businessTypeLabels = [
                                 {{ (! $admin->isOwner() || $contactInfoLocked) ? 'disabled' : '' }}
                                 class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-400">
                         </div>
+
+                        {{-- Gender --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.profile.gender') }}</label>
+                            <select name="gender" {{ ! $admin->isOwner() ? 'disabled' : '' }}
+                                class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-400">
+                                <option value="">{{ __('partner.profile.gender_unset') }}</option>
+                                @foreach (\App\Enums\Gender::cases() as $g)
+                                    <option value="{{ $g->value }}" @selected(old('gender', $vendor->gender?->value) === $g->value)>{{ __('partner.profile.gender_'.$g->value) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
                     @if ($admin->isOwner())

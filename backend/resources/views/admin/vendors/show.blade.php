@@ -117,6 +117,7 @@
                             __('admin.vendors.tax_id')          => $vendor->tax_id ?: '—',
                             __('admin.vendors.contact_email')   => $vendor->contact_email ?: '—',
                             __('admin.vendors.contact_phone')   => $vendor->contact_phone ?: '—',
+                            __('admin.vendors.gender')          => $vendor->gender ? __('admin.vendors.gender_'.$vendor->gender->value) : '—',
                             __('admin.vendors.whatsapp')        => $vendor->whatsapp_number ?: '—',
                             __('admin.vendors.commission_rate') => $vendor->commission_rate ? $vendor->commission_rate . '%' : __('admin.vendors.platform_default'),
                             __('admin.vendors.payout_schedule') => $vendor->payout_schedule ? __('admin.vendors.payout_schedule_' . $vendor->payout_schedule->value) : '—',
@@ -157,6 +158,8 @@
                             </div>
                             <x-form.input name="contact_email"   label="{{ __('admin.vendors.contact_email') }}" :value="$vendor->contact_email"   type="email"/>
                             <x-form.input name="contact_phone"   label="{{ __('admin.vendors.contact_phone') }}" :value="$vendor->contact_phone" />
+                            <x-form.select name="gender" label="{{ __('admin.vendors.gender') }}" :value="$vendor->gender?->value"
+                                :options="['' => '—', 'male' => __('admin.vendors.gender_male'), 'female' => __('admin.vendors.gender_female')]"/>
                             <x-form.input name="commission_rate" label="{{ __('admin.vendors.commission_rate') }} (%)" :value="$vendor->commission_rate" type="number" step="0.01"/>
                             <x-form.select name="payout_schedule" label="{{ __('admin.vendors.payout_schedule') }}" :value="$vendor->payout_schedule?->value"
                                 :options="['weekly' => __('admin.vendors.weekly'), 'biweekly' => __('admin.vendors.biweekly'), 'monthly' => __('admin.vendors.monthly')]"/>

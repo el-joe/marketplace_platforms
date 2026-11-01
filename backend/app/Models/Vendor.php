@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
+use App\Enums\Gender;
 use App\Enums\PayoutSchedule;
 use App\Enums\VendorBusinessType;
 use App\Enums\VendorCommissionDiscountType;
@@ -32,6 +34,7 @@ class Vendor extends Model
         'email_verified_at',
         'phone',
         'phone_verified_at',
+        'gender',
         'password',
         'store_name',
         'store_slug',
@@ -87,12 +90,13 @@ class Vendor extends Model
     protected function casts(): array
     {
         return [
+            'gender' => Gender::class,
             'approved_at' => 'datetime',
             'onboarding_completed_at' => 'datetime',
             'last_login_at' => 'datetime',
             'payout_hold_active' => 'boolean',
             'store_rating_avg' => 'float',
-            'total_sales' => \App\Casts\DecimalMoney::class,
+            'total_sales' => DecimalMoney::class,
             'return_rate_pct' => 'float',
             'cancellation_rate_pct' => 'float',
             'strikes_count' => 'integer',

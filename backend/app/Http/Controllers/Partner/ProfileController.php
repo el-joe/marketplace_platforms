@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Partner;
 
+use App\Enums\Gender;
 use App\Http\Controllers\Controller;
 use App\Models\VendorBankAccount;
 use App\Models\VendorDocument;
@@ -15,6 +16,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -45,7 +48,7 @@ class ProfileController extends Controller
      */
     public function index(): View
     {
-        $admin  = $this->vendorAdmin();
+        $admin = $this->vendorAdmin();
         $vendor = $admin->vendor()->with('country')->firstOrFail();
 
         // Dynamic, country-aware list — same shared helper as registration.
@@ -100,7 +103,7 @@ class ProfileController extends Controller
     {
         $admin = $this->vendorAdmin();
 
-        if (!$admin->isOwner()) {
+        if (! $admin->isOwner()) {
             return response()->json(['message' => 'يحق للمالك فقط تعديل بيانات المتجر'], 403);
         }
 
@@ -115,6 +118,7 @@ class ProfileController extends Controller
             'contact_email' => 'sometimes|required|email|max:255',
             'contact_phone' => 'sometimes|required|string|max:30',
             'whatsapp_number' => 'sometimes|nullable|string|max:30',
+            'gender' => ['sometimes', 'nullable', Rule::enum(Gender::class)],
         ]);
 
         $vendor = $admin->vendor()->firstOrFail();
@@ -154,6 +158,11 @@ class ProfileController extends Controller
             }
         }
 
+        // Gender is a personal attribute of the owner, not a locked store section.
+        if (array_key_exists('gender', $validated)) {
+            $applied[] = ['gender' => $validated['gender']];
+        }
+
         if (! empty($applied)) {
             $vendor->update(array_merge(...$applied));
         }
@@ -182,7 +191,7 @@ class ProfileController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        if (!Hash::check($request->input('current_password'), $admin->password)) {
+        if (! Hash::check($request->input('current_password'), $admin->password)) {
             return response()->json(['message' => 'كلمة المرور الحالية غير صحيحة'], 422);
         }
 
@@ -201,13 +210,13 @@ class ProfileController extends Controller
     {
         $this->assertSectionEditable(VendorSectionLock::SECTION_DOCUMENTS);
 
-        $admin    = $this->vendorAdmin();
-        $vendor   = $admin->vendor()->with('country')->firstOrFail();
+        $admin = $this->vendorAdmin();
+        $vendor = $admin->vendor()->with('country')->firstOrFail();
         $vendorId = $vendor->id;
 
         $request->validate([
             'document_type_id' => 'required|uuid|exists:vendor_document_types,id',
-            'file'             => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         $typeId = $request->input('document_type_id');
@@ -226,8 +235,8 @@ class ProfileController extends Controller
             return response()->json(['message' => 'نوع الوثيقة غير مطلوب لبلدك'], 422);
         }
 
-        $ext  = $request->file('file')->getClientOriginalExtension();
-        $slug = \Illuminate\Support\Str::uuid();
+        $ext = $request->file('file')->getClientOriginalExtension();
+        $slug = Str::uuid();
         $path = $request->file('file')->storeAs(
             "vendor-docs/{$vendorId}",
             "{$typeId}-{$slug}.{$ext}",
@@ -236,10 +245,10 @@ class ProfileController extends Controller
 
         // Always insert a new row — admin reviews the fresh submission.
         VendorDocument::create([
-            'vendor_id'               => $vendorId,
+            'vendor_id' => $vendorId,
             'vendor_document_type_id' => $typeId,
-            'file_path'               => $path,
-            'status'                  => 'pending',
+            'file_path' => $path,
+            'status' => 'pending',
         ]);
 
         return response()->json(['message' => 'تم رفع الملف بنجاح، سيتم مراجعته قريباً']);

@@ -165,6 +165,7 @@ class MarketerLifecycleTest extends TestCase
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'marketer_type' => 'affiliate',
+            'gender' => 'female',
             'country_id' => $scenario->country->id,
         ], ['HTTP_HOST' => 'marketer.localhost']);
         $registerResponse->assertStatus(302);

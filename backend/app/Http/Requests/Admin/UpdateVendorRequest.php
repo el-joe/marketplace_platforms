@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\Gender;
 use App\Enums\PayoutSchedule;
 use App\Enums\VendorBusinessType;
 use App\Enums\VendorCommissionDiscountType;
@@ -53,6 +54,7 @@ class UpdateVendorRequest extends FormRequest
             'tax_id' => ['nullable', 'string', 'max:100'],
             'contact_email' => ['nullable', 'email', 'max:150'],
             'contact_phone' => ['nullable', 'string', 'max:50'],
+            'gender' => ['nullable', Rule::enum(Gender::class)],
             ...self::commissionRules(),
             'payout_schedule' => ['nullable', Rule::enum(PayoutSchedule::class)],
             'global_status' => ['nullable', Rule::enum(VendorGlobalStatus::class)],
