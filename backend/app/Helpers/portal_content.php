@@ -110,3 +110,34 @@ if (! function_exists('portal_image')) {
         return ['src' => PortalContent::resolveUrl($src), 'alt' => $alt];
     }
 }
+
+if (! function_exists('portal_video_embed_url')) {
+    /**
+     * Normalise an admin-pasted YouTube/Vimeo URL (watch, youtu.be, shorts,
+     * live, embed, player) into an iframe-safe embed URL. Other URLs are
+     * returned unchanged so direct embeds keep working.
+     *
+     * Usage in Blade:
+     *
+     *   <iframe src="{{ portal_video_embed_url($video['url']) }}"></iframe>
+     */
+    function portal_video_embed_url(string $url): string
+    {
+        $url = trim($url);
+
+        if (preg_match('~^https?://(?:www\.|m\.)?youtube(?:-nocookie)?\.com/(?:watch\?(?:[^#]*&)?v=|shorts/|live/|embed/)([\w-]{11})~i', $url, $match)
+            || preg_match('~^https?://youtu\.be/([\w-]{11})~i', $url, $match)) {
+            $query = (string) parse_url($url, PHP_URL_QUERY);
+            parse_str($query, $params);
+            $start = isset($params['t']) ? (int) $params['t'] : (int) ($params['start'] ?? 0);
+
+            return 'https://www.youtube.com/embed/'.$match[1].($start > 0 ? '?start='.$start : '');
+        }
+
+        if (preg_match('~^https?://(?:www\.)?vimeo\.com/(?:video/)?(\d+)~i', $url, $match)) {
+            return 'https://player.vimeo.com/video/'.$match[1];
+        }
+
+        return $url;
+    }
+}

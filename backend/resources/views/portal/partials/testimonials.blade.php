@@ -10,7 +10,7 @@
                 @php
                     $testimonialVideo = portal_link('home', 'testimonials', 'video', 'How PAN Emirates scaled their Nawy store', 'كيف نمت حول الإمارات متجرها على ناوي', 'https://www.youtube.com/embed/SKrJq4XZYn8');
                 @endphp
-                <iframe class="absolute inset-0 w-full h-full" src="{{ $testimonialVideo['url'] }}"
+                <iframe class="absolute inset-0 w-full h-full" src="{{ portal_video_embed_url($testimonialVideo['url']) }}"
                         title="{{ $testimonialVideo['label'] }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>

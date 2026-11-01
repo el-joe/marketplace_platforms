@@ -53,7 +53,7 @@
     <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 mt-8 lg:mt-10">
         <div class="rounded-2xl overflow-hidden aspect-video">
             @php($fulfilmentModelVideo = portal_link('how-it-works', 'fulfilment-model', 'video', 'YouTube video player', 'مشغل فيديو يوتيوب', 'https://www.youtube.com/embed/t9a9ApEXCRc'))
-            <iframe class="w-full h-full" src="{{ $fulfilmentModelVideo['url'] }}" title="{{ $fulfilmentModelVideo['label'] }}"
+            <iframe class="w-full h-full" src="{{ portal_video_embed_url($fulfilmentModelVideo['url']) }}" title="{{ $fulfilmentModelVideo['label'] }}"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>

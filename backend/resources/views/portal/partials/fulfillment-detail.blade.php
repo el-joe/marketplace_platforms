@@ -84,7 +84,7 @@
         <div class="mb-6 md:flex-1 md:mb-0">
             <div class="aspect-video rounded-xl overflow-hidden">
                 @php($fbnVideo = portal_link('fulfillment', 'fbn', 'video', 'YouTube video player', 'مشغل فيديو يوتيوب', 'https://www.youtube.com/embed/soM79P27Hm4'))
-                <iframe class="w-full h-full" src="{{ $fbnVideo['url'] }}" title="{{ $fbnVideo['label'] }}"
+                <iframe class="w-full h-full" src="{{ portal_video_embed_url($fbnVideo['url']) }}" title="{{ $fbnVideo['label'] }}"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
@@ -180,7 +180,7 @@
         <div class="mb-6 md:flex-1 md:mb-0">
             <div class="aspect-video rounded-xl overflow-hidden">
                 @php($fbpVideo = portal_link('fulfillment', 'fbp', 'video', 'YouTube video player', 'مشغل فيديو يوتيوب', 'https://www.youtube.com/embed/8W9HHs8WcH0'))
-                <iframe class="w-full h-full" src="{{ $fbpVideo['url'] }}" title="{{ $fbpVideo['label'] }}"
+                <iframe class="w-full h-full" src="{{ portal_video_embed_url($fbpVideo['url']) }}" title="{{ $fbpVideo['label'] }}"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
