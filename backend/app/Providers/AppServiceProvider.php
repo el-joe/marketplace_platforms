@@ -117,6 +117,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->applyMailSettingsFromDatabase();
+
         // enhancement.md P-20 task 2 asks for
         // Model::preventLazyLoading(!app()->isProduction()) to catch N+1
         // regressions. Tried it here: it throws LazyLoadingViolationException
@@ -301,5 +303,35 @@ class AppServiceProvider extends ServiceProvider
 
             return $variant;
         });
+    }
+
+    /**
+     * Mail transport and sender come from the settings table (Admin → Settings →
+     * Integrations), not .env. Empty values fall back to config/mail.php.
+     */
+    private function applyMailSettingsFromDatabase(): void
+    {
+        try {
+            $rows = \App\Models\Setting::where('key', 'like', 'mail\_%')->get()->keyBy('key');
+        } catch (\Throwable) {
+            return; // settings table not migrated yet (fresh install / CI)
+        }
+
+        $val = fn (string $key) => ($v = $rows[$key]?->getRawValue()) === '' ? null : $v;
+
+        if ($mailer = $val('mail_mailer')) {
+            config(['mail.default' => $mailer]);
+        }
+
+        $encryption = $val('mail_encryption');
+        config(array_filter([
+            'mail.mailers.smtp.host' => $val('mail_host'),
+            'mail.mailers.smtp.port' => ($p = $val('mail_port')) ? (int) $p : null,
+            'mail.mailers.smtp.scheme' => $encryption === null ? null : ($encryption === 'ssl' ? 'smtps' : 'smtp'),
+            'mail.mailers.smtp.username' => $val('mail_username'),
+            'mail.mailers.smtp.password' => $val('mail_password'),
+            'mail.from.address' => $val('mail_from_address'),
+            'mail.from.name' => $val('mail_from_name'),
+        ], fn ($v) => $v !== null));
     }
 }

@@ -7163,6 +7163,8 @@ return [
         'marketer_settings_desc' => 'Configure campaign invitation timeouts, auto-approval windows, and marketer replacement rules.',
         'security_access' => 'Security & Access',
         'payment_gateway' => 'Payment Gateway',
+        'email' => 'Email',
+        'email_desc' => 'SMTP server and sender used for all outgoing email.',
         'sms_gateway' => 'SMS Gateway',
         'other_apis' => 'Other APIs',
         'exchange_rates' => 'Currency Exchange Rates',

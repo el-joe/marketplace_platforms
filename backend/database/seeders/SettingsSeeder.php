@@ -115,6 +115,14 @@ class SettingsSeeder extends Seeder
             ['key' => 'meilisearch_key', 'value' => '', 'category' => 'integrations', 'description' => 'Meilisearch master key', 'is_encrypted' => 1],
             ['key' => 'exchange_rate_api_key', 'value' => '', 'category' => 'integrations', 'description' => 'API key for automatic exchange rate updates', 'is_encrypted' => 1],
 
+            ['key' => 'mail_mailer', 'value' => 'smtp', 'category' => 'integrations', 'description' => 'Mail driver (smtp/log/sendmail)'],
+            ['key' => 'mail_host', 'value' => '', 'category' => 'integrations', 'description' => 'SMTP host'],
+            ['key' => 'mail_port', 'value' => 587, 'category' => 'integrations', 'description' => 'SMTP port'],
+            ['key' => 'mail_encryption', 'value' => 'tls', 'category' => 'integrations', 'description' => 'SMTP encryption (tls/ssl/none)'],
+            ['key' => 'mail_username', 'value' => '', 'category' => 'integrations', 'description' => 'SMTP username'],
+            ['key' => 'mail_password', 'value' => '', 'category' => 'integrations', 'description' => 'SMTP password', 'is_encrypted' => 1],
+            ['key' => 'mail_from_address', 'value' => '', 'category' => 'integrations', 'description' => 'Sender email address'],
+            ['key' => 'mail_from_name', 'value' => '', 'category' => 'integrations', 'description' => 'Sender display name'],
             // ─── appearance ───────────────────────────────────────────────────
             ['key' => 'primary_color', 'value' => '#0284c7', 'category' => 'appearance', 'description' => 'Primary brand color (hex)', 'is_public' => 1],
             ['key' => 'secondary_color', 'value' => '#0f172a', 'category' => 'appearance', 'description' => 'Secondary brand color (hex)', 'is_public' => 1],
