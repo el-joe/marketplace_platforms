@@ -35,20 +35,19 @@
 @if ($noScroll)
 @push('head')
     <style>
-        /* No-scroll wizard layout for desktop/laptop only. Mobile & tablet keep normal scrolling. */
+        /* No-scroll wizard layout for desktop/laptop only. Mobile & tablet keep normal scrolling.
+           Uses min-height (never overflow:hidden) so short viewports, e.g. Safari on a MacBook,
+           scroll instead of clipping the cards and the Continue button. */
         @media (min-width: 1024px) {
             #choice-page {
-                height: 100vh;
-                min-height: 0;
-                overflow: hidden;
+                min-height: 100vh;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
             }
 
             #choice-page .choice-content {
-                flex: 1 1 auto;
-                min-height: 0;
+                flex: 1 0 auto;
                 display: flex;
                 flex-direction: column;
                 justify-content: flex-start;
@@ -76,10 +75,12 @@
                 margin-top: 0.75rem;
             }
 
-            /* Promote the form's children (cards + button) to direct flex items so
-               the title, cards and button can be spaced independently. */
+            /* The form is a flex column (not display:contents, which Safari handles poorly
+               on form controls) so the cards and button can be spaced independently. */
             #choice-page .choice-form {
-                display: contents;
+                flex: 1 1 auto;
+                display: flex;
+                flex-direction: column;
             }
 
             #choice-page .choice-cards {
@@ -126,6 +127,12 @@
             #choice-page footer > div {
                 padding-top: 0.5rem;
                 padding-bottom: 0.5rem;
+            }
+        }
+
+        @supports (min-height: 100dvh) {
+            @media (min-width: 1024px) {
+                #choice-page { min-height: 100dvh; }
             }
         }
     </style>
