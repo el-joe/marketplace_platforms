@@ -38,6 +38,7 @@ class LiveStreamController extends Controller
 
         $data = $request->validate([
             'source' => ['nullable', Rule::in([LiveStream::SOURCE_LIVE, LiveStream::SOURCE_RECORDED])],
+            'playback_mode' => ['nullable', Rule::in([LiveStream::PLAYBACK_SYNCED, LiveStream::PLAYBACK_FREE])],
             'title_en' => 'required|string|max:200',
             'title_ar' => 'required|string|max:200',
             'description_en' => 'nullable|string|max:2000',
@@ -100,6 +101,7 @@ class LiveStreamController extends Controller
         $editSchedule = $liveStream->isRecorded() && $liveStream->status !== LiveStreamStatus::Live;
 
         $data = $request->validate([
+            'playback_mode' => ['nullable', Rule::in([LiveStream::PLAYBACK_SYNCED, LiveStream::PLAYBACK_FREE])],
             'title_en' => 'required|string|max:200',
             'title_ar' => 'required|string|max:200',
             'description_en' => 'nullable|string|max:2000',

@@ -1600,7 +1600,18 @@
     "radioReplay": "إعادة",
     "radioTapToPlay": "اضغط للاستماع",
     "radioScheduledHint": "يبدأ تلقائيًا في الموعد المحدد",
-    "radioPlayFailed": "منع المتصفح التشغيل. اضغط تشغيل."
+    "radioPlayFailed": "منع المتصفح التشغيل. اضغط تشغيل.",
+    "radioMiniPlay": "تشغيل في المشغّل المصغّر",
+    "radioMiniSeek": "تقديم / تأخير",
+    "radioMiniClose": "إغلاق المشغّل",
+    "radioMiniMinimize": "تصغير",
+    "radioMiniExpand": "تكبير",
+    "radioLiveBadge": "مباشر",
+    "radioPause": "إيقاف مؤقت",
+    "radioPlay": "تشغيل",
+    "radioPlayingInMini": "يتم التشغيل في المشغّل المصغّر",
+    "radioBringBack": "التشغيل هنا بدلاً من ذلك",
+    "radioMiniEnded": "انتهى هذا البث"
   },
   "adsPopup": {
     "close": "إغلاق",

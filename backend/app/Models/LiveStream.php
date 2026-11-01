@@ -21,6 +21,7 @@ class LiveStream extends Model
         'source',
         'media_path',
         'media_type',
+        'playback_mode',
         'duration_seconds',
         'scheduled_end_at',
         'scheduled_at',
@@ -64,6 +65,10 @@ class LiveStream extends Model
     public const SOURCE_LIVE = 'live';
 
     public const SOURCE_RECORDED = 'recorded';
+
+    public const PLAYBACK_SYNCED = 'synced';
+
+    public const PLAYBACK_FREE = 'free';
 
     /** A scheduled audio/video file ("radio channel") that goes live and ends on its own. */
     public function isRecorded(): bool

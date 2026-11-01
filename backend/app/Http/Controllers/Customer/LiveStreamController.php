@@ -204,6 +204,7 @@ class LiveStreamController extends Controller
         $shape = [
             'source' => $s->source ?? LiveStream::SOURCE_LIVE,
             'media_type' => $s->isRecorded() ? $s->media_type : null,
+            'playback_mode' => $s->isRecorded() ? ($s->playback_mode ?? LiveStream::PLAYBACK_SYNCED) : null,
             'duration_seconds' => $s->isRecorded() ? $s->duration_seconds : null,
             'scheduled_end_at' => $s->isRecorded() ? $s->scheduled_end_at?->toIso8601String() : null,
         ];

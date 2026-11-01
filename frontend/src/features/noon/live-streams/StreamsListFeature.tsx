@@ -6,6 +6,7 @@ import useLocale from '@/src/hooks/use-locale';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getStreams } from './api';
+import { useRadioPlayer } from './radio-player-context';
 import type { LiveStreamCard, StreamStatus } from './types';
 import { getImageURL } from '@/src/helpers/get-image-url';
 
@@ -25,6 +26,8 @@ function StreamCard({
     ended:     { label: t('statusEnded'),     badge: 'bg-gray-100 text-gray-600' },
   };
   const cfg = STATUS_CONFIG[stream.status];
+  const miniPlayer = useRadioPlayer();
+  const canMini = stream.source === 'recorded' && stream.status !== 'ended';
 
   return (
     <Link
@@ -84,6 +87,15 @@ function StreamCard({
             <span>{t('endedOn', { date: new Date(stream.ended_at).toLocaleDateString() })}</span>
           )}
         </div>
+        {canMini && (
+          <button
+            type="button"
+            onClick={e => { e.preventDefault(); miniPlayer.open(stream.id); }}
+            className="mt-3 bg-gray-900 text-white text-xs font-semibold px-3 py-1.5 rounded-full"
+          >
+            ⧉ {t('radioMiniPlay')}
+          </button>
+        )}
       </div>
     </Link>
   );

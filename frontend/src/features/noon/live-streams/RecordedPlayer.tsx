@@ -8,6 +8,8 @@ interface Props {
   playback: RecordedPlayback;
   /** true while the channel is on air: playback follows the schedule and can't be scrubbed */
   onAir: boolean;
+  /** false = on-demand: viewer keeps full controls even while on air */
+  synced?: boolean;
   title: string;
   thumbnail: string | null;
   labels: { onAir: string; replay: string; tapToPlay: string; playFailed: string };
@@ -19,7 +21,7 @@ interface Props {
  * Plays an uploaded audio/video file in sync with the schedule: on air it starts at the
  * server-computed offset (and re-syncs if the browser drifts), as a replay it starts at 0.
  */
-export default function RecordedPlayer({ playback, onAir, title, thumbnail, labels, onFinished }: Props) {
+export default function RecordedPlayer({ playback, onAir, synced = true, title, thumbnail, labels, onFinished }: Props) {
   const mediaRef = useRef<HTMLMediaElement | null>(null);
   const loadedAt = useRef(Date.now());
   const [blocked, setBlocked] = useState(false);
@@ -52,19 +54,19 @@ export default function RecordedPlayer({ playback, onAir, title, thumbnail, labe
 
   // Keep on-air playback aligned with the schedule (seeks, tab throttling, buffering).
   useEffect(() => {
-    if (!onAir) return;
+    if (!onAir || !synced) return;
     const timer = setInterval(() => {
       const el = mediaRef.current;
       if (el && !el.paused && Math.abs(el.currentTime - target()) > 4) el.currentTime = target();
     }, 5000);
     return () => clearInterval(timer);
-  }, [onAir, target]);
+  }, [onAir, synced, target]);
 
   const common = {
     ref: mediaRef as never,
     src: playback.url,
     preload: 'auto' as const,
-    controls: !onAir,
+    controls: !(onAir && synced),
     onEnded: onFinished,
     onPlay: () => setBlocked(false),
   };
@@ -75,7 +77,7 @@ export default function RecordedPlayer({ playback, onAir, title, thumbnail, labe
         <video {...common} playsInline className="w-full h-full object-contain bg-black" poster={thumbnail ?? undefined} />
       ) : (
         <>
-          <audio {...common} className={onAir ? 'hidden' : 'absolute bottom-3 inset-x-3 z-10 w-[calc(100%-1.5rem)]'} />
+          <audio {...common} className={onAir && synced ? 'hidden' : 'absolute bottom-3 inset-x-3 z-10 w-[calc(100%-1.5rem)]'} />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-white bg-gradient-to-br from-gray-900 via-gray-800 to-primary-900">
             {thumbnail && <Image src={thumbnail} alt="" fill className="object-cover opacity-20 blur-sm" sizes="100vw" />}
             <div className="relative z-[1] flex flex-col items-center gap-4">

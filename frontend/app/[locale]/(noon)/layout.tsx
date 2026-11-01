@@ -4,6 +4,7 @@ import MobileNav from "@/src/layout/noon/MobileNav";
 import Header from "@/src/layout/noon/header/Header";
 import LiveStreamButton from "@/src/components/shared/LiveStreamButton";
 import NawyOptionsButton from "@/src/components/shared/NawyOptionsButton";
+import RadioPlayerProvider from "@/src/features/noon/live-streams/radio-player-context";
 import EchoProvider from "@/src/providers/echo-provider";
 import SeriousFeaturedPopup from "@/src/features/noon/ads/serious-featured-popup";
 
@@ -19,12 +20,14 @@ export default async function RootLayout({
 }>) {
   return (
     <EchoProvider>
+      <RadioPlayerProvider>
       <Header />
       <main className="md:pt-26">{children}</main>
       <MobileNav />
       <LiveStreamButton />
       <NawyOptionsButton />
       <SeriousFeaturedPopup />
+      </RadioPlayerProvider>
     </EchoProvider>
   );
 }

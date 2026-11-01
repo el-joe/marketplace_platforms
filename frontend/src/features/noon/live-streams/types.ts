@@ -4,6 +4,9 @@ export type MediaMode = 'audio' | 'video' | 'both';
 
 export type StreamSource = 'live' | 'recorded';
 
+/** synced = true live (same moment for everyone, no seek); free = on-demand with full controls */
+export type PlaybackMode = 'synced' | 'free';
+
 /** Where a scheduled radio/video channel is right now (present while live, and as a replay once ended). */
 export interface RecordedPlayback {
   url: string;
@@ -17,6 +20,7 @@ export interface LiveStreamCard {
   /** 'recorded' = scheduled audio/video file (radio channel); absent on older API versions */
   source?: StreamSource;
   media_type?: 'audio' | 'video' | null;
+  playback_mode?: PlaybackMode | null;
   duration_seconds?: number | null;
   scheduled_end_at?: string | null;
   id: string;

@@ -106,6 +106,18 @@
                 ({{ $liveStream->media_type }}, {{ gmdate($liveStream->duration_seconds >= 3600 ? 'H:i:s' : 'i:s', $liveStream->duration_seconds) }})
             </p>
             @endif
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.live_streams.playback_mode') }}</label>
+                @php $mode = old('playback_mode', $isEdit ? ($liveStream->playback_mode ?? 'synced') : 'synced'); @endphp
+                <label class="flex items-start gap-2 text-sm mb-1">
+                    <input type="radio" name="playback_mode" value="synced" @checked($mode === 'synced') class="mt-1">
+                    <span><strong>{{ __('admin.live_streams.mode_synced') }}</strong> — {{ __('admin.live_streams.mode_synced_hint') }}</span>
+                </label>
+                <label class="flex items-start gap-2 text-sm">
+                    <input type="radio" name="playback_mode" value="free" @checked($mode === 'free') class="mt-1">
+                    <span><strong>{{ __('admin.live_streams.mode_free') }}</strong> — {{ __('admin.live_streams.mode_free_hint') }}</span>
+                </label>
+            </div>
             @unless($lockSchedule)
             <label class="block text-sm font-medium text-gray-700">
                 {{ __('admin.live_streams.media_file') }} <span class="text-red-500" x-show="source === 'recorded'">*</span>

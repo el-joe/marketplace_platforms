@@ -1600,7 +1600,18 @@
     "radioReplay": "Replay",
     "radioTapToPlay": "Tap to listen",
     "radioScheduledHint": "Starts automatically at the scheduled time",
-    "radioPlayFailed": "Playback was blocked by your browser. Tap play."
+    "radioPlayFailed": "Playback was blocked by your browser. Tap play.",
+    "radioMiniPlay": "Play in mini player",
+    "radioMiniSeek": "Seek",
+    "radioMiniClose": "Close player",
+    "radioMiniMinimize": "Minimize",
+    "radioMiniExpand": "Expand",
+    "radioLiveBadge": "LIVE",
+    "radioPause": "Pause",
+    "radioPlay": "Play",
+    "radioPlayingInMini": "Playing in the mini player",
+    "radioBringBack": "Play here instead",
+    "radioMiniEnded": "This broadcast has ended"
   },
   "adsPopup": {
     "close": "Close",

@@ -10,6 +10,7 @@ import { ensureEcho, useLiveStreamViewer, type ConnectionState } from './useLive
 import type { LiveStreamDetail, StreamComment } from './types';
 import { getImageURL } from '@/src/helpers/get-image-url';
 import RecordedPlayer from './RecordedPlayer';
+import { useRadioPlayer } from './radio-player-context';
 
 function getGuestToken(): string {
   if (typeof window === 'undefined') return '';
@@ -167,6 +168,7 @@ function AudioCard({
 export default function StreamDetailFeature({ streamId }: { streamId: string }) {
   const locale      = useLocale() as 'en' | 'ar';
   const t           = useTranslations('liveStreams');
+  const miniPlayer  = useRadioPlayer();
   const [stream, setStream]       = useState<LiveStreamDetail | null>(null);
   const [loading, setLoading]     = useState(true);
   const [comments, setComments]   = useState<StreamComment[]>([]);
@@ -312,6 +314,11 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
             {stream.media_type === 'video' ? '🎬' : '📻'} {t('radioChannel')}
           </span>
         )}
+        {isRecorded && stream.playback && miniPlayer.activeId !== streamId && (
+          <button onClick={() => miniPlayer.open(streamId)} className="bg-gray-900 text-white text-xs font-semibold px-3 py-1 rounded-full">
+            ⧉ {t('radioMiniPlay')}
+          </button>
+        )}
         {showLive && (
           <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {t('statusLive')}
@@ -334,11 +341,20 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
         {/* Video column */}
         <div className="lg:col-span-2 space-y-3">
           <div ref={playerRef} className="relative aspect-video bg-black rounded-2xl overflow-hidden">
-            {isRecorded && stream.playback && (
+            {isRecorded && stream.playback && miniPlayer.activeId === streamId && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gray-900 text-white text-sm px-6 text-center">
+                <p>{t('radioPlayingInMini')}</p>
+                <button onClick={miniPlayer.close} className="bg-white text-gray-900 font-semibold px-4 py-2 rounded-full">
+                  {t('radioBringBack')}
+                </button>
+              </div>
+            )}
+            {isRecorded && stream.playback && miniPlayer.activeId !== streamId && (
               <RecordedPlayer
                 key={`${stream.playback.url}-${isLive ? 'live' : 'replay'}`}
                 playback={stream.playback}
                 onAir={isLive}
+                synced={(stream.playback_mode ?? 'synced') === 'synced'}
                 title={title}
                 thumbnail={thumbUrl}
                 labels={{ onAir: t('radioNowPlaying'), replay: t('radioReplay'), tapToPlay: t('radioTapToPlay'), playFailed: t('radioPlayFailed') }}
