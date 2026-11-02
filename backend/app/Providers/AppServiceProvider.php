@@ -2,82 +2,108 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\Auth\TravelAgencyUserProvider;
+use App\Contracts\WhatsAppGateway;
+use App\Events\ListingStockChanged;
+use App\Events\SubOrderDelivered;
+use App\Events\SubOrderPlaced;
+use App\Events\SubOrderShipped;
 use App\Http\View\Composers\TravelAgencySidebarComposer;
+use App\Listeners\CaptureCodOnDelivery;
+use App\Listeners\InvalidateVendorDashboardCache;
+use App\Listeners\NotifyCustomerOnShipment;
+use App\Listeners\PauseCampaignsOnLowStock;
+use App\Listeners\RebuildBuyBoxOnStockChange;
+use App\Listeners\SyncListingStockStatus;
+use App\Listeners\SyncMarketerListingAvailabilityOnStock;
+use App\Models\Address;
+use App\Models\AdminListing;
+use App\Models\ClassifiedInquiry;
+use App\Models\ClassifiedListing;
+use App\Models\Country;
+use App\Models\Coupon;
+use App\Models\DeliveryAgent;
+use App\Models\DeliveryAssignment;
+use App\Models\FlashSaleSubmission;
+use App\Models\Marketer;
+use App\Models\MarketerConversation;
+use App\Models\MarketerListing;
+use App\Models\MarketerProfile;
+use App\Models\PaidAdBooking;
+use App\Models\PaidAdSlot;
+use App\Models\Payout;
+use App\Models\Product;
+use App\Models\ProductImage;
+use App\Models\ProductVariant;
+use App\Models\ReturnRequest;
+use App\Models\Setting;
+use App\Models\ShippingCompanySupervisor;
+use App\Models\SubOrder;
+use App\Models\Vendor;
+use App\Models\VendorBankAccount;
+use App\Models\VendorListing;
+use App\Models\WarehouseInventory;
+use App\Models\WarrantyPurchase;
+use App\Notifications\Channels\CustomDatabaseChannel;
+use App\Notifications\Channels\VendorPushChannel;
+use App\Observers\AdminListingObserver;
+use App\Observers\CountryObserver;
+use App\Observers\CouponObserver;
+use App\Observers\MarketerListingObserver;
+use App\Observers\MarketerProfileObserver;
+use App\Observers\ProductImageObserver;
+use App\Observers\ProductObserver;
+use App\Observers\SubOrderObserver;
+use App\Observers\VendorListingObserver;
+use App\Observers\VendorObserver;
+use App\Observers\WarrantyPurchaseObserver;
+use App\Policies\AddressPolicy;
+use App\Policies\AdSlotPolicy;
+use App\Policies\CarrierAgentPolicy;
+use App\Policies\ClassifiedInquiryPolicy;
+use App\Policies\ClassifiedListingPolicy;
+use App\Policies\DeliveryAssignmentPolicy;
+use App\Policies\FlashSaleSubmissionPolicy;
+use App\Policies\PaidAdBookingPolicy;
+use App\Policies\PayoutPolicy;
+use App\Policies\ReturnRequestPolicy;
+use App\Policies\SubOrderPolicy;
+use App\Policies\SupervisorPolicy;
+use App\Policies\VendorBankAccountPolicy;
+use App\Policies\VendorListingPolicy;
+use App\Policies\WarehouseInventoryPolicy;
+use App\Services\AppContextService;
+use App\Services\Carrier\CarrierFCMService;
+use App\Services\Customer\CheckoutCalculationService;
+use App\Services\Customer\ListingIdentifierService;
+use App\Services\Customer\ListingQueryService;
+use App\Services\Customer\LoyaltyService;
+use App\Services\Customer\UnifiedCategoryService;
+use App\Services\Customer\UnifiedListingQueryService;
+use App\Services\Delivery\DeliveryFCMService;
+use App\Services\GiftCardService;
+use App\Services\Media\ListingImageResolver;
+use App\Services\Portal\JoinService;
+use App\Services\Shared\PageBuilderService;
+use App\Services\Shipping\ShippingCarrierFactory;
+use App\Services\Vendor\VendorFCMService;
+use App\Services\WhatsAppService;
 use App\View\Components\Form\AsyncSelect;
 use App\View\Components\Form\FileUpload;
 use App\View\Components\Form\Input;
 use App\View\Components\Form\PriceInput;
 use App\View\Components\Form\RichEditor;
 use App\View\Components\Form\Select;
-use App\Events\SubOrderPlaced;
-use App\Events\SubOrderShipped;
-use App\Events\SubOrderDelivered;
-use App\Listeners\InvalidateVendorDashboardCache;
-use App\Listeners\NotifyCustomerOnShipment;
-use App\Listeners\CaptureCodOnDelivery;
-use App\Services\GiftCardService;
-use App\Services\AppContextService;
-use App\Services\Shared\PageBuilderService;
-use App\Services\Customer\CheckoutCalculationService;
-use App\Services\Customer\ListingIdentifierService;
-use App\Services\Customer\ListingQueryService;
-use App\Services\Customer\UnifiedCategoryService;
-use App\Services\Shipping\ShippingCarrierFactory;
-use App\Services\Vendor\VendorFCMService;
-use App\Services\Carrier\CarrierFCMService;
-use App\Services\Delivery\DeliveryFCMService;
-use App\Notifications\Channels\VendorPushChannel;
-use App\Models\Address;
-use App\Models\Country;
-use App\Models\FlashSaleSubmission;
-use App\Models\MarketerCampaign;
-use App\Models\Payout;
-use App\Models\SubOrder;
-use App\Models\VendorBankAccount;
-use App\Models\ReturnRequest;
-use App\Models\VendorListing;
-use App\Models\WarehouseInventory;
-use App\Models\DeliveryAssignment;
-use App\Models\DeliveryAgent;
-use App\Models\ShippingCompanySupervisor;
-use App\Policies\AddressPolicy;
-use App\Policies\CarrierAgentPolicy;
-use App\Policies\SupervisorPolicy;
-use App\Policies\DeliveryAssignmentPolicy;
-use App\Policies\FlashSaleSubmissionPolicy;
-use App\Policies\PayoutPolicy;
-use App\Policies\SubOrderPolicy;
-use App\Policies\VendorBankAccountPolicy;
-use App\Policies\ReturnRequestPolicy;
-use App\Policies\VendorListingPolicy;
-use App\Policies\WarehouseInventoryPolicy;
-use App\Models\ClassifiedListing;
-use App\Models\ClassifiedInquiry;
-use App\Models\PaidAdSlot;
-use App\Models\PaidAdBooking;
-use App\Policies\AdSlotPolicy;
-use App\Policies\PaidAdBookingPolicy;
-use App\Policies\ClassifiedListingPolicy;
-use App\Policies\ClassifiedInquiryPolicy;
-use App\Observers\SubOrderObserver;
-use App\Observers\VendorListingObserver;
-use App\Observers\WarrantyPurchaseObserver;
-use App\Models\WarrantyPurchase;
-use App\Models\AdminListing;
-use App\Models\Product;
-use App\Models\ProductVariant;
-use App\Observers\AdminListingObserver;
-use App\Observers\CouponObserver;
-use App\Models\Coupon;
+use Illuminate\Notifications\Channels\DatabaseChannel;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Auth;
-use App\Auth\TravelAgencyUserProvider;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -88,10 +114,10 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ShippingCarrierFactory::class);
-        $this->app->bind(\App\Contracts\WhatsAppGateway::class, \App\Services\WhatsAppService::class);
+        $this->app->bind(WhatsAppGateway::class, WhatsAppService::class);
         $this->app->singleton(PageBuilderService::class);
         $this->app->singleton(ListingQueryService::class);
-        $this->app->singleton(\App\Services\Customer\UnifiedListingQueryService::class);
+        $this->app->singleton(UnifiedListingQueryService::class);
         $this->app->singleton(ListingIdentifierService::class);
         $this->app->singleton(UnifiedCategoryService::class);
         $this->app->singleton(CheckoutCalculationService::class);
@@ -99,16 +125,16 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(CarrierFCMService::class);
         $this->app->singleton(DeliveryFCMService::class);
         $this->app->singleton(GiftCardService::class);
-        $this->app->singleton(AppContextService::class, fn () => new AppContextService());
-        $this->app->singleton(\App\Services\Customer\LoyaltyService::class);
-        $this->app->singleton(\App\Services\Media\ListingImageResolver::class);
+        $this->app->singleton(AppContextService::class, fn () => new AppContextService);
+        $this->app->singleton(LoyaltyService::class);
+        $this->app->singleton(ListingImageResolver::class);
 
         // Replace Laravel's built-in DatabaseChannel with our custom one that
         // writes to the platform's non-standard notifications table schema
         // (has required `channel` enum column, no `updated_at` column).
         $this->app->bind(
-            \Illuminate\Notifications\Channels\DatabaseChannel::class,
-            \App\Notifications\Channels\CustomDatabaseChannel::class
+            DatabaseChannel::class,
+            CustomDatabaseChannel::class
         );
     }
 
@@ -154,6 +180,7 @@ class AppServiceProvider extends ServiceProvider
             if (method_exists($user, 'hasRole') && $user->hasRole('super_admin')) {
                 return true;
             }
+
             return null;
         });
 
@@ -178,12 +205,12 @@ class AppServiceProvider extends ServiceProvider
         WarrantyPurchase::observe(WarrantyPurchaseObserver::class);
         SubOrder::observe(SubOrderObserver::class);
         Coupon::observe(CouponObserver::class);
-        Country::observe(\App\Observers\CountryObserver::class);
-        \App\Models\ProductImage::observe(\App\Observers\ProductImageObserver::class);
-        \App\Models\MarketerListing::observe(\App\Observers\MarketerListingObserver::class);
-        \App\Models\Product::observe(\App\Observers\ProductObserver::class);
-        \App\Models\Vendor::observe(\App\Observers\VendorObserver::class);
-        \App\Models\MarketerProfile::observe(\App\Observers\MarketerProfileObserver::class);
+        Country::observe(CountryObserver::class);
+        ProductImage::observe(ProductImageObserver::class);
+        MarketerListing::observe(MarketerListingObserver::class);
+        Product::observe(ProductObserver::class);
+        Vendor::observe(VendorObserver::class);
+        MarketerProfile::observe(MarketerProfileObserver::class);
 
         Event::listen(SubOrderPlaced::class, InvalidateVendorDashboardCache::class);
         Event::listen(SubOrderShipped::class, NotifyCustomerOnShipment::class);
@@ -191,29 +218,29 @@ class AppServiceProvider extends ServiceProvider
         // enhancement.md P-13 task 4: keep listing.status in sync with
         // stock (active <-> out_of_stock) after any InventoryService
         // mutation.
-        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\SyncListingStockStatus::class);
+        Event::listen(ListingStockChanged::class, SyncListingStockStatus::class);
         // enhancement.md P-14 task 4: pause/resume/complete campaigns
         // sourced from a listing as soon as its stock changes, instead of
         // only on MonitorCampaignStockJob's hourly sweep.
-        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\PauseCampaignsOnLowStock::class);
+        Event::listen(ListingStockChanged::class, PauseCampaignsOnLowStock::class);
         // enhancement.md P-15 task 4: hide/unhide a marketer listing the
         // moment ITS source's stock crosses zero, independent of the
         // parent campaign's own pause/resume above. Registered after
         // SyncListingStockStatus so the source listing's status column is
         // already up to date when this runs.
-        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\SyncMarketerListingAvailabilityOnStock::class);
+        Event::listen(ListingStockChanged::class, SyncMarketerListingAvailabilityOnStock::class);
         // enhancement.md P-19 task 2: total_stock in product_country_buybox
         // must follow every stock mutation, not only the ones that flip a
         // listing's status (SyncListingStockStatus above only writes on a
         // status change).
-        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\RebuildBuyBoxOnStockChange::class);
+        Event::listen(ListingStockChanged::class, RebuildBuyBoxOnStockChange::class);
         // enhancement.md P-09 task 2: warranty activation on delivery is
         // implemented in SubOrderObserver::updating() (fires on the same
         // status write that produces SubOrderDelivered, before this event's
         // listeners run) rather than as a second listener here — see that
         // observer for the D3 coverage-start rule.
 
-        \Illuminate\Support\Facades\Notification::extend('push', function ($app) {
+        Notification::extend('push', function ($app) {
             return $app->make(VendorPushChannel::class);
         });
 
@@ -236,18 +263,17 @@ class AppServiceProvider extends ServiceProvider
         Blade::component('components.form.date-picker', 'form-date-picker');
         Blade::component('components.form.radio-group', 'form-radio-group');
 
-        // Portal header country dropdown: shares the active/launched country list plus
-        // the currently selected one (URL {country} segment, then session, then default).
-        View::composer(['portal.partials.nav', 'portal.partials.section-nav'], function ($view): void {
-            $countries = Country::where('is_active', true)
-                ->where('is_launched', true)
-                ->orderBy('name_en')
-                ->get();
+        // Portal country switcher: one partial, one data source (JoinService) for every
+        // portal page. Callers may still pass explicit `countries` / `currentCountry`.
+        View::composer('portal.partials.country-switcher', function ($view): void {
+            $data = $view->getData();
+            $service = app(JoinService::class);
+            $countries = $data['countries'] ?? $service->headerCountries();
 
-            $currentCode = Country::resolveSiteCode(request()->route('country'));
-            $currentCountry = $countries->firstWhere('site_code', $currentCode) ?? $countries->first();
-
-            $view->with(compact('countries', 'currentCountry'));
+            $view->with([
+                'countries' => $countries,
+                'currentCountry' => $data['currentCountry'] ?? $service->headerCountry($countries),
+            ]);
         });
 
         // Marketer sidebar badges: null-safe (no marketer => zeros), two indexed counts.
@@ -256,10 +282,10 @@ class AppServiceProvider extends ServiceProvider
             $unreadMessages = 0;
             $unreadInquiries = 0;
             if ($marketerId) {
-                $unreadMessages = \App\Models\MarketerConversation::where('marketer_id', $marketerId)
+                $unreadMessages = MarketerConversation::where('marketer_id', $marketerId)
                     ->where('marketer_has_unread', true)->count();
-                $unreadInquiries = \App\Models\ClassifiedInquiry::where('status', 'new')
-                    ->whereHas('listing', fn ($q) => $q->where('seller_type', \App\Models\Marketer::class)->where('seller_id', $marketerId))
+                $unreadInquiries = ClassifiedInquiry::where('status', 'new')
+                    ->whereHas('listing', fn ($q) => $q->where('seller_type', Marketer::class)->where('seller_id', $marketerId))
                     ->count();
             }
             $view->with(compact('unreadMessages', 'unreadInquiries'));
@@ -312,7 +338,7 @@ class AppServiceProvider extends ServiceProvider
     private function applyMailSettingsFromDatabase(): void
     {
         try {
-            $rows = \App\Models\Setting::where('key', 'like', 'mail\_%')->get()->keyBy('key');
+            $rows = Setting::where('key', 'like', 'mail\_%')->get()->keyBy('key');
         } catch (\Throwable) {
             return; // settings table not migrated yet (fresh install / CI)
         }

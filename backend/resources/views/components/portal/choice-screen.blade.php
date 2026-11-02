@@ -152,10 +152,7 @@
                 <img src="{{ $logo['src'] }}" alt="{{ $logo['alt'] }}" width="808" height="780" decoding="async"
                     class="h-[44px] sm:h-[48px] w-auto object-contain">
             </a>
-            @include('portal.partials.locale-switcher', [
-                'countries' => $countries ?? collect(),
-                'currentCountry' => $currentCountry,
-            ])
+            @include('portal.partials.locale-switcher')
         </div>
     </header>
 

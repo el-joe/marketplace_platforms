@@ -43,32 +43,7 @@
                 @include('portal.partials.header-account-controls')
 
                 <div class="flex lg:hidden items-center gap-4">
-                    <div class="relative" x-data="{ mobileCountryOpen: false }" @click.outside="mobileCountryOpen = false">
-                        <button type="button" @click="mobileCountryOpen = ! mobileCountryOpen"
-                            aria-label="{{ portal_content('nav', 'country_toggle', 'mobile_aria_label', 'Select country', 'اختر الدولة') }}">
-                            @if ($currentCountry)
-                                <img src="https://f.nooncdn.com/s/app/com/common/images/flags/{{ strtolower($currentCountry->iso_code_2) }}.svg"
-                                    alt="{{ $isAr ? $currentCountry->name_ar : $currentCountry->name_en }}"
-                                    width="20" height="20" class="rounded-sm">
-                            @endif
-                        </button>
-
-                        <div x-show="mobileCountryOpen" x-cloak x-transition:enter="transition ease-out duration-150"
-                            x-transition:enter-start="opacity-0 -translate-y-1"
-                            x-transition:enter-end="opacity-100 translate-y-0"
-                            class="absolute end-0 top-full mt-3 w-48 rounded-xl bg-[#1c1c1c] border border-white/10 shadow-2xl py-2 z-50">
-                            @foreach ($countries as $country)
-                                <a href="{{ route('portal.country', $country->site_code) }}"
-                                    class="flex items-center gap-[10px] px-4 py-2 text-[14px] font-bold transition-colors
-                                          {{ $currentCountry && $currentCountry->id === $country->id ? 'text-[#0F807E]' : 'text-gray-300 hover:text-white hover:bg-white/5' }}">
-                                    <img src="https://f.nooncdn.com/s/app/com/common/images/flags/{{ strtolower($country->iso_code_2) }}.svg"
-                                        alt="{{ $isAr ? $country->name_ar : $country->name_en }}" width="18"
-                                        height="18" class="rounded-sm">
-                                    <span>{{ $isAr ? $country->name_ar : $country->name_en }}</span>
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
+                    @include('portal.partials.country-switcher', ['variant' => 'mobile'])
                     <a href="{{ $langToggleUrl }}" class="text-white hover:opacity-80 transition-opacity">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" width="20" height="20">

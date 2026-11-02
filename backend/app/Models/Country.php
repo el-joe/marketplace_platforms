@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Stevebauman\Location\Facades\Location;
 
 class Country extends Model
 {
@@ -65,10 +67,34 @@ class Country extends Model
      */
     public static function resolveSiteCode(?string $country): ?string
     {
-        return $country
-            ?? session('portal_country')
-            ?? static::resolveFromRequest(request())
+        if ($country) {
+            return $country;
+        }
+
+        if ($picked = session('portal_country')) {
+            return $picked;
+        }
+
+        $detected = static::detectAndRemember();
+
+        return $detected
             ?? static::where('is_active', true)->where('is_launched', true)->value('site_code');
+    }
+
+    /**
+     * Auto-detect the visitor's country on their first visit and store it in the
+     * session (`portal_country`) so every portal page and the switcher agree and
+     * no further lookups are made. A manual pick simply overwrites it.
+     */
+    public static function detectAndRemember(): ?string
+    {
+        $detected = static::resolveFromRequest(request());
+
+        if ($detected && request()->hasSession()) {
+            session(['portal_country' => $detected]);
+        }
+
+        return $detected;
     }
 
     /**
@@ -94,29 +120,37 @@ class Country extends Model
     }
 
     /**
-     * Detect country from client IP address via the geoip PHP extension.
-     * Returns null when the extension is unavailable or the IP cannot be mapped.
+     * Detect the visitor's country from the client IP. Uses the Cloudflare
+     * `CF-IPCountry` header when present, otherwise the free stevebauman/location
+     * package (ip-api.com driver with fallbacks), cached per IP. Only launched,
+     * active countries are returned.
      */
     public static function resolveFromIp(string $ip): ?string
     {
-        if (in_array($ip, ['127.0.0.1', '::1', 'localhost'], true)
-            || str_starts_with($ip, '192.168.')
-            || str_starts_with($ip, '10.')
-            || str_starts_with($ip, '172.')) {
+        $code = request()->header('CF-IPCountry');
+
+        if (! $code || strlen($code) !== 2 || strtoupper($code) === 'XX') {
+            if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return null;
+            }
+
+            $code = Cache::remember("geo:country:{$ip}", now()->addDay(), function () use ($ip): string {
+                try {
+                    return (string) (Location::get($ip)->countryCode ?? '');
+                } catch (\Throwable) {
+                    return '';
+                }
+            });
+        }
+
+        if (! $code) {
             return null;
         }
 
-        if (function_exists('geoip_country_code_by_name')) {
-            $code = @geoip_country_code_by_name($ip);
-            if ($code) {
-                return static::where('site_code', strtolower($code))
-                    ->where('is_active', true)
-                    ->where('is_launched', true)
-                    ->value('site_code');
-            }
-        }
-
-        return null;
+        return static::where('site_code', strtolower($code))
+            ->where('is_active', true)
+            ->where('is_launched', true)
+            ->value('site_code');
     }
 
     /**

@@ -19,6 +19,8 @@
                         </a>
 
                         <div class="flex items-center gap-1 font-medium text-sm">
+                            @include('portal.partials.country-switcher', ['variant' => 'mobile', 'theme' => 'light'])
+
                             {{-- Language switcher --}}
                             <div class="hidden sm:flex items-center gap-1 me-2">
                                 @php($langToggle = portal_link('helpcenter', 'header', 'language_toggle_desktop', 'العربية', 'English', route('portal.language', $isAr ? 'en' : 'ar')))

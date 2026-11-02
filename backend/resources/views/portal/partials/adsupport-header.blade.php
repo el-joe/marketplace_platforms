@@ -21,6 +21,9 @@
                         </div>
 
                         <div class="ms-auto flex items-center font-semibold">
+                            <div class="me-3">
+                                @include('portal.partials.country-switcher', ['variant' => 'mobile', 'theme' => 'light'])
+                            </div>
                             {{-- Mobile hamburger --}}
                             <div class="flex items-center md:hidden">
                                 <button type="button" @click="mobileOpen = !mobileOpen"

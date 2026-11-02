@@ -47,12 +47,14 @@
                 </a>
                 <a href="{{ route('portal.advertise.request', $country) }}"
                     class="text-[15px] font-semibold text-gray-700 hover:text-gray-900">{{ $navContactUs }}</a>
+                @include('portal.partials.country-switcher', ['variant' => 'mobile', 'theme' => 'light'])
                 <a href="{{ $langToggleUrl }}"
                     class="text-[15px] font-bold text-gray-700 hover:text-gray-900">{{ $navLangShort }}</a>
             </div>
 
             {{-- Mobile controls --}}
             <div class="flex lg:hidden items-center gap-4">
+                @include('portal.partials.country-switcher', ['variant' => 'mobile', 'theme' => 'light'])
                 <a href="{{ $langToggleUrl }}" class="text-sm font-bold text-gray-700">{{ $navLangShort }}</a>
                 <button @click="mobileOpen = !mobileOpen" class="text-gray-900 p-1"
                     aria-label="{{ $navMenuAria }}">

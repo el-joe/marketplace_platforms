@@ -4,47 +4,7 @@
     <div class="w-px h-[24px] bg-white/20 self-center"></div>
 
     {{-- Country --}}
-    <div class="relative group h-full flex items-center" x-data="{ open: false }" @mouseenter="open = true"
-        @mouseleave="open = false">
-        <button type="button"
-            class="flex items-center gap-[8px] text-[15px] font-bold text-white hover:opacity-80 transition-opacity h-full">
-            @if ($currentCountry)
-                <img src="https://f.nooncdn.com/s/app/com/common/images/flags/{{ strtolower($currentCountry->iso_code_2) }}.svg"
-                    alt="{{ $isAr ? $currentCountry->name_ar : $currentCountry->name_en }}" width="20"
-                    height="20" class="rounded-sm">
-                <span>{{ $isAr ? $currentCountry->name_ar : $currentCountry->name_en }}</span>
-            @else
-                <span>{{ portal_content('nav', 'country_toggle', 'label', 'Country', 'الدولة') }}</span>
-            @endif
-        </button>
-
-        <div x-show="open" x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 translate-y-4"
-            x-transition:enter-end="opacity-100 translate-y-0"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100 translate-y-0"
-            x-transition:leave-end="opacity-0 translate-y-4"
-            class="absolute end-0 top-full w-48 pt-6 -mt-6 z-50" x-cloak>
-            <div class="bg-[#1c1c1c] border border-white/5 shadow-2xl rounded-xl py-2 overflow-hidden mt-1">
-                @foreach ($countries as $country)
-                    <a href="{{ route('portal.country', $country->site_code) }}"
-                        class="relative block px-5 py-3 text-[14px] font-bold transition-all duration-200 flex items-center gap-3 group/sub hover:bg-white/5
-                              {{ $currentCountry && $currentCountry->id === $country->id ? 'text-[#0F807E]' : 'text-gray-300 hover:text-white' }}">
-                        <div
-                            class="w-[3px] h-0 bg-[#0F807E] absolute {{ $isAr ? 'right-0' : 'left-0' }} top-1/2 -translate-y-1/2 transition-all duration-300 group-hover/sub:h-[70%] {{ $isAr ? 'rounded-l-full' : 'rounded-r-full' }}">
-                        </div>
-                        <span
-                            class="flex items-center gap-3 transition-transform duration-300 group-hover/sub:{{ $isAr ? '-translate-x-2' : 'translate-x-2' }}">
-                            <img src="https://f.nooncdn.com/s/app/com/common/images/flags/{{ strtolower($country->iso_code_2) }}.svg"
-                                alt="{{ $isAr ? $country->name_ar : $country->name_en }}" width="18"
-                                height="18" class="rounded-sm">
-                            <span>{{ $isAr ? $country->name_ar : $country->name_en }}</span>
-                        </span>
-                    </a>
-                @endforeach
-            </div>
-        </div>
-    </div>
+    @include('portal.partials.country-switcher', ['variant' => 'desktop'])
 
     {{-- Language --}}
     <div class="relative group h-full flex items-center" x-data="{ open: false }" @mouseenter="open = true"

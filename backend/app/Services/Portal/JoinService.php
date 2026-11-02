@@ -94,9 +94,12 @@ class JoinService
     {
         $countries ??= $this->headerCountries();
 
-        $current = session()->has('portal_country')
-            ? $countries->firstWhere('site_code', session('portal_country'))
-            : null;
+        // The URL {country} segment wins (advertise / adsupport / helpcenter pages),
+        // then the session pick, so every portal page shows the same selection.
+        $current = $countries->firstWhere('site_code', request()->route('country'))
+            ?? (session()->has('portal_country')
+                ? $countries->firstWhere('site_code', session('portal_country'))
+                : $countries->firstWhere('site_code', Country::detectAndRemember()));
 
         return $current
             ?? $countries->firstWhere('iso_code_2', 'OM')

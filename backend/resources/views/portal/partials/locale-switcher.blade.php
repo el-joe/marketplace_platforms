@@ -1,7 +1,7 @@
 @php
     $isAr = session('locale', 'ar') === 'ar';
-    $selectorCountries = $countries ?? collect();
-    $selectorCurrent = $currentCountry ?? $selectorCountries->first();
+    $selectorCountries = $countries ?? app(\App\Services\Portal\JoinService::class)->headerCountries();
+    $selectorCurrent = $currentCountry ?? app(\App\Services\Portal\JoinService::class)->headerCountry($selectorCountries);
     $countryToggleLabel = portal_content('nav', 'country_toggle', 'label', 'Country', 'الدولة');
     $languageToggleLabel = portal_content('nav', 'language_toggle', 'label', 'English', 'العربية');
     $flagUrl = fn ($country) => filled($country?->iso_code_2)
@@ -13,45 +13,7 @@
     <div class="flex items-center gap-4 sm:gap-6" dir="{{ $isAr ? 'rtl' : 'ltr' }}">
 
         {{-- Country --}}
-        <div class="relative" x-data="{ open: false }" @click.outside="open = false"
-            @mouseenter="window.innerWidth >= 1024 && (open = true)"
-            @mouseleave="window.innerWidth >= 1024 && (open = false)">
-            <button type="button" @click="window.innerWidth < 1024 && (open = ! open)"
-                class="flex items-center gap-[8px] text-[15px] font-bold text-white hover:opacity-80 transition-opacity">
-                @if ($selectorCurrent && $flagUrl($selectorCurrent))
-                    <img src="{{ $flagUrl($selectorCurrent) }}" alt="{{ $isAr ? $selectorCurrent->name_ar : $selectorCurrent->name_en }}"
-                        width="20" height="20" class="rounded-sm">
-                    <span class="hidden sm:inline">{{ $isAr ? $selectorCurrent->name_ar : ($selectorCurrent->name_en ?? $selectorCurrent->name_ar) }}</span>
-                @else
-                    <span>{{ $countryToggleLabel }}</span>
-                @endif
-            </button>
-
-            <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-200"
-                x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
-                x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0"
-                x-transition:leave-end="opacity-0 translate-y-4" class="absolute end-0 top-full w-48 pt-6 -mt-6 z-50">
-                <div class="bg-[#1c1c1c] border border-white/5 shadow-2xl rounded-xl py-2 overflow-hidden mt-1">
-                    @foreach ($selectorCountries as $country)
-                        <a href="{{ route('portal.country', $country->site_code) }}"
-                            class="relative block px-5 py-3 text-[14px] font-bold transition-all duration-200 flex items-center gap-3 group/sub hover:bg-white/5
-                                  {{ $selectorCurrent && $selectorCurrent->id === $country->id ? 'text-[#0F807E]' : 'text-gray-300 hover:text-white' }}">
-                            <div
-                                class="w-[3px] h-0 bg-[#0F807E] absolute {{ $isAr ? 'right-0' : 'left-0' }} top-1/2 -translate-y-1/2 transition-all duration-300 group-hover/sub:h-[70%] {{ $isAr ? 'rounded-l-full' : 'rounded-r-full' }}">
-                            </div>
-                            <span
-                                class="flex items-center gap-3 transition-transform duration-300 group-hover/sub:{{ $isAr ? '-translate-x-2' : 'translate-x-2' }}">
-                                @if ($flagUrl($country))
-                                    <img src="{{ $flagUrl($country) }}" alt="{{ $isAr ? $country->name_ar : $country->name_en }}"
-                                        width="18" height="18" class="rounded-sm">
-                                @endif
-                                <span>{{ $isAr ? $country->name_ar : ($country->name_en ?? $country->name_ar) }}</span>
-                            </span>
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-        </div>
+        @include('portal.partials.country-switcher', ['variant' => 'desktop', 'countries' => $selectorCountries, 'currentCountry' => $selectorCurrent])
 
         {{-- Language --}}
         <div class="relative" x-data="{ open: false }" @click.outside="open = false"

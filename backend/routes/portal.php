@@ -12,6 +12,7 @@ use App\Http\Controllers\Portal\RegistrationController;
 use App\Http\Controllers\Portal\TravelAgencyController;
 use App\Http\Controllers\Portal\TravelAgencyRegistrationController;
 use App\Models\Country;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -159,10 +160,28 @@ Route::get('/language/{locale}', function (string $locale) {
 
 // Country switcher — mirrors the language switcher; stores the pick in session so
 // non-{country}-prefixed portal pages (home, faq, etc.) also reflect the selection.
+// On {country}-prefixed pages (advertise, adsupport, helpcenter) the URL segment wins
+// over the session, so the previous URL is rewritten to the newly picked country.
 Route::get('/country/{country}', function (string $country) {
     $exists = Country::where('site_code', $country)->where('is_active', true)->exists();
     abort_unless($exists, 404);
     session(['portal_country' => $country]);
 
-    return redirect()->back()->withFragment('');
+    $previous = url()->previous();
+    $parts = parse_url($previous);
+
+    try {
+        $matched = app('router')->getRoutes()->match(Request::create($previous));
+    } catch (Throwable) {
+        $matched = null;
+    }
+
+    if ($matched && $matched->parameter('country') !== null && isset($parts['path'])) {
+        $segments = explode('/', ltrim($parts['path'], '/'));
+        $segments[0] = $country;
+        $previous = request()->getSchemeAndHttpHost().'/'.implode('/', $segments)
+            .(isset($parts['query']) ? '?'.$parts['query'] : '');
+    }
+
+    return redirect($previous);
 })->name('country');

@@ -19,6 +19,7 @@
         "phpoffice/phpspreadsheet": "^5.9",
         "phpoffice/phpword": "^1.4",
         "spatie/laravel-permission": "^7.4",
+        "stevebauman/location": "^7.7",
         "tymon/jwt-auth": "^2.3"
     },
     "require-dev": {
