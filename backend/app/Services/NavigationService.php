@@ -24,6 +24,7 @@ use App\Models\TravelPackage;
 use App\Models\Vendor;
 use App\Models\VendorAcquisitionCommission;
 use App\Models\VendorChangeRequest;
+use App\Models\VendorContract;
 use App\Models\VendorExceptionalZoneAlert;
 use App\Models\VendorProductCertification;
 use App\Models\WarrantyClaim;
@@ -492,7 +493,7 @@ class NavigationService
                         'route' => 'admin.contracts.signatures.index',
                         'icon' => 'pencil-square',
                         'permission' => 'vendors.view',
-                        'badge' => null,
+                        'badge' => $this->contractSignaturesBadge(),
                     ],
                 ],
             ],
@@ -1004,6 +1005,35 @@ class NavigationService
         $count = Cache::remember("nav.badge.{$key}", $ttl ?? self::BADGE_CACHE_TTL, $resolver);
 
         return $count > 0 ? (int) $count : null;
+    }
+
+    /**
+     * Contracts signed by vendors since this admin last opened the signatures page. Automatic acceptances
+     * (continued use after a notice period) are not counted, so a notice version cannot flood the badge.
+     */
+    protected function contractSignaturesBadge(): ?int
+    {
+        $admin = Auth::guard('admin')->user();
+
+        if (! $admin) {
+            return null;
+        }
+
+        return $this->cachedBadge(self::contractSignaturesBadgeKey($admin->id), function () use ($admin) {
+            try {
+                return VendorContract::query()
+                    ->where('acceptance_method', '!=', 'implicit')
+                    ->where('signed_at', '>', $admin->contracts_seen_at ?? $admin->created_at)
+                    ->count();
+            } catch (\Throwable) {
+                return 0;
+            }
+        });
+    }
+
+    public static function contractSignaturesBadgeKey(string|int $adminId): string
+    {
+        return "contract_signatures.{$adminId}";
     }
 
     protected function countOutOfStockAdminListings(): int

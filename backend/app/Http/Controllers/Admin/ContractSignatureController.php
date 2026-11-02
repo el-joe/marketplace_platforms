@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Models\VendorContract;
+use App\Services\NavigationService;
 use App\Services\Vendor\ContractFileService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -32,6 +35,8 @@ class ContractSignatureController extends Controller
             ->paginate(30)
             ->withQueryString();
 
+        $this->markSeen();
+
         return view('admin.contracts.signatures.index', compact('contracts', 'scope', 'status', 'search'));
     }
 
@@ -41,5 +46,20 @@ class ContractSignatureController extends Controller
     public function download(VendorContract $contract): StreamedResponse
     {
         return $this->files->respondToSigned($contract);
+    }
+
+    /**
+     * Opening the list clears the sidebar badge for this admin.
+     */
+    private function markSeen(): void
+    {
+        $adminId = auth('admin')->id();
+
+        if (! $adminId) {
+            return;
+        }
+
+        Admin::whereKey($adminId)->update(['contracts_seen_at' => now()]);
+        Cache::forget('nav.badge.'.NavigationService::contractSignaturesBadgeKey($adminId));
     }
 }
