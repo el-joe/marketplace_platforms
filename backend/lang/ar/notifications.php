@@ -61,6 +61,9 @@ return [
     ],
 
     'vendor' => [
+        'agreement_updated_title' => 'تحديث اتفاقية البائع',
+        'agreement_notice_message' => 'النسخة :version من اتفاقية البائع تسري بتاريخ :date. لا يلزم أي إجراء.',
+        'agreement_accept_message' => 'النسخة :version من اتفاقية البائع بحاجة إلى موافقتك.',
         'contract_updated_title' => 'تحديث العقد — يتطلب إجراءً',
         'contract_updated_message' => 'تم تحديث العقد ":name" إلى الإصدار :version. يرجى مراجعته وإعادة قبوله.',
     ],

@@ -87,6 +87,48 @@
         <span>{{ portal_content('register', 'step_5', 'missing_docs_warning', 'Please go back to the previous step and upload the required documents before submitting.', 'يرجى العودة للخطوة السابقة ورفع الوثائق المطلوبة قبل الإرسال.') }}</span>
     </div>
 
+    @if (! empty($agreement))
+        {{-- Seller Agreement: read it, then sign with your full name. Required before the application can be submitted. --}}
+        <div class="space-y-3 rounded-xl border border-gray-700 bg-gray-800/40 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="text-sm font-semibold text-white">{{ $agreement->name }} · v{{ $agreement->version }}</h3>
+                <div class="flex gap-2">
+                    <button type="button" @click="form.agreement_language = 'ar'" :class="form.agreement_language === 'ar' ? 'bg-[#0F807E] text-gray-900' : 'bg-gray-700 text-gray-300'" class="rounded px-3 py-1 text-xs font-medium">AR</button>
+                    <button type="button" @click="form.agreement_language = 'en'" :class="form.agreement_language === 'en' ? 'bg-[#0F807E] text-gray-900' : 'bg-gray-700 text-gray-300'" class="rounded px-3 py-1 text-xs font-medium">EN</button>
+                </div>
+            </div>
+
+            <div class="rounded-lg bg-white p-3 text-gray-800">
+                @if ($agreementDoc['content_mode'] === 'file')
+                    @foreach (['ar', 'en'] as $language)
+                        @php($agreementFile = $agreementDoc['files'][$language] ?? ($agreementDoc['files']['ar'] ?? $agreementDoc['files']['en'] ?? null))
+                        <div x-show="form.agreement_language === '{{ $language }}'" @if ($language !== 'ar') x-cloak @endif>
+                            @if ($agreementFile)
+                                @if ($agreementFile['inline'])
+                                    <iframe src="{{ $agreementFile['url'] }}" title="{{ $agreementFile['name'] }}" class="h-96 w-full rounded border"></iframe>
+                                @endif
+                                <a href="{{ $agreementFile['url'] }}?download=1" target="_blank" class="mt-2 inline-block text-xs font-medium text-[#0F807E] hover:underline">{{ __('portal.registration.agreement_download') }} · {{ $agreementFile['name'] }}</a>
+                            @endif
+                        </div>
+                    @endforeach
+                @else
+                    <div x-show="form.agreement_language === 'ar'" dir="rtl" class="max-h-96 overflow-y-auto whitespace-pre-line text-sm leading-relaxed">{!! $agreementDoc['content_ar'] !!}</div>
+                    <div x-show="form.agreement_language === 'en'" x-cloak dir="ltr" class="max-h-96 overflow-y-auto whitespace-pre-line text-sm leading-relaxed">{!! $agreementDoc['content_en'] !!}</div>
+                @endif
+            </div>
+
+            <div>
+                <label class="mb-1 block text-xs font-medium text-gray-300">{{ __('portal.registration.signature_name_label') }}</label>
+                <input type="text" x-model="form.signature_name" maxlength="150" autocomplete="name"
+                    placeholder="{{ __('portal.registration.signature_name_placeholder') }}"
+                    class="w-full rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white focus:border-[#0F807E] focus:ring-[#0F807E]">
+                <p x-show="errors.signature_name" x-text="errors.signature_name?.[0]" class="mt-1 text-xs text-red-400" x-cloak></p>
+                <p x-show="errors.agreement_template_id" x-text="errors.agreement_template_id?.[0]" class="mt-1 text-xs text-red-400" x-cloak></p>
+                <p class="mt-1 text-[11px] text-gray-500">{{ __('portal.registration.signature_name_help') }}</p>
+            </div>
+        </div>
+    @endif
+
     <div class="border-t border-gray-700 pt-4 space-y-3">
         <h3 class="text-sm font-semibold text-white">{{ portal_content('register', 'step_5', 'agree_terms_heading', 'Agree to Terms', 'الموافقة على الشروط') }}</h3>
 
@@ -97,13 +139,15 @@
             <span class="text-sm text-gray-300 group-hover:text-white transition-colors leading-relaxed">
                 @if($isAr)
                     {{ portal_content('register', 'step_5', 'terms_prefix', null, 'أوافق على') }}
-                    @php($termsLink = portal_link('register', 'step_5', 'terms_link', 'Terms and Conditions', 'الشروط والأحكام', '#'))
-                    <a href="{{ $termsLink['url'] }}" class="text-[#0F807E] hover:underline">{{ $termsLink['label'] }}</a>
+                    @php($termsLink = portal_link('register', 'step_5', 'terms_link', 'Terms and Conditions', 'الشروط والأحكام', route('portal.legal.seller-agreement')))
+                    @php($termsLink['url'] = in_array($termsLink['url'], ['#', ''], true) ? route('portal.legal.seller-agreement') : $termsLink['url'])
+                    <a href="{{ $termsLink['url'] }}" target="_blank" rel="noopener" class="text-[#0F807E] hover:underline">{{ $termsLink['label'] }}</a>
                     {{ portal_content('register', 'step_5', 'terms_suffix', null, 'الخاصة ببائعي ناوي') }}
                 @else
                     {{ portal_content('register', 'step_5', 'terms_prefix', "I agree to Nawy's", null) }}
-                    @php($termsLink = portal_link('register', 'step_5', 'terms_link', 'Terms and Conditions', 'الشروط والأحكام', '#'))
-                    <a href="{{ $termsLink['url'] }}" class="text-[#0F807E] hover:underline">{{ $termsLink['label'] }}</a>
+                    @php($termsLink = portal_link('register', 'step_5', 'terms_link', 'Terms and Conditions', 'الشروط والأحكام', route('portal.legal.seller-agreement')))
+                    @php($termsLink['url'] = in_array($termsLink['url'], ['#', ''], true) ? route('portal.legal.seller-agreement') : $termsLink['url'])
+                    <a href="{{ $termsLink['url'] }}" target="_blank" rel="noopener" class="text-[#0F807E] hover:underline">{{ $termsLink['label'] }}</a>
                     {{ portal_content('register', 'step_5', 'terms_suffix', 'for sellers', null) }}
                 @endif
             </span>
@@ -117,13 +161,15 @@
             <span class="text-sm text-gray-300 group-hover:text-white transition-colors leading-relaxed">
                 @if($isAr)
                     {{ portal_content('register', 'step_5', 'privacy_prefix', null, 'أوافق على') }}
-                    @php($privacyLink = portal_link('register', 'step_5', 'privacy_link', 'Privacy Policy', 'سياسة الخصوصية', '#'))
-                    <a href="{{ $privacyLink['url'] }}" class="text-[#0F807E] hover:underline">{{ $privacyLink['label'] }}</a>
+                    @php($privacyLink = portal_link('register', 'step_5', 'privacy_link', 'Privacy Policy', 'سياسة الخصوصية', route('portal.legal.seller-agreement').'#privacy'))
+                    @php($privacyLink['url'] = in_array($privacyLink['url'], ['#', ''], true) ? route('portal.legal.seller-agreement').'#privacy' : $privacyLink['url'])
+                    <a href="{{ $privacyLink['url'] }}" target="_blank" rel="noopener" class="text-[#0F807E] hover:underline">{{ $privacyLink['label'] }}</a>
                     {{ portal_content('register', 'step_5', 'privacy_suffix', null, 'وأذن لناوي بمعالجة بياناتي التجارية') }}
                 @else
                     {{ portal_content('register', 'step_5', 'privacy_prefix', 'I agree to the', null) }}
-                    @php($privacyLink = portal_link('register', 'step_5', 'privacy_link', 'Privacy Policy', 'سياسة الخصوصية', '#'))
-                    <a href="{{ $privacyLink['url'] }}" class="text-[#0F807E] hover:underline">{{ $privacyLink['label'] }}</a>
+                    @php($privacyLink = portal_link('register', 'step_5', 'privacy_link', 'Privacy Policy', 'سياسة الخصوصية', route('portal.legal.seller-agreement').'#privacy'))
+                    @php($privacyLink['url'] = in_array($privacyLink['url'], ['#', ''], true) ? route('portal.legal.seller-agreement').'#privacy' : $privacyLink['url'])
+                    <a href="{{ $privacyLink['url'] }}" target="_blank" rel="noopener" class="text-[#0F807E] hover:underline">{{ $privacyLink['label'] }}</a>
                     {{ portal_content('register', 'step_5', 'privacy_suffix', 'and authorize Nawy to process my business data', null) }}
                 @endif
             </span>

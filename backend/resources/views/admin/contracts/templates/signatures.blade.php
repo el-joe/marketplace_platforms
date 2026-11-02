@@ -45,7 +45,7 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 font-medium text-gray-900">{{ $row['vendor']->store_name }}</td>
                         <td class="px-4 py-3 text-gray-500">{{ $row['vendor']->email }}</td>
-                        <td class="px-4 py-3 text-center">{{ $row['listings'] }}</td>
+                        <td class="px-4 py-3 text-center">{{ $row['listings'] ?? '—' }}</td>
                         <td class="px-4 py-3">
                             @if ($signature)
                                 <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">{{ __('admin.contracts.status_signed') }}</span>
@@ -54,10 +54,13 @@
                             @endif
                         </td>
                         <td class="px-4 py-3">{{ $signature?->signer_name ?? '—' }}</td>
-                        <td class="px-4 py-3 uppercase">{{ $signature?->language_signed ?? '—' }}</td>
+                        <td class="px-4 py-3 uppercase">{{ $signature?->language_signed ?? '—' }}@if ($signature) <span class="block text-[10px] normal-case text-gray-400">{{ __('admin.contracts.method_' . $signature->acceptance_method) }}</span>@endif</td>
                         <td class="px-4 py-3">{{ $signature?->signed_at?->format('d/m/Y H:i') ?? '—' }}</td>
                         <td class="px-4 py-3 font-mono text-xs">{{ $signature?->signed_ip ?? '—' }}</td>
-                        <td class="px-4 py-3 text-end">
+                        <td class="space-x-3 px-4 py-3 text-end">
+                            @if ($signature?->hasSignedFile())
+                                <a href="{{ route('admin.contracts.signatures.download', $signature) }}" class="text-xs font-medium text-emerald-700 hover:underline">{{ __('admin.contracts.download_signed') }}</a>
+                            @endif
                             <a href="{{ route('admin.vendors.contracts.index', $row['vendor']) }}" class="text-xs font-medium text-primary-600 hover:underline">{{ __('admin.vendor_contracts.button') }}</a>
                         </td>
                     </tr>

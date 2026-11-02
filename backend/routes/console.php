@@ -125,6 +125,12 @@ Schedule::command('exclusive-contracts:expire')
     ->runInBackground()
     ->name('expire-exclusive-contracts');
 
+// Seller Agreement versions published with a notice period: record implicit acceptance once they take effect
+Schedule::command('contracts:apply-effective')
+    ->hourly()
+    ->withoutOverlapping()
+    ->name('apply-effective-seller-agreement');
+
 // Client feature request doc, section 6: flag vendor listings disposable_by_admin
 // once unpaid storage fees exceed their locked-in first_price after a year in storage
 Schedule::command('products:flag-overstored-unpaid')

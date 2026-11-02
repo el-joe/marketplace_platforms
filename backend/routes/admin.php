@@ -1646,10 +1646,14 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::post('/{contractTemplate}/publish', [ContractTemplateController::class, 'publish'])->name('publish');
             Route::delete('/{contractTemplate}', [ContractTemplateController::class, 'destroy'])->name('destroy');
             Route::get('/{contractTemplate}/signatures', [ContractTemplateController::class, 'signatures'])->name('signatures');
+            Route::get('/{contractTemplate}/file/{language}', [ContractTemplateController::class, 'file'])->whereIn('language', ['ar', 'en'])->name('file');
         });
 
         Route::get('/signatures', [ContractSignatureController::class, 'index'])
             ->name('signatures.index')
+            ->middleware('admin.permission:vendors.view');
+        Route::get('/signatures/{contract}/download', [ContractSignatureController::class, 'download'])
+            ->name('signatures.download')
             ->middleware('admin.permission:vendors.view');
     });
 

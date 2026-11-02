@@ -16,9 +16,20 @@ class ClassifiedContractTemplate extends Model
 
     public const SCOPE_PRODUCT = 'product';
 
+    public const SCOPE_PLATFORM = 'platform';
+
+    public const MODE_EDITOR = 'editor';
+
+    public const MODE_FILE = 'file';
+
+    public const ACCEPTANCE_CLICK_WRAP = 'click_wrap';
+
+    public const ACCEPTANCE_NOTICE = 'notice';
+
     protected $fillable = [
         'classified_category_id', 'category_scope', 'product_category_id',
-        'name', 'version', 'content_en', 'content_ar', 'is_active', 'is_published',
+        'name', 'content_mode', 'version', 'content_en', 'content_ar', 'files', 'is_active', 'is_published',
+        'acceptance_mode', 'notice_days', 'effective_at', 'published_at', 'change_summary',
         'variables_schema', 'created_by_admin_id',
     ];
 
@@ -26,6 +37,10 @@ class ClassifiedContractTemplate extends Model
         'is_active' => 'boolean',
         'is_published' => 'boolean',
         'variables_schema' => 'array',
+        'files' => 'array',
+        'notice_days' => 'integer',
+        'effective_at' => 'datetime',
+        'published_at' => 'datetime',
     ];
 
     /**
@@ -94,6 +109,39 @@ class ClassifiedContractTemplate extends Model
     public function scopeEnforceable(Builder $query): Builder
     {
         return $query->where('is_published', true)->where('is_active', true);
+    }
+
+    public function isFileMode(): bool
+    {
+        return $this->content_mode === self::MODE_FILE;
+    }
+
+    public function isPlatformScope(): bool
+    {
+        return $this->category_scope === self::SCOPE_PLATFORM;
+    }
+
+    /**
+     * Uploaded document for a language. Arabic is the official language, so a missing language falls back to the other one.
+     *
+     * @return array{path: string, name: string, mime: string, size: int, sha256: string, pdf_path: ?string, language: string}|null
+     */
+    public function fileFor(string $language): ?array
+    {
+        $files = $this->files ?? [];
+        $language = $language === 'ar' ? 'ar' : 'en';
+        $fallback = $language === 'ar' ? 'en' : 'ar';
+        $resolved = isset($files[$language]) ? $language : (isset($files[$fallback]) ? $fallback : null);
+
+        return $resolved ? $files[$resolved] + ['language' => $resolved] : null;
+    }
+
+    /**
+     * Scheduled: published for vendors but not yet in force (notice period still running).
+     */
+    public function isScheduled(): bool
+    {
+        return $this->is_published && $this->effective_at !== null && $this->effective_at->isFuture();
     }
 
     /**

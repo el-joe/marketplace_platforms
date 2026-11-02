@@ -6,6 +6,7 @@ use App\Http\Controllers\Portal\BlogController;
 use App\Http\Controllers\Portal\HelpCenterController;
 use App\Http\Controllers\Portal\JoinController;
 use App\Http\Controllers\Portal\LandingController;
+use App\Http\Controllers\Portal\LegalController;
 use App\Http\Controllers\Portal\MarketersController;
 use App\Http\Controllers\Portal\OpenSouqController;
 use App\Http\Controllers\Portal\RegistrationController;
@@ -138,6 +139,12 @@ Route::prefix('vendors/register')->group(function () {
     Route::delete('/document', [RegistrationController::class, 'removeDocument'])->name('register.document.remove');
     Route::post('/complete', [RegistrationController::class, 'complete'])->name('register.complete');
 });
+
+// Public Seller Agreement (terms) page and its documents
+Route::get('/legal/seller-agreement', [LegalController::class, 'sellerAgreement'])->name('legal.seller-agreement');
+Route::get('/legal/seller-agreement/{template}/{language}', [LegalController::class, 'sellerAgreementFile'])
+    ->whereIn('language', ['ar', 'en'])
+    ->name('legal.seller-agreement.file');
 
 // Legacy /register URLs keep working after the move to /vendors/register.
 Route::get('/register', fn () => redirect()->route('portal.register', [], 301));

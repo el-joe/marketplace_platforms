@@ -50,6 +50,7 @@ function registrationWizard() {
             building: '', floor: '', apartment: '', postal_code: '',
             // Step 5
             terms_agreed: false, privacy_agreed: false,
+            signature_name: '', agreement_language: document.documentElement.lang === 'en' ? 'en' : 'ar',
         },
 
         // Dynamic document types loaded from server per country
@@ -267,6 +268,9 @@ function registrationWizard() {
                     body: JSON.stringify({
                         terms_agreed: this.form.terms_agreed ? '1' : '0',
                         privacy_agreed: this.form.privacy_agreed ? '1' : '0',
+                        signature_name: this.form.signature_name,
+                        agreement_language: this.form.agreement_language,
+                        agreement_template_id: window._agreement?.id ?? null,
                         doc_expiries: this.docExpiries,
                     }),
                 });

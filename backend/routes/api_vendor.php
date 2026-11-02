@@ -258,6 +258,15 @@ Route::prefix('v1')->group(function (): void {
                 Route::post('{templateId}/accept', [ContractController::class, 'accept'])->name('accept');
             });
 
+            // Legal documents: Seller Agreement state, acceptance, and the vendor's signed copies
+            Route::prefix('legal')->name('vendor.legal.')->group(function (): void {
+                Route::get('agreement', [ContractController::class, 'agreement'])->name('agreement');
+                Route::post('agreement/accept', [ContractController::class, 'acceptAgreement'])->name('agreement.accept');
+                Route::get('documents', [ContractController::class, 'documents'])->name('documents');
+                Route::get('templates/{template}/{language}', [ContractController::class, 'templateFile'])->whereIn('language', ['ar', 'en'])->name('template-file');
+                Route::get('signed/{contract}/file', [ContractController::class, 'signedFile'])->name('signed-file');
+            });
+
             Route::prefix('classifieds')->name('vendor.classifieds.')->group(function (): void {
                 Route::get('categories', [ClassifiedListingController::class, 'categories'])->name('categories');
                 Route::get('/', [ClassifiedListingController::class, 'index'])->name('index');

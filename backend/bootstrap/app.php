@@ -9,6 +9,7 @@ use App\Http\Middleware\DeliveryApiActive;
 use App\Http\Middleware\DeliveryApiAuth;
 use App\Http\Middleware\DeliveryAuth;
 use App\Http\Middleware\DetectCountry;
+use App\Http\Middleware\EnforceSellerAgreement;
 use App\Http\Middleware\EnforceVendorCategoryContracts;
 use App\Http\Middleware\GuestCartToken;
 use App\Http\Middleware\MarketerApiActive;
@@ -36,6 +37,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\HandleCors;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -118,6 +121,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'vendor.can' => VendorPermissionMiddleware::class,
             'vendor.type' => VendorTypeMiddleware::class,
             'vendor.contracts.enforce' => EnforceVendorCategoryContracts::class,
+            'vendor.agreement.enforce' => EnforceSellerAgreement::class,
             'auth.delivery' => DeliveryAuth::class,
             'delivery.api.auth' => DeliveryApiAuth::class,
             'delivery.api.active' => DeliveryApiActive::class,
@@ -140,7 +144,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Tampered / expired WhatsApp accept-reject links: friendly page instead of a bare 403.
-        $exceptions->render(function (\Illuminate\Routing\Exceptions\InvalidSignatureException $e, \Illuminate\Http\Request $request) {
+        $exceptions->render(function (InvalidSignatureException $e, Request $request) {
             if (str_starts_with((string) $request->route()?->getName(), 'marketer.invitations.whatsapp.')) {
                 return response()->view('marketer.invitations.whatsapp', ['expiredLink' => true], 403);
             }

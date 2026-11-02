@@ -40,9 +40,7 @@ class VendorCategoryContractController extends Controller
         $pending = $this->contracts->pendingForVendor($vendor)
             ->unique(fn (array $item) => $item['template']->id)
             ->map(function (array $item) use ($vendor) {
-                $variables = $this->contracts->variablesFor($vendor, $item['category'], $item['template']);
-                $item['resolved_content_en'] = $this->contracts->renderContent($item['template']->content_en, $variables);
-                $item['resolved_content_ar'] = $this->contracts->renderContent($item['template']->content_ar, $variables);
+                $item['doc'] = $this->contracts->present($item['template'], $vendor, $item['category']);
 
                 return $item;
             })
@@ -56,18 +54,15 @@ class VendorCategoryContractController extends Controller
      */
     public function preview(string $templateId): View
     {
-        $template = ClassifiedContractTemplate::findOrFail($templateId);
+        $template = ClassifiedContractTemplate::where('is_published', true)->findOrFail($templateId);
         $vendor = $this->vendor();
 
         $category = ClassifiedCategory::where('contract_template_id', $template->id)->first()
             ?? Category::where('contract_template_id', $template->id)->first();
 
-        $variables = $this->contracts->variablesFor($vendor, $category, $template, $this->vendorAdmin()->name);
+        $doc = $this->contracts->present($template, $vendor, $category);
 
-        $resolvedEn = $this->contracts->renderContent($template->content_en, $variables);
-        $resolvedAr = $this->contracts->renderContent($template->content_ar, $variables);
-
-        return view('partner.contracts.preview', compact('template', 'category', 'resolvedEn', 'resolvedAr'));
+        return view('partner.contracts.preview', compact('template', 'category', 'doc'));
     }
 
     /**

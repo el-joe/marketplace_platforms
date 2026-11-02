@@ -52,6 +52,8 @@
                         <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_signed_at') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_ip') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_status') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_method') }}</th>
+                        <th class="px-4 py-3"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -67,9 +69,11 @@
                             <td class="px-4 py-3">{{ $contract->signed_at?->format('d/m/Y H:i') }}</td>
                             <td class="px-4 py-3 font-mono text-xs">{{ $contract->signed_ip ?? '—' }}</td>
                             <td class="px-4 py-3">{{ __('admin.contracts.sig_' . $contract->status) }}</td>
+                            <td class="px-4 py-3">{{ __('admin.contracts.method_' . $contract->acceptance_method) }}</td>
+                            <td class="px-4 py-3 text-end">@if ($contract->hasSignedFile())<a href="{{ route('admin.contracts.signatures.download', $contract) }}" class="text-xs font-medium text-emerald-700 hover:underline">{{ __('admin.contracts.download_signed') }}</a>@endif</td>
                         </tr>
                     @empty
-                        <tr><td colspan="9" class="px-4 py-6 text-center text-gray-400">{{ __('admin.vendor_contracts.empty') }}</td></tr>
+                        <tr><td colspan="11" class="px-4 py-6 text-center text-gray-400">{{ __('admin.vendor_contracts.empty') }}</td></tr>
                     @endforelse
                 </tbody>
             </table>

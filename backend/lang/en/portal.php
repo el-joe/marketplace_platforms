@@ -150,7 +150,23 @@ return [
         'description_required' => 'Please enter your request details!',
     ],
 
+    'legal' => [
+        'intro' => 'The Seller Agreement and its appendices, including the privacy policy and fees, apply to every seller on the platform.',
+        'title' => 'Seller Agreement',
+        'upcoming' => 'Version :version takes effect on :date',
+        'download_upcoming' => 'Download the upcoming version',
+        'effective' => 'Effective :date',
+        'download' => 'Download',
+        'none' => 'No Seller Agreement has been published yet.',
+    ],
+
     'registration' => [
+        'signature_name_required' => 'Type your full name to sign the Seller Agreement.',
+        'agreement_changed' => 'The Seller Agreement was updated while you were registering. Reload the page and review it again.',
+        'agreement_download' => 'Download the agreement',
+        'signature_name_label' => 'Sign with your full name',
+        'signature_name_placeholder' => 'Full name as in your commercial registration',
+        'signature_name_help' => 'Typing your name and submitting the application is your electronic signature and has the same legal force as a handwritten one. A copy is emailed to you.',
         'email_unique' => 'This email is already registered.',
         'password_min' => 'Password must be at least 8 characters.',
         'password_confirmed' => 'Password and confirmation do not match.',

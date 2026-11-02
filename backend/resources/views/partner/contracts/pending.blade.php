@@ -35,8 +35,7 @@
                     </div>
                 </div>
 
-                <div x-show="lang === 'en'" dir="ltr" class="max-h-64 overflow-y-auto whitespace-pre-line rounded-lg border p-4 text-sm leading-relaxed text-gray-700">{!! $item['resolved_content_en'] !!}</div>
-                <div x-show="lang === 'ar'" x-cloak dir="rtl" class="max-h-64 overflow-y-auto whitespace-pre-line rounded-lg border p-4 text-sm leading-relaxed text-gray-700">{!! $item['resolved_content_ar'] !!}</div>
+                @include('partner.contracts.partials.document', ['doc' => $item['doc'], 'height' => 'h-80'])
 
                 <form method="POST" action="{{ route('partner.contracts.accept', $item['template']->id) }}" class="space-y-3">
                     @csrf

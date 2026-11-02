@@ -41,6 +41,12 @@ return [
         'private' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
+            // The web server and the queue worker run as different users, so files written by one
+            // (signed contracts, template documents) must stay readable by the other through the group.
+            'permissions' => [
+                'file' => ['public' => 0664, 'private' => 0664],
+                'dir' => ['public' => 0775, 'private' => 0775],
+            ],
             'serve' => false,
             'throw' => false,
             'report' => false,

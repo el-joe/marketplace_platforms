@@ -27,6 +27,10 @@ class CategoryContractService
 
     public const SCOPE_PRODUCT = 'product';
 
+    public const SCOPE_PLATFORM = 'platform';
+
+    public function __construct(private readonly ContractFileService $files) {}
+
     public function categoryFor(string $scope, string $categoryId): ClassifiedCategory|Category|null
     {
         return $scope === self::SCOPE_PRODUCT
@@ -124,16 +128,14 @@ class CategoryContractService
         $template = $this->templateFor($category)
             ?? throw ValidationException::withMessages(['contract' => 'No published contract for this category.']);
 
-        $language = $language === 'ar' ? 'ar' : 'en';
-        $variables = $this->variablesFor($vendor, $category, $template, $signerName);
-        $content = $this->renderContent($language === 'ar' ? $template->content_ar : $template->content_en, $variables);
+        $frozen = $this->freeze($vendor, $template, $category, $language, $signerName);
 
-        return DB::transaction(function () use ($vendor, $signer, $scope, $category, $template, $language, $variables, $content, $signerName, $ipAddress, $userAgent, $signaturePath) {
+        return DB::transaction(function () use ($vendor, $signer, $scope, $category, $template, $frozen, $signerName, $ipAddress, $userAgent, $signaturePath) {
             $enrollment = $this->enrollmentFor($vendor, $scope, $category);
 
             $enrollment->contracts()->where('status', 'active')->update(['status' => 'superseded']);
 
-            $contract = VendorContract::create([
+            $contract = VendorContract::create($frozen + [
                 'vendor_id' => $vendor->id,
                 'vendor_category_enrollment_id' => $enrollment->id,
                 'classified_category_id' => $scope === self::SCOPE_CLASSIFIED ? $category->id : null,
@@ -141,10 +143,6 @@ class CategoryContractService
                 'product_category_id' => $scope === self::SCOPE_PRODUCT ? $category->id : null,
                 'contract_template_id' => $template->id,
                 'template_version' => $template->version,
-                'language_signed' => $language,
-                'rendered_content' => $content,
-                'rendered_content_hash' => hash('sha256', $content.json_encode($variables)),
-                'variables' => $variables,
                 'signature_path' => $signaturePath,
                 'signed_by_vendor_admin_id' => $signer?->id,
                 'signer_name' => $signerName,
@@ -152,6 +150,7 @@ class CategoryContractService
                 'signed_user_agent' => $userAgent,
                 'signed_at' => now(),
                 'status' => 'active',
+                'acceptance_method' => 'click_wrap',
             ]);
 
             $enrollment->update([
@@ -162,6 +161,160 @@ class CategoryContractService
 
             return $contract;
         });
+    }
+
+    /**
+     * The immutable part of a signature: the text rendered for this vendor, or a private copy of the uploaded
+     * document, plus the hash that proves what was signed.
+     *
+     * @return array<string, mixed>
+     */
+    public function freeze(Vendor $vendor, ClassifiedContractTemplate $template, ClassifiedCategory|Category|null $category, string $language, string $signerName): array
+    {
+        $language = $language === 'ar' ? 'ar' : 'en';
+        $variables = $this->variablesFor($vendor, $category, $template, $signerName);
+
+        if ($template->isFileMode()) {
+            $file = $template->fileFor($language)
+                ?? throw ValidationException::withMessages(['contract' => 'This contract has no uploaded document.']);
+            $copy = $this->files->copyForSignature($file, $vendor->id);
+
+            return [
+                'language_signed' => $file['language'],
+                'content_mode' => ClassifiedContractTemplate::MODE_FILE,
+                'rendered_content' => '',
+                'rendered_content_hash' => $file['sha256'],
+                'variables' => $variables,
+                'signed_file_path' => $copy['path'],
+                'signed_file_name' => $copy['name'],
+                'signed_file_mime' => $copy['mime'],
+            ];
+        }
+
+        $content = $this->renderContent($language === 'ar' ? $template->content_ar : $template->content_en, $variables);
+
+        return [
+            'language_signed' => $language,
+            'content_mode' => ClassifiedContractTemplate::MODE_EDITOR,
+            'rendered_content' => $content,
+            'rendered_content_hash' => hash('sha256', $content.json_encode($variables)),
+            'variables' => $variables,
+        ];
+    }
+
+    /**
+     * What a client needs to show a template: rendered text in editor mode, document links in file mode.
+     *
+     * @return array{template_id: string, name: string, version: int, content_mode: string, content_en: string, content_ar: string, files: array<string, array{name: string, mime: string, size: int, url: string, inline: bool}>}
+     */
+    public function present(ClassifiedContractTemplate $template, Vendor $vendor, ClassifiedCategory|Category|null $category, string $fileRoute = 'partner.legal.template-file'): array
+    {
+        $payload = [
+            'template_id' => $template->id,
+            'name' => $template->name,
+            'version' => $template->version,
+            'content_mode' => $template->content_mode,
+            'content_en' => '',
+            'content_ar' => '',
+            'files' => [],
+        ];
+
+        if ($template->isFileMode()) {
+            $payload['files'] = $this->fileLinks($template, $fileRoute);
+            $payload['content_en'] = $this->fileHtml($payload['files'], 'en');
+            $payload['content_ar'] = $this->fileHtml($payload['files'], 'ar');
+
+            return $payload;
+        }
+
+        $variables = $this->variablesFor($vendor, $category, $template);
+        $payload['content_en'] = $this->renderContent($template->content_en, $variables);
+        $payload['content_ar'] = $this->renderContent($template->content_ar, $variables);
+
+        return $payload;
+    }
+
+    /**
+     * The same payload for readers who are not vendors yet (registration, public terms page). Vendor-specific
+     * variables stay as written because there is no vendor to fill them from.
+     *
+     * @return array{template_id: string, name: string, version: int, content_mode: string, content_en: string, content_ar: string, files: array<string, array{name: string, mime: string, size: int, url: string, inline: bool}>}
+     */
+    public function presentPublic(ClassifiedContractTemplate $template): array
+    {
+        $payload = [
+            'template_id' => $template->id,
+            'name' => $template->name,
+            'version' => $template->version,
+            'content_mode' => $template->content_mode,
+            'content_en' => '',
+            'content_ar' => '',
+            'files' => [],
+        ];
+
+        if ($template->isFileMode()) {
+            $payload['files'] = $this->fileLinks($template, 'portal.legal.seller-agreement.file');
+            $payload['content_en'] = $this->fileHtml($payload['files'], 'en');
+            $payload['content_ar'] = $this->fileHtml($payload['files'], 'ar');
+
+            return $payload;
+        }
+
+        $variables = [
+            'platform.name_en' => (string) config('app.name'),
+            'platform.name_ar' => (string) config('app.name'),
+            'contract.version' => (string) $template->version,
+            'contract.date' => ($template->effective_at ?? now())->format('d/m/Y'),
+        ];
+        $payload['content_en'] = $this->renderContent($template->content_en, $variables);
+        $payload['content_ar'] = $this->renderContent($template->content_ar, $variables);
+
+        return $payload;
+    }
+
+    /**
+     * HTML stand-in for the contract text of an uploaded document, so clients that only render
+     * content_en/content_ar still show the document (inline when a PDF preview exists, plus a link).
+     *
+     * @param  array<string, array{name: string, mime: string, size: int, url: string, inline: bool}>  $files
+     */
+    public function fileHtml(array $files, string $language): string
+    {
+        $file = $files[$language] ?? $files['ar'] ?? $files['en'] ?? null;
+
+        if (! $file) {
+            return '';
+        }
+
+        $name = e($file['name']);
+        $url = e($file['url']);
+        $html = $file['inline'] ? '<iframe src="'.$url.'" title="'.$name.'" style="width:100%;height:28rem;border:1px solid #e5e7eb;border-radius:8px"></iframe>' : '';
+
+        return $html.'<p><a href="'.$url.(str_contains($file['url'], '?') ? '&' : '?').'download=1" target="_blank" rel="noopener">'.$name.'</a></p>';
+    }
+
+    /**
+     * @return array<string, array{name: string, mime: string, size: int, url: string, inline: bool}>
+     */
+    public function fileLinks(ClassifiedContractTemplate $template, string $fileRoute = 'partner.legal.template-file'): array
+    {
+        $links = [];
+
+        foreach (['ar', 'en'] as $language) {
+            $file = ($template->files ?? [])[$language] ?? null;
+
+            if ($file) {
+                $links[$language] = [
+                    'name' => $file['name'],
+                    'mime' => $file['mime'],
+                    'size' => $file['size'],
+                    'url' => route($fileRoute, ['template' => $template->id, 'language' => $language]),
+                    'inline' => $file['pdf_path'] !== null,
+                ];
+            }
+        }
+
+        return $links;
     }
 
     /**

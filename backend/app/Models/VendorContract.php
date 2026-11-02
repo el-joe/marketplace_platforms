@@ -22,6 +22,7 @@ class VendorContract extends Model
         'contract_template_id',
         'template_version',
         'language_signed',
+        'content_mode',
         'rendered_content',
         'rendered_content_hash',
         'variables',
@@ -33,8 +34,13 @@ class VendorContract extends Model
         'signed_at',
         'status',
         'pdf_path',
+        'acceptance_method',
+        'signed_file_path',
+        'signed_file_name',
+        'signed_file_mime',
         'revoked_at',
         'revoked_reason',
+        'emailed_at',
     ];
 
     protected $casts = [
@@ -42,7 +48,13 @@ class VendorContract extends Model
         'variables' => 'array',
         'signed_at' => 'datetime',
         'revoked_at' => 'datetime',
+        'emailed_at' => 'datetime',
     ];
+
+    public function hasSignedFile(): bool
+    {
+        return $this->signed_file_path !== null;
+    }
 
     public function vendor(): BelongsTo
     {

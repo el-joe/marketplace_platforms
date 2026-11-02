@@ -738,21 +738,15 @@ class ListingController extends Controller
 
         if ($unsignedTemplate) {
             $category = $contracts->categoryFor(CategoryContractService::SCOPE_PRODUCT, $productCategoryId);
-            $variables = $contracts->variablesFor($vendor, $category, $unsignedTemplate);
 
             return response()->json([
                 'success' => false,
                 'message' => __('partner.contracts.product_signature_required'),
                 'redirect' => route('partner.contracts.pending'),
-                'contract' => [
-                    'template_id' => $unsignedTemplate->id,
-                    'name' => $unsignedTemplate->name,
-                    'version' => $unsignedTemplate->version,
+                'contract' => $contracts->present($unsignedTemplate, $vendor, $category) + [
                     'category_scope' => CategoryContractService::SCOPE_PRODUCT,
                     'category_id' => $productCategoryId,
                     'category_name' => $category->name_en,
-                    'content_en' => $contracts->renderContent($unsignedTemplate->content_en, $variables),
-                    'content_ar' => $contracts->renderContent($unsignedTemplate->content_ar, $variables),
                     'accept_url' => route('partner.contracts.accept', $unsignedTemplate),
                 ],
             ], 422);

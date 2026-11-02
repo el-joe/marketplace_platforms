@@ -136,7 +136,7 @@
                     x-show="step === totalSteps"
                     @click="submit()"
                     type="button"
-                    :disabled="loading || !form.terms_agreed || !form.privacy_agreed"
+                    :disabled="loading || !form.terms_agreed || !form.privacy_agreed || (window._agreement && form.signature_name.trim().length < 3)"
                     class="flex-1 py-2.5 rounded-xl text-sm font-bold bg-[#0F807E] hover:bg-[#0c6665] text-gray-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     <span x-show="!loading">{{ portal_content('register', 'footer_nav', 'submit_button', 'Submit Application ✓', 'إرسال الطلب ✓') }}</span>
@@ -172,5 +172,6 @@ window._routes = {
     complete:     '{{ route('portal.register.complete') }}',
 };
 window._csrf = '{{ csrf_token() }}';
+window._agreement = @json($agreement ? ['id' => $agreement->id] : null);
 </script>
 @endsection

@@ -4,18 +4,22 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\VendorContract;
+use App\Services\Vendor\ContractFileService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Every signature across vendors, for either category scope.
  */
 class ContractSignatureController extends Controller
 {
+    public function __construct(private readonly ContractFileService $files) {}
+
     public function index(Request $request): View
     {
-        $scope = in_array($request->query('scope'), ['classified', 'product'], true) ? $request->query('scope') : null;
+        $scope = in_array($request->query('scope'), ['classified', 'product', 'platform'], true) ? $request->query('scope') : null;
         $status = in_array($request->query('status'), ['active', 'superseded', 'revoked'], true) ? $request->query('status') : null;
         $search = trim((string) $request->query('q', ''));
 
@@ -29,5 +33,13 @@ class ContractSignatureController extends Controller
             ->withQueryString();
 
         return view('admin.contracts.signatures.index', compact('contracts', 'scope', 'status', 'search'));
+    }
+
+    /**
+     * The exact document a vendor signed (uploaded agreements only; text contracts are shown in the page).
+     */
+    public function download(VendorContract $contract): StreamedResponse
+    {
+        return $this->files->respondToSigned($contract);
     }
 }

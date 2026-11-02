@@ -31,6 +31,25 @@ return [
         'footer_copyright' => '© :year Nawy — All rights reserved.',
     ],
 
+    'seller_agreement_signed' => [
+        'subject' => 'Your signed Seller Agreement',
+        'header' => 'Seller Agreement signed',
+        'intro' => 'Thank you, :name. This email is your copy of the Seller Agreement you signed.',
+        'signed_at' => 'Signed on',
+        'reference' => 'Document fingerprint',
+        'attached' => 'The signed document is attached to this email.',
+        'where' => 'You can also find it any time in your seller dashboard under Legal documents.',
+    ],
+
+    'seller_agreement_updated' => [
+        'subject' => 'Seller Agreement update',
+        'header' => 'The Seller Agreement has been updated',
+        'greeting' => 'Hello :name,',
+        'notice_body' => 'A new version takes effect on :date. No action is needed: continuing to use your seller account after that date means you accept it.',
+        'click_wrap_body' => 'A new version needs your acceptance. You will be asked to review and accept it the next time you open your seller dashboard.',
+        'open' => 'Open Legal documents',
+    ],
+
     'vendor_application_received' => [
         'subject'          => 'Your application is under review',
         'title'            => 'Your application is under review',

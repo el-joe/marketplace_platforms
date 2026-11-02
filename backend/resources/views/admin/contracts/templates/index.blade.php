@@ -21,7 +21,7 @@
     @endif
 
     <div class="flex gap-2 text-sm">
-        @foreach ([null => 'filter_all', 'classified' => 'filter_classified', 'product' => 'filter_product'] as $value => $label)
+        @foreach ([null => 'filter_all', 'classified' => 'filter_classified', 'product' => 'filter_product', 'platform' => 'filter_platform'] as $value => $label)
             <a href="{{ route('admin.contracts.templates.index', $value ? ['scope' => $value] : []) }}"
                class="rounded-full px-3 py-1 {{ $scope === $value ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
                 {{ __('admin.contracts.' . $label) }}
@@ -44,11 +44,23 @@
             <tbody class="divide-y divide-gray-100">
                 @forelse ($templates as $template)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 font-medium text-gray-900">{{ $template->name }}</td>
+                        <td class="px-4 py-3 font-medium text-gray-900">
+                            {{ $template->name }}
+                            @if ($template->isFileMode())
+                                <span class="ms-1 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">{{ __('admin.contracts.mode_file_badge') }}</span>
+                                @foreach (['ar', 'en'] as $language)
+                                    @if (isset($template->files[$language]))
+                                        <a href="{{ route('admin.contracts.templates.file', [$template, $language]) }}" target="_blank" class="ms-1 text-[10px] font-semibold uppercase text-primary-600 hover:underline">{{ $language }}</a>
+                                    @endif
+                                @endforeach
+                            @endif
+                        </td>
                         <td class="px-4 py-3">{{ __('admin.contracts.scope_' . $template->category_scope) }}</td>
                         <td class="px-4 py-3 text-center">v{{ $template->version }}</td>
                         <td class="px-4 py-3 text-center">
-                            @if ($template->is_published)
+                            @if ($template->isScheduled())
+                                <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{{ __('admin.contracts.status_scheduled', ['date' => $template->effective_at->format('d/m/Y')]) }}</span>
+                            @elseif ($template->is_published)
                                 <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">{{ __('admin.contracts.status_published') }}</span>
                             @elseif ($template->is_active)
                                 <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">{{ __('admin.contracts.status_draft') }}</span>

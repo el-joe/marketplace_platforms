@@ -15,7 +15,14 @@
         </div>
         <button type="button" onclick="window.print()" class="rounded bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{{ __('partner.contracts.print') }}</button>
     </div>
-    <div dir="{{ $contract->language_signed === 'ar' ? 'rtl' : 'ltr' }}" class="whitespace-pre-line text-sm leading-relaxed text-gray-800">{!! $contract->rendered_content !!}</div>
+    @if ($contract->hasSignedFile())
+        <div class="flex items-center justify-between gap-3 rounded-lg border bg-gray-50 p-4 text-sm text-gray-700">
+            <span>{{ $contract->signed_file_name }}</span>
+            <a href="{{ route('partner.legal.signed-file', $contract) }}" class="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700">{{ __('partner.legal.download_signed_copy') }}</a>
+        </div>
+    @else
+        <div dir="{{ $contract->language_signed === 'ar' ? 'rtl' : 'ltr' }}" class="whitespace-pre-line text-sm leading-relaxed text-gray-800">{!! $contract->rendered_content !!}</div>
+    @endif
     <p class="border-t pt-3 text-xs text-gray-500">{{ __('partner.contracts.signed_by', ['name' => $contract->signer_name, 'ip' => $contract->signed_ip ?? '—']) }}</p>
 </div>
 @endsection

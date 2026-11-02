@@ -75,6 +75,7 @@
 
         {{-- Contracts: category agreements for classified and product vendors --}}
         <x-partner-nav-group :label="__('partner.contracts.nav_group')">
+            <x-partner-nav-item route="partner.legal.index" icon="document-text" :label="__('partner.legal.nav')" />
             <x-partner-nav-item route="partner.contracts.pending" icon="pencil-square" :label="__('partner.contracts.nav_pending')" />
             <x-partner-nav-item route="partner.contracts.history" icon="archive-box" :label="__('partner.contracts.nav_history')" />
         </x-partner-nav-group>

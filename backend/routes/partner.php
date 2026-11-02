@@ -21,6 +21,7 @@ use App\Http\Controllers\Partner\FinanceController;
 use App\Http\Controllers\Partner\FlashSaleController;
 use App\Http\Controllers\Partner\FulfillmentController;
 use App\Http\Controllers\Partner\InventoryController;
+use App\Http\Controllers\Partner\LegalDocumentController;
 use App\Http\Controllers\Partner\ListingController;
 use App\Http\Controllers\Partner\MarketerCampaignController;
 use App\Http\Controllers\Partner\OrderController;
@@ -97,7 +98,7 @@ Route::post('/locale/switch', function (Request $request) {
 Broadcast::routes(['middleware' => ['web', 'vendor.auth'], 'guard' => 'vendor']);
 
 // ── Protected panel ──────────────────────────────────────────────────────
-Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
+Route::middleware(['vendor.auth', 'vendor.active', 'vendor.agreement.enforce'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ── Notifications ───────────────────────────────────────────────────────────
@@ -543,6 +544,15 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
             Route::get('/', [ClassifiedListingController::class, 'contractShow'])->name('show');
             Route::post('/', [ClassifiedListingController::class, 'contractAccept'])->name('accept');
         });
+    });
+
+    // Legal documents: the Seller Agreement in force, signed copies, and the click-wrap gate for new versions
+    Route::prefix('legal')->name('legal.')->controller(LegalDocumentController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('agreement', 'agreement')->name('agreement');
+        Route::post('agreement', 'accept')->name('agreement.accept');
+        Route::get('templates/{template}/{language}', 'templateFile')->whereIn('language', ['ar', 'en'])->name('template-file');
+        Route::get('signed/{contract}/file', 'signedFile')->name('signed-file');
     });
 
     // Category-level contracts (one acceptance per template version, see CategoryContractService)

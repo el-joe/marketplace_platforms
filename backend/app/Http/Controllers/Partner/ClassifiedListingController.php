@@ -197,7 +197,7 @@ class ClassifiedListingController extends Controller
         $category->setAttribute('contract_pending', $template !== null);
         $category->setAttribute(
             'contract_template_content',
-            $template ? $contracts->renderContent($template->content_ar, $contracts->variablesFor($vendor, $category, $template)) : null,
+            $template ? $contracts->present($template, $vendor, $category)['content_ar'] : null,
         );
         $category->unsetRelation('contractTemplate');
     }
@@ -452,10 +452,21 @@ class ClassifiedListingController extends Controller
 
         $template = $listing->classifiedCategory?->contractTemplate;
 
+        $contracts = app(CategoryContractService::class);
+        $text = $template?->content ?? '';
+        $files = [];
+
+        if ($template?->isFileMode()) {
+            $files = $contracts->fileLinks($template);
+            $text = $contracts->fileHtml($files, app()->getLocale());
+        }
+
         return response()->json([
             'data' => [
-                'text' => $template?->content ?? '',
+                'text' => $text,
                 'version' => $template?->version ?? null,
+                'content_mode' => $template?->content_mode,
+                'files' => $files,
             ],
         ]);
     }

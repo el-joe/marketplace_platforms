@@ -15,6 +15,7 @@
                 <option value="">{{ __('admin.contracts.filter_all') }}</option>
                 <option value="classified" @selected($scope === 'classified')>{{ __('admin.contracts.scope_classified') }}</option>
                 <option value="product" @selected($scope === 'product')>{{ __('admin.contracts.scope_product') }}</option>
+                <option value="platform" @selected($scope === 'platform')>{{ __('admin.contracts.scope_platform') }}</option>
             </select>
         </div>
         <div>
@@ -46,6 +47,8 @@
                     <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_signed_by') }}</th>
                     <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_signed_at') }}</th>
                     <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_status') }}</th>
+                    <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_method') }}</th>
+                    <th class="px-4 py-3"></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -61,9 +64,11 @@
                         <td class="px-4 py-3">{{ $contract->signer_name }}</td>
                         <td class="px-4 py-3">{{ $contract->signed_at?->format('d/m/Y H:i') }}</td>
                         <td class="px-4 py-3">{{ __('admin.contracts.sig_' . $contract->status) }}</td>
+                        <td class="px-4 py-3">{{ __('admin.contracts.method_' . $contract->acceptance_method) }}</td>
+                        <td class="px-4 py-3 text-end">@if ($contract->hasSignedFile())<a href="{{ route('admin.contracts.signatures.download', $contract) }}" class="text-xs font-medium text-emerald-700 hover:underline">{{ __('admin.contracts.download_signed') }}</a>@endif</td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="px-4 py-10 text-center text-gray-400">{{ __('admin.contracts.no_signatures') }}</td></tr>
+                    <tr><td colspan="11" class="px-4 py-10 text-center text-gray-400">{{ __('admin.contracts.no_signatures') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

@@ -19,7 +19,6 @@
         </div>
     </div>
 
-    <div x-show="lang === 'en'" dir="ltr" class="whitespace-pre-line text-sm leading-relaxed text-gray-800">{!! $resolvedEn !!}</div>
-    <div x-show="lang === 'ar'" x-cloak dir="rtl" class="whitespace-pre-line text-sm leading-relaxed text-gray-800">{!! $resolvedAr !!}</div>
+    @include('partner.contracts.partials.document', ['doc' => $doc, 'height' => 'h-[32rem]'])
 </div>
 @endsection

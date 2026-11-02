@@ -61,6 +61,9 @@ return [
     ],
 
     'vendor' => [
+        'agreement_updated_title' => 'Seller Agreement updated',
+        'agreement_notice_message' => 'Version :version of the Seller Agreement takes effect on :date. No action is needed.',
+        'agreement_accept_message' => 'Version :version of the Seller Agreement needs your acceptance.',
         'contract_updated_title' => 'Contract Updated — Action Required',
         'contract_updated_message' => 'The contract ":name" has been updated to version :version. Please review and re-accept.',
     ],

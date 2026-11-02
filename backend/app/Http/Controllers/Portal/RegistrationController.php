@@ -11,10 +11,13 @@ use App\Models\City;
 use App\Models\Country;
 use App\Models\Vendor;
 use App\Models\VendorAdmin;
+use App\Models\VendorContract;
 use App\Models\VendorDocument;
 use App\Models\VendorDocumentType;
 use App\Notifications\Admin\NewVendorApplicationSubmitted;
 use App\Services\ActivityLoggerService;
+use App\Services\Vendor\CategoryContractService;
+use App\Services\Vendor\SellerAgreementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +32,11 @@ use Illuminate\View\View;
 
 class RegistrationController extends Controller
 {
+    public function __construct(
+        private readonly SellerAgreementService $agreements,
+        private readonly CategoryContractService $contracts,
+    ) {}
+
     // ── Step validation rule sets ─────────────────────────────────────────
 
     private function stepRules(int $step): array
@@ -98,7 +106,10 @@ class RegistrationController extends Controller
         $currentStep = session('reg_data.current_step', 1);
         $savedData = session('reg_data', []);
 
-        return view('portal.register', compact('countries', 'currentStep', 'savedData'));
+        $agreement = $this->agreements->latestPublished();
+        $agreementDoc = $agreement ? $this->contracts->presentPublic($agreement) : null;
+
+        return view('portal.register', compact('countries', 'currentStep', 'savedData', 'agreement', 'agreementDoc'));
     }
 
     /**
@@ -255,12 +266,25 @@ class RegistrationController extends Controller
      */
     public function complete(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $agreement = $this->agreements->latestPublished();
+
+        $rules = [
             'terms_agreed' => 'required|accepted',
             'privacy_agreed' => 'required|accepted',
-        ], [
+        ];
+
+        if ($agreement) {
+            $rules['signature_name'] = 'required|string|min:3|max:150';
+            $rules['agreement_language'] = 'required|in:ar,en';
+            $rules['agreement_template_id'] = ['required', 'in:'.$agreement->id];
+        }
+
+        $validator = Validator::make($request->all(), $rules, [
             'terms_agreed.accepted' => __('portal.registration.terms_agreed_accepted'),
             'privacy_agreed.accepted' => __('portal.registration.privacy_agreed_accepted'),
+            'signature_name.required' => __('portal.registration.signature_name_required'),
+            'signature_name.min' => __('portal.registration.signature_name_required'),
+            'agreement_template_id.in' => __('portal.registration.agreement_changed'),
         ]);
 
         if ($validator->fails()) {
@@ -314,8 +338,10 @@ class RegistrationController extends Controller
         // Build the set of acceptable doc codes for this country (mandatory + optional)
         $acceptableCodes = $requiredDocs->pluck('type.code')->flip()->all();
 
+        $signedContract = null;
+
         // try {
-        DB::transaction(function () use ($step1, $step2, $step3, $docs, $docExpiries, $acceptableCodes) {
+        DB::transaction(function () use ($request, $agreement, &$signedContract, $step1, $step2, $step3, $docs, $docExpiries, $acceptableCodes) {
             // ① Create Vendor
             $vendor = Vendor::create([
                 'name' => $step1['name'],
@@ -360,7 +386,7 @@ class RegistrationController extends Controller
             $vendor->update(['business_address_id' => $address->id]);
 
             // ④ Create VendorAdmin (owner)
-            VendorAdmin::create([
+            $owner = VendorAdmin::create([
                 'vendor_id' => $vendor->id,
                 'name' => $step1['name'],
                 'email' => $step1['email'],
@@ -368,6 +394,20 @@ class RegistrationController extends Controller
                 'role' => 'owner',
                 'is_active' => 1,
             ]);
+
+            // ④b Sign the Seller Agreement: typed name + agreement, frozen with IP and time
+            if ($agreement) {
+                $signedContract = $this->agreements->sign(
+                    vendor: $vendor,
+                    signer: $owner,
+                    template: $agreement,
+                    language: (string) $request->input('agreement_language'),
+                    signerName: (string) $request->input('signature_name'),
+                    ipAddress: $request->ip(),
+                    userAgent: $request->userAgent() ?? '',
+                    method: 'registration',
+                );
+            }
 
             // ⑤ Move temp documents → permanent, create VendorDocument records
             // Only process docs that are applicable for this country (skip not_applicable)
@@ -438,6 +478,10 @@ class RegistrationController extends Controller
         });
 
         session()->forget('reg_data');
+
+        if ($signedContract instanceof VendorContract) {
+            $this->agreements->sendSignedCopy($signedContract);
+        }
 
         return response()->json([
             'success' => true,
