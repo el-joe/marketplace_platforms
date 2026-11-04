@@ -62,9 +62,9 @@ class SafeCache
             $value = $this->store()->get($key);
 
             if ($value !== null) {
-                if (!is_array($value)) {
+                if (!is_array($value) && !$value instanceof \Illuminate\Support\Collection) {
                     throw new \UnexpectedValueException(
-                        "Cache key [{$key}] returned a non-array value: " . gettype($value)
+                        "Cache key [{$key}] returned an unexpected value: " . gettype($value)
                     );
                 }
 

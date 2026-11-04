@@ -15,6 +15,18 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'domain' => env('APP_DOMAIN', 'localhost'),
+
+    'subdomains' => [
+        'admin' => env('APP_ADMIN_SUBDOMAIN', 'admin'),
+        'portal' => env('APP_PORTAL_SUBDOMAIN', 'portal'),
+        'partner' => env('APP_PARTNER_SUBDOMAIN', 'partner'),
+        'delivery' => env('APP_DELIVERY_SUBDOMAIN', 'delivery'),
+        'travel' => env('APP_TRAVEL_SUBDOMAIN', 'travel-agency'),
+        'carrier' => env('APP_CARRIER_SUBDOMAIN', 'carrier'),
+        'marketer' => env('APP_MARKETER_SUBDOMAIN', 'marketer'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

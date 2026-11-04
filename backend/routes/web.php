@@ -25,14 +25,14 @@ Route::post('/locale/switch', function (Request $request) {
 | Admin subdomain routes
 |--------------------------------------------------------------------------
 */
-$appDomain = env('APP_DOMAIN', 'localhost');
-$adminDomain = env('APP_ADMIN_SUBDOMAIN', 'admin') . '.' . $appDomain;
-$portalDomain = env('APP_PORTAL_SUBDOMAIN', 'portal') . '.' . $appDomain;
-$partnerDomain = env('APP_PARTNER_SUBDOMAIN', 'partner') . '.' . $appDomain;
-$deliveryDomain = env('APP_DELIVERY_SUBDOMAIN', 'delivery') . '.' . $appDomain;
-$travelDomain = env('APP_TRAVEL_SUBDOMAIN', 'travel-agency') . '.' . $appDomain;
-$carrierDomain = env('APP_CARRIER_SUBDOMAIN', 'carrier') . '.' . $appDomain;
-$marketerDomain = env('APP_MARKETER_SUBDOMAIN', 'marketer') . '.' . $appDomain;
+$appDomain = config('app.domain');
+$adminDomain = config('app.subdomains.admin') . '.' . $appDomain;
+$portalDomain = config('app.subdomains.portal') . '.' . $appDomain;
+$partnerDomain = config('app.subdomains.partner') . '.' . $appDomain;
+$deliveryDomain = config('app.subdomains.delivery') . '.' . $appDomain;
+$travelDomain = config('app.subdomains.travel') . '.' . $appDomain;
+$carrierDomain = config('app.subdomains.carrier') . '.' . $appDomain;
+$marketerDomain = config('app.subdomains.marketer') . '.' . $appDomain;
 
 
 Route::domain($adminDomain)->name('admin.')->group(function () {

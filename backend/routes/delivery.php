@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 // ── Locale switcher (delivery subdomain) ──────────────────────────────────
-Route::domain('delivery.' . env('APP_DOMAIN', 'localhost'))
+Route::domain('delivery.' . config('app.domain'))
     ->middleware('web')
     ->post('/locale/switch', function (\Illuminate\Http\Request $request) {
         $locale = $request->input('locale');
@@ -27,7 +27,7 @@ Route::domain('delivery.' . env('APP_DOMAIN', 'localhost'))
         return back();
     })->name('delivery.locale.switch');
 
-Route::domain('delivery.' . env('APP_DOMAIN', 'localhost'))
+Route::domain('delivery.' . config('app.domain'))
     ->name('delivery.')
     ->group(function () {
 

@@ -11,7 +11,7 @@ class SubdomainDetect
     public function handle(Request $request, Closure $next): Response
     {
         $host = $request->getHost();
-        $baseDomain = config('app.domain', env('APP_DOMAIN', 'localhost'));
+        $baseDomain = config('app.domain');
 
         // Extract subdomain: "portal" from "portal.noon.loc"
         if (str_ends_with($host, '.' . $baseDomain)) {

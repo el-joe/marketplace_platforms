@@ -23,7 +23,7 @@
             <h2 class="text-lg font-semibold text-gray-900">{{ __('docs/features/classifieds.admin_management.heading') }}</h2>
             <ul class="list-disc list-inside text-gray-600 space-y-1">
                 <li><a href="{{ route('admin.classifieds.categories.index') }}" class="text-primary-600 hover:underline">admin/classifieds/categories</a>: {{ __('docs/features/classifieds.admin_management.categories') }}</li>
-                <li><a href="{{ route('admin.classifieds.contract-templates.index') }}" class="text-primary-600 hover:underline">admin/classifieds/contract-templates</a>: {{ __('docs/features/classifieds.admin_management.contract_templates') }}</li>
+                <li><a href="{{ route('admin.contracts.templates.index') }}" class="text-primary-600 hover:underline">admin/classifieds/contract-templates</a>: {{ __('docs/features/classifieds.admin_management.contract_templates') }}</li>
                 <li><a href="{{ route('admin.classifieds.listings.index') }}" class="text-primary-600 hover:underline">admin/classifieds/listings</a>: {{ __('docs/features/classifieds.admin_management.listings') }}</li>
             </ul>
         </section>

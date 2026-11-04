@@ -164,11 +164,17 @@ class AppServiceProvider extends ServiceProvider
         // production only (a dev/test box running without the P-22 index
         // migration, or a cold-cache aggregate, would otherwise spam this).
         if ($this->app->isProduction()) {
-            DB::whenQueryingForLongerThan(500, function ($connection) {
-                Log::warning('Slow query detected (>500ms)', [
-                    'connection' => $connection->getName(),
-                    'query_count' => count($connection->getQueryLog()),
-                ]);
+            // whenQueryingForLongerThan() sums time across the whole request and
+            // exposes no SQL, so listen per query to log the actual offender.
+            DB::listen(function ($query) {
+                if ($query->time > 500) {
+                    Log::warning('Slow query detected (>500ms)', [
+                        'connection' => $query->connectionName,
+                        'time_ms' => round($query->time, 1),
+                        'sql' => $query->sql,
+                        'url' => request()?->fullUrl(),
+                    ]);
+                }
             });
         }
 
