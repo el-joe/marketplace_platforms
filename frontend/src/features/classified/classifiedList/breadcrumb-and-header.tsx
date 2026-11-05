@@ -1,33 +1,28 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronRight, ChevronLeft } from "lucide-react";
-import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import useLocale from "@/src/hooks/use-locale";
 import { Breadcrumb } from "@/src/components/ui/breadcrumb";
 import { Select } from "@/src/components/ui/base-inputs/select";
-import { IClassifiedCategoriesList } from "./helpers/types";
-import getSelectedCategoryTree from "./helpers/get-selected-categories-tree";
+import { IClassifiedCategoryRef } from "./helpers/types";
 
 interface BreadcrumbAndHeaderProps {
   totalCount: number;
   onSortChange?: (sort: string) => void;
-  selectedCtg: string | null;
-  categories: IClassifiedCategoriesList[];
+  /** Section > sub-category trail of the resolved category (empty on the landing page). */
+  trail: IClassifiedCategoryRef[];
 }
 
 export default function BreadcrumbAndHeader({
   totalCount = 0,
   onSortChange,
-  selectedCtg,
-  categories,
+  trail: categoryTree,
 }: BreadcrumbAndHeaderProps) {
   const t = useTranslations("classified");
   const locale = useLocale();
   const [selectedSort, setSelectedSort] = useState("relevant");
 
-  const categoryTree = getSelectedCategoryTree(selectedCtg, categories);
   const SORT_OPTIONS = [
     { value: "relevant", label: t("sortRelevant") },
     { value: "newest", label: t("sortNewest") },
@@ -43,8 +38,8 @@ export default function BreadcrumbAndHeader({
           { label: t("home"), href: "/" },
           { label: t("classifieds"), href: "/classified" },
           ...categoryTree.map((cat) => ({
-            label: cat?.name[locale] as string,
-            href: `/classified/${cat?.id as string}`,
+            label: cat.name[locale],
+            href: `/classified/${cat.slug}`,
           })),
         ]}
       />

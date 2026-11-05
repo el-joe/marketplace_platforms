@@ -67,7 +67,7 @@ function initInviteModal() {
                 return;
             }
 
-            toast(data.message);
+            toast(data.message, !data.warning);
             form.reset();
             // Close modal via Alpine (dispatch a custom event)
             document.dispatchEvent(new CustomEvent('close-invite-modal'));

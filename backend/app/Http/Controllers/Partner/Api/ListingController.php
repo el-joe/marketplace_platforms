@@ -10,6 +10,7 @@ use App\Models\InventoryMovement;
 use App\Models\VendorListing;
 use App\Models\WarehouseInventory;
 use App\Services\ListingCertificationGate;
+use App\Services\ListingContractGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -75,6 +76,8 @@ class ListingController extends Controller
             } catch (ValidationException) {
                 return response()->json(['success' => false, 'message' => 'Listing requires a valid local certification before activation.'], 422);
             }
+
+            ListingContractGate::assertCanGoLive($listing);
         }
 
         $newStatus = $listing->status === VendorListingStatus::Active ? VendorListingStatus::Paused : VendorListingStatus::Active;

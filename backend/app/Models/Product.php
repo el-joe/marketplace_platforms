@@ -37,6 +37,8 @@ class Product extends Model
         'is_age_restricted',
         'min_age',
         'is_hazardous',
+        'contract_requirement',
+        'contract_template_id',
         'has_variants',
         'has_custom_attributes',
         'size_guide_image',
@@ -69,6 +71,41 @@ class Product extends Model
         'published_at' => 'datetime',
         'status' => ProductStatus::class,
     ];
+
+    public const CONTRACT_INHERIT = 'inherit';
+
+    public const CONTRACT_REQUIRED = 'required';
+
+    public const CONTRACT_EXEMPT = 'exempt';
+
+    /**
+     * @return list<string>
+     */
+    public static function contractRequirements(): array
+    {
+        return [self::CONTRACT_INHERIT, self::CONTRACT_REQUIRED, self::CONTRACT_EXEMPT];
+    }
+
+    /**
+     * inherit (also NULL) follows the category switch, required always needs an individual contract,
+     * exempt is covered by the global agreement even when its category requires one.
+     */
+    public function contractRequirementValue(): string
+    {
+        return in_array($this->contract_requirement, [self::CONTRACT_REQUIRED, self::CONTRACT_EXEMPT], true)
+            ? $this->contract_requirement
+            : self::CONTRACT_INHERIT;
+    }
+
+    public function contractTemplate(): BelongsTo
+    {
+        return $this->belongsTo(ClassifiedContractTemplate::class, 'contract_template_id');
+    }
+
+    public function contractAssignments(): HasMany
+    {
+        return $this->hasMany(ContractCountryAssignment::class, 'product_id');
+    }
 
     protected static function booted(): void
     {

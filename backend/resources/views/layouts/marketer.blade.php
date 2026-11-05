@@ -197,6 +197,13 @@
                           class="ms-auto bg-red-500 text-white text-xs rounded-full min-w-5 h-5 px-1 items-center justify-center {{ ($unreadMessages ?? 0) > 0 ? 'flex' : 'hidden' }}">{{ $unreadMessages ?? 0 }}</span>
                 </a>
 
+                <a href="{{ route('marketer.contracts.index') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                          {{ request()->routeIs('marketer.contracts.*', 'marketer.contract.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    {{ __('contracts.marketer.my_contracts') }}
+                </a>
+
                 <a href="{{ route('marketer.exclusive-contracts.index') }}"
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                           {{ request()->routeIs('marketer.exclusive-contracts.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">

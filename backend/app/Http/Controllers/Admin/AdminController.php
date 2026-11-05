@@ -10,6 +10,8 @@ use App\Models\Admin;
 use App\Models\AdminLoginSession;
 use App\Models\Country;
 use App\Services\ActivityLoggerService;
+use App\Services\Auth\CredentialDeliveryService;
+use App\Support\PortalPermissions;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -27,9 +29,10 @@ class AdminController extends Controller
 {
     use HasDataTable;
 
-    public function __construct(private readonly ActivityLoggerService $activityLogger)
-    {
-    }
+    public function __construct(
+        private readonly ActivityLoggerService $activityLogger,
+        private readonly CredentialDeliveryService $credentials,
+    ) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Index
@@ -76,20 +79,21 @@ class AdminController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('admins.status', $v),
-            'role' => fn($q, $v) => $q->role($v, 'admin'),
-            'country_id' => fn($q, $v) => $q->where('admins.country_id', $v),
+            'status' => fn ($q, $v) => $q->where('admins.status', $v),
+            'role' => fn ($q, $v) => $q->role($v, 'admin'),
+            'country_id' => fn ($q, $v) => $q->where('admins.country_id', $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) use ($authAdmin) {
             $isSelf = $row->id === $authAdmin->id;
             $isSuperAdmin = $row->hasRole('super_admin');
-            $canImpersonate = !$isSelf
-                && !$isSuperAdmin
+            $canImpersonate = ! $isSelf
+                && ! $isSuperAdmin
                 && $authAdmin->hasPermissionTo('admins.impersonate');
-            $canDelete = !$isSelf
+            $canResend = $authAdmin->hasPermissionTo('admins.edit');
+            $canDelete = ! $isSelf
                 && $authAdmin->hasPermissionTo('admins.delete')
-                && (!$isSuperAdmin || Admin::role('super_admin', 'admin')->count() > 1);
+                && (! $isSuperAdmin || Admin::role('super_admin', 'admin')->count() > 1);
 
             return [
                 'id' => $row->id,
@@ -106,6 +110,8 @@ class AdminController extends Controller
                 'can_delete' => $canDelete,
                 'edit_url' => route('admin.admins.edit', $row->id),
                 'reset_pwd_url' => route('admin.admins.reset-password', $row->id),
+                'resend_credentials_url' => route('admin.admins.resend-credentials', $row->id),
+                'can_resend_credentials' => $canResend,
                 'sessions_url' => route('admin.admins.login-sessions', $row->id),
                 'impersonate_url' => $canImpersonate ? route('admin.admins.impersonate', $row->id) : null,
                 'toggle_url' => route('admin.admins.toggle-status', $row->id),
@@ -138,8 +144,6 @@ class AdminController extends Controller
             return response()->json(['message' => __('admin.admins_section.forbidden')], 403);
         }
 
-        $password = Str::password(12);
-
         DB::beginTransaction();
         try {
             $admin = Admin::create([
@@ -149,7 +153,8 @@ class AdminController extends Controller
                 'phone' => $request->phone,
                 'country_id' => $request->country_id,
                 'status' => $request->status,
-                'password' => Hash::make($password),
+                // Unusable until the person sets their own through the emailed link.
+                'password' => Hash::make(Str::password(32)),
             ]);
 
             $admin->syncRoles($request->roles);
@@ -160,11 +165,12 @@ class AdminController extends Controller
             return response()->json(['message' => __('admin.admins_section.create_failed')], 500);
         }
 
+        $delivery = $this->credentials->sendSetPasswordLink($admin, 'admins', 'admin_created', 'admin_welcome');
+
         return response()->json([
             'success' => true,
-            'generated_password' => $password,
             'redirect' => route('admin.admins.edit', $admin->id),
-        ]);
+        ] + $delivery->toResponseFields());
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -183,6 +189,10 @@ class AdminController extends Controller
             'allRoles' => Role::where('guard_name', 'admin')->with('permissions')->orderBy('name')->get(),
             'countries' => Country::orderBy('name_en')->get(['id', 'name_en']),
             'vendorsAssignedOnly' => $admin->hasDirectPermission('vendors.assigned_only'),
+            'directPortalPermissions' => array_values(array_intersect(
+                PortalPermissions::directlyAssignable(),
+                $admin->permissions()->pluck('name')->all(),
+            )),
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.admins_section.administrators'), 'url' => route('admin.admins.index')],
@@ -230,33 +240,71 @@ class AdminController extends Controller
     }
 
     /**
-     * Syncs the small whitelist of directly-assignable (non-role) permissions.
-     * The UI can only ever grant permissions on this whitelist — never system
-     * permissions, and never for a super_admin (it's a restriction, not a grant).
+     * Syncs the small whitelist of directly-assignable (non-role) permissions:
+     * `vendors.assigned_only` (a restriction) and the portal content permissions (an optional
+     * per-employee grant on top of roles, same spatie tables). The UI can only ever grant
+     * permissions on this whitelist and never for a super_admin. Direct permissions outside the
+     * whitelist are left untouched.
      */
     private function syncDirectPermissions(Admin $admin, UpdateAdminRequest $request): void
     {
-        $whitelist = ['vendors.assigned_only'];
+        $isSuperAdmin = $admin->hasRole('super_admin');
 
-        $requested = collect($whitelist)
-            ->filter(fn ($p) => $request->boolean('vendors_assigned_only') && $p === 'vendors.assigned_only')
-            ->values()
-            ->all();
+        $wantsAssignedOnly = ! $isSuperAdmin && $request->boolean('vendors_assigned_only');
+        $hadPermission = $admin->permissions()->where('name', 'vendors.assigned_only')->exists();
 
-        if ($admin->hasRole('super_admin')) {
-            $requested = [];
+        if ($wantsAssignedOnly) {
+            $admin->givePermissionTo('vendors.assigned_only');
+        } elseif ($hadPermission) {
+            $admin->revokePermissionTo('vendors.assigned_only');
         }
 
-        $hadPermission = $admin->hasDirectPermission('vendors.assigned_only');
-        $willHavePermission = in_array('vendors.assigned_only', $requested, true);
-
-        $admin->syncPermissions($requested);
-
-        if ($hadPermission !== $willHavePermission) {
+        if ($hadPermission !== $wantsAssignedOnly) {
             $this->activityLogger->log(
-                description: 'vendors.assigned_only ' . ($willHavePermission ? 'granted' : 'revoked'),
+                description: 'vendors.assigned_only '.($wantsAssignedOnly ? 'granted' : 'revoked'),
                 subject: $admin,
                 causer: auth('admin')->user(),
+                logName: 'admin_permissions',
+                event: 'admin_permission_changed',
+            );
+        }
+
+        $this->syncPortalPermissions($admin, $request, $isSuperAdmin);
+    }
+
+    /**
+     * Only runs when the staff form submitted the portal section (marker field), so API callers and older
+     * pages that do not send it never revoke anything.
+     */
+    private function syncPortalPermissions(Admin $admin, UpdateAdminRequest $request, bool $isSuperAdmin): void
+    {
+        if ($isSuperAdmin || ! $request->boolean('portal_permissions_present')) {
+            return;
+        }
+
+        PortalPermissions::ensureExist();
+
+        $assignable = PortalPermissions::directlyAssignable();
+        $requested = array_values(array_intersect($assignable, (array) $request->input('portal_permissions', [])));
+        $before = array_values(array_intersect($assignable, $admin->permissions()->pluck('name')->all()));
+
+        foreach ($assignable as $permission) {
+            if (in_array($permission, $requested, true)) {
+                $admin->givePermissionTo($permission);
+            } elseif (in_array($permission, $before, true)) {
+                $admin->revokePermissionTo($permission);
+            }
+        }
+
+        $granted = array_values(array_diff($requested, $before));
+        $revoked = array_values(array_diff($before, $requested));
+
+        if ($granted || $revoked) {
+            $this->activityLogger->log(
+                description: __('admin.portal_permissions.staff_direct_log'),
+                subject: $admin,
+                causer: auth('admin')->user(),
+                properties: ['granted' => $granted, 'revoked' => $revoked],
                 logName: 'admin_permissions',
                 event: 'admin_permission_changed',
             );
@@ -321,16 +369,37 @@ class AdminController extends Controller
             return response()->json(['message' => __('admin.admins_section.forbidden')], 403);
         }
 
-        $password = Str::password(12);
-        $admin->update(['password' => Hash::make($password)]);
+        return $this->deliverCredentials($admin, 'admin_password_reset', 'admin_reset', 'admin.admins_section.password_reset_email_sent');
+    }
 
-        // In production: dispatch AdminWelcomeEmailJob or a password reset email
-        // Intentionally NOT returning the raw password in the response
+    // ─────────────────────────────────────────────────────────────────────────
+    // Resend credentials (welcome email with a fresh set-password link)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function resendCredentials(Admin $admin): JsonResponse
+    {
+        return $this->deliverCredentials($admin, 'admin_credentials_resent', 'admin_welcome', 'admin.admins_section.credentials_resent');
+    }
+
+    /**
+     * Email a fresh single-use set-password link. The current password is left untouched
+     * until the person actually chooses a new one.
+     */
+    private function deliverCredentials(Admin $admin, string $flow, string $kind, string $successKey): JsonResponse
+    {
+        $delivery = $this->credentials->sendSetPasswordLink($admin, 'admins', $flow, $kind);
+
+        if (! $delivery->sent) {
+            return response()->json([
+                'success' => false,
+                'message' => $delivery->warning(),
+            ] + $delivery->toResponseFields(), 502);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => __('admin.admins_section.password_reset_email_sent'),
-        ]);
+            'message' => $delivery->warning() ?? __($successKey, ['email' => $admin->email]),
+        ] + $delivery->toResponseFields());
     }
 
     // ─────────────────────────────────────────────────────────────────────────

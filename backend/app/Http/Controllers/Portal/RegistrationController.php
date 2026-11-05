@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
+use App\Enums\RegistrationFlow;
 use App\Mail\NewVendorApplicationAdminMail;
 use App\Mail\VendorApplicationReceivedMail;
 use App\Models\Address;
@@ -16,7 +17,10 @@ use App\Models\VendorDocument;
 use App\Models\VendorDocumentType;
 use App\Notifications\Admin\NewVendorApplicationSubmitted;
 use App\Services\ActivityLoggerService;
+use App\Services\PortalAnalytics\PortalTracker;
 use App\Services\Vendor\CategoryContractService;
+use App\Exceptions\ContractNotConfiguredException;
+use App\Services\Vendor\ContractResolver;
 use App\Services\Vendor\SellerAgreementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,6 +39,8 @@ class RegistrationController extends Controller
     public function __construct(
         private readonly SellerAgreementService $agreements,
         private readonly CategoryContractService $contracts,
+        private readonly ContractResolver $resolver,
+        private readonly PortalTracker $tracker,
     ) {}
 
     // ── Step validation rule sets ─────────────────────────────────────────
@@ -106,10 +112,33 @@ class RegistrationController extends Controller
         $currentStep = session('reg_data.current_step', 1);
         $savedData = session('reg_data', []);
 
-        $agreement = $this->agreements->latestPublished();
-        $agreementDoc = $agreement ? $this->contracts->presentPublic($agreement) : null;
+        // Carry the portal country chosen earlier into the country field, unless
+        // the applicant already saved a different one.
+        $portalCountryId = $countries->firstWhere('site_code', Country::resolveSiteCode(null))?->id;
+        if ($portalCountryId && empty($savedData['step1']['country_id'])) {
+            $savedData['step1']['country_id'] = $portalCountryId;
+        }
 
-        return view('portal.register', compact('countries', 'currentStep', 'savedData', 'agreement', 'agreementDoc'));
+        $this->tracker->stepReached(RegistrationFlow::Vendor, max(1, (int) $currentStep));
+
+        // The Seller Agreement depends on the seller's country (chosen in step 1), so every country's agreement is
+        // prepared here and step 5 shows the one for the selected country. Countries without one are mapped to null.
+        $agreementByCountry = [];
+        $agreementDocs = [];
+
+        foreach ($countries as $country) {
+            $template = $this->agreements->latestPublished($country->id);
+            $agreementByCountry[$country->id] = $template?->id;
+
+            if ($template && ! isset($agreementDocs[$template->id])) {
+                $agreementDocs[$template->id] = ['template' => $template, 'doc' => $this->contracts->presentPublic($template)];
+            }
+        }
+
+        $agreementEnforced = $this->resolver->anyPlatformAgreementPublished();
+        $agreementNotConfiguredMessage = __('contracts.api.not_configured', ['country' => ':country']);
+
+        return view('portal.register', compact('countries', 'currentStep', 'savedData', 'agreementByCountry', 'agreementDocs', 'agreementEnforced', 'agreementNotConfiguredMessage'));
     }
 
     /**
@@ -136,6 +165,8 @@ class RegistrationController extends Controller
         );
 
         if ($validator->fails()) {
+            $this->tracker->stepFailed(RegistrationFlow::Vendor, $step);
+
             return response()->json([
                 'success' => false,
                 'errors' => $validator->errors(),
@@ -144,6 +175,7 @@ class RegistrationController extends Controller
 
         session(["reg_data.step{$step}" => $validator->validated()]);
         session(['reg_data.current_step' => $step + 1]);
+        $this->tracker->stepCompleted(RegistrationFlow::Vendor, $step);
 
         return response()->json([
             'success' => true,
@@ -229,6 +261,10 @@ class RegistrationController extends Controller
 
         session(["reg_data.documents.{$type}" => $path]);
 
+        if (RegistrationFlow::Vendor->sessionReached(4)) {
+            $this->tracker->stepReached(RegistrationFlow::Vendor, 4);
+        }
+
         return response()->json([
             'success' => true,
             'path' => $path,
@@ -266,7 +302,21 @@ class RegistrationController extends Controller
      */
     public function complete(Request $request): JsonResponse
     {
-        $agreement = $this->agreements->latestPublished();
+        // The agreement is the one of the country chosen in step 1, decided here and never taken from the client.
+        $country = ($countryId = session('reg_data.step1.country_id')) ? Country::find($countryId) : null;
+        $agreement = $this->agreements->latestPublished($country?->id);
+
+        if (! $agreement && $this->resolver->anyPlatformAgreementPublished()) {
+            $this->tracker->stepFailed(RegistrationFlow::Vendor, 5);
+            $notConfigured = ContractNotConfiguredException::forCountry($country);
+
+            return response()->json([
+                'success' => false,
+                'code' => ContractNotConfiguredException::CODE,
+                'message' => $notConfigured->getMessage(),
+                'errors' => $notConfigured->errors(),
+            ], 422);
+        }
 
         $rules = [
             'terms_agreed' => 'required|accepted',
@@ -288,6 +338,8 @@ class RegistrationController extends Controller
         ]);
 
         if ($validator->fails()) {
+            $this->tracker->stepFailed(RegistrationFlow::Vendor, 5);
+
             return response()->json([
                 'success' => false,
                 'errors' => $validator->errors(),
@@ -302,6 +354,8 @@ class RegistrationController extends Controller
 
         // Guard: all steps must be present
         if (empty($step1['email']) || empty($step2['store_name']) || empty($step3['street_address'])) {
+            $this->tracker->stepFailed(RegistrationFlow::Vendor, 5);
+
             return response()->json([
                 'success' => false,
                 'message' => __('portal.registration.incomplete_data'),
@@ -311,6 +365,8 @@ class RegistrationController extends Controller
         // Validate required documents against country's document requirements
         $country = Country::find($step1['country_id'] ?? null);
         if (! $country) {
+            $this->tracker->stepFailed(RegistrationFlow::Vendor, 5);
+
             return response()->json([
                 'success' => false,
                 'message' => __('portal.registration.invalid_country'),
@@ -327,6 +383,8 @@ class RegistrationController extends Controller
         }
 
         if (! empty($mandatoryMissing)) {
+            $this->tracker->stepFailed(RegistrationFlow::Vendor, 5);
+
             return response()->json([
                 'success' => false,
                 'errors' => [
@@ -339,9 +397,11 @@ class RegistrationController extends Controller
         $acceptableCodes = $requiredDocs->pluck('type.code')->flip()->all();
 
         $signedContract = null;
+        $confirmationEmailFailed = false;
+        $createdVendor = null;
 
         // try {
-        DB::transaction(function () use ($request, $agreement, &$signedContract, $step1, $step2, $step3, $docs, $docExpiries, $acceptableCodes) {
+        DB::transaction(function () use ($request, $agreement, &$signedContract, &$confirmationEmailFailed, &$createdVendor, $step1, $step2, $step3, $docs, $docExpiries, $acceptableCodes) {
             // ① Create Vendor
             $vendor = Vendor::create([
                 'name' => $step1['name'],
@@ -363,6 +423,7 @@ class RegistrationController extends Controller
                 'global_status' => 'pending',
                 // 'approved_at' => 0,
             ]);
+            $createdVendor = $vendor;
 
             // ② Create billing address (polymorphic)
             $address = Address::create([
@@ -442,11 +503,19 @@ class RegistrationController extends Controller
                 ]);
             }
 
-            // ⑥ Welcome email (non-blocking)
+            // ⑥ Confirmation email: the application is already saved, so a mail failure must not
+            // lose it, but it is logged with context and shown to the applicant on the success page.
             try {
                 Mail::to($vendor->email)->send(new VendorApplicationReceivedMail($vendor));
             } catch (\Throwable $e) {
-                Log::warning('VendorApplicationReceivedMail failed: '.$e->getMessage());
+                $confirmationEmailFailed = true;
+                Log::error('Credential email failed', [
+                    'flow' => 'vendor_application_received',
+                    'recipient' => $vendor->email,
+                    'mailer' => config('mail.default'),
+                    'exception' => $e::class,
+                    'error' => $e->getMessage(),
+                ]);
             }
 
             // ⑧ Notify admins of new application (in-app + email)
@@ -459,7 +528,12 @@ class RegistrationController extends Controller
                     Mail::to($admin->email)->queue(new NewVendorApplicationAdminMail($vendor));
                 }
             } catch (\Throwable $e) {
-                Log::warning('Admin vendor application notification/email failed: '.$e->getMessage());
+                Log::error('Admin vendor application notification/email failed', [
+                    'flow' => 'vendor_application_admin_notice',
+                    'vendor_id' => $vendor->id,
+                    'exception' => $e::class,
+                    'error' => $e->getMessage(),
+                ]);
             }
 
             // ⑦ Activity log (non-blocking)
@@ -478,6 +552,14 @@ class RegistrationController extends Controller
         });
 
         session()->forget('reg_data');
+
+        if ($createdVendor instanceof Vendor) {
+            $this->tracker->registrationCompleted(RegistrationFlow::Vendor, $createdVendor);
+        }
+
+        if ($confirmationEmailFailed) {
+            session()->flash('registration_email_failed', true);
+        }
 
         if ($signedContract instanceof VendorContract) {
             $this->agreements->sendSignedCopy($signedContract);

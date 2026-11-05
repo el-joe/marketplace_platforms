@@ -12,7 +12,11 @@ import {
   getClassifiedMapPinsService,
   MapPin,
 } from "./api/get";
-import { IClassifiedsList, IClassifiedCategoriesList } from "./helpers/types";
+import {
+  IClassifiedCategoriesList,
+  IClassifiedCategoryRef,
+  IClassifiedsList,
+} from "./helpers/types";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Loader2Icon } from "lucide-react";
@@ -24,7 +28,7 @@ interface ClassifiedsPageClientProps {
   data: IClassifiedsList | null;
   classifiedCategories: IClassifiedCategoriesList[];
   categoryId?: string;
-  selectedCategory: IClassifiedCategoriesList | null;
+  selectedCategory: IClassifiedCategoryRef | null;
 }
 
 export default function ClassifiedsPageClient({
@@ -150,13 +154,23 @@ export default function ClassifiedsPageClient({
           <main className="flex-1 w-full min-w-0">
             <ActiveFiltersBar selectedCtg={selectedCategory || null} />
             {total === 0 && (
-              <Image
-                src="/images/no_products.jpg"
-                alt={t("noProductsFound")}
-                width={400}
-                height={400}
-                className="mx-auto mt-10"
-              />
+              <div className="py-6 text-center">
+                <Image
+                  src="/images/no_products.jpg"
+                  alt={t("noProductsFound")}
+                  width={400}
+                  height={400}
+                  className="mx-auto"
+                />
+                {categoryId && (
+                  <>
+                    <p className="font-semibold">{t("noAdsInCategory")}</p>
+                    <p className="text-sm text-gray-500">
+                      {t("noAdsInCategoryHint")}
+                    </p>
+                  </>
+                )}
+              </div>
             )}
             {listings.map((listing) => (
               <div

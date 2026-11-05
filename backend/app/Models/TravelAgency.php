@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\TravelAgencyAuthUser;
 use App\Enums\TravelAgencyStatus;
+use App\Models\Concerns\SendsPasswordResetLink;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +17,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class TravelAgency extends Authenticatable implements JWTSubject, TravelAgencyAuthUser
 {
-    use HasRoles, HasUuids, Notifiable, SoftDeletes;
+    use HasRoles, HasUuids, Notifiable, SendsPasswordResetLink, SoftDeletes;
 
     protected string $guard_name = 'travel_agency';
 
@@ -42,6 +43,11 @@ class TravelAgency extends Authenticatable implements JWTSubject, TravelAgencyAu
             'password' => 'hashed',
             'status' => TravelAgencyStatus::class,
         ];
+    }
+
+    public function passwordResetBroker(): string
+    {
+        return 'travel_agencies';
     }
 
     // ── JWTSubject ────────────────────────────────────────────────────────────

@@ -30,7 +30,9 @@
                     <tr>
                         <th class="w-8 px-3 py-3"></th>
                         <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.classifieds.name') }}</th>
-                        <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.classifieds.icon') }}</th>
+                        <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('classified.admin.image_icon') }}</th>
+                        <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('classified.admin.appears_on') }}</th>
+                        <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('classified.admin.countries') }}</th>
                         <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.classifieds.contract_template') }}</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-700">{{ __('admin.classifieds.map') }}</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-700">{{ __('admin.classifieds.sketch') }}</th>
@@ -42,140 +44,13 @@
                 </thead>
                 <tbody id="category-tree" class="divide-y divide-gray-100">
                     @forelse($roots as $root)
-                        {{-- Parent row --}}
-                        <tr class="hover:bg-gray-50 bg-white category-row" data-id="{{ $root->id }}">
-                            <td class="px-3 py-3 text-gray-300 cursor-grab drag-handle">
-                                <x-heroicon name="bars-3" class="w-4 h-4" />
-                            </td>
-                            <td class="px-4 py-3">
-                                <span class="font-semibold text-gray-900">{{ $root->name_en }}</span>
-                                <span class="block text-xs text-gray-400" dir="rtl">{{ $root->name_ar }}</span>
-                                <span class="block text-xs text-gray-300 font-mono">{{ $root->slug }}</span>
-                            </td>
-                            <td class="px-4 py-3 text-lg">{{ $root->icon ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-500 text-xs">
-                                {{ $root->contractTemplate?->name ?? '—' }}
-                                @if($root->contractTemplate)
-                                    <span class="text-gray-300">v{{ $root->contractTemplate->version }}</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                @if($root->requires_location_map)
-                                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">{{ __('common.yes') }}</span>
-                                @else
-                                    <span class="text-gray-300 text-xs">{{ __('common.no') }}</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                @if($root->requires_sketch_upload)
-                                    <span class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{{ __('common.yes') }}</span>
-                                @else
-                                    <span class="text-gray-300 text-xs">{{ __('common.no') }}</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                @if(!empty($root->required_attachment_types))
-                                    <span class="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-                                        {{ count($root->required_attachment_types) }}
-                                    </span>
-                                @else
-                                    <span class="text-gray-300 text-xs">—</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-center text-gray-500 text-xs">
-                                {{ $root->active_listing_count ?? 0 }}
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <button type="button" dir="ltr"
-                                        class="btn-toggle-active relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none {{ $root->is_active ? 'bg-emerald-500' : 'bg-gray-200' }}"
-                                        data-id="{{ $root->id }}" data-active="{{ $root->is_active ? '1' : '0' }}"
-                                        data-has-children="{{ $root->children->isNotEmpty() ? '1' : '0' }}"
-                                        aria-label="{{ __('admin.classifieds.toggle_active') }}">
-                                    <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform {{ $root->is_active ? 'translate-x-4' : 'translate-x-0.5' }}"></span>
-                                </button>
-                            </td>
-                            <td class="px-4 py-3 text-end whitespace-nowrap">
-                                <button type="button"
-                                        class="btn-edit-category text-xs text-primary-600 font-medium hover:underline"
-                                        data-category="{{ json_encode(['id' => $root->id, 'name_en' => $root->name_en, 'name_ar' => $root->name_ar, 'slug' => $root->slug, 'icon' => $root->icon, 'parent_id' => $root->parent_id, 'requires_location_map' => $root->requires_location_map, 'requires_sketch_upload' => $root->requires_sketch_upload, 'contract_template_id' => $root->contract_template_id, 'required_attachment_types' => $root->required_attachment_types ?? [], 'is_active' => $root->is_active, 'sort_order' => $root->sort_order]) }}">
-                                    {{ __('common.edit') }}
-                                </button>
-                                <button type="button"
-                                        class="btn-delete-category ms-2 text-xs text-red-500 hover:underline"
-                                        data-id="{{ $root->id }}" data-name="{{ $root->name_en }}">
-                                    {{ __('common.delete') }}
-                                </button>
-                            </td>
-                        </tr>
-                        {{-- Children rows --}}
+                        @include('admin.classified-categories._row', ['cat' => $root, 'isChild' => false])
                         @foreach($root->children->sortBy('sort_order') as $child)
-                        <tr class="hover:bg-gray-50 bg-gray-50/40 category-row" data-id="{{ $child->id }}">
-                            <td class="px-3 py-3 text-gray-200"></td>
-                            <td class="px-4 py-3 ps-10">
-                                <span class="text-gray-400 me-1">↳</span>
-                                <span class="font-medium text-gray-800">{{ $child->name_en }}</span>
-                                <span class="block text-xs text-gray-400 ps-4" dir="rtl">{{ $child->name_ar }}</span>
-                                <span class="block text-xs text-gray-300 font-mono ps-4">{{ $child->slug }}</span>
-                            </td>
-                            <td class="px-4 py-3 text-lg">{{ $child->icon ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-500 text-xs">
-                                {{ $child->contractTemplate?->name ?? '—' }}
-                                @if($child->contractTemplate)
-                                    <span class="text-gray-300">v{{ $child->contractTemplate->version }}</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                @if($child->requires_location_map)
-                                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">{{ __('common.yes') }}</span>
-                                @else
-                                    <span class="text-gray-300 text-xs">{{ __('common.no') }}</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                @if($child->requires_sketch_upload)
-                                    <span class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{{ __('common.yes') }}</span>
-                                @else
-                                    <span class="text-gray-300 text-xs">{{ __('common.no') }}</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                @if(!empty($child->required_attachment_types))
-                                    <span class="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-                                        {{ count($child->required_attachment_types) }}
-                                    </span>
-                                @else
-                                    <span class="text-gray-300 text-xs">—</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-center text-gray-500 text-xs">
-                                {{ $child->active_listing_count ?? 0 }}
-                            </td>
-                            <td class="px-4 py-3 text-center">
-                                <button type="button" dir="ltr"
-                                        class="btn-toggle-active relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none {{ $child->is_active ? 'bg-emerald-500' : 'bg-gray-200' }}"
-                                        data-id="{{ $child->id }}" data-active="{{ $child->is_active ? '1' : '0' }}"
-                                        data-has-children="0"
-                                        aria-label="{{ __('admin.classifieds.toggle_active') }}">
-                                    <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform {{ $child->is_active ? 'translate-x-4' : 'translate-x-0.5' }}"></span>
-                                </button>
-                            </td>
-                            <td class="px-4 py-3 text-end whitespace-nowrap">
-                                <button type="button"
-                                        class="btn-edit-category text-xs text-primary-600 font-medium hover:underline"
-                                        data-category="{{ json_encode(['id' => $child->id, 'name_en' => $child->name_en, 'name_ar' => $child->name_ar, 'slug' => $child->slug, 'icon' => $child->icon, 'parent_id' => $child->parent_id, 'requires_location_map' => $child->requires_location_map, 'requires_sketch_upload' => $child->requires_sketch_upload, 'contract_template_id' => $child->contract_template_id, 'required_attachment_types' => $child->required_attachment_types ?? [], 'is_active' => $child->is_active, 'sort_order' => $child->sort_order]) }}">
-                                    {{ __('common.edit') }}
-                                </button>
-                                <button type="button"
-                                        class="btn-delete-category ms-2 text-xs text-red-500 hover:underline"
-                                        data-id="{{ $child->id }}" data-name="{{ $child->name_en }}">
-                                    {{ __('common.delete') }}
-                                </button>
-                            </td>
-                        </tr>
+                            @include('admin.classified-categories._row', ['cat' => $child, 'isChild' => true])
                         @endforeach
                     @empty
                         <tr>
-                            <td colspan="10" class="px-4 py-10 text-center text-gray-400">{{ __('admin.classifieds.no_categories_yet') }}</td>
+                            <td colspan="12" class="px-4 py-10 text-center text-gray-400">{{ __('admin.classifieds.no_categories_yet') }}</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -213,7 +88,61 @@
                 <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.classifieds.icon_field') }}</label>
                 <input type="text" name="icon" id="f-icon" maxlength="50"
                        class="form-input w-full text-sm" placeholder="🏠">
+                <p class="mt-0.5 text-xs text-gray-400">{{ __('classified.admin.icon_help') }}</p>
             </div>
+        </div>
+        <p class="-mt-2 text-xs text-gray-400">{{ __('classified.admin.slug_help') }}</p>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('classified.admin.description_en') }}</label>
+                <textarea name="description_en" id="f-desc-en" rows="2" maxlength="500" dir="ltr" class="form-input w-full text-sm"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('classified.admin.description_ar') }}</label>
+                <textarea name="description_ar" id="f-desc-ar" rows="2" maxlength="500" dir="rtl" class="form-input w-full text-sm"></textarea>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('classified.admin.image') }}</label>
+            <div class="flex items-center gap-3">
+                <img id="f-image-preview" src="" alt="" class="hidden h-14 w-14 rounded-lg border object-cover">
+                <input type="file" name="image" id="f-image" accept="image/jpeg,image/png,image/webp"
+                       class="block w-full text-sm text-gray-600 file:me-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-primary-700">
+            </div>
+            <label id="f-remove-image-wrap" class="mt-1 hidden items-center gap-2 text-xs text-red-600">
+                <input type="checkbox" name="remove_image" id="f-remove-image" value="1"> {{ __('classified.admin.remove_image') }}
+            </label>
+            <p class="mt-0.5 text-xs text-gray-400">{{ __('classified.admin.image_help') }}</p>
+        </div>
+
+        <div id="f-placement-section" class="space-y-2 rounded-lg border border-gray-100 bg-gray-50 p-3">
+            <p class="text-xs font-medium text-gray-700">{{ __('classified.admin.placement_title') }}</p>
+            <input type="hidden" name="placements_submitted" value="1">
+            <div class="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+                @foreach($placements as $placement)
+                    <label class="inline-flex items-center gap-2">
+                        <input type="checkbox" name="placements[]" value="{{ $placement->value }}" data-placement class="rounded text-primary-600">
+                        {{ $placement->label() }}
+                    </label>
+                @endforeach
+            </div>
+            <p class="text-xs text-gray-400">{{ __('classified.admin.placement_help') }}</p>
+        </div>
+
+        <div class="space-y-2 rounded-lg border border-gray-100 bg-gray-50 p-3">
+            <p class="text-xs font-medium text-gray-700">{{ __('classified.admin.countries_title') }}</p>
+            <input type="hidden" name="countries_submitted" value="1">
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
+                @foreach($countries as $country)
+                    <label class="inline-flex items-center gap-2">
+                        <input type="checkbox" name="country_ids[]" value="{{ $country->id }}" data-country class="rounded text-primary-600">
+                        {{ app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en }}
+                    </label>
+                @endforeach
+            </div>
+            <p class="text-xs text-gray-400">{{ __('classified.admin.countries_help') }}</p>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -227,14 +156,44 @@
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.classifieds.contract_template') }}</label>
+                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('contracts.admin.requires_title') }}</label>
+                <div class="flex gap-5 pt-1.5 text-sm">
+                    <label class="inline-flex items-center gap-2"><input type="radio" name="requires_contract" id="f-requires-yes" value="1"> {{ __('contracts.admin.yes') }}</label>
+                    <label class="inline-flex items-center gap-2"><input type="radio" name="requires_contract" id="f-requires-no" value="0" checked> {{ __('contracts.admin.no') }}</label>
+                </div>
+                <p class="mt-0.5 text-xs text-gray-400">{{ __('contracts.admin.requires_help') }}</p>
+            </div>
+        </div>
+
+        <div id="f-contract-section" class="hidden space-y-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('contracts.admin.all_countries_template') }}</label>
                 <select name="contract_template_id" id="f-template-id" class="form-input w-full text-sm">
                     <option value="">{{ __('admin.classifieds.no_template') }}</option>
-                    @foreach($templates as $tpl)
+                    @foreach($templates->whereNull('country_id') as $tpl)
                         <option value="{{ $tpl->id }}">{{ $tpl->name }} (v{{ $tpl->version }})</option>
                     @endforeach
                 </select>
+                <p class="mt-1 text-xs text-gray-400">{{ __('contracts.admin.all_countries_template_hint') }}</p>
             </div>
+            @if($contractData['countries']->isNotEmpty())
+                <div class="space-y-2">
+                    <p class="text-xs font-medium text-gray-700">{{ __('contracts.admin.template_per_country') }}</p>
+                    @foreach($contractData['countries'] as $country)
+                        @php($countryTemplates = $templates->where('country_id', $country->id))
+                        <div class="flex items-center gap-2">
+                            <span class="w-32 shrink-0 text-xs text-gray-600">{{ app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en }}</span>
+                            <select data-country-contract="{{ $country->id }}" class="form-input w-full text-xs" @disabled($countryTemplates->isEmpty())>
+                                <option value="">{{ $countryTemplates->isEmpty() ? __('contracts.admin.no_template_for_country') : __('contracts.admin.use_country_default') }}</option>
+                                @foreach($countryTemplates as $tpl)
+                                    <option value="{{ $tpl->id }}">{{ $tpl->name }} (v{{ $tpl->version }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endforeach
+                    <p class="text-xs text-gray-400">{{ __('contracts.admin.template_per_country_hint') }}</p>
+                </div>
+            @endif
         </div>
 
         <div>
@@ -289,6 +248,7 @@
 {{-- Delete confirmation modal --}}
 <x-modal id="delete-modal" title="{{ __('admin.classifieds.delete_category_title') }}" size="sm">
     <p class="text-sm text-gray-700">{!! str_replace(':name', '<strong id="delete-cat-name"></strong>', __('admin.classifieds.delete_category_confirm', ['name' => ':name'])) !!}</p>
+    <p class="mt-2 text-xs text-gray-500">{{ __('classified.admin.delete_hint') }}</p>
     <input type="hidden" id="delete-cat-id">
     <div id="delete-error" class="hidden mt-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"></div>
     <x-slot:footer>
@@ -307,6 +267,7 @@ Object.assign(window.TRANSLATIONS, {
     toggle_failed: "{{ __('admin.classifieds.toggle_failed') }}",
     delete_failed: "{{ __('admin.classifieds.delete_failed') }}",
     error_occurred: "{{ __('common.error') }}",
+    deactivate_confirm: @json(__('classified.admin.deactivate_confirm')),
 });
 
 (function () {
@@ -352,6 +313,39 @@ Object.assign(window.TRANSLATIONS, {
     }
     attachSelect.addEventListener('change', syncAttach);
 
+    // ── Image preview, placements, countries ─────────────────────────────────
+    const imageInput   = document.getElementById('f-image');
+    const imagePreview = document.getElementById('f-image-preview');
+    const removeWrap   = document.getElementById('f-remove-image-wrap');
+    const removeBox    = document.getElementById('f-remove-image');
+
+    function setMedia(url) {
+        imageInput.value = '';
+        removeBox.checked = false;
+        imagePreview.classList.toggle('hidden', !url);
+        imagePreview.src = url || '';
+        removeWrap.classList.toggle('hidden', !url);
+        removeWrap.classList.toggle('inline-flex', !!url);
+    }
+    imageInput.addEventListener('change', () => {
+        const file = imageInput.files[0];
+        if (file) {
+            imagePreview.src = URL.createObjectURL(file);
+            imagePreview.classList.remove('hidden');
+        }
+    });
+
+    function setPlacementsAndCountries(placements, countryIds) {
+        document.querySelectorAll('[data-placement]').forEach(el => el.checked = placements.includes(el.value));
+        document.querySelectorAll('[data-country]').forEach(el => el.checked = countryIds.includes(el.value));
+    }
+
+    // Placements belong to top-level sections; sub-categories appear under their section.
+    function syncPlacementVisibility(parentId) {
+        document.getElementById('f-placement-section').classList.toggle('hidden', !!parentId);
+    }
+    document.getElementById('f-parent-id').addEventListener('change', e => syncPlacementVisibility(e.target.value));
+
     // ── Open "New Category" ───────────────────────────────────────────────────
     document.querySelector('[data-mode="create"]')?.addEventListener('click', () => {
         resetForm();
@@ -359,12 +353,28 @@ Object.assign(window.TRANSLATIONS, {
         openModal('category-modal');
     });
 
+    // ── Requires individual contract (Yes/No) and template per country ───────
+    function setContractState(requires, perCountry) {
+        document.getElementById(requires ? 'f-requires-yes' : 'f-requires-no').checked = true;
+        document.getElementById('f-contract-section').classList.toggle('hidden', !requires);
+        document.querySelectorAll('[data-country-contract]').forEach(el => {
+            el.value = (perCountry && !Array.isArray(perCountry) && perCountry[el.dataset.countryContract]) || '';
+        });
+    }
+    document.querySelectorAll('input[name="requires_contract"]').forEach(el => el.addEventListener('change', () => {
+        document.getElementById('f-contract-section').classList.toggle('hidden', !document.getElementById('f-requires-yes').checked);
+    }));
+
     function resetForm() {
         document.getElementById('form-category-id').value = '';
-        ['f-name-en','f-name-ar','f-slug','f-icon'].forEach(id => document.getElementById(id).value = '');
+        ['f-name-en','f-name-ar','f-slug','f-icon','f-desc-en','f-desc-ar'].forEach(id => document.getElementById(id).value = '');
+        setMedia(null);
+        setPlacementsAndCountries(['nav', 'landing'], []);
+        syncPlacementVisibility('');
         Array.from(attachSelect.options).forEach(o => o.selected = false);
         document.getElementById('f-parent-id').value       = '';
         document.getElementById('f-template-id').value     = '';
+        setContractState(false, {});
         document.getElementById('f-req-map').checked       = false;
         document.getElementById('f-req-sketch').checked    = false;
         document.getElementById('f-is-active').checked     = true;
@@ -382,8 +392,14 @@ Object.assign(window.TRANSLATIONS, {
             document.getElementById('f-name-ar').value             = cat.name_ar ?? '';
             document.getElementById('f-slug').value                = cat.slug ?? '';
             document.getElementById('f-icon').value                = cat.icon ?? '';
+            document.getElementById('f-desc-en').value             = cat.description_en ?? '';
+            document.getElementById('f-desc-ar').value             = cat.description_ar ?? '';
+            setMedia(cat.image_url);
+            setPlacementsAndCountries(cat.placements ?? [], cat.country_ids ?? []);
             document.getElementById('f-parent-id').value           = cat.parent_id ?? '';
+            syncPlacementVisibility(cat.parent_id ?? '');
             document.getElementById('f-template-id').value         = cat.contract_template_id ?? '';
+            setContractState(!!cat.requires_contract, cat.country_contracts ?? {});
             document.getElementById('f-req-map').checked           = !!cat.requires_location_map;
             document.getElementById('f-req-sketch').checked        = !!cat.requires_sketch_upload;
             document.getElementById('f-is-active').checked         = !!cat.is_active;
@@ -403,30 +419,34 @@ Object.assign(window.TRANSLATIONS, {
         const id   = document.getElementById('form-category-id').value;
         const form = document.getElementById('category-form');
         const fd   = new FormData(form);
-        const body = {};
-        fd.forEach((v, k) => {
-            if (k.endsWith('[]')) {
-                const key = k.slice(0, -2);
-                (body[key] = body[key] ?? []).push(v);
-            } else {
-                body[k] = v;
-            }
+        fd.set('requires_contract', document.getElementById('f-requires-yes').checked ? 1 : 0);
+        document.querySelectorAll('[data-country-contract]').forEach(el => {
+            if (el.value) fd.set(`country_contracts[${el.dataset.countryContract}]`, el.value);
         });
         // Checkboxes: if not in fd they're unchecked
         ['requires_location_map', 'requires_sketch_upload', 'is_active'].forEach(k => {
-            body[k] = fd.has(k) ? 1 : 0;
+            fd.set(k, fd.has(k) ? 1 : 0);
         });
+        if (!(imageInput.files && imageInput.files.length)) fd.delete('image');
+        if (id) fd.set('_method', 'PUT');
 
-        const url    = id ? `${base}/${id}` : base;
-        const method = id ? 'PUT' : 'POST';
-        const { ok, data } = await request(url, method, body);
+        const saveBtn = document.getElementById('btn-save-category');
+        saveBtn.disabled = true;
+        const res  = await fetch(id ? `${base}/${id}` : base, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+            body: fd,
+        });
+        const data = await res.json().catch(() => ({}));
+        saveBtn.disabled = false;
 
-        if (ok) {
+        if (res.ok) {
+            if (data.warning) alert(data.warning);
             closeModal('category-modal');
             location.reload();
         } else {
             const errEl = document.getElementById('form-error');
-            errEl.textContent = data.message ?? (data.errors ? Object.values(data.errors).flat().join(' ') : window.TRANSLATIONS.error_occurred);
+            errEl.textContent = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message ?? window.TRANSLATIONS.error_occurred);
             errEl.classList.remove('hidden');
         }
     });
@@ -436,10 +456,9 @@ Object.assign(window.TRANSLATIONS, {
         btn.addEventListener('click', async () => {
             const id         = btn.dataset.id;
             const isActive   = btn.dataset.active === '1';
-            const hasChildren = btn.dataset.hasChildren === '1';
 
-            if (isActive && hasChildren) {
-                if (!confirm(window.TRANSLATIONS.deactivate_parent_warning)) {
+            if (isActive) {
+                if (!confirm(window.TRANSLATIONS.deactivate_confirm)) {
                     return;
                 }
             }

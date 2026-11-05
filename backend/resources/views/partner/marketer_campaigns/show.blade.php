@@ -105,6 +105,43 @@
         </div>
     @endif
 
+    @if ($marketerCampaign->status === 'marketer_requested' && $mcVendorUser?->hasPermissionTo('marketer_campaigns.create'))
+        <form method="POST" action="{{ route('partner.marketer-campaigns.approve-request', $marketerCampaign) }}" class="bg-white rounded-2xl border border-yellow-200 p-6 space-y-4" data-testid="approve-request-form">
+            @csrf
+            <h3 class="font-semibold text-gray-900">{{ __('contracts.marketer.approve_title') }}</h3>
+            @if ($errors->any())
+                <ul class="list-disc list-inside rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+                    @foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+                </ul>
+            @endif
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1" for="approve_budget">{{ __('partner.marketer_campaigns.max_commission_budget_label') }}</label>
+                <input type="number" step="0.01" min="0.01" id="approve_budget" name="max_commission_budget" value="{{ old('max_commission_budget') }}" required
+                       class="w-full sm:w-64 border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
+            </div>
+            @foreach ($requestAgreements as $agreement)
+                <div class="rounded-xl border border-gray-200 p-4 space-y-2">
+                    <div class="font-semibold text-gray-900 text-sm">{{ $agreement['name'] }} <span class="text-xs font-normal text-gray-500">{{ __('contracts.marketer.version') }} {{ $agreement['version'] }}</span></div>
+                    <details class="rounded-lg bg-gray-50 border border-gray-200">
+                        <summary class="cursor-pointer px-3 py-2 text-xs font-medium text-gray-700">{{ __('contracts.marketer.read') }}</summary>
+                        <div class="px-3 py-3 text-sm text-gray-700 max-h-72 overflow-y-auto">{!! $agreement['content'] !!}</div>
+                    </details>
+                    <label class="flex items-start gap-2 text-sm text-gray-800">
+                        <input type="checkbox" name="collab_contracts[]" value="{{ $agreement['template_id'] }}" class="mt-1 rounded border-gray-300" required>
+                        <span>{{ __('contracts.marketer.i_agree') }}</span>
+                    </label>
+                </div>
+            @endforeach
+            @if (count($requestAgreements) > 0)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="approve_signer">{{ __('contracts.marketer.signer_name') }} <span class="text-red-500">*</span></label>
+                    <input type="text" id="approve_signer" name="collab_signer_name" maxlength="150" value="{{ old('collab_signer_name') }}" required class="w-full sm:w-80 border border-gray-200 rounded-xl px-3 py-2.5 text-sm">
+                </div>
+            @endif
+            <button type="submit" class="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg">{{ __('contracts.marketer.approve_button') }}</button>
+        </form>
+    @endif
+
     {{-- Tab nav --}}
     <div class="border-b border-gray-200">
         <nav class="-mb-px flex gap-x-6 overflow-x-auto">

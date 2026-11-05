@@ -7,6 +7,23 @@
     <h1 id="privacy" class="text-2xl font-bold text-white">{{ __('portal.legal.title') }}</h1>
     <p class="mt-2 text-sm text-gray-400">{{ __('portal.legal.intro') }}</p>
 
+    @if ($countries->count() > 1)
+        <form method="GET" class="mt-4 flex items-center gap-2 text-sm">
+            <label for="legal-country" class="text-gray-400">{{ __('contracts.portal.country_label') }}</label>
+            <select id="legal-country" name="country" onchange="this.form.submit()" class="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200">
+                @foreach ($countries as $option)
+                    <option value="{{ $option->site_code }}" @selected($country && $country->id === $option->id)>{{ app()->getLocale() === 'ar' ? $option->name_ar : $option->name_en }}</option>
+                @endforeach
+            </select>
+        </form>
+    @endif
+
+    @if ($notConfigured)
+        <div class="mt-4 rounded-xl border border-amber-700 bg-amber-900/30 p-4 text-sm text-amber-200">
+            {{ $country ? __('contracts.api.not_configured', ['country' => app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en]) : __('contracts.api.not_configured_no_country') }}
+        </div>
+    @endif
+
     @if ($upcoming)
         <div class="mt-4 rounded-xl border border-blue-700 bg-blue-900/30 p-4 text-sm text-blue-200">
             <p class="font-semibold">{{ __('portal.legal.upcoming', ['version' => $upcoming->version, 'date' => $upcoming->effective_at->format('d/m/Y')]) }}</p>
@@ -48,7 +65,7 @@
                 <div x-show="lang === 'ar'" x-cloak dir="rtl" class="whitespace-pre-line text-sm leading-relaxed">{!! $inForceDoc['content_ar'] !!}</div>
             @endif
         </div>
-    @else
+    @elseif (! $notConfigured)
         <p class="mt-6 text-sm text-gray-400">{{ __('portal.legal.none') }}</p>
     @endif
 </div>

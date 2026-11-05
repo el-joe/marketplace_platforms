@@ -188,6 +188,11 @@ class Customer extends Authenticatable implements JWTSubject
         return $this->hasMany(ClassifiedInquiry::class);
     }
 
+    public function customerContracts(): HasMany
+    {
+        return $this->hasMany(CustomerContract::class);
+    }
+
     public function travelBookings(): HasMany
     {
         return $this->hasMany(TravelBooking::class);

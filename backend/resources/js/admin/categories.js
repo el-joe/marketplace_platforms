@@ -330,6 +330,8 @@ function initFormSubmit() {
         })
             .done(function (res) {
                 window.Toast?.success(res.message || t('admin.categories.category_saved'));
+                // Contract coverage gap (countries with sellers but no contract for this category)
+                if (res.warning) window.Toast?.warning(res.warning);
             })
             .fail(function (xhr) {
                 if (xhr.status === 422) {

@@ -18,7 +18,7 @@ class ClassifiedCategoryTreeResource extends JsonResource
             'requires_location_map'    => $this->requires_location_map,
             'requires_sketch_upload'   => $this->requires_sketch_upload,
             'required_attachment_types'=> $this->required_attachment_types ?? [],
-            'has_contract'             => (bool) $this->contract_template_id,
+            'has_contract'             => $this->requiresIndividualContract(),
             'children'                 => self::collection($this->whenLoaded('children')),
         ];
     }

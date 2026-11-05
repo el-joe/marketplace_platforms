@@ -119,6 +119,12 @@ class Marketer extends Model
         return $this->hasMany(ExclusiveContract::class);
     }
 
+    /** Seller-marketer collaboration contracts sellers signed with this marketer (not the onboarding contract). */
+    public function sellerContracts(): HasMany
+    {
+        return $this->hasMany(MarketerSellerContract::class, 'marketer_id');
+    }
+
     public function contract(): HasOne
     {
         return $this->hasOne(MarketerContract::class, 'marketer_id');

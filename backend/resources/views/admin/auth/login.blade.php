@@ -26,6 +26,12 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 px-8 py-8">
             <h2 class="text-lg font-semibold text-gray-900 mb-6">{{ __('admin.auth.login_subtitle') }}</h2>
 
+            @if(session('status'))
+                <div class="mb-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+                    {{ session('status') }}
+                </div>
+            @endif
+
             {{-- Session errors --}}
             @if(session('error'))
                 <div class="mb-4 rounded-lg bg-danger-50 border border-danger-200 px-4 py-3 text-sm text-danger-700">

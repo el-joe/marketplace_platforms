@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AdminStatus;
+use App\Models\Concerns\SendsPasswordResetLink;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class Admin extends Authenticatable
 {
-    use HasFactory, HasUuids, Notifiable, HasRoles;
+    use HasFactory, HasRoles, HasUuids, Notifiable, SendsPasswordResetLink;
 
     protected string $guard_name = 'admin';
 
@@ -41,6 +42,11 @@ class Admin extends Authenticatable
             'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function passwordResetBroker(): string
+    {
+        return 'admins';
     }
 
     // ── Relationships ──────────────────────────────────────────────────────────

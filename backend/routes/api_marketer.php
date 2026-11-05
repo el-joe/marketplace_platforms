@@ -66,6 +66,7 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
 
     Route::get('/contract', [ContractController::class, 'show']);
     Route::post('/contract/accept', [ContractController::class, 'accept']);
+    Route::get('/contracts/collaboration', [ContractController::class, 'collaboration']);
 
     // enhancement.md P-16 task 2: API parity — listings (CRUD subset), finance/wallet/withdrawals.
     Route::get('/listings', [ListingController::class, 'index']);

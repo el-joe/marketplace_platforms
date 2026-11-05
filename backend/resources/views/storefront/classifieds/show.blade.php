@@ -149,6 +149,21 @@
                     {{ __('common.static_text.storefront_classifieds_show.send_inquiry') }}
                 </button>
             </form>
+            <div id="customer-contract" class="hidden mt-3 space-y-3 rounded-lg border border-amber-200 bg-white p-3">
+                <h4 id="cc-title" class="text-sm font-semibold text-gray-900"></h4>
+                <p class="text-xs text-gray-600">{{ __('contracts.customer.required_notice') }}</p>
+                <div id="cc-body" class="max-h-64 overflow-y-auto rounded border border-gray-200 p-2 text-sm text-gray-700"></div>
+                <input id="cc-name" type="text" maxlength="150" placeholder="{{ __('contracts.customer.name_placeholder') }}"
+                       class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                <label class="flex items-start gap-2 text-xs text-gray-700">
+                    <input id="cc-accept" type="checkbox" class="mt-0.5">
+                    <span>{{ __('contracts.customer.accept_label') }}</span>
+                </label>
+                <p class="text-[11px] text-gray-500">{{ __('contracts.customer.recorded_notice') }}</p>
+                <p id="cc-error" class="hidden text-xs text-red-600"></p>
+                <button id="cc-submit" type="button" class="w-full rounded-lg bg-primary-600 py-2 text-sm font-semibold text-white">{{ __('contracts.customer.accept_button') }}</button>
+            </div>
+            <p id="inquiry-error" class="hidden text-center text-sm text-red-600 mt-2">{{ __('contracts.customer.inquiry_failed') }}</p>
             <p id="inquiry-success" class="hidden text-center text-sm text-emerald-700 mt-2 font-medium">
                 {{ __('common.static_text.storefront_classifieds_show.your_inquiry_was_sent_successfully') }}
             </p>
@@ -204,21 +219,75 @@
         track.style.transform = `translateX(${current * -100}%)`;
     }
 
-    // Inquiry
+    // Inquiry. The server decides whether a customer contract is needed: it answers 422 `customer_contract_required`
+    // with the contract, which the customer reviews and accepts before the inquiry is sent again.
     const form = document.getElementById('inquiry-form');
+    const csrf = document.querySelector('meta[name=csrf-token]').content;
+    const contractBox = document.getElementById('customer-contract');
+    let contractVersion = null;
+
+    function showContract(contract) {
+        contractVersion = contract.version;
+        document.getElementById('cc-title').textContent = contract.name;
+        document.getElementById('cc-body').innerHTML = contract.content;
+        document.getElementById('cc-error').classList.add('hidden');
+        contractBox.classList.remove('hidden');
+        contractBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function sendInquiry() {
+        const resp = await fetch('{{ route("classifieds.inquire", [$country, $listing->id]) }}', {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        });
+        if (resp.ok) {
+            form.classList.add('hidden');
+            contractBox.classList.add('hidden');
+            document.getElementById('inquiry-success').classList.remove('hidden');
+            return;
+        }
+        const body = await resp.json().catch(() => null);
+        if (resp.status === 422 && body && body.code === 'customer_contract_required') {
+            showContract(body.data.contract);
+            return;
+        }
+        document.getElementById('inquiry-error').classList.remove('hidden');
+    }
+
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const fd = new FormData(form);
-            const resp = await fetch('{{ route("classifieds.inquire", [$country, $listing->listing_number]) }}', {
+            document.getElementById('inquiry-error').classList.add('hidden');
+            await sendInquiry();
+        });
+    }
+
+    const acceptButton = document.getElementById('cc-submit');
+    if (acceptButton) {
+        acceptButton.addEventListener('click', async () => {
+            const error = document.getElementById('cc-error');
+            error.classList.add('hidden');
+            const resp = await fetch('{{ route("classifieds.customer-contract.accept", [$country, $listing->id]) }}', {
                 method: 'POST',
-                body: fd,
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    signer_name: document.getElementById('cc-name').value,
+                    accept: document.getElementById('cc-accept').checked ? 1 : 0,
+                    version: contractVersion,
+                }),
             });
+            const body = await resp.json().catch(() => null);
             if (resp.ok) {
-                form.classList.add('hidden');
-                document.getElementById('inquiry-success').classList.remove('hidden');
+                contractBox.classList.add('hidden');
+                await sendInquiry();
+                return;
             }
+            if (body && body.code === 'customer_contract_changed') {
+                showContract(body.data.contract);
+            }
+            error.textContent = (body && body.message) || '{{ __('contracts.customer.accept_failed') }}';
+            error.classList.remove('hidden');
         });
     }
 </script>

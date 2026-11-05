@@ -161,6 +161,7 @@ class SearchService
     public function searchClassifieds(string $query, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         return ClassifiedListing::where('status', 'active')
+            ->whereIn('classified_category_id', app(ClassifiedSectionService::class)->visibleIds())
             ->where(function ($q) use ($query) {
                 $q->where('title_en', 'like', "%{$query}%")
                     ->orWhere('title_ar', 'like', "%{$query}%")

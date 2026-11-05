@@ -2,8 +2,8 @@
 
 namespace App\Services\Customer;
 
+use App\Enums\ClassifiedPlacement;
 use App\Models\Category;
-use App\Models\ClassifiedCategory;
 use App\Models\Country;
 use App\Models\TravelCategory;
 use App\Support\SafeCache;
@@ -31,10 +31,12 @@ class NavigationService
      */
     public function getTree(Country $country): array
     {
-        return SafeCache::remember("nav_tree:{$country->id}", 600, function () {
+        $version = Cache::get(UnifiedCategoryService::CACHE_VERSION_KEY, 1);
+
+        return SafeCache::remember("nav_tree:v{$version}:{$country->id}", 600, function () use ($country) {
             return array_merge(
                 $this->productNodes(),
-                $this->classifiedNodes(),
+                $this->classifiedNodes($country),
                 $this->travelNodes(),
             );
         });
@@ -43,6 +45,7 @@ class NavigationService
     public function forgetTree(Country $country): void
     {
         Cache::forget("nav_tree:{$country->id}");
+        UnifiedCategoryService::flushCache();
     }
 
     private function productNodes(): array
@@ -57,13 +60,9 @@ class NavigationService
         return $roots->map(fn ($cat) => $this->mapCategory($cat, 'product'))->values()->all();
     }
 
-    private function classifiedNodes(): array
+    private function classifiedNodes(Country $country): array
     {
-        $roots = ClassifiedCategory::where('is_active', true)
-            ->whereNull('parent_id')
-            ->with(['children' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
-            ->orderBy('sort_order')
-            ->get();
+        $roots = app(ClassifiedSectionService::class)->tree($country, ClassifiedPlacement::Nav);
 
         return $roots->map(fn ($cat) => $this->mapCategory($cat, 'classified'))->values()->all();
     }

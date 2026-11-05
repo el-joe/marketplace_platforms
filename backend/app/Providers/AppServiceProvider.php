@@ -83,6 +83,7 @@ use App\Services\Customer\UnifiedListingQueryService;
 use App\Services\Delivery\DeliveryFCMService;
 use App\Services\GiftCardService;
 use App\Services\Media\ListingImageResolver;
+use App\Services\PortalAnalytics\PortalTracker;
 use App\Services\Portal\JoinService;
 use App\Services\Shared\PageBuilderService;
 use App\Services\Shipping\ShippingCarrierFactory;
@@ -114,6 +115,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ShippingCarrierFactory::class);
+        $this->app->singleton(PortalTracker::class);
         $this->app->bind(WhatsAppGateway::class, WhatsAppService::class);
         $this->app->singleton(PageBuilderService::class);
         $this->app->singleton(ListingQueryService::class);

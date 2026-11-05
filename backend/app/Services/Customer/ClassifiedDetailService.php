@@ -18,6 +18,7 @@ class ClassifiedDetailService
         })
             ->where('status', 'active')
             ->where('country_id', $country->id)
+            ->whereIn('classified_category_id', app(ClassifiedSectionService::class)->visibleIds($country))
             ->with([
             'images' => fn ($q) => $q->orderBy('position'),
             'city',

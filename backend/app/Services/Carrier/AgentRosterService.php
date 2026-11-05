@@ -9,7 +9,8 @@ use App\Models\DeliveryZone;
 use App\Models\ShippingCompany;
 use App\Models\ShippingCompanySupervisor;
 use App\Notifications\Carrier\NewAgentRegistered;
-use Illuminate\Support\Facades\Mail;
+use App\Services\Auth\CredentialDeliveryResult;
+use App\Services\Auth\CredentialDeliveryService;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
@@ -22,12 +23,17 @@ class AgentRosterService
      * verification before they can be set to 'active' and begin receiving assignments.
      * The supervisor's panel can activate them via PUT /agents/{id} once documents
      * are verified, but the initial state is intentionally inactive.
+     *
+     * The welcome email is sent synchronously so a failure is logged and returned to the
+     * caller (the account is kept; the supervisor chose the password and can relay it).
+     *
+     * @return array{0: DeliveryAgent, 1: CredentialDeliveryResult}
      */
     public function createAgent(
         ShippingCompany $company,
         ShippingCompanySupervisor $supervisor,
         array $data,
-    ): DeliveryAgent {
+    ): array {
         if (! empty($data['zone_id'])) {
             $zone = DeliveryZone::find($data['zone_id']);
 
@@ -54,8 +60,8 @@ class AgentRosterService
             'is_available' => false,
         ]);
 
-        Mail::to($agent->email)
-            ->queue(new AgentWelcomeMail($agent, $company, $data['password']));
+        $delivery = app(CredentialDeliveryService::class)
+            ->deliver($agent->email, new AgentWelcomeMail($agent, $company, $data['password']), 'carrier_agent_welcome');
 
         $supervisors = $company->supervisors()->receivingNotifications()->get();
 
@@ -63,6 +69,6 @@ class AgentRosterService
             Notification::send($supervisors, new NewAgentRegistered($agent));
         }
 
-        return $agent;
+        return [$agent, $delivery];
     }
 }

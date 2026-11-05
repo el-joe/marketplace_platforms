@@ -563,6 +563,9 @@
     {{-- Per-category commission rules, one card per marketer type --}}
     @include('admin.marketers._commission_rules')
 
+    {{-- Contracts: collaboration (seller <-> marketer), onboarding (platform) and the filters shared with the exclusive table --}}
+    @include('admin.marketers._contracts')
+
     {{-- Exclusive contracts (open-market) --}}
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
@@ -585,7 +588,7 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-                @forelse($marketer->exclusiveContracts as $contract)
+                @forelse($exclusiveContracts as $contract)
                 @php
                     $statusMap = [
                         'pending' => [__('admin.marketers.contract_status_pending'), 'bg-yellow-50 text-yellow-700'],
@@ -652,6 +655,7 @@
             </tbody>
         </table>
         </div>
+        @if($exclusiveContracts->hasPages())<div class="px-4 py-3">{{ $exclusiveContracts->fragment('contracts')->links() }}</div>@endif
         @if($errors->hasAny(['classified_listing_id', 'classified_category_id', 'starts_at', 'ends_at', 'global', 'status', 'contract_file', 'notes']))
         <div id="exclusive-contracts-error" class="mx-4 mt-4 rounded-lg border border-danger-200 bg-danger-50 p-3 text-sm text-danger-800">
             <p class="font-semibold mb-1">{{ __('admin.marketers.contract_create_failed') }}</p>

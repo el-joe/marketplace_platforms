@@ -80,12 +80,16 @@ class AgentController extends Controller
         $data['country_id'] = $countryId;
 
         try {
-            $agent = $this->agentRosterService->createAgent($company, $supervisor, $data);
+            [$agent, $delivery] = $this->agentRosterService->createAgent($company, $supervisor, $data);
         } catch (ValidationException $e) {
             return ApiResponse::error($e->getMessage(), $e->errors(), 422);
         }
 
-        return ApiResponse::success(['agent' => $this->transform($agent)], 'Agent created.', 201);
+        return ApiResponse::success(
+            ['agent' => $this->transform($agent)] + $delivery->toResponseFields(),
+            $delivery->warning() ?? 'Agent created.',
+            201,
+        );
     }
 
     public function show(string $id): JsonResponse

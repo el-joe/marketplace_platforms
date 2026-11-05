@@ -14,6 +14,7 @@ use App\Models\CountryCategory;
 use App\Models\File;
 use App\Models\Slug;
 use App\Services\CategoryService;
+use App\Services\Vendor\ContractAssignmentService;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -78,6 +79,8 @@ class CategoryController extends Controller
 
     public function store(StoreCategoryRequest $request): JsonResponse|RedirectResponse
     {
+        app(ContractAssignmentService::class)->assertConfigurable('product', $request->all());
+
         DB::beginTransaction();
         // try {
         $id = (string) Str::uuid();
@@ -151,6 +154,9 @@ class CategoryController extends Controller
 
         Slug::upsertFor($category, $category->slug);
 
+        $contractAssignments = app(ContractAssignmentService::class);
+        $contractGaps = $contractAssignments->apply($category, 'product', $request->all());
+
         // Sync attribute assignments if provided
         if ($request->filled('attributes')) {
             $attributes = array_filter($request->input('attributes', []), fn ($a) => isset($a['attribute_id']));
@@ -159,15 +165,19 @@ class CategoryController extends Controller
 
         DB::commit();
 
+        $warning = $contractGaps->isNotEmpty() ? __('contracts.admin.gap_warning', ['countries' => $contractGaps->pluck('name_en')->implode(', ')]) : null;
+
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
                 'redirect' => route('admin.categories.index'),
+                'warning' => $warning,
             ]);
         }
 
         return redirect()->route('admin.categories.index')
-            ->with('success', __('admin.categories.category_created'));
+            ->with('success', __('admin.categories.category_created'))
+            ->with('warning', $warning);
 
         // } catch (\Throwable $e) {
         //     DB::rollBack();
@@ -211,6 +221,8 @@ class CategoryController extends Controller
     public function update(UpdateCategoryRequest $request, string $category): JsonResponse
     {
         $categoryModel = Category::whereNull('deleted_at')->findOrFail($category);
+
+        app(ContractAssignmentService::class)->assertConfigurable('product', $request->all(), $categoryModel);
 
         DB::beginTransaction();
         // try {
@@ -258,6 +270,8 @@ class CategoryController extends Controller
 
         Slug::upsertFor($categoryModel, $categoryModel->slug);
 
+        $contractGaps = app(ContractAssignmentService::class)->apply($categoryModel, 'product', $request->all());
+
         $categoryModel->update($request->only([
             'influencer_sample_qty',
             'affiliate_sample_qty',
@@ -294,7 +308,11 @@ class CategoryController extends Controller
 
         DB::commit();
 
-        return response()->json(['success' => true, 'message' => __('admin.categories.category_updated')]);
+        return response()->json([
+            'success' => true,
+            'message' => __('admin.categories.category_updated'),
+            'warning' => $contractGaps->isNotEmpty() ? __('contracts.admin.gap_warning', ['countries' => $contractGaps->pluck('name_en')->implode(', ')]) : null,
+        ]);
 
         // } catch (\Throwable $e) {
         //     DB::rollBack();

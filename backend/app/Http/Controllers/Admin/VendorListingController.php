@@ -9,6 +9,7 @@ use App\Models\InternationalShippingEligibility;
 use App\Models\VendorListing;
 use App\Models\Warehouse;
 use App\Services\ListingCertificationGate;
+use App\Services\ListingContractGate;
 use App\Services\Shared\PageCacheService;
 use App\Services\ShippingMethodResolverService;
 use App\Traits\HasDataTable;
@@ -184,6 +185,7 @@ class VendorListingController extends Controller
 
         if ($data['status'] === VendorListingStatus::Active->value) {
             ListingCertificationGate::assertCanGoLive($vendorListing);
+            ListingContractGate::assertCanGoLive($vendorListing);
         }
 
         $vendorListing->update($data);

@@ -3,17 +3,14 @@
 namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
-use App\Mail\TeamMemberInviteMail;
 use App\Models\VendorAdmin;
+use App\Services\Vendor\TeamService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
@@ -22,6 +19,8 @@ class TeamController extends Controller
 {
     use HasDataTable;
     use HasExport;
+
+    public function __construct(private readonly TeamService $team) {}
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -122,7 +121,7 @@ class TeamController extends Controller
 
     /**
      * Invite a new team member (owner only).
-     * Sends an email with a temporary password.
+     * Emails a single-use set-password link (no password is created or sent).
      */
     public function store(Request $request): JsonResponse
     {
@@ -138,27 +137,14 @@ class TeamController extends Controller
             'role' => ['required', Rule::exists('roles', 'name')->where('guard_name', 'vendor'), Rule::notIn(['vendor_owner'])],
         ]);
 
-        $tempPassword = Str::password(12, symbols: false);
-
-        $member = DB::transaction(function () use ($validated, $tempPassword) {
-            $member = VendorAdmin::create([
-                'vendor_id' => $this->vendorId(),
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($tempPassword),
-                'role' => $validated['role'],
-                'is_active' => true,
-            ]);
-
-            $member->assignRole($validated['role']);
-
-            return $member;
-        });
-
-        Mail::to($member->email)->send(new TeamMemberInviteMail($member, $tempPassword));
+        [$member, $delivery] = $this->team->invite($this->vendorAdmin()->vendor, [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'role' => $validated['role'],
+        ]);
 
         return response()->json([
-            'message' => 'تم إرسال الدعوة بنجاح',
+            'message' => $delivery->warning() ?? 'تم إرسال الدعوة بنجاح',
             'member' => [
                 'id' => $member->id,
                 'name' => $member->name,
@@ -167,7 +153,7 @@ class TeamController extends Controller
                 'is_active' => $member->is_active,
                 'last_login_at' => null,
             ],
-        ], 201);
+        ] + $delivery->toResponseFields(), 201);
     }
 
     /**

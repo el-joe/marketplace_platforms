@@ -19,6 +19,8 @@ class VendorContract extends Model
         'classified_category_id',
         'category_scope',
         'product_category_id',
+        'product_id',
+        'country_id',
         'contract_template_id',
         'template_version',
         'language_signed',
@@ -79,6 +81,16 @@ class VendorContract extends Model
     public function productCategory(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'product_category_id');
+    }
+
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 
     public function signedByVendorAdmin(): BelongsTo

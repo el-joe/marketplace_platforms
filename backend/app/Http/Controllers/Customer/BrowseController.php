@@ -15,6 +15,7 @@ use App\Models\ClassifiedListing;
 use App\Models\Country;
 use App\Models\TravelCategory;
 use App\Services\Customer\CategoryService;
+use App\Services\Customer\ClassifiedSectionService;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\ProductQueryService;
 use App\Services\Customer\UnifiedCategoryService;
@@ -34,6 +35,7 @@ class BrowseController extends Controller
         private readonly ListingQueryService $listings,
         private readonly UnifiedCategoryService $unifiedCategories,
         private readonly PageBuilderService $pageBuilder,
+        private readonly ClassifiedSectionService $classifiedSections,
     ) {}
 
     /**
@@ -86,8 +88,11 @@ class BrowseController extends Controller
      */
     public function classifiedMapPins(Request $request, $country): JsonResponse
     {
+        $country = $request->attributes->get('country');
+
         $query = ClassifiedListing::query()
             ->where('status', ClassifiedListingStatus::Active)
+            ->whereIn('classified_category_id', $this->classifiedSections->visibleIds($country))
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->with(['images' => fn ($q) => $q->where('is_primary', true)->limit(1)]);
@@ -104,7 +109,8 @@ class BrowseController extends Controller
         }
 
         if ($request->filled('category')) {
-            $query->where('classified_category_id', $request->input('category'));
+            $category = $this->classifiedSections->find((string) $request->input('category'), $country);
+            $query->whereIn('classified_category_id', $category ? $this->classifiedSections->visibleBranchIds($category, $country) : []);
         }
 
         if ($request->filled('purpose')) {
@@ -216,13 +222,18 @@ class BrowseController extends Controller
         $category = null;
 
         if ($id !== 'all' && $id !== '') {
-            $categoryNode = $this->unifiedCategories->findById($id, 'classified');
+            // Accepts the slug (storefront URL) or the id (older links). A disabled category, one with a disabled
+            // parent, or one not offered in this country is a 404; its ads are hidden, never deleted.
+            $category = $this->classifiedSections->find($id, $country);
 
-            if (! $categoryNode) {
+            if (! $category) {
                 return response()->json(['success' => false, 'message' => __('common.exceptions.browse.category_not_found')], 404);
             }
 
-            $category = ClassifiedCategory::where('id', $categoryNode['id'])->firstOrFail();
+            $category->load(['parent', 'primaryImage']);
+            $category->setRelation('children', $category->parent_id
+                ? collect()
+                : ($this->classifiedSections->tree($country)->firstWhere('id', $category->id)?->children ?? collect()));
         }
 
         $pageBuilder = $category
@@ -239,7 +250,7 @@ class BrowseController extends Controller
         $filters = $request->only(['listing_purpose', 'seller_type', 'min_price', 'max_price', 'city_id'])
             + $this->classifiedGeoFilter($request);
 
-        $paginator = $this->listings->paginateForClassifiedCategory($category?->id, $perPage, $filters);
+        $paginator = $this->listings->paginateForClassifiedCategory($category?->id, $perPage, $filters, $country);
 
         $exclusiveContracts = $this->listings->exclusiveContractsForListings($paginator->getCollection());
 
@@ -277,6 +288,7 @@ class BrowseController extends Controller
 
         $cities = ClassifiedListing::query()
             ->where('classified_listings.status', ClassifiedListingStatus::Active->value)
+            ->whereIn('classified_listings.classified_category_id', $this->classifiedSections->visibleIds($country))
             ->when($country, fn ($q) => $q->where('classified_listings.country_id', $country->id))
             ->whereNotNull('classified_listings.city_id')
             ->join('cities', 'cities.id', '=', 'classified_listings.city_id')

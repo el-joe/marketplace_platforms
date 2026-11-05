@@ -8,6 +8,15 @@
         <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
     @endif
 
+    @if ($country)
+        <p class="text-xs text-gray-500">{{ __('contracts.partner.agreement_country', ['country' => app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en]) }}</p>
+    @endif
+    @if (! $agreementConfigured && $country && \App\Models\ClassifiedContractTemplate::query()->where('category_scope', 'platform')->where('is_published', true)->exists())
+        <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {{ __('contracts.api.not_configured', ['country' => app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en]) }}
+        </div>
+    @endif
+
     @if ($upcoming)
         <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
             <p class="font-semibold">{{ __('partner.legal.upcoming_title', ['version' => $upcoming->version, 'date' => $upcoming->effective_at->format('d/m/Y')]) }}</p>
@@ -103,6 +112,8 @@
         <p class="text-xs text-gray-500">
             {{ __('partner.legal.category_contracts_hint') }}
             <a href="{{ route('partner.contracts.history') }}" class="text-blue-600 hover:underline">{{ __('partner.contracts.nav_history') }}</a>
+            <span class="mx-2 text-gray-300">|</span>
+            <a href="{{ route('partner.legal.collaborations') }}" class="text-blue-600 hover:underline">{{ __('contracts.marketer.partner_title') }}</a>
         </p>
     </section>
 </div>

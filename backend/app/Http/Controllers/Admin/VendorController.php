@@ -19,14 +19,17 @@ use App\Models\Notification;
 use App\Models\SubOrder;
 use App\Models\Vendor;
 use App\Models\VendorAdmin;
-use App\Models\VendorBankAccount;
 use App\Models\VendorDocument;
 use App\Services\ActivityLoggerService;
+use App\Services\Vendor\OwnerEmailConflictException;
+use App\Services\Vendor\VendorOwnerService;
 use App\Services\VendorApprovalService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class VendorController extends Controller
 {
@@ -36,6 +39,7 @@ class VendorController extends Controller
     public function __construct(
         private VendorApprovalService $approvalService,
         private ActivityLoggerService $activityLogger,
+        private VendorOwnerService $owners,
     ) {
     }
 
@@ -266,9 +270,43 @@ class VendorController extends Controller
             ], 422);
         }
 
-        $this->approvalService->approve($vendor, auth('admin')->user());
+        try {
+            $delivery = $this->approvalService->approve($vendor, auth('admin')->user());
+        } catch (OwnerEmailConflictException $e) {
+            return response()->json(['message' => __('admin.credentials.approval_owner_conflict', ['email' => $e->email])], 422);
+        }
 
-        return response()->json(['message' => 'Vendor approved successfully.']);
+        return response()->json([
+            'message' => $delivery->delivered()
+                ? __('admin.credentials.approval_email_sent', ['email' => $delivery->recipient])
+                : 'Vendor approved successfully.',
+        ] + $delivery->toResponseFields());
+    }
+
+    /**
+     * Email the store owner a fresh single-use set-password link.
+     */
+    public function resendCredentials(Vendor $vendor): JsonResponse
+    {
+        if (! in_array($vendor->global_status, [VendorGlobalStatus::Active, VendorGlobalStatus::Suspended], true)) {
+            return response()->json(['message' => __('admin.credentials.resend_vendor_no_owner')], 422);
+        }
+
+        try {
+            $owner = $this->owners->ensureOwner($vendor);
+        } catch (OwnerEmailConflictException $e) {
+            return response()->json(['message' => __('admin.credentials.approval_owner_conflict', ['email' => $e->email])], 422);
+        }
+
+        $delivery = $this->owners->resendCredentials($vendor, $owner);
+
+        if (! $delivery->sent) {
+            return response()->json(['message' => $delivery->warning()] + $delivery->toResponseFields(), 502);
+        }
+
+        return response()->json([
+            'message' => $delivery->warning() ?? __('admin.credentials.resend_vendor_sent', ['email' => $delivery->recipient]),
+        ] + $delivery->toResponseFields());
     }
 
     public function reject(RejectVendorRequest $request, Vendor $vendor): JsonResponse

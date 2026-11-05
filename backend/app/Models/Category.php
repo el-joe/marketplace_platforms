@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasContractRequirement;
 use App\Services\Customer\CategoryService;
 use App\Services\Customer\UnifiedCategoryService;
 use App\Services\FooterService;
@@ -18,7 +19,7 @@ use Kalnoy\Nestedset\NodeTrait;
 
 class Category extends Model
 {
-    use HasFactory, NodeTrait, SoftDeletes;
+    use HasContractRequirement, HasFactory, NodeTrait, SoftDeletes;
 
     // Override kalnoy/nestedset defaults (_lft/_rgt) to match actual DB columns
     public function getLftName(): string
@@ -148,9 +149,9 @@ class Category extends Model
         return $this->belongsTo(Category::class, 'parent_id');
     }
 
-    public function contractTemplate(): BelongsTo
+    public function contractAssignmentColumn(): string
     {
-        return $this->belongsTo(ClassifiedContractTemplate::class, 'contract_template_id');
+        return 'product_category_id';
     }
 
     public function commissionTiers(): HasMany

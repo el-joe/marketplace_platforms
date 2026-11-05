@@ -861,6 +861,15 @@
                     <button type="button" data-modal-open="reject-modal" class="w-full btn btn-ghost btn-sm text-danger-600">{{ __('admin.vendors.reject_application') }}</button>
                 @endif
 
+                @if(in_array($vendor->global_status, [\App\Enums\VendorGlobalStatus::Active, \App\Enums\VendorGlobalStatus::Suspended], true))
+                    @if(auth('admin')->user()?->can('vendors.edit'))
+                        <button type="button"
+                                data-resend-credentials="{{ route('admin.vendors.resend-credentials', $vendor->id) }}"
+                                data-confirm="{{ __('admin.credentials.resend_vendor_confirm') }}"
+                                class="w-full btn btn-secondary btn-sm">{{ __('admin.credentials.resend_vendor') }}</button>
+                    @endif
+                @endif
+
                 @if($vendor->payout_hold_active)
                     <button type="button" data-release-hold="{{ $vendor->id }}" class="w-full btn btn-secondary btn-sm">{{ __('admin.vendors.release_payout_hold') }}</button>
                 @else

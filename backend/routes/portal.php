@@ -3,6 +3,7 @@
 use App\Http\Controllers\Portal\AdSupportController;
 use App\Http\Controllers\Portal\AdvertiseRequestController;
 use App\Http\Controllers\Portal\BlogController;
+use App\Http\Controllers\Portal\CountrySwitchController;
 use App\Http\Controllers\Portal\HelpCenterController;
 use App\Http\Controllers\Portal\JoinController;
 use App\Http\Controllers\Portal\LandingController;
@@ -10,10 +11,10 @@ use App\Http\Controllers\Portal\LegalController;
 use App\Http\Controllers\Portal\MarketersController;
 use App\Http\Controllers\Portal\OpenSouqController;
 use App\Http\Controllers\Portal\RegistrationController;
+use App\Http\Controllers\Portal\RegistrationTrackController;
 use App\Http\Controllers\Portal\TravelAgencyController;
 use App\Http\Controllers\Portal\TravelAgencyRegistrationController;
 use App\Models\Country;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -71,7 +72,7 @@ Route::prefix('{country}')->group(function () {
     });
 });
 
-$resolvedCountry = fn () => Country::resolveSiteCode(null);
+$resolvedCountry = fn (): string => Country::resolveSiteCode(null) ?? abort(404);
 
 Route::get('advertise/sellers', fn () => redirect()->route('portal.sellers', $resolvedCountry()));
 Route::get('advertise/brands', fn () => redirect()->route('portal.advertise.brands', $resolvedCountry()));
@@ -138,6 +139,7 @@ Route::prefix('vendors/register')->group(function () {
     Route::post('/upload', [RegistrationController::class, 'uploadDocument'])->name('register.upload');
     Route::delete('/document', [RegistrationController::class, 'removeDocument'])->name('register.document.remove');
     Route::post('/complete', [RegistrationController::class, 'complete'])->name('register.complete');
+    Route::post('/track', RegistrationTrackController::class)->middleware('throttle:60,1')->name('register.track');
 });
 
 // Public Seller Agreement (terms) page and its documents
@@ -169,26 +171,4 @@ Route::get('/language/{locale}', function (string $locale) {
 // non-{country}-prefixed portal pages (home, faq, etc.) also reflect the selection.
 // On {country}-prefixed pages (advertise, adsupport, helpcenter) the URL segment wins
 // over the session, so the previous URL is rewritten to the newly picked country.
-Route::get('/country/{country}', function (string $country) {
-    $exists = Country::where('site_code', $country)->where('is_active', true)->exists();
-    abort_unless($exists, 404);
-    session(['portal_country' => $country]);
-
-    $previous = url()->previous();
-    $parts = parse_url($previous);
-
-    try {
-        $matched = app('router')->getRoutes()->match(Request::create($previous));
-    } catch (Throwable) {
-        $matched = null;
-    }
-
-    if ($matched && $matched->parameter('country') !== null && isset($parts['path'])) {
-        $segments = explode('/', ltrim($parts['path'], '/'));
-        $segments[0] = $country;
-        $previous = request()->getSchemeAndHttpHost().'/'.implode('/', $segments)
-            .(isset($parts['query']) ? '?'.$parts['query'] : '');
-    }
-
-    return redirect($previous);
-})->name('country');
+Route::get('/country/{country}', CountrySwitchController::class)->name('country');

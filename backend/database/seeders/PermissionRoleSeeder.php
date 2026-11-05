@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Admin;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -27,10 +28,10 @@ class PermissionRoleSeeder extends Seeder
         // Assign all permissions to Super Admin
         $superAdmin->permissions()->sync($permissions);
 
-        $admins = \App\Models\Admin::all();
-        foreach ($admins as $admin) {
-            $admin->assignRole($superAdmin);
-        }
+        // Only the bootstrap account is promoted. Promoting every admin on each deploy would silently
+        // turn all restricted staff into super admins.
+        Admin::where('email', 'admin@admin.com')->get()
+            ->each(fn ($admin) => $admin->assignRole($superAdmin));
 
         $this->command->info('Permissions, roles, and Super Admin assignment seeded successfully.');
     }

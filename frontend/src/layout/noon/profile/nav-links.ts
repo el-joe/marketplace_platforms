@@ -54,6 +54,11 @@ export const myAccountNavItems: NavItem[] = [
     icon: "/images/profile/warranty-claims-icon.svg",
   },
   {
+    labelKey: "myContracts",
+    href: "/my-contracts",
+    icon: "/images/profile/claims.svg",
+  },
+  {
     labelKey: "warrantyClaims",
     href: "/warranty-claims",
     icon: "/images/profile/warranty-claims-icon.svg",

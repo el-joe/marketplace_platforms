@@ -6,7 +6,8 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <h1 class="text-xl font-semibold text-gray-900">{{ __('admin.contracts.signatures_title', ['name' => $contractTemplate->name, 'version' => $contractTemplate->version]) }}</h1>
-            <p class="text-sm text-gray-500">{{ __('admin.contracts.signatures_subtitle') }}</p>
+            <p class="text-sm text-gray-500">{{ __('admin.contracts.signatures_subtitle') }}
+                · {{ __('contracts.admin.col_country') }}: {{ $contractTemplate->country ? (app()->getLocale() === 'ar' ? $contractTemplate->country->name_ar : $contractTemplate->country->name_en) : __('contracts.admin.legacy_country') }}</p>
         </div>
         <a href="{{ route('admin.contracts.templates.index', ['scope' => $contractTemplate->category_scope]) }}" class="text-sm text-gray-500 hover:text-gray-700">← {{ __('common.back') }}</a>
     </div>

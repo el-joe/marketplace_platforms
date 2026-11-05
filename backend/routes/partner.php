@@ -130,7 +130,10 @@ Route::middleware(['vendor.auth', 'vendor.active', 'vendor.agreement.enforce'])-
     Route::prefix('listings')->name('listings.')->controller(ListingController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', 'index')->name('index')->middleware('vendor.can:listings.view');
         Route::get('/datatable', 'datatable')->name('datatable')->middleware('vendor.can:listings.view');
-        Route::get('/create', 'create')->name('create')->middleware(['vendor.can:listings.create', 'vendor.contracts.enforce']);
+        // The wizard itself is not gated by unrelated pending contracts (blast radius when a category switch goes
+        // live): the contract the chosen product needs is signed inline and enforced in store().
+        Route::get('/create', 'create')->name('create')->middleware('vendor.can:listings.create');
+        Route::get('/contract-check', 'contractCheck')->name('contract-check')->middleware('vendor.can:listings.create');
         Route::post('/', 'store')->name('store')->middleware('vendor.can:listings.create');
         Route::get('/product-search', 'productSearch')->name('product-search')->middleware('vendor.can:listings.view');
         Route::get('/products/{product}/variants/{variant}/slug-preview', 'slugPreview')->name('slug-preview')->middleware('vendor.can:listings.view');
@@ -553,6 +556,9 @@ Route::middleware(['vendor.auth', 'vendor.active', 'vendor.agreement.enforce'])-
         Route::post('agreement', 'accept')->name('agreement.accept');
         Route::get('templates/{template}/{language}', 'templateFile')->whereIn('language', ['ar', 'en'])->name('template-file');
         Route::get('signed/{contract}/file', 'signedFile')->name('signed-file');
+        Route::get('collaborations', 'collaborations')->name('collaborations');
+        Route::get('collaborations/{contract}', 'collaborationShow')->name('collaborations.show');
+        Route::get('collaborations/{contract}/file', 'collaborationFile')->name('collaborations.file');
     });
 
     // Category-level contracts (one acceptance per template version, see CategoryContractService)

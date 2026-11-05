@@ -11,7 +11,7 @@ class ClassifiedInquiry extends Model
     use HasUuids;
 
     protected $fillable = [
-        'classified_listing_id', 'customer_id',
+        'classified_listing_id', 'customer_id', 'customer_contract_id',
         'message', 'contact_phone', 'status',
         'marketer_id', 'marketer_campaign_id', 'referral_code',
     ];
@@ -38,5 +38,11 @@ class ClassifiedInquiry extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /** The customer purchase contract accepted before this inquiry was sent (null when none was required). */
+    public function customerContract(): BelongsTo
+    {
+        return $this->belongsTo(CustomerContract::class);
     }
 }

@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useTranslations } from "next-intl";
 import { Send, CheckCircle } from "lucide-react";
-import toast from "react-hot-toast";
-import { postClassifiedInquiryService } from "./api/get";
+import CustomerContractModal from "./customer-contract-modal";
+import { useInquiryActions } from "./helpers/use-inquiry-actions";
 
 interface ClassifiedInquiryProps {
   sellerName?: string;
@@ -16,9 +16,18 @@ export default function ClassifiedInquiry({
   slug,
 }: ClassifiedInquiryProps) {
   const t = useTranslations("classifiedInquiry");
-  const [message, setMessage] = useState("");
-  const [isSent, setIsSent] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+  const {
+    message,
+    setMessage,
+    isSending,
+    isSent,
+    sendInquiry,
+    contract,
+    isSigning,
+    signError,
+    acceptContract,
+    closeContract,
+  } = useInquiryActions(slug);
   const displaySellerName = sellerName || t("theLister");
 
   const PRESET_QUESTIONS = [
@@ -35,22 +44,7 @@ export default function ClassifiedInquiry({
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || isSending) return;
-
-    const sentMessage = message.trim();
-    setIsSending(true);
-    try {
-      await postClassifiedInquiryService(slug, sentMessage);
-      setIsSent(true);
-      setMessage("");
-      setTimeout(() => {
-        setIsSent(false);
-      }, 3500);
-    } catch {
-      toast.error(t("sendFailed"));
-    } finally {
-      setIsSending(false);
-    }
+    await sendInquiry();
   };
 
   return (
@@ -106,6 +100,16 @@ export default function ClassifiedInquiry({
           <span>{t("messageSentTo", { name: displaySellerName })}</span>
         </div>
       )}
+
+      {/* Purchase contract the server asked the customer to accept before the inquiry is sent */}
+      <CustomerContractModal
+        open={contract !== null}
+        contract={contract}
+        isSubmitting={isSigning}
+        error={signError}
+        onAccept={acceptContract}
+        onClose={closeContract}
+      />
     </div>
   );
 }

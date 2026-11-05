@@ -23,7 +23,26 @@
 
     <form method="POST" enctype="multipart/form-data"
           action="{{ $template ? route('admin.contracts.templates.update', $template) : route('admin.contracts.templates.store') }}"
-          x-data="{ mode: @js(old('content_mode', $template?->content_mode ?? 'editor')), scope: @js(old('category_scope', $template?->category_scope ?? 'classified')), acceptance: @js(old('acceptance_mode', $template?->acceptance_mode ?? 'click_wrap')) }"
+          x-data="{
+              mode: @js(old('content_mode', $template?->content_mode ?? 'editor')),
+              scope: @js(old('category_scope', $template?->category_scope ?? 'classified')),
+              acceptance: @js(old('acceptance_mode', $template?->acceptance_mode ?? 'click_wrap')),
+              country: @js((string) old('country_id', $template?->country_id ?? '')),
+              picked: @js(array_values(old('classified_category_ids', $selectedSections))),
+              takenAll: { classified: @js($takenSections), customer: @js($takenCustomerSections) },
+              pickedMarketers: @js($selectedMarketers),
+              marketerQuery: '',
+              marketerResults: [],
+              searchMarketers() {
+                  if (this.marketerQuery.length < 2) { this.marketerResults = []; return; }
+                  fetch(@js(route('admin.contracts.templates.marketer-search')) + '?q=' + encodeURIComponent(this.marketerQuery), { headers: { 'Accept': 'application/json' } })
+                      .then(r => r.json()).then(rows => { this.marketerResults = rows.filter(r => !this.pickedMarketers.some(p => p.id === r.id)); });
+              },
+              addMarketer(m) { this.pickedMarketers.push(m); this.marketerResults = []; this.marketerQuery = ''; },
+              removeMarketer(id) { this.pickedMarketers = this.pickedMarketers.filter(m => m.id !== id); },
+              takenBy(id) { const taken = this.takenAll[this.scope === 'customer' ? 'customer' : 'classified']; return (taken[this.country || 'legacy'] || {})[id]?.name || null; },
+              effective() { return this.picked.filter(id => !this.takenBy(id)); },
+          }"
           class="space-y-5 rounded-xl border bg-white p-6">
         @csrf
         @if ($template) @method('PUT') @endif
@@ -43,10 +62,140 @@
                         <option value="classified">{{ __('admin.contracts.scope_classified') }}</option>
                         <option value="product">{{ __('admin.contracts.scope_product') }}</option>
                         <option value="platform">{{ __('admin.contracts.scope_platform') }}</option>
+                        <option value="marketer">{{ __('admin.contracts.scope_marketer') }}</option>
+                        <option value="customer">{{ __('admin.contracts.scope_customer') }}</option>
                     </select>
                     <p class="mt-1 text-xs text-gray-500" x-show="scope === 'platform'">{{ __('admin.contracts.scope_platform_help') }}</p>
-                    <p class="mt-1 text-xs text-gray-500" x-show="scope !== 'platform'" x-cloak>{{ __('admin.contracts.scope_category_help') }}</p>
+                    <p class="mt-1 text-xs text-gray-500" x-show="scope === 'marketer'" x-cloak>{{ __('contracts.marketer.scope_help') }}</p>
+                    <p class="mt-1 text-xs text-gray-500" x-show="scope === 'customer'" x-cloak>{{ __('contracts.customer.scope_help') }}</p>
+                    <p class="mt-1 text-xs text-gray-500" x-show="scope !== 'platform' && scope !== 'marketer' && scope !== 'customer'" x-cloak>{{ __('admin.contracts.scope_category_help') }}</p>
                 @endif
+            </div>
+        </div>
+
+        {{-- Country: which sellers this contract is for. Empty = legacy / all countries without a contract of their own. --}}
+        @php($lockedCountry = $template && $template->is_published)
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+                <label class="mb-1 block text-sm font-medium text-gray-700">{{ __('contracts.admin.col_country') }}</label>
+                <select name="country_id" x-model="country" class="form-input w-full text-sm" @disabled($lockedCountry)>
+                    <option value="">{{ __('contracts.admin.all_countries_option') }}</option>
+                    @foreach ($countries as $country)
+                        <option value="{{ $country->id }}" @selected(old('country_id', $template?->country_id) === $country->id)>{{ app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en }}</option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-gray-500">{{ $lockedCountry ? __('contracts.admin.country_locked_help') : __('contracts.admin.country_help') }}</p>
+                @error('country_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            </div>
+            <div x-show="scope !== 'platform' && scope !== 'marketer' && scope !== 'customer'" x-cloak>
+                <label class="mb-1 block text-sm font-medium text-gray-700">{{ __('contracts.admin.default_label') }}</label>
+                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input type="hidden" name="is_country_default" value="0">
+                    <input type="checkbox" name="is_country_default" value="1" @checked(old('is_country_default', $template?->is_country_default)) @disabled($lockedCountry)>
+                    {{ __('contracts.admin.default_flag') }}
+                </label>
+                <p class="mt-1 text-xs text-gray-500">{{ __('contracts.admin.default_help') }}</p>
+                @error('is_country_default')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            </div>
+        </div>
+
+
+        {{-- Classified sections this contract applies to (classified scope only). Saved as links the resolver reads. --}}
+        <div x-show="scope === 'classified' || scope === 'customer'" x-cloak class="space-y-3 rounded-lg border border-indigo-100 bg-indigo-50/40 p-4">
+            <input type="hidden" name="sections_submitted" value="1">
+            <template x-for="id in effective()" :key="id"><input type="hidden" name="classified_category_ids[]" :value="id"></template>
+            <div>
+                <p class="text-sm font-semibold text-gray-800">{{ __('contracts.sections.title') }}</p>
+                <p class="mt-0.5 text-xs text-gray-600" x-show="scope !== 'customer'">{{ __('contracts.sections.help') }}</p>
+                <p class="mt-0.5 text-xs text-gray-600" x-show="scope === 'customer'" x-cloak>{{ __('contracts.customer.sections_help') }}</p>
+                <p class="mt-0.5 text-xs text-gray-500" x-show="country === ''">{{ __('contracts.sections.legacy_note') }}</p>
+            </div>
+            @error('classified_category_ids')<div class="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{{ $message }}</div>@enderror
+            @error('classified_category_ids.*')<div class="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{{ $message }}</div>@enderror
+            @if ($sectionTree->isEmpty())
+                <p class="text-xs text-gray-500">{{ __('contracts.sections.no_sections') }}</p>
+            @else
+                <div class="grid gap-3 sm:grid-cols-2">
+                    @foreach ($sectionTree as $root)
+                        <div class="rounded-lg border bg-white p-3">
+                            @include('admin.contracts.partials.section-checkbox', ['category' => $root, 'child' => false])
+                            @foreach ($root->children as $child)
+                                @include('admin.contracts.partials.section-checkbox', ['category' => $child, 'child' => true])
+                            @endforeach
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+            <p class="text-xs text-gray-500" x-show="scope !== 'customer'">{{ __('contracts.sections.draft_note') }}</p>
+            <p class="text-xs text-gray-500" x-show="scope === 'customer'" x-cloak>{{ __('contracts.customer.sections_draft_note') }}</p>
+        </div>
+
+        {{-- Seller-marketer collaboration contracts: where they are shown and whom they cover --}}
+        <div x-show="scope === 'marketer'" x-cloak class="space-y-4 rounded-lg border border-purple-100 bg-purple-50/40 p-4">
+            <div>
+                <p class="text-sm font-semibold text-gray-800">{{ __('contracts.marketer.display_on') }}</p>
+                <p class="mt-0.5 text-xs text-gray-600">{{ __('contracts.marketer.display_on_help') }}</p>
+            </div>
+            <div class="grid gap-2 sm:grid-cols-2">
+                @foreach ($destinations as $destination)
+                    <label class="flex items-start gap-2 rounded border bg-white px-3 py-2 text-sm text-gray-700">
+                        <input type="checkbox" name="destination_ids[]" value="{{ $destination->id }}" class="mt-0.5 rounded border-gray-300"
+                               @checked(in_array($destination->id, (array) old('destination_ids', $selectedDestinationIds), true))>
+                        <span>{{ $destination->label() }}</span>
+                    </label>
+                @endforeach
+            </div>
+            @error('destination_ids')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+            @error('destination_ids.*')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">{{ __('contracts.marketer.category') }}</label>
+                    <select name="classified_category_id" class="form-input w-full text-sm">
+                        <option value="">{{ __('contracts.marketer.category_any') }}</option>
+                        @foreach ($sectionTree as $root)
+                            <option value="{{ $root->id }}" @selected(old('classified_category_id', $template?->classified_category_id) === $root->id)>{{ app()->getLocale() === 'ar' ? $root->name_ar : $root->name_en }}</option>
+                            @foreach ($root->children as $child)
+                                <option value="{{ $child->id }}" @selected(old('classified_category_id', $template?->classified_category_id) === $child->id)>— {{ app()->getLocale() === 'ar' ? $child->name_ar : $child->name_en }}</option>
+                            @endforeach
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">{{ __('contracts.marketer.category_help') }}</p>
+                    @error('classified_category_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">{{ __('contracts.marketer.public_label') }}</label>
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input type="hidden" name="show_on_public_profile" value="0">
+                        <input type="checkbox" name="show_on_public_profile" value="1" @checked(old('show_on_public_profile', $template?->show_on_public_profile))>
+                        {{ __('contracts.marketer.public_flag') }}
+                    </label>
+                    <p class="mt-1 text-xs text-gray-500">{{ __('contracts.marketer.public_help') }}</p>
+                </div>
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium text-gray-700">{{ __('contracts.marketer.specific_marketers') }}</label>
+                <p class="mb-2 text-xs text-gray-500">{{ __('contracts.marketer.specific_marketers_help') }}</p>
+                <div class="flex flex-wrap gap-2">
+                    <template x-for="m in pickedMarketers" :key="m.id">
+                        <span class="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs text-gray-800 ring-1 ring-purple-200">
+                            <input type="hidden" name="marketer_ids[]" :value="m.id">
+                            <span x-text="m.text"></span>
+                            <button type="button" class="text-red-600" @click="removeMarketer(m.id)" aria-label="{{ __('common.delete') }}">&times;</button>
+                        </span>
+                    </template>
+                </div>
+                <div class="relative mt-2 sm:w-80">
+                    <input type="text" x-model="marketerQuery" @input.debounce.300ms="searchMarketers()" placeholder="{{ __('contracts.marketer.search_marketers') }}" class="form-input w-full text-sm">
+                    <ul x-show="marketerResults.length > 0" x-cloak class="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-lg border bg-white text-sm shadow">
+                        <template x-for="m in marketerResults" :key="m.id">
+                            <li><button type="button" class="block w-full px-3 py-2 text-start hover:bg-gray-50" @click="addMarketer(m)" x-text="m.text"></button></li>
+                        </template>
+                    </ul>
+                </div>
+                @error('marketer_ids')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                @error('marketer_ids.*')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
         </div>
 

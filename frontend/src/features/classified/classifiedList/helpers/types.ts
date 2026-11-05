@@ -1,7 +1,41 @@
 import { Currency } from "@/src/features/noon/cart/types/recommendations.type";
 
 export interface IClassifiedsList {
+  /** The resolved category of a category page; null on the all-ads landing page. */
+  category?: IClassifiedBrowseCategory | null;
   listings: Listings;
+}
+
+/** `category` block of GET /browse/classified/{idOrSlug}. */
+export interface IClassifiedBrowseCategory {
+  id: string;
+  slug: string;
+  name: Name;
+  icon: null | string;
+  image_url: null | string;
+  description: { ar: null | string; en: null | string };
+  parent: { id: string; slug: string; name: Name } | null;
+  children: { id: string; slug: string; name: Name }[];
+}
+
+/** Minimal shape the breadcrumb / filter chips need. */
+export interface IClassifiedCategoryRef {
+  id: string;
+  slug: string;
+  name: Name;
+}
+
+/** One admin-configured section with its newest ads: GET /classified/sections. */
+export interface IClassifiedSection {
+  id: string;
+  slug: string;
+  name: Name;
+  icon: null | string;
+  image_url: null | string;
+  description: { ar: null | string; en: null | string };
+  total: number;
+  children: { id: string; slug: string; name: Name }[];
+  listings: ClassifiedItem[];
 }
 
 export interface Listings {
@@ -65,6 +99,9 @@ export interface IClassifiedCategoriesList {
   attributes?: Attribute[];
   children: IClassifiedCategoriesList[];
   icon?: null | string;
+  /** Surfaces the admin put the section on: nav, landing, home. */
+  placements?: string[];
+  description?: { ar: null | string; en: null | string };
 }
 
 export interface Attribute {

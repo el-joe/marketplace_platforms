@@ -4,7 +4,9 @@ namespace Tests\Feature\Admin;
 
 use App\Enums\PortalContentType;
 use App\Models\Admin;
+use App\Models\Country;
 use App\Models\PortalContent;
+use App\Services\PortalContentCountrySync;
 use Database\Seeders\Concerns\SyncsPortalContent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -28,11 +30,13 @@ class PortalContentTest extends TestCase
 
     private function admin(): Admin
     {
-        foreach (['vendors.assigned_only', 'portal_content.view', 'portal_content.edit'] as $permission) {
+        // A full content editor: edit holders receive create/publish/delete through the grant migration.
+        $permissions = ['portal_content.view', 'portal_content.edit', 'portal_content.create', 'portal_content.delete', 'portal_content.publish'];
+        foreach (['vendors.assigned_only', ...$permissions] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'admin']);
         }
         $admin = Admin::factory()->create();
-        $admin->givePermissionTo(['portal_content.view', 'portal_content.edit']);
+        $admin->givePermissionTo($permissions);
 
         return $admin;
     }
@@ -99,8 +103,8 @@ class PortalContentTest extends TestCase
             'value_en' => 'Nawy', 'value_ar' => 'Nawy', 'value_url' => '/images/nawy_logo_transparent.png',
         ]);
         $admin = $this->admin();
-        $country = \App\Models\Country::factory()->create(['site_code' => 'kw', 'is_active' => true]);
-        app(\App\Services\PortalContentCountrySync::class)->ensureCountryRows($country, 'zz_test');
+        $country = Country::factory()->create(['site_code' => 'kw', 'is_active' => true]);
+        app(PortalContentCountrySync::class)->ensureCountryRows($country, 'zz_test');
         $row = PortalContent::where('country_code', 'kw')->where('page_key', 'zz_test')->firstOrFail();
         $save = fn (array $field) => $this->actingAs($admin, 'admin')
             ->post(route('admin.portal-content.save', ['kw', 'zz_test']), ['fields' => [$row->id => $field + ['value_en' => 'Nawy', 'value_ar' => 'Nawy', 'is_active' => '1']]])

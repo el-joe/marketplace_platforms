@@ -19,6 +19,8 @@ class ContractSignaturesBadgeTest extends TestCase
 
     private Admin $admin;
 
+    private ?MarketplaceScenario $scenario = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -49,7 +51,9 @@ class ContractSignaturesBadgeTest extends TestCase
 
     private function sign(string $method = 'click_wrap', ?object $template = null): void
     {
-        $scenario = MarketplaceScenario::make()->build();
+        // One vendor signs several times; the scenario inserts fixed rows (country iso code), so build it once.
+        $this->scenario ??= MarketplaceScenario::make()->build();
+        $scenario = $this->scenario;
         $template ??= $this->platformFileTemplate();
         app(SellerAgreementService::class)->sign($scenario->vendor, null, $template, 'ar', 'Owner', '127.0.0.1', 'phpunit', $method);
     }
@@ -67,6 +71,8 @@ class ContractSignaturesBadgeTest extends TestCase
         $this->assertNotNull($this->admin->fresh()->contracts_seen_at);
         $this->assertNull($this->badge());
 
+        // timestamps have second precision: sign after the visit, not within the same second
+        $this->travel(2)->seconds();
         $this->sign('click_wrap', $this->platformFileTemplate(version: 2, published: false));
         Cache::flush();
         $this->assertSame(1, $this->badge(), 'only signatures after the last visit count');

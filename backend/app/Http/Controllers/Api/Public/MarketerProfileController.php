@@ -12,9 +12,11 @@ use App\Models\ExclusiveContract;
 use App\Models\Marketer;
 use App\Models\MarketerListing;
 use App\Models\MarketerProfile;
+use App\Services\Customer\ClassifiedSectionService;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\MarketerProfileCache;
 use App\Services\Customer\PromoBadgeResolver;
+use App\Services\Marketer\MarketerCollaborationContractService;
 use App\Services\Marketer\PublicMarketerDirectoryService;
 use App\Services\Marketer\PublicMarketerProfileListingService;
 use Illuminate\Http\JsonResponse;
@@ -152,9 +154,36 @@ class MarketerProfileController extends Controller
         $filters = $this->profileListings->filtersFrom($request);
         $response['listings'] = $this->profileListings->listings($header['_marketer_id'], $country, $filters, $wishlistIds, MarketerBannerResource::localeFor($request));
         $response['facets'] = $this->profileListings->facets($header['_marketer_id'], $country, $filters, MarketerBannerResource::localeFor($request));
-        $response['banners'] = $this->directory->profileBanners(Marketer::findOrFail($header['_marketer_id']), $country->id, $request);
+        $profileMarketer = Marketer::findOrFail($header['_marketer_id']);
+        $response['banners'] = $this->directory->profileBanners($profileMarketer, $country->id, $request);
+        // New (not cached): the contracts an admin flagged as public for this marketer's profile.
+        $response['contract_types'] = $this->publicContractTypes($profileMarketer);
 
         return ApiResponse::success($response);
+    }
+
+    /**
+     * Collaboration contracts that apply to the marketer AND are flagged for the public profile. Only the type is
+     * exposed: no template id, text, files, sellers or signers.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function publicContractTypes(Marketer $marketer): array
+    {
+        return app(MarketerCollaborationContractService::class)->applicableTo($marketer)
+            ->filter(fn ($template) => $template->show_on_public_profile)
+            ->map(fn ($template) => [
+                'kind' => $template->contract_kind?->value,
+                'kind_label' => $template->contract_kind?->labelBilingual(),
+                'name' => $template->name,
+                'version' => $template->version,
+                'country' => $template->country?->iso_code_2,
+                'classified_category' => $template->category ? ['name_ar' => $template->category->name_ar, 'name_en' => $template->category->name_en] : null,
+                'display_on' => $template->displayDestinations->map(fn ($d) => ['key' => $d->key, 'name_ar' => $d->name_ar, 'name_en' => $d->name_en])->values()->all(),
+                'effective_at' => $template->effective_at?->toIso8601String(),
+            ])
+            ->values()
+            ->all();
     }
 
     /** Public-safe active exclusive contracts (no file paths / notes). */
@@ -180,6 +209,7 @@ class MarketerProfileController extends Controller
             ->where('seller_type', Marketer::class)
             ->where('seller_id', $marketerId)
             ->where('status', ClassifiedListingStatus::Active)
+            ->whereIn('classified_category_id', app(ClassifiedSectionService::class)->visibleIds())
             ->with(['classifiedCategory:id,name_ar,name_en', 'images'])
             ->latest()
             ->limit(12)

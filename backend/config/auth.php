@@ -191,10 +191,19 @@ return [
             'throttle' => 60,
         ],
 
+        // Staff: also used for the set-password link in welcome / resend-credentials emails,
+        // so the link stays valid for 24 hours (1440 minutes).
+        'admins' => [
+            'provider' => 'admins',
+            'table' => 'admin_password_resets',
+            'expire' => 1440,
+            'throttle' => 60,
+        ],
+        // Sellers: same link is used for approval / team-invite emails (24 hours).
         'vendor_admins' => [
             'provider' => 'vendor_admins',
             'table' => 'vendor_admin_password_resets',
-            'expire' => 60,
+            'expire' => 1440,
             'throttle' => 60,
         ],
         'customers' => [

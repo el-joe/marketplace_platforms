@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Portal;
 
+use App\Enums\RegistrationFlow;
 use App\Enums\TravelAgencyStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\TravelAgency;
 use App\Models\TravelAgencyMember;
+use App\Services\PortalAnalytics\PortalTracker;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +36,8 @@ class TravelAgencyRegistrationController extends Controller
 
     /** Steps that persist to the session before the final submit. */
     private const STEPS = [1, 2];
+
+    public function __construct(private readonly PortalTracker $tracker) {}
 
     // ── Step validation rule sets ─────────────────────────────────────────
 
@@ -97,6 +101,15 @@ class TravelAgencyRegistrationController extends Controller
         $currentStep = session(self::SESSION_KEY.'.current_step', 1);
         $savedData = session(self::SESSION_KEY, []);
 
+        // Carry the portal country chosen earlier into the country field, unless
+        // the applicant already saved a different one.
+        $portalCountryId = $countries->firstWhere('site_code', Country::resolveSiteCode(null))?->id;
+        if ($portalCountryId && empty($savedData['step1']['country_id'])) {
+            $savedData['step1']['country_id'] = $portalCountryId;
+        }
+
+        $this->tracker->stepReached(RegistrationFlow::TravelAgency, max(1, (int) $currentStep));
+
         return view('portal.travel-agency-register', compact('countries', 'currentStep', 'savedData'));
     }
 
@@ -118,6 +131,8 @@ class TravelAgencyRegistrationController extends Controller
         );
 
         if ($validator->fails()) {
+            $this->tracker->stepFailed(RegistrationFlow::TravelAgency, $step);
+
             return response()->json([
                 'success' => false,
                 'errors' => $validator->errors(),
@@ -132,6 +147,7 @@ class TravelAgencyRegistrationController extends Controller
 
         session([self::SESSION_KEY.".step{$step}" => $data]);
         session([self::SESSION_KEY.'.current_step' => $step + 1]);
+        $this->tracker->stepCompleted(RegistrationFlow::TravelAgency, $step);
 
         return response()->json([
             'success' => true,
@@ -200,6 +216,8 @@ class TravelAgencyRegistrationController extends Controller
         ]);
 
         if ($validator->fails()) {
+            $this->tracker->stepFailed(RegistrationFlow::TravelAgency, 3);
+
             return response()->json([
                 'success' => false,
                 'errors' => $validator->errors(),
@@ -210,6 +228,8 @@ class TravelAgencyRegistrationController extends Controller
         $step2 = session(self::SESSION_KEY.'.step2', []);
 
         if (empty($step1['email']) || empty($step2['agency_name'])) {
+            $this->tracker->stepFailed(RegistrationFlow::TravelAgency, 3);
+
             return response()->json([
                 'success' => false,
                 'message' => __('portal.travel_agency.incomplete_data'),
@@ -219,6 +239,8 @@ class TravelAgencyRegistrationController extends Controller
         // The step 1 uniqueness check may be stale by the time the visitor
         // submits; re-check so we never violate the email unique constraints.
         if ($this->emailTaken($step1['email'])) {
+            $this->tracker->stepFailed(RegistrationFlow::TravelAgency, 3);
+
             return response()->json([
                 'success' => false,
                 'errors' => ['email' => [__('portal.travel_agency.email_unique')]],
@@ -230,6 +252,8 @@ class TravelAgencyRegistrationController extends Controller
             ->first();
 
         if (! $country) {
+            $this->tracker->stepFailed(RegistrationFlow::TravelAgency, 3);
+
             return response()->json([
                 'success' => false,
                 'message' => __('portal.registration.invalid_country'),
@@ -238,7 +262,9 @@ class TravelAgencyRegistrationController extends Controller
 
         $logoPath = $step2['logo_path'] ?? null;
 
-        DB::transaction(function () use ($step1, $step2, $country, $logoPath): void {
+        $createdAgency = null;
+
+        DB::transaction(function () use ($step1, $step2, $country, $logoPath, &$createdAgency): void {
             $agency = TravelAgency::create([
                 'name' => $step2['agency_name'],
                 'email' => $step1['email'],
@@ -248,6 +274,8 @@ class TravelAgencyRegistrationController extends Controller
                 'country_id' => $country->id,
                 'status' => TravelAgencyStatus::Pending,
             ]);
+
+            $createdAgency = $agency;
 
             $member = TravelAgencyMember::create([
                 'travel_agency_id' => $agency->id,
@@ -274,6 +302,10 @@ class TravelAgencyRegistrationController extends Controller
         });
 
         session()->forget(self::SESSION_KEY);
+
+        if ($createdAgency instanceof TravelAgency) {
+            $this->tracker->registrationCompleted(RegistrationFlow::TravelAgency, $createdAgency);
+        }
 
         return response()->json([
             'success' => true,

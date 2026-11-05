@@ -177,3 +177,11 @@ Schedule::command('promotion:expire-items')
     ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Client requirement 2: keep portal analytics lean (page views + idle anonymous visitors older than
+// config('portal_analytics.retention_days'); registration funnel history is kept).
+Schedule::command('portal-analytics:prune')
+    ->dailyAt('04:30')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->name('prune-portal-analytics');

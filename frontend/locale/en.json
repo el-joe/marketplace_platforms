@@ -272,6 +272,7 @@
     "noonCredits": "Nawy Credits",
     "warrantyClaims": "Warranty Claims",
     "myWarranties": "My Warranties",
+    "myContracts": "My Contracts",
     "giftCards": "Gift Cards",
     "digitalCards": "Digital Cards",
     "others": "Others",
@@ -1312,7 +1313,17 @@
     "nearMeHint": "Show ads around your location",
     "radiusKm": "{km} km",
     "locationDenied": "Location permission was denied. Allow it in your browser settings.",
-    "locationUnavailable": "Couldn't get your location. Please try again."
+    "locationUnavailable": "Couldn't get your location. Please try again.",
+    "noAdsInCategory": "No ads in this section yet.",
+    "noAdsInCategoryHint": "Check back soon or browse another section.",
+    "subCategories": "Sub-categories",
+    "viewAllAds": "View all ads",
+    "sectionAdsCount": "{count} ads",
+    "sectionsLabel": "Classified sections",
+    "metaTitle": "{category} Classifieds | Buy, Sell & Rent",
+    "metaDescription": "Browse the latest {category} ads and find great deals from trusted sellers.",
+    "metaTitleAll": "Classifieds | Buy & Sell Anything",
+    "metaDescriptionAll": "Browse the latest classified ads across all sections and find great deals."
   },
   "classifiedSidebar": {
     "chat": "Chat",
@@ -1686,5 +1697,48 @@
     "typeMessage": "Type a message…",
     "send": "Send",
     "sendFailed": "Message not sent. Please try again."
+  },
+  "customerContract": {
+    "requiredNotice": "This advertisement has a purchase contract. Please read it, type your full name and confirm to continue with your message.",
+    "version": "Version {version}",
+    "scrollHint": "Scroll to the end of the contract to continue.",
+    "nameLabel": "Your full name",
+    "namePlaceholder": "Type your full name",
+    "acceptLabel": "I have read this contract and I accept its terms.",
+    "recordedNotice": "Your acceptance is recorded with your typed name, the date and time and your IP address. You can find it later under My contracts.",
+    "accept": "Accept and continue",
+    "cancel": "Cancel",
+    "changed": "The contract was updated while you were reading it. Please review the new version.",
+    "acceptFailed": "Your acceptance could not be recorded. Please try again.",
+    "loginRequired": "Please log in again to accept the contract.",
+    "loadFailed": "The contract document could not be loaded. Please try again.",
+    "downloadDocument": "Download {name}"
+  },
+  "myContracts": {
+    "title": "My contracts",
+    "subtitle": "Purchase and rental contracts you accepted for classified advertisements.",
+    "empty": "You have not accepted any contracts yet.",
+    "view": "View contract",
+    "back": "Back to my contracts",
+    "version": "Version {version}",
+    "status": {
+      "active": "Current",
+      "superseded": "Replaced by a newer version",
+      "cancelled": "Cancelled"
+    },
+    "purpose": {
+      "purchase": "Sale",
+      "rental": "Rent"
+    },
+    "listing": "Advertisement",
+    "category": "Category",
+    "country": "Country",
+    "purposeLabel": "Sale / rent",
+    "versionLabel": "Contract version",
+    "signerName": "Name you typed",
+    "acceptedAt": "Accepted on",
+    "acceptedText": "Contract you accepted",
+    "supersededNote": "A newer version of this contract was accepted for the same advertisement. This record is kept unchanged.",
+    "recordedNote": "This record shows the contract exactly as it was shown to you, with the name you typed and the date and time of your acceptance."
   }
 }

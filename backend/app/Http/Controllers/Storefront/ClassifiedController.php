@@ -7,6 +7,7 @@ use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
 use App\Models\Country;
 use App\Services\ClassifiedListingService;
+use App\Services\Customer\ClassifiedSectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -22,9 +23,12 @@ class ClassifiedController extends Controller
             ->orWhere('slug', $country)
             ->firstOrFail();
 
+        $sections = app(ClassifiedSectionService::class);
+
         $query = ClassifiedListing::with(['classifiedCategory', 'images', 'city'])
             ->where('status', 'active')
             ->where('country_id', $countryModel->id)
+            ->whereIn('classified_category_id', $sections->visibleIds($countryModel))
             ->latest();
 
         if ($request->filled('category')) {
@@ -47,11 +51,7 @@ class ClassifiedController extends Controller
         }
 
         $listings   = $query->paginate(12)->withQueryString();
-        $categories = ClassifiedCategory::where('is_active', true)
-            ->whereNull('parent_id')
-            ->with('children')
-            ->orderBy('sort_order')
-            ->get();
+        $categories = $sections->tree($countryModel);
 
         return view('storefront.classifieds.index', compact(
             'listings', 'categories', 'countryModel'
@@ -71,6 +71,7 @@ class ClassifiedController extends Controller
             ])
             ->where('status', 'active')
             ->where('country_id', $countryModel->id)
+            ->whereIn('classified_category_id', app(ClassifiedSectionService::class)->visibleIds($countryModel))
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->when($request->filled('bounds'), function ($q) use ($request) {
@@ -102,6 +103,7 @@ class ClassifiedController extends Controller
             ])
             ->where('listing_number', $listingNumber)
             ->where('status', 'active')
+            ->whereIn('classified_category_id', app(ClassifiedSectionService::class)->visibleIds())
             ->firstOrFail();
 
         $listing->increment('views_count');
@@ -122,11 +124,7 @@ class ClassifiedController extends Controller
             ->orWhere('slug', $country)
             ->firstOrFail();
 
-        $categories = ClassifiedCategory::where('is_active', true)
-            ->whereNull('parent_id')
-            ->with('children')
-            ->orderBy('sort_order')
-            ->get();
+        $categories = app(ClassifiedSectionService::class)->tree($countryModel);
 
         return view('storefront.classifieds.create', compact(
             'countryModel', 'categories'
@@ -214,6 +212,52 @@ class ClassifiedController extends Controller
         return response()->json(['success' => true, 'status' => 'pending_review']);
     }
 
+    /**
+     * Records the customer's acceptance of the customer purchase contract of this advertisement (web flow). The same
+     * server-side service as the API; the inquiry below is refused until it has been recorded.
+     */
+    public function acceptCustomerContract(Request $request, string $country, ClassifiedListing $listing): JsonResponse
+    {
+        $customer = auth('customer')->user();
+        abort_unless($customer && $listing->status === \App\Enums\ClassifiedListingStatus::Active, 404);
+
+        $data = $request->validate([
+            'signer_name' => 'required|string|min:2|max:150',
+            'accept'      => 'accepted',
+            'version'     => 'required|integer|min:1',
+        ]);
+
+        $contracts = app(\App\Services\Customer\CustomerContractService::class);
+        $template = $contracts->templateFor($listing, $customer);
+
+        if ($template && $template->version !== (int) $data['version']) {
+            return response()->json([
+                'success' => false,
+                'code'    => 'customer_contract_changed',
+                'message' => __('contracts.customer.changed'),
+                'data'    => ['contract' => $contracts->present($template, $listing, $customer)],
+            ], 422);
+        }
+
+        $result = $contracts->accept($customer, $listing, $data['signer_name'], app()->getLocale(), $request->ip(), $request->userAgent());
+
+        return response()->json(['success' => true, 'created' => $result['created']]);
+    }
+
+    /**
+     * The uploaded document of the customer contract that applies to this advertisement (file-mode templates).
+     */
+    public function customerContractFile(Request $request, string $country, ClassifiedListing $listing, string $language): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $customer = auth('customer')->user();
+        $template = $customer ? app(\App\Services\Customer\CustomerContractService::class)->templateFor($listing, $customer) : null;
+        $file = $template ? ($template->files ?? [])[$language] ?? null : null;
+
+        abort_unless($file, 404);
+
+        return app(\App\Services\Vendor\ContractFileService::class)->respond($file, $request->boolean('download'));
+    }
+
     public function inquire(Request $request, string $country, ClassifiedListing $listing): JsonResponse
     {
         $request->validate([
@@ -222,6 +266,7 @@ class ClassifiedController extends Controller
         ]);
 
         $customer = auth('customer')->user();
+        abort_unless($customer, 401);
 
         $this->service->recordInquiry($listing, $customer, $request->only(
             'message', 'contact_phone'

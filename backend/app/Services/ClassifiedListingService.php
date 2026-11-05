@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Admin;
+use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedInquiry;
+use App\Services\Customer\ClassifiedSectionService;
 use App\Models\ClassifiedListing;
 use App\Models\ClassifiedListingAttachment;
 use App\Models\Customer;
@@ -23,6 +25,9 @@ class ClassifiedListingService
 {
     public function createDraft(array $data, Customer $customer): ClassifiedListing
     {
+        $category = ClassifiedCategory::findOrFail($data['classified_category_id']);
+        app(ClassifiedSectionService::class)->assertListable($category, $data['country_id'] ?? null);
+
         return $customer->classifiedListings()->create([
             'listing_number'          => 'CL-' . strtoupper(Str::random(8)),
             'classified_category_id'  => $data['classified_category_id'],
@@ -50,8 +55,7 @@ class ClassifiedListingService
         string $signatureName,
         string $ip
     ): ClassifiedListing {
-        $category = $listing->classifiedCategory;
-        $template = $category?->contractTemplate;
+        $template = app(\App\Services\Vendor\CategoryContractService::class)->classifiedTemplateForListing($listing);
 
         if (! $template) {
             throw ValidationException::withMessages([
@@ -154,11 +158,19 @@ class ClassifiedListingService
         array $data,
         ?string $sessionId = null
     ): ClassifiedInquiry {
-        return ClassifiedInquiry::create(app(\App\Services\Marketer\ListingReferralService::class)->attributes('classified', (string) $listing->id, $sessionId) + [
+        $contracts = app(\App\Services\Customer\CustomerContractService::class);
+        $acceptance = $contracts->assertAccepted($listing, $customer);
+
+        $inquiry = ClassifiedInquiry::create(app(\App\Services\Marketer\ListingReferralService::class)->attributes('classified', (string) $listing->id, $sessionId) + [
             'classified_listing_id' => $listing->id,
             'customer_id'           => $customer->id,
+            'customer_contract_id'  => $acceptance?->id,
             'message'               => $data['message'] ?? null,
             'contact_phone'         => $data['contact_phone'] ?? null,
         ]);
+
+        $contracts->linkInquiry($acceptance, $inquiry);
+
+        return $inquiry;
     }
 }

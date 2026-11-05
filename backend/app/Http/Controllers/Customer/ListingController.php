@@ -139,6 +139,7 @@ class ListingController extends Controller
         $listing = ClassifiedListing::where('slug', $slug)
             ->where('status', 'active')
             ->where('country_id', $country->id)
+            ->whereIn('classified_category_id', app(\App\Services\Customer\ClassifiedSectionService::class)->visibleIds($country))
             ->select(['id', 'classified_category_id', 'country_id'])
             ->first();
 

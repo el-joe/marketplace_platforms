@@ -23,7 +23,7 @@ function categoryHref(category: ICategoryNavTree): string {
       // Virtual parent node → all classifieds; real node → category browse
       return category.id === "virtual-open-souq"
         ? "/classified"
-        : `/classified/${category.id}`;
+        : `/classified/${category.slug}`;
     case Type.Travel:
       // Virtual parent node → Travel hub; real node → travel with category filter
       return category.id === "virtual-travel"
@@ -43,7 +43,7 @@ function subCategoryHref(
 ): string {
   switch (child.type ?? parent?.type) {
     case Type.ClassiFied:
-      return `/classified/${child.id}`;
+      return `/classified/${child.slug}`;
     case Type.Travel:
       return child.slug ? `/travel?category=${child.slug}` : "/travel";
     case Type.Product:
@@ -72,7 +72,11 @@ function buildNavTree(
   },
 ): ICategoryNavTree[] {
   const productNodes = nodes.filter((n) => n.type === Type.Product);
-  const classifiedNodes = nodes.filter((n) => n.type === Type.ClassiFied);
+  // Only the sections the admin placed in the navigation (sections without placement data keep showing).
+  const classifiedNodes = nodes.filter(
+    (n) =>
+      n.type === Type.ClassiFied && (n.placements ?? ["nav"]).includes("nav"),
+  );
   const travelNodes = nodes.filter((n) => n.type === Type.Travel);
 
   const result: ICategoryNavTree[] = [...productNodes];

@@ -26,11 +26,33 @@
 </x-card>
 
 {{-- Email --}}
+@php
+    $mailDiagnostics = app(\App\Services\Mail\MailDiagnostics::class);
+    $mailWarnings = $mailDiagnostics->warnings();
+    $mailSummary = $mailDiagnostics->summary();
+@endphp
 <x-card class="mb-6">
     <div class="mb-4">
         <h2 class="text-base font-semibold text-gray-900">{{ __('admin.settings_section.email') }}</h2>
         <p class="text-sm text-gray-500">{{ __('admin.settings_section.email_desc') }}</p>
     </div>
+    @if(count($mailWarnings))
+        <div id="mail-warning-banner" class="mb-4 flex gap-3 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+            <x-heroicon name="exclamation-triangle" class="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+            <div>
+                <p class="font-semibold">{{ __('admin.mail_diagnostics.warning_title') }}</p>
+                <ul class="mt-1 list-disc space-y-1 ps-5">
+                    @foreach($mailWarnings as $warning)
+                        <li>{{ $warning }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
+    <p class="mb-4 text-xs text-gray-500">
+        {{ __('admin.mail_diagnostics.override_note', ['mailer' => $mailSummary['mailer'], 'host' => $mailSummary['host'] ?? '—', 'from' => $mailSummary['from_address'] ?: '—']) }}
+    </p>
+
     <div class="divide-y divide-gray-100">
 
         @foreach($settings->whereIn('key', [
@@ -41,6 +63,64 @@
         @endforeach
 
     </div>
+
+    @if(auth('admin')->user()?->can('settings.edit'))
+        <div class="mt-5 border-t border-gray-100 pt-4">
+            <h3 class="text-sm font-semibold text-gray-900">{{ __('admin.mail_diagnostics.send_test_title') }}</h3>
+            <p class="mb-3 text-xs text-gray-500">{{ __('admin.mail_diagnostics.send_test_desc') }}</p>
+            <div class="flex flex-col gap-2 sm:flex-row">
+                <input type="email" id="mail-test-recipient" maxlength="255"
+                    class="form-input w-full text-sm sm:max-w-sm"
+                    placeholder="{{ __('admin.mail_diagnostics.send_test_placeholder') }}">
+                <button type="button" id="btn-send-test-email" data-url="{{ route('admin.settings.test-email') }}"
+                    class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-60">
+                    <x-heroicon name="envelope" class="h-4 w-4" />
+                    {{ __('admin.mail_diagnostics.send_test_button') }}
+                </button>
+            </div>
+            <p id="mail-test-result" class="mt-2 hidden text-sm"></p>
+        </div>
+
+        @push('scripts')
+            <script>
+                (function () {
+                    const btn = document.getElementById('btn-send-test-email');
+                    if (!btn) { return; }
+                    const input = document.getElementById('mail-test-recipient');
+                    const result = document.getElementById('mail-test-result');
+                    const label = btn.innerHTML;
+
+                    btn.addEventListener('click', async function () {
+                        btn.disabled = true;
+                        btn.textContent = @json(__('admin.mail_diagnostics.sending'));
+                        result.className = 'mt-2 hidden text-sm';
+
+                        try {
+                            const res = await fetch(btn.dataset.url, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ to: input.value.trim() || null }),
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            const errors = data.errors ? Object.values(data.errors).flat().join(' ') : null;
+                            result.textContent = errors || data.message || @json(__('admin.mail_diagnostics.unexpected_error'));
+                            result.className = 'mt-2 text-sm ' + (res.ok && data.success ? 'text-green-700' : 'text-red-700');
+                        } catch (e) {
+                            result.textContent = @json(__('admin.mail_diagnostics.unexpected_error'));
+                            result.className = 'mt-2 text-sm text-red-700';
+                        } finally {
+                            btn.disabled = false;
+                            btn.innerHTML = label;
+                        }
+                    });
+                })();
+            </script>
+        @endpush
+    @endif
 </x-card>
 
 {{-- Currency Exchange Rates --}}

@@ -795,18 +795,23 @@ class ListingQueryService
         ?string $categoryId,
         int $perPage = 20,
         array $filters = [],
+        ?\App\Models\Country $country = null,
     ): LengthAwarePaginator {
+        $sections = app(ClassifiedSectionService::class);
+
+        // Only ads of categories that are visible (active, ancestors active, offered in the visitor's country):
+        // ads of a disabled category are hidden here, never deleted.
+        if ($categoryId !== null) {
+            $category = ClassifiedCategory::find($categoryId);
+            $visibleIds = $category ? $sections->visibleBranchIds($category, $country) : [];
+        } else {
+            $visibleIds = $sections->visibleIds($country);
+        }
+
         $query = ClassifiedListing::where('status', ClassifiedListingStatus::Active->value)
+            ->whereIn('classified_category_id', $visibleIds)
             ->with(['images', 'seller', 'city'])
             ->orderByDesc('created_at');
-
-        if ($categoryId !== null) {
-            $childIds = ClassifiedCategory::where('parent_id', $categoryId)->pluck('id');
-            $query->where(function ($q) use ($categoryId, $childIds) {
-                $q->where('classified_category_id', $categoryId)
-                    ->orWhereIn('classified_category_id', $childIds);
-            });
-        }
 
         if (! empty($filters['listing_purpose'])) {
             $query->where('listing_purpose', $filters['listing_purpose']);

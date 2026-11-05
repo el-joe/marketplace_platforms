@@ -63,6 +63,7 @@ export default defineConfig({
                 'resources/js/admin/shipping-subsidies.js',
                 'resources/js/admin/support-tickets.js',
                 'resources/js/admin/analytics.js',
+                'resources/js/admin/portal-analytics.js',
                 'resources/js/admin/activity-log.js',
                 'resources/js/admin/payment-gateways.js',
                 'resources/js/admin/shipping-settings.js',

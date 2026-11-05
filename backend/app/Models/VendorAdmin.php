@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SendsPasswordResetLink;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,7 +16,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class VendorAdmin extends Authenticatable implements JWTSubject
 {
-    use HasRoles, HasUuids, Notifiable, SoftDeletes;
+    use HasRoles, HasUuids, Notifiable, SendsPasswordResetLink, SoftDeletes;
 
     protected string $guard = 'vendor';
 
@@ -48,6 +49,11 @@ class VendorAdmin extends Authenticatable implements JWTSubject
             'is_owner' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    public function passwordResetBroker(): string
+    {
+        return 'vendor_admins';
     }
 
     // ── Relationships ──────────────────────────────────────────────────────────

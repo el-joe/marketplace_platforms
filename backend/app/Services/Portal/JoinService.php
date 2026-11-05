@@ -38,24 +38,22 @@ class JoinService
     }
 
     /**
-     * Countries offered in the portal country switcher (active and launched),
-     * mirroring the header list. Detection and switching share this set so a
-     * visitor is never shown a country that cannot be selected.
+     * Countries offered in the portal country switcher: active and launched,
+     * plus Oman (the cultural context of the imagery) even ahead of launch.
+     * Detection, switching and server-side validation all use this same set
+     * ({@see Country::scopePortalSelectable()}), so a visitor is never shown a
+     * country that cannot be selected and never accepted one that is not shown.
      *
      * @return Collection<int, Country>
      */
     public function selectableCountries(): Collection
     {
-        return Country::where('is_active', true)
-            ->where('is_launched', true)
-            ->orderBy('name_en')
-            ->get();
+        return Country::portalSelectable()->orderBy('name_en')->get();
     }
 
     /**
-     * The country currently effective for the portal journey: the home-page
-     * selection (session `portal_country`), the auto-detected country, or the
-     * first launched country. Mirrors the dialog shown on the join landing.
+     * The country currently effective for the portal journey (route segment,
+     * the selection stored in the session, detection, or the single default).
      */
     public function currentCountry(): ?Country
     {
@@ -66,27 +64,20 @@ class JoinService
     }
 
     /**
-     * Countries offered in the join / choice header switcher, guaranteed to
-     * include Oman (the cultural context of the imagery) even ahead of launch.
+     * Countries offered in the join / choice header switcher.
      *
      * @return Collection<int, Country>
      */
     public function headerCountries(): Collection
     {
-        $countries = $this->selectableCountries();
-
-        $oman = Country::where('iso_code_2', 'OM')->where('is_active', true)->first();
-
-        if ($oman && ! $countries->contains('id', $oman->id)) {
-            $countries = $countries->push($oman)->sortBy('name_en')->values();
-        }
-
-        return $countries;
+        return $this->selectableCountries();
     }
 
     /**
-     * The country effective for a join / choice header: an explicit session
-     * pick, else Oman (the imagery default), else the first launched country.
+     * The country effective for a portal header. Uses the same resolution as
+     * the page content ({@see Country::resolveSiteCode()}: URL segment, session,
+     * detection, single default), so the header can never show a country other
+     * than the one whose content is rendered.
      *
      * @param  Collection<int, Country>|null  $countries
      */
@@ -94,16 +85,18 @@ class JoinService
     {
         $countries ??= $this->headerCountries();
 
-        // The URL {country} segment wins (advertise / adsupport / helpcenter pages),
-        // then the session pick, so every portal page shows the same selection.
-        $current = $countries->firstWhere('site_code', request()->route('country'))
-            ?? (session()->has('portal_country')
-                ? $countries->firstWhere('site_code', session('portal_country'))
-                : $countries->firstWhere('site_code', Country::detectAndRemember()));
-
-        return $current
-            ?? $countries->firstWhere('iso_code_2', 'OM')
+        return $countries->firstWhere('site_code', Country::resolveSiteCode(null))
             ?? $countries->first();
+    }
+
+    /**
+     * Persist the visitor's validated country choice for the rest of the portal
+     * journey (session `portal_country` and the current request), before any
+     * redirect so the next page already renders it.
+     */
+    public function rememberCountry(string $siteCode): void
+    {
+        Country::rememberForRequest($siteCode);
     }
 
     /**

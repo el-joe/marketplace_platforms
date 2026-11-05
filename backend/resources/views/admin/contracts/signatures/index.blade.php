@@ -28,6 +28,16 @@
             </select>
         </div>
         <div>
+            <label class="mb-1 block text-xs text-gray-600">{{ __('contracts.admin.col_country') }}</label>
+            <select name="country" class="form-input text-sm">
+                <option value="">{{ __('contracts.admin.all_countries_filter') }}</option>
+                <option value="legacy" @selected($countryFilter === 'legacy')>{{ __('contracts.admin.legacy_signed') }}</option>
+                @foreach ($countries as $country)
+                    <option value="{{ $country->id }}" @selected($countryFilter === $country->id)>{{ app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
             <label class="mb-1 block text-xs text-gray-600">{{ __('admin.contracts.col_vendor') }}</label>
             <input type="text" name="q" value="{{ $search }}" class="form-input text-sm">
         </div>
@@ -41,6 +51,7 @@
                     <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_vendor') }}</th>
                     <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_contract') }}</th>
                     <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_scope') }}</th>
+                    <th class="px-4 py-3 text-start">{{ __('contracts.admin.col_country') }}</th>
                     <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_category') }}</th>
                     <th class="px-4 py-3 text-center">{{ __('admin.contracts.col_version') }}</th>
                     <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_language') }}</th>
@@ -58,7 +69,8 @@
                         <td class="px-4 py-3"><a href="{{ route('admin.vendors.contracts.index', $contract->vendor_id) }}" class="text-primary-600 hover:underline">{{ $contract->vendor?->store_name }}</a></td>
                         <td class="px-4 py-3">{{ $contract->contractTemplate?->name ?? '—' }}</td>
                         <td class="px-4 py-3">{{ __('admin.contracts.scope_' . $contract->category_scope) }}</td>
-                        <td class="px-4 py-3">{{ $category?->name_en ?? '—' }}</td>
+                        <td class="px-4 py-3">{{ $contract->country ? (app()->getLocale() === 'ar' ? $contract->country->name_ar : $contract->country->name_en) : '—' }}</td>
+                        <td class="px-4 py-3">{{ $contract->product?->name_en ?? $category?->name_en ?? '—' }}</td>
                         <td class="px-4 py-3 text-center">v{{ $contract->template_version }}</td>
                         <td class="px-4 py-3 uppercase">{{ $contract->language_signed }}</td>
                         <td class="px-4 py-3">{{ $contract->signer_name }}</td>
@@ -68,7 +80,7 @@
                         <td class="px-4 py-3 text-end">@if ($contract->hasSignedFile())<a href="{{ route('admin.contracts.signatures.download', $contract) }}" class="text-xs font-medium text-emerald-700 hover:underline">{{ __('admin.contracts.download_signed') }}</a>@endif</td>
                     </tr>
                 @empty
-                    <tr><td colspan="11" class="px-4 py-10 text-center text-gray-400">{{ __('admin.contracts.no_signatures') }}</td></tr>
+                    <tr><td colspan="12" class="px-4 py-10 text-center text-gray-400">{{ __('admin.contracts.no_signatures') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

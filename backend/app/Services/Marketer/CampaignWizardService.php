@@ -6,12 +6,15 @@ use App\Enums\CommissionVertical;
 use App\Enums\MarketerType;
 use App\Models\Marketer;
 use App\Models\MarketerCampaign;
+use App\Models\Vendor;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
 use App\Support\Marketer\CampaignBudgetRules;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSubject;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -32,6 +35,7 @@ class CampaignWizardService
     public function __construct(
         private readonly MarketerCampaignService $campaigns,
         private readonly MarketerCampaignQuoteService $quotes,
+        private readonly MarketerCollaborationContractService $collaboration,
     ) {}
 
     /** Column of marketer_campaigns holding the promoted item of a subject. */
@@ -135,7 +139,13 @@ class CampaignWizardService
         }
         CampaignBudgetRules::assertEndDateForUnlimited($budget, $endsAt);
 
-        $campaign = $this->campaigns->createCampaign($owner, $subject->source(), [
+        // A seller must review and sign the collaboration contract(s) that apply to the chosen marketers before the
+        // collaboration is created. Nothing applies (no template for the type / country) = nothing is asked.
+        $vendor = $owner->isVendor() ? Vendor::find($owner->id) : null;
+        $requirements = $vendor ? $this->collaboration->requirementsForSubject($vendor, $picked, $openToAffiliates, $subject) : collect();
+        $this->collaboration->assertAccepted($requirements, array_values(array_filter((array) ($input['collab_contracts'] ?? []), 'is_string')), $input['collab_signer_name'] ?? null);
+
+        $campaign = DB::transaction(fn () => $this->createAndSign($owner, $subject, $vendor, $requirements, $input, [
             'max_commission_budget' => $budget,
             'country_id' => $subject->countryId,
             'currency' => $subject->currency,
@@ -145,8 +155,33 @@ class CampaignWizardService
             'ends_at' => $endsAt,
             'selected_ad_types' => ($input['selected_ad_types'] ?? null) ?: null,
             'vendor_ad_notes' => ($input['vendor_ad_notes'] ?? null) ?: null,
-        ]);
+        ]));
 
         return ['campaign' => $campaign, 'quote' => $quote];
+    }
+
+    /**
+     * @param  Collection<string, array<string, mixed>>  $requirements
+     * @param  array<string, mixed>  $input
+     * @param  array<string, mixed>  $data
+     */
+    private function createAndSign(CampaignOwner $owner, CampaignSubject $subject, ?Vendor $vendor, Collection $requirements, array $input, array $data): MarketerCampaign
+    {
+        $campaign = $this->campaigns->createCampaign($owner, $subject->source(), $data);
+
+        if ($vendor && $requirements->isNotEmpty()) {
+            $this->collaboration->sign(
+                $vendor,
+                auth('vendor')->user(),
+                $campaign,
+                $requirements,
+                trim((string) $input['collab_signer_name']),
+                app()->getLocale(),
+                request()->ip(),
+                request()->userAgent(),
+            );
+        }
+
+        return $campaign;
     }
 }

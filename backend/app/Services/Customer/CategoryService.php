@@ -5,6 +5,7 @@ namespace App\Services\Customer;
 use App\Http\Resources\Customer\CategoryTreeResource;
 use App\Http\Resources\Customer\ClassifiedCategoryTreeResource;
 use App\Http\Resources\Customer\TravelCategoryTreeResource;
+use App\Enums\ClassifiedPlacement;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\ClassifiedCategory;
@@ -39,7 +40,7 @@ class CategoryService
     {
         $version = Cache::get(self::CACHE_VERSION_KEY, 1);
 
-        return SafeCache::remember("category_tree_v{$version}_{$country->id}", 600, function () {
+        return SafeCache::remember("category_tree_v{$version}_{$country->id}", 600, function () use ($country) {
                 // toTree() builds the hierarchy in PHP from a single lft/rgt-ordered query.
                 $productNodes = Category::where('is_active', true)
                     ->where('is_visible', true)
@@ -47,11 +48,7 @@ class CategoryService
                     ->get()
                     ->toTree();
 
-                $classifiedNodes = ClassifiedCategory::whereNull('parent_id')
-                    ->where('is_active', true)
-                    ->orderBy('sort_order')
-                    ->with(['children' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
-                    ->get();
+                $classifiedNodes = $this->classifiedNavNodes($country);
 
                 $travelNodes = TravelCategory::whereNull('parent_id')
                     ->where('is_active', true)
@@ -65,6 +62,19 @@ class CategoryService
                     TravelCategoryTreeResource::collection($travelNodes)->resolve(),
                 );
             });
+    }
+
+    /**
+     * Visible classified sections for this country that the admin placed in the navigation or on the
+     * classified landing page (each node carries its `placements`, so every surface filters for itself).
+     *
+     * @return \Illuminate\Support\Collection<int, ClassifiedCategory>
+     */
+    private function classifiedNavNodes(Country $country)
+    {
+        return app(ClassifiedSectionService::class)->tree($country)
+            ->filter(fn (ClassifiedCategory $root) => $root->appearsOn(ClassifiedPlacement::Nav) || $root->appearsOn(ClassifiedPlacement::Landing))
+            ->values();
     }
 
     public static function flushCache(): void
@@ -100,11 +110,7 @@ class CategoryService
             function () use ($country) {
                 $productNodes = $this->buildProductTree($country, withAttributes: false, brandsLimit: 5);
 
-                $classifiedNodes = ClassifiedCategory::whereNull('parent_id')
-                    ->where('is_active', true)
-                    ->orderBy('sort_order')
-                    ->with(['children' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
-                    ->get();
+                $classifiedNodes = $this->classifiedNavNodes($country);
 
                 $travelNodes = TravelCategory::whereNull('parent_id')
                     ->where('is_active', true)

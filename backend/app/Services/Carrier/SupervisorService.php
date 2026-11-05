@@ -5,15 +5,19 @@ namespace App\Services\Carrier;
 use App\Mail\Carrier\SupervisorInviteMail;
 use App\Models\ShippingCompany;
 use App\Models\ShippingCompanySupervisor;
-use Illuminate\Support\Facades\Mail;
+use App\Services\Auth\CredentialDeliveryResult;
+use App\Services\Auth\CredentialDeliveryService;
 use Illuminate\Support\Str;
 
 class SupervisorService
 {
     /**
-     * Create a new supervisor with a random temp password and queue an invite email.
+     * Create a new supervisor with a random temp password and email the invite synchronously,
+     * so a failure is logged and returned to the caller (the account is kept).
+     *
+     * @return array{0: ShippingCompanySupervisor, 1: CredentialDeliveryResult}
      */
-    public function invite(ShippingCompany $company, array $data): ShippingCompanySupervisor
+    public function invite(ShippingCompany $company, array $data): array
     {
         $tempPassword = Str::password(12, letters: true, numbers: true, symbols: false);
 
@@ -29,10 +33,10 @@ class SupervisorService
             'receives_all_notifications' => false,
         ]);
 
-        Mail::to($supervisor->email)
-            ->queue(new SupervisorInviteMail($supervisor, $company, $tempPassword));
+        $delivery = app(CredentialDeliveryService::class)
+            ->deliver($supervisor->email, new SupervisorInviteMail($supervisor, $company, $tempPassword), 'carrier_supervisor_invite');
 
-        return $supervisor;
+        return [$supervisor, $delivery];
     }
 
     /**

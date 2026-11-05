@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Models\CustomerContract;
 use App\Models\VendorContract;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
@@ -90,6 +91,21 @@ class ContractFileService
         ];
     }
 
+    /**
+     * Frozen private copy of the document a customer accepted.
+     *
+     * @param  FileMeta  $meta
+     * @return array{path: string, name: string, mime: string}
+     */
+    public function copyForCustomerSignature(array $meta, string $customerId): array
+    {
+        return [
+            'path' => $this->copyTo($meta['path'], 'customer-contracts/'.$customerId),
+            'name' => $meta['name'],
+            'mime' => $meta['mime'],
+        ];
+    }
+
     public function deleteTemplateFiles(string $templateId): void
     {
         Storage::disk(self::DISK)->deleteDirectory($this->directory($templateId));
@@ -127,6 +143,20 @@ class ContractFileService
      * Streams the frozen copy of the document a vendor signed.
      */
     public function respondToSigned(VendorContract $contract): StreamedResponse
+    {
+        abort_unless($contract->hasSignedFile() && $this->exists($contract->signed_file_path), 404);
+
+        return Storage::disk(self::DISK)->download(
+            $contract->signed_file_path,
+            $contract->signed_file_name,
+            ['Content-Type' => $contract->signed_file_mime ?? 'application/octet-stream'],
+        );
+    }
+
+    /**
+     * Streams the frozen copy of the document a customer accepted.
+     */
+    public function respondToCustomerSigned(CustomerContract $contract): StreamedResponse
     {
         abort_unless($contract->hasSignedFile() && $this->exists($contract->signed_file_path), 404);
 

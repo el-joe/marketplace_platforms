@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Services\Vendor\ContractAssignmentService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
@@ -95,6 +96,7 @@ class ProductController extends Controller
             )
             ->select([
                 'products.id',
+                'products.contract_requirement',
                 'products.name_en',
                 'products.name_ar',
                 'products.status',
@@ -192,6 +194,7 @@ class ProductController extends Controller
                 'status' => $row->status?->value,
                 'is_hidden' => (bool) $row->is_hidden,
                 'is_featured' => (bool) $row->is_featured,
+                'contract' => __('contracts.admin.badge_'.($row->contract_requirement ?: 'inherit')),
                 'seller_count' => (int) $row->seller_count,
                 'rating_avg' => $row->rating_avg ? number_format((float) $row->rating_avg, 1) : '—',
                 'total_sold' => (int) $row->total_sold,
@@ -216,6 +219,8 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request): JsonResponse|RedirectResponse
     {
+        app(ContractAssignmentService::class)->assertConfigurable('product', $request->all());
+
         DB::beginTransaction();
         try {
         $id = (string) Str::uuid();
@@ -248,6 +253,8 @@ class ProductController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        app(ContractAssignmentService::class)->apply(Product::findOrFail($id), 'product', $request->all());
 
         // Default variant when product has no variants
         if (!$request->boolean('has_variants')) {
@@ -425,7 +432,9 @@ class ProductController extends Controller
 
     public function update(UpdateProductRequest $request, string $product): JsonResponse
     {
-        Product::query()->where('id', $product)->whereNull('deleted_at')->firstOrFail();
+        $productModel = Product::query()->where('id', $product)->whereNull('deleted_at')->firstOrFail();
+
+        app(ContractAssignmentService::class)->assertConfigurable('product', $request->all(), $productModel);
 
         DB::beginTransaction();
         try {
@@ -458,6 +467,8 @@ class ProductController extends Controller
         }
 
         Product::query()->where('id', $product)->update($data);
+
+        app(ContractAssignmentService::class)->apply($productModel->fresh(), 'product', $request->all());
 
         if ($request->boolean('has_variants') && $request->has('variants')) {
             $this->syncVariants($product, $request->input('variants', []), update: true);
@@ -1624,6 +1635,7 @@ class ProductController extends Controller
             ['title' => 'Brand', 'data' => 'brand', 'name' => 'brand', 'orderable_column' => 'b.name', 'searchable' => false],
             ['title' => 'Status', 'data' => 'status', 'name' => 'status', 'orderable_column' => 'products.status', 'searchable' => false],
             ['title' => 'Hidden', 'data' => 'is_hidden', 'name' => 'is_hidden', 'orderable' => false, 'searchable' => false],
+            ['title' => 'Individual contract', 'data' => 'contract', 'name' => 'contract', 'orderable' => false, 'searchable' => false],
             ['title' => 'Sellers', 'data' => 'seller_count', 'name' => 'seller_count', 'orderable' => false, 'searchable' => false, 'className' => 'text-right'],
             ['title' => 'Rating', 'data' => 'rating_avg', 'name' => 'rating_avg', 'orderable_column' => 'rating_avg', 'searchable' => false, 'className' => 'text-right'],
             ['title' => 'Sold', 'data' => 'total_sold', 'name' => 'total_sold', 'orderable_column' => 'products.total_sold', 'searchable' => false, 'className' => 'text-right'],

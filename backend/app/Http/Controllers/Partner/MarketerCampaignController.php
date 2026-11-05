@@ -15,6 +15,7 @@ use App\Models\VendorListing;
 use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
 use App\Services\Marketer\CampaignWizardService;
+use App\Services\Marketer\MarketerCollaborationContractService;
 use App\Services\Marketer\MarketerCommissionCalculator;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
@@ -28,6 +29,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class MarketerCampaignController extends Controller
@@ -37,7 +39,21 @@ class MarketerCampaignController extends Controller
     public function __construct(
         private readonly MarketerCampaignService $marketerCampaignService,
         private readonly CampaignWizardService $wizard,
+        private readonly MarketerCollaborationContractService $collaboration,
     ) {}
+
+    /**
+     * The collaboration contracts the seller would have to sign for the marketers currently picked (for the wizard).
+     *
+     * @param  list<string>  $marketerIds
+     * @return list<array<string, mixed>>
+     */
+    private function agreementsFor(CampaignSubject $subject, array $marketerIds, bool $openToAffiliates): array
+    {
+        $vendor = $this->vendor();
+
+        return $this->collaboration->present($this->collaboration->requirementsForSubject($vendor, $marketerIds, $openToAffiliates, $subject), $vendor);
+    }
 
     private function vendorId(): string
     {
@@ -115,6 +131,8 @@ class MarketerCampaignController extends Controller
             - $sampleService->pendingReservedQty($vendorListing)
             - $sampleService->adminQty($vendorListing->productVariant?->product?->category);
 
+        $quote['agreements'] = $this->agreementsFor(CampaignSubject::of($vendorListing), array_values(array_filter((array) old('marketer_ids', []), 'is_string')), (bool) old('open_to_affiliates'));
+
         return view('partner.marketer_campaigns.create', compact('vendorListing', 'influencers', 'affiliateCount', 'walletBalance', 'walletCurrency', 'quote', 'minStock', 'availableStock', 'stockAfterFixedSample'));
     }
 
@@ -130,6 +148,8 @@ class MarketerCampaignController extends Controller
         $influencers = $quoteService->influencerOptions($subject);
         $affiliateCount = $quoteService->openAudienceCount($subject);
         $quote = $quoteService->withWallet($quoteService->quote($subject, []), $this->vendorId(), $classifiedListing->currency);
+
+        $quote['agreements'] = $this->agreementsFor($subject, array_values(array_filter((array) old('marketer_ids', []), 'is_string')), (bool) old('open_to_affiliates'));
 
         return view('partner.marketer_campaigns.create_classified', compact('classifiedListing', 'subject', 'influencers', 'affiliateCount', 'quote'));
     }
@@ -152,16 +172,18 @@ class MarketerCampaignController extends Controller
 
         $quoteService = app(MarketerCampaignQuoteService::class);
 
+        $marketerIds = array_values(array_filter((array) $request->input('marketer_ids', []), 'is_string'));
+
         return response()->json($quoteService->withWallet(
             $quoteService->quote(
                 $subject,
-                array_values(array_filter((array) $request->input('marketer_ids', []), 'is_string')),
+                $marketerIds,
                 (float) $request->input('budget', 0),
                 $request->boolean('open_to_affiliates'),
             ),
             $this->vendorId(),
             $subject->currency,
-        ));
+        ) + ['agreements' => $this->agreementsFor($subject, $marketerIds, $request->boolean('open_to_affiliates'))]);
     }
 
     public function store(Request $request)
@@ -182,6 +204,9 @@ class MarketerCampaignController extends Controller
             'selected_ad_types' => ['nullable', 'array'],
             'selected_ad_types.*' => ['string', 'in:story,post,video'],
             'vendor_ad_notes' => ['nullable', 'string', 'max:2000'],
+            'collab_contracts' => ['nullable', 'array'],
+            'collab_contracts.*' => ['uuid'],
+            'collab_signer_name' => ['nullable', 'string', 'max:150'],
         ], CampaignBudgetRules::endsAtMessages());
 
         $subject = $this->ownedSubject($request->input('vendor_listing_id'), $request->input('classified_listing_id'));
@@ -268,7 +293,11 @@ class MarketerCampaignController extends Controller
             ->filter(fn ($i) => $i->marketer && in_array($i->status, ['pending', 'accepted'], true))
             ->mapWithKeys(fn ($i) => [$i->id => $calculator->compute($i->marketer, $marketerCampaign, $examplePrice, 1, $i)]);
 
-        return view('partner.marketer_campaigns.show', compact('marketerCampaign', 'calculations', 'examplePrice'));
+        $requestAgreements = $marketerCampaign->status === 'marketer_requested'
+            ? $this->collaboration->present($this->collaboration->requirementsForRequest($this->vendor(), $marketerCampaign), $this->vendor())
+            : [];
+
+        return view('partner.marketer_campaigns.show', compact('marketerCampaign', 'calculations', 'examplePrice', 'requestAgreements'));
     }
 
     public function edit(MarketerCampaign $marketerCampaign)
@@ -479,13 +508,24 @@ class MarketerCampaignController extends Controller
     {
         $request->validate([
             'max_commission_budget' => ['required', 'numeric', 'min:0.01', 'max:999999999', 'decimal:0,2'],
+            'collab_contracts' => ['nullable', 'array'],
+            'collab_contracts.*' => ['uuid'],
+            'collab_signer_name' => ['nullable', 'string', 'max:150'],
         ]);
 
         abort_unless($campaign->status === 'marketer_requested', 422);
         abort_unless($campaign->vendor_id === $this->vendor()->id, 403);
 
+        // Confirming the collaboration means signing the contract(s) that apply to the requesting marketer.
+        $vendor = $this->vendor();
+        $requirements = $this->collaboration->requirementsForRequest($vendor, $campaign);
+        $this->collaboration->assertAccepted($requirements, array_values(array_filter((array) $request->input('collab_contracts', []), 'is_string')), $request->input('collab_signer_name'));
+
         try {
-            $this->marketerCampaignService->approveMarketerRequest($campaign, $request->only(['max_commission_budget']));
+            DB::transaction(function () use ($campaign, $request, $vendor, $requirements) {
+                $this->marketerCampaignService->approveMarketerRequest($campaign, $request->only(['max_commission_budget']));
+                $this->collaboration->sign($vendor, Auth::guard('vendor')->user(), $campaign, $requirements, trim((string) $request->input('collab_signer_name')), app()->getLocale(), $request->ip(), $request->userAgent());
+            });
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }

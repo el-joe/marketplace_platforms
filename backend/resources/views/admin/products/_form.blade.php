@@ -1056,6 +1056,11 @@
                 </div>
             </div>
 
+            {{-- Individual contract requirement (Inherit / Yes / No) --}}
+            @include('admin.contracts.partials.product-requirement', [
+                'subject' => $isEdit ? \App\Models\Product::find($product->id ?? null) : null,
+            ])
+
             {{-- Save actions card --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-2">
                 @if($errors->any())

@@ -23,13 +23,12 @@ class UnifiedCategoryService
     {
         $version = Cache::get(self::CACHE_VERSION_KEY, 1);
 
-        // Cache key is per-country, but productTree()/classifiedTree()/travelTree() query
-        // globally with no country filter — category trees are shared across all countries
-        // by design, so $country is only used to namespace the cache entry.
-        return SafeCache::remember("unified_nav_v{$version}_{$country->id}", 600, function () {
+        // Product and travel trees are shared across all countries; classified categories can be limited to
+        // countries by the admin, so the classified section is built for this country.
+        return SafeCache::remember("unified_nav_v{$version}_{$country->id}", 600, function () use ($country) {
             return [
                 ['section' => 'products', 'nodes' => $this->productTree()],
-                ['section' => 'classifieds', 'nodes' => $this->classifiedTree()],
+                ['section' => 'classifieds', 'nodes' => $this->classifiedTree($country)],
                 ['section' => 'travel', 'nodes' => $this->travelTree()],
             ];
         });
@@ -55,11 +54,7 @@ class UnifiedCategoryService
                 ->where('is_visible', 1)->orderBy('sort_order')])
             ->get();
 
-        $classifieds = ClassifiedCategory::whereNull('parent_id')
-            ->where('is_active', 1)
-            ->orderBy('sort_order')
-            ->with(['children' => fn ($q) => $q->where('is_active', 1)->orderBy('sort_order')])
-            ->get();
+        $classifieds = app(ClassifiedSectionService::class)->tree($country);
 
         $travel = TravelCategory::whereNull('parent_id')
             ->where('is_active', 1)
@@ -96,16 +91,14 @@ class UnifiedCategoryService
     /**
      * Single unified node by id + source_type, without children.
      */
-    public function findById(string $id, string $sourceType): ?array
+    public function findById(string $id, string $sourceType, ?Country $country = null): ?array
     {
         $category = match ($sourceType) {
             'product' => Category::where('id', $id)
                 ->where('is_active', 1)
                 ->where('is_visible', 1)
                 ->first(),
-            'classified' => ClassifiedCategory::where('id', $id)
-                ->where('is_active', 1)
-                ->first(),
+            'classified' => app(ClassifiedSectionService::class)->find($id, $country),
             'travel' => TravelCategory::where('id', $id)
                 ->where('is_active', 1)
                 ->first(),
@@ -134,7 +127,7 @@ class UnifiedCategoryService
 
         $classifieds = ClassifiedCategory::where(fn ($q) => $q->where('name_en', 'like', "%{$query}%")
                 ->orWhere('name_ar', 'like', "%{$query}%"))
-            ->where('is_active', 1)
+            ->whereIn('id', app(ClassifiedSectionService::class)->visibleIds())
             ->limit(2)
             ->get()
             ->map(fn ($category) => $this->mapNode($category, 'classified', 0, []));
@@ -177,13 +170,9 @@ class UnifiedCategoryService
         })->values()->all();
     }
 
-    private function classifiedTree(): array
+    private function classifiedTree(Country $country): array
     {
-        $roots = ClassifiedCategory::whereNull('parent_id')
-            ->where('is_active', 1)
-            ->orderBy('sort_order')
-            ->with(['children' => fn ($q) => $q->where('is_active', 1)->orderBy('sort_order')])
-            ->get();
+        $roots = app(ClassifiedSectionService::class)->tree($country);
 
         return $roots->map(function ($category) {
             $children = $category->children->map(
@@ -246,7 +235,7 @@ class UnifiedCategoryService
     {
         return match ($sourceType) {
             'product' => "/browse/product/{$category->id}",
-            'classified' => "/browse/classified/{$category->id}",
+            'classified' => "/browse/classified/{$category->slug}",
             'travel' => '/travel',
         };
     }

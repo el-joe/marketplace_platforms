@@ -41,6 +41,7 @@
                 'searchable' => false,
                 'render' => 'function (v) { return v ? Renderers.badge({ 1: { label: "' . __('admin.products.hidden_status') . '", color: "danger" } })(1) : ""; }'
             ],
+            ['title' => __('contracts.admin.col_individual_contract'), 'data' => 'contract', 'name' => 'contract', 'orderable' => false, 'searchable' => false],
             ['title' => __('admin.products.column_sellers'), 'data' => 'seller_count', 'name' => 'seller_count', 'searchable' => false, 'className' => 'text-end'],
             ['title' => __('admin.products.column_rating'), 'data' => 'rating_avg', 'name' => 'rating_avg', 'searchable' => false, 'className' => 'text-end'],
             ['title' => __('admin.products.column_sold'), 'data' => 'total_sold', 'name' => 'total_sold', 'searchable' => false, 'className' => 'text-end'],

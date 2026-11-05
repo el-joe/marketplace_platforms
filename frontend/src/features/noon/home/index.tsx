@@ -2,6 +2,7 @@ import { DynamicLayout } from "@/src/components/shared/page-builder";
 import { getHomeService } from "./api/get";
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
+import ClassifiedSections from "./classified-sections";
 
 export default async function Home() {
   const homeData = await getHomeService();
@@ -20,6 +21,7 @@ export default async function Home() {
       {homeData.data.page_builder.sections.map((e) => (
         <DynamicLayout key={e.id} section={e} />
       ))}
+      <ClassifiedSections />
     </div>
   );
 }

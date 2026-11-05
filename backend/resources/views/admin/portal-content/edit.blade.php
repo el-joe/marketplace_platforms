@@ -5,6 +5,7 @@
 @section('content')
 @php($locale = app()->getLocale() === 'ar' ? 'ar' : 'en')
 @php($dir = $locale === 'ar' ? 'rtl' : 'ltr')
+@php($readOnly = ! $can['edit'])
 @php($countryName = fn ($c) => $locale === 'ar' ? ($c->name_ar ?: $c->name_en) : $c->name_en)
 <div class="p-6 space-y-5" dir="{{ $dir }}"
      x-data="{ dirty: false, lightbox: null, lightboxLabel: '' }"
@@ -69,6 +70,12 @@
         </nav>
     @endif
 
+    @if($readOnly)
+        <div data-readonly-notice class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {{ __('admin.portal_permissions.read_only_notice') }}
+        </div>
+    @endif
+
     <form method="POST" action="{{ route('admin.portal-content.save', [$country->site_code, $pageKey]) }}" class="space-y-6" enctype="multipart/form-data"
           @input="dirty = true" @change="dirty = true" @submit="dirty = false">
         @csrf
@@ -116,7 +123,7 @@
                                 <div class="flex items-center justify-between">
                                     <div class="text-xs font-mono text-gray-400" dir="ltr">{{ $row->field_key }} <span class="ms-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500">{{ $row->type->value }}</span></div>
                                     <label class="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                                        <input type="checkbox" name="fields[{{ $row->id }}][is_active]" value="1" {{ $row->is_active ? 'checked' : '' }} class="rounded border-gray-300">
+                                        <input type="checkbox" name="fields[{{ $row->id }}][is_active]" value="1" {{ $row->is_active ? 'checked' : '' }} @disabled($readOnly || ! $can['publish']) @if(! $readOnly && ! $can['publish']) title="{{ __('admin.portal_permissions.no_publish') }}" @endif class="rounded border-gray-300">
                                         {{ __('common.active') }}
                                     </label>
                                 </div>
@@ -125,17 +132,17 @@
                                     <div>
                                         <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.portal_content.english') }}</label>
                                         @if($row->type === \App\Enums\PortalContentType::RichText)
-                                            <textarea name="fields[{{ $row->id }}][value_en]" rows="4" class="w-full rounded-lg border-gray-300 text-sm" dir="ltr">{{ old("fields.{$row->id}.value_en", $row->value_en) }}</textarea>
+                                            <textarea name="fields[{{ $row->id }}][value_en]" @disabled($readOnly) rows="4" class="w-full rounded-lg border-gray-300 text-sm" dir="ltr">{{ old("fields.{$row->id}.value_en", $row->value_en) }}</textarea>
                                         @else
-                                            <input type="text" name="fields[{{ $row->id }}][value_en]" value="{{ old("fields.{$row->id}.value_en", $row->value_en) }}" class="w-full rounded-lg border-gray-300 text-sm" dir="ltr">
+                                            <input type="text" name="fields[{{ $row->id }}][value_en]" @disabled($readOnly) value="{{ old("fields.{$row->id}.value_en", $row->value_en) }}" class="w-full rounded-lg border-gray-300 text-sm" dir="ltr">
                                         @endif
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.portal_content.arabic') }}</label>
                                         @if($row->type === \App\Enums\PortalContentType::RichText)
-                                            <textarea name="fields[{{ $row->id }}][value_ar]" rows="4" class="w-full rounded-lg border-gray-300 text-sm" dir="rtl">{{ old("fields.{$row->id}.value_ar", $row->value_ar) }}</textarea>
+                                            <textarea name="fields[{{ $row->id }}][value_ar]" @disabled($readOnly) rows="4" class="w-full rounded-lg border-gray-300 text-sm" dir="rtl">{{ old("fields.{$row->id}.value_ar", $row->value_ar) }}</textarea>
                                         @else
-                                            <input type="text" name="fields[{{ $row->id }}][value_ar]" value="{{ old("fields.{$row->id}.value_ar", $row->value_ar) }}" class="w-full rounded-lg border-gray-300 text-sm" dir="rtl">
+                                            <input type="text" name="fields[{{ $row->id }}][value_ar]" @disabled($readOnly) value="{{ old("fields.{$row->id}.value_ar", $row->value_ar) }}" class="w-full rounded-lg border-gray-300 text-sm" dir="rtl">
                                         @endif
                                     </div>
                                 </div>
@@ -143,21 +150,22 @@
                                 @if($row->type === \App\Enums\PortalContentType::Link)
                                     <div>
                                         <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.portal_content.url') }}</label>
-                                        <input type="text" name="fields[{{ $row->id }}][value_url]" value="{{ old("fields.{$row->id}.value_url", $row->value_url) }}" placeholder="{{ __('admin.portal_content.url_hint') }}" class="w-full rounded-lg border-gray-300 text-sm font-mono" dir="ltr">
+                                        <input type="text" name="fields[{{ $row->id }}][value_url]" @disabled($readOnly) value="{{ old("fields.{$row->id}.value_url", $row->value_url) }}" placeholder="{{ __('admin.portal_content.url_hint') }}" class="w-full rounded-lg border-gray-300 text-sm font-mono" dir="ltr">
                                     </div>
                                 @endif
 
                                 @if($row->type === \App\Enums\PortalContentType::Image)
+                                    @php($imageLocked = $readOnly || (! $row->value_url && ! $can['create']))
                                     <div class="space-y-2" x-data="{ mode: @js(preg_match('#^(https?:)?//|^/#', (string) $row->value_url) ? 'url' : 'file') }">
                                         <div class="inline-flex rounded-lg border border-gray-300 overflow-hidden text-xs">
                                             <button type="button" @click="mode = 'file'" :class="mode === 'file' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600'" class="px-3 py-1.5">{{ __('admin.portal_content.image_file') }}</button>
                                             <button type="button" @click="mode = 'url'" :class="mode === 'url' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600'" class="px-3 py-1.5">{{ __('admin.portal_content.image_url') }}</button>
                                         </div>
                                         <div x-show="mode === 'url'" x-cloak>
-                                            <input type="text" name="fields[{{ $row->id }}][value_url]" :disabled="mode !== 'url'" value="{{ old("fields.{$row->id}.value_url", $row->value_url) }}" placeholder="{{ __('admin.portal_content.image_url_hint') }}" class="w-full rounded-lg border-gray-300 text-sm font-mono" dir="ltr">
+                                            <input type="text" name="fields[{{ $row->id }}][value_url]" :disabled="mode !== 'url' || {{ $imageLocked ? 'true' : 'false' }}" value="{{ old("fields.{$row->id}.value_url", $row->value_url) }}" placeholder="{{ __('admin.portal_content.image_url_hint') }}" class="w-full rounded-lg border-gray-300 text-sm font-mono" dir="ltr">
                                         </div>
                                         <div x-show="mode === 'file'" x-cloak>
-                                            <input type="file" name="fields[{{ $row->id }}][value_file]" :disabled="mode !== 'file'" accept="image/*" class="w-full rounded-lg border-gray-300 text-sm">
+                                            <input type="file" name="fields[{{ $row->id }}][value_file]" :disabled="mode !== 'file' || {{ $imageLocked ? 'true' : 'false' }}" accept="image/*" class="w-full rounded-lg border-gray-300 text-sm">
                                             @error("fields.{$row->id}.value_file")
                                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                             @enderror
@@ -166,7 +174,7 @@
                                             <div class="flex items-center gap-3">
                                                 <img src="{{ \App\Models\PortalContent::resolveUrl($row->value_url) }}" alt="" class="h-16 rounded border border-gray-200 object-cover">
                                                 <label class="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                                                    <input type="checkbox" name="fields[{{ $row->id }}][reset_image]" value="1" class="rounded border-gray-300">
+                                                    <input type="checkbox" name="fields[{{ $row->id }}][reset_image]" value="1" @disabled($readOnly || ! $can['delete']) class="rounded border-gray-300">
                                                     {{ __('admin.portal_content.reset_image') }}
                                                 </label>
                                             </div>
@@ -203,10 +211,12 @@
         <div class="sticky bottom-0 z-10 -mx-6 border-t border-gray-200 bg-white px-6 py-4 shadow-md flex items-center justify-between gap-3">
             <span x-show="dirty" x-cloak class="text-xs font-medium text-amber-600">{{ __('admin.portal_content.unsaved_changes') }}</span>
             <span x-show="!dirty" class="text-xs text-gray-400">{{ __('admin.portal_content.saving_for', ['country' => $countryName($country)]) }}</span>
+            @if(! $readOnly)
             <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-700">
                 <x-heroicon name="check-circle" class="w-4 h-4" />
                 {{ __('admin.portal_content.save_page') }}
             </button>
+            @endif
         </div>
     </form>
 

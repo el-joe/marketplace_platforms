@@ -41,6 +41,7 @@ use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
 use App\Services\Marketer\CampaignFeeService;
 use App\Services\Marketer\InfluencerFixedService;
+use App\Services\Marketer\MarketerCollaborationContractService;
 use App\Services\Marketer\MarketerCommissionCalculator;
 use App\Support\Marketer\CampaignBudgetRules;
 use App\Support\Marketer\CampaignOwner;
@@ -938,6 +939,13 @@ class MarketerCampaignService
 
         // The influencer's fixed amount, frozen at campaign creation, travels with his invitation.
         $this->influencerFixed->applyTo($campaign, $invitation);
+
+        // A marketer joining a campaign the seller signed an open-call collaboration contract for is covered by it.
+        try {
+            app(MarketerCollaborationContractService::class)->coverInvitation($campaign, $invitation);
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         // Samples follow the invitation: an influencer gets his own sample row the
         // moment he is invited (a predecessor's undispatched sample is re-pointed,

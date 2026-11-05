@@ -6,6 +6,7 @@ use App\Enums\JoinSection;
 use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Services\Portal\JoinService;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,8 +26,8 @@ class JoinController extends Controller
      */
     public function index(): View
     {
-        // The header defaults to Oman (the cultural context of the imagery)
-        // and keeps it selectable ahead of a formal launch.
+        // Header list and current country come from the single portal-country
+        // resolution (URL segment, session, detection, default).
         $countries = $this->joinService->headerCountries();
         $currentCountry = $this->joinService->headerCountry($countries);
 
@@ -41,14 +42,27 @@ class JoinController extends Controller
     /**
      * POST /join/select — validate the section choice server-side, remember it
      * for the rest of the journey, and hand off to that section's landing page.
+     *
+     * The optional `country` (a site_code, the country shown in the header) is
+     * validated against the portal-selectable countries and persisted in the
+     * session before redirecting, so the next page renders that country.
      */
     public function select(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'section' => ['required', 'string', Rule::in(JoinSection::values())],
+            'country' => ['nullable', 'string', 'max:20', function (string $attribute, mixed $value, Closure $fail): void {
+                if (! Country::isPortalSelectable(strtolower((string) $value))) {
+                    $fail(__('portal.join.country_unavailable'));
+                }
+            }],
         ], [
             'section.in' => __('portal.join.section_invalid'),
         ]);
+
+        if (! empty($validated['country'])) {
+            $this->joinService->rememberCountry(strtolower($validated['country']));
+        }
 
         if (! $this->joinService->isSectionEnabled($validated['section'])) {
             return redirect()->route('portal.join')->withErrors(['section' => __('portal.join.section_unavailable')]);
@@ -92,6 +106,11 @@ class JoinController extends Controller
         $validated = $this->joinService->validate($request->all());
 
         $this->joinService->storeSelection($validated);
+
+        $siteCode = Country::whereKey($validated['country_id'])->value('site_code');
+        if ($siteCode && Country::isPortalSelectable($siteCode)) {
+            $this->joinService->rememberCountry($siteCode);
+        }
 
         $destination = $this->joinService->resolve($validated);
 

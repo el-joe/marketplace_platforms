@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SendsPasswordResetLink;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,9 +13,10 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class MarketerAdmin extends Authenticatable implements JWTSubject
 {
-    use HasUuids, SoftDeletes, Notifiable, HasRoles;
+    use HasRoles, HasUuids, Notifiable, SendsPasswordResetLink, SoftDeletes;
 
-    protected string $guard      = 'marketer';
+    protected string $guard = 'marketer';
+
     protected string $guard_name = 'marketer';
 
     protected $fillable = [
@@ -40,6 +42,11 @@ class MarketerAdmin extends Authenticatable implements JWTSubject
             'is_owner'          => 'boolean',
             'password'          => 'hashed',
         ];
+    }
+
+    public function passwordResetBroker(): string
+    {
+        return 'marketer_admins';
     }
 
     // ── Relationships ──────────────────────────────────────────────────────

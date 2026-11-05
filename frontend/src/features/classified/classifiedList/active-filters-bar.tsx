@@ -4,11 +4,11 @@ import React, { useState } from "react";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { IClassifiedCategoriesList } from "./helpers/types";
+import { IClassifiedCategoryRef } from "./helpers/types";
 import useLocale from "@/src/hooks/use-locale";
 
 type props = {
-  selectedCtg?: IClassifiedCategoriesList | null;
+  selectedCtg?: IClassifiedCategoryRef | null;
 };
 
 export default function ActiveFiltersBar({ selectedCtg }: props) {

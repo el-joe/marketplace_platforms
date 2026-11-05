@@ -244,7 +244,8 @@ $(function () {
             $.post('/vendors/' + vendorId + '/approve', { _token: csrfToken() })
                 .done(function (res) {
                     closeModal('approve-modal');
-                    Toast.success((vendorName ? t('admin.vendors.approved_success', { name: vendorName }) : res.message));
+                    if (res.warning) { Toast.warning(res.warning); } else {
+                    Toast.success((vendorName ? t('admin.vendors.approved_success', { name: vendorName }) : res.message)); }
                     if (dt) dt.ajax.reload();
                 })
                 .fail(function (xhr) { Toast.error(xhr.responseJSON?.message ?? t('admin.vendors.approval_failed')); })
@@ -418,9 +419,20 @@ $(function () {
         withLoading(this,
             $.post('/vendors/' + vendorId + '/approve', { _token: csrfToken() })
                 .done(function (res) {
-                    Toast.success(res.message);
-                    setTimeout(function () { location.reload(); }, 700);
+                    if (res.warning) { Toast.warning(res.warning); } else { Toast.success(res.message); }
+                    setTimeout(function () { location.reload(); }, res.warning ? 4000 : 700);
                 })
+                .fail(function (xhr) { Toast.error(xhr.responseJSON?.message ?? t('admin.vendors.approval_failed')); })
+        );
+    });
+
+    // Resend credentials: emails the store owner a fresh single-use set-password link
+    $(document).on('click', '[data-resend-credentials]', function () {
+        if (!confirm($(this).data('confirm'))) return;
+
+        withLoading(this,
+            $.post($(this).data('resend-credentials'), { _token: csrfToken() })
+                .done(function (res) { if (res.warning) { Toast.warning(res.warning); } else { Toast.success(res.message); } })
                 .fail(function (xhr) { Toast.error(xhr.responseJSON?.message ?? t('admin.vendors.approval_failed')); })
         );
     });

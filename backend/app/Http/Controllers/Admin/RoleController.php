@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
+use App\Support\PortalPermissions;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -244,6 +245,8 @@ class RoleController extends Controller
             'admins' => 'System — Admins',
             'roles' => 'System — Roles',
             'activity_log' => 'System — Activity Log',
+            'portal_content' => __('admin.portal_permissions.group'),
+            'portal_analytics' => __('admin.portal_permissions.analytics_group'),
         ];
 
         $permissions = Permission::where('guard_name', 'admin')
@@ -258,7 +261,15 @@ class RoleController extends Controller
             $grouped[$prefix]['permissions'][] = [
                 'name' => $perm->name,
                 'label' => $this->formatPermissionLabel($perm->name),
+                'description' => PortalPermissions::description($perm->name),
             ];
+        }
+
+        // Portal permissions: show them in a logical order rather than alphabetically.
+        if (isset($grouped['portal_content'])) {
+            $order = array_flip(PortalPermissions::CONTENT);
+            usort($grouped['portal_content']['permissions'], fn ($a, $b) => ($order[$a['name']] ?? 99) <=> ($order[$b['name']] ?? 99));
+            $grouped['portal_content']['description'] = __('admin.portal_permissions.group_description');
         }
 
         return array_values($grouped);
@@ -266,6 +277,10 @@ class RoleController extends Controller
 
     private function formatPermissionLabel(string $permission): string
     {
+        if (in_array($permission, PortalPermissions::ALL, true)) {
+            return PortalPermissions::label($permission);
+        }
+
         $parts = explode('.', $permission, 2);
         $action = $parts[1] ?? $parts[0];
         return ucwords(str_replace(['_', '.'], ' ', $action));

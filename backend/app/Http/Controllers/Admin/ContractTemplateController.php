@@ -2,21 +2,36 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ContractKind;
 use App\Http\Controllers\Controller;
 use App\Jobs\NotifyVendorsOfAgreementUpdateJob;
 use App\Models\Category;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedContractTemplate;
 use App\Models\ClassifiedListing;
+use App\Models\ContractCountryAssignment;
+use App\Models\ContractDisplayDestination;
+use App\Models\Country;
+use App\Models\CustomerContract;
+use App\Models\CustomerContractAssignment;
+use App\Models\Marketer;
+use App\Models\MarketerSellerContract;
+use App\Models\Product;
 use App\Models\Vendor;
 use App\Models\VendorAdmin;
 use App\Models\VendorContract;
 use App\Models\VendorListing;
 use App\Notifications\Vendor\ContractTemplateUpdated;
+use App\Services\ActivityLoggerService;
+use App\Services\Marketer\MarketerCollaborationContractService;
 use App\Services\Vendor\CategoryContractService;
+use App\Services\Vendor\ClassifiedSectionContractService;
 use App\Services\Vendor\ContractFileService;
+use App\Services\Vendor\ContractResolver;
+use App\Services\Vendor\CustomerContractAssignmentService;
 use App\Services\Vendor\SellerAgreementService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -39,31 +54,81 @@ class ContractTemplateController extends Controller
         private readonly CategoryContractService $contracts,
         private readonly SellerAgreementService $agreements,
         private readonly ContractFileService $files,
+        private readonly ContractResolver $resolver,
+        private readonly ActivityLoggerService $activity,
+        private readonly ClassifiedSectionContractService $sections,
+        private readonly MarketerCollaborationContractService $collaboration,
+        private readonly CustomerContractAssignmentService $customerAssignments,
     ) {}
 
     public function index(Request $request): View
     {
         $scope = $this->scopeFilter($request);
+        $status = in_array($request->query('status'), ['draft', 'published', 'scheduled', 'retired'], true) ? $request->query('status') : null;
+        $countryFilter = $this->countryFilter($request);
+        $sectionFilter = $this->sectionFilter($request);
+        $kindFilter = ContractKind::tryFrom((string) $request->query('kind'))?->value;
+        $destinationFilter = ContractDisplayDestination::query()->where('key', (string) $request->query('destination'))->value('id');
 
         $templates = ClassifiedContractTemplate::query()
+            ->when($kindFilter, fn (Builder $query) => $query->where('contract_kind', $kindFilter))
+            ->when($destinationFilter, fn (Builder $query) => $query->whereHas('displayDestinations', fn (Builder $d) => $d->whereKey($destinationFilter)))
+            ->when($sectionFilter, fn (Builder $query) => $this->limitToSection($query, $sectionFilter))
             ->when($scope, fn (Builder $query) => $query->where('category_scope', $scope))
-            ->with(['category:id,name_en', 'productCategory:id,name_en'])
+            ->when($countryFilter === 'legacy', fn (Builder $query) => $query->whereNull('country_id'))
+            ->when($countryFilter && $countryFilter !== 'legacy', fn (Builder $query) => $query->where('country_id', $countryFilter))
+            ->when($status === 'draft', fn (Builder $query) => $query->where('is_published', false)->where('is_active', true))
+            ->when($status === 'retired', fn (Builder $query) => $query->where('is_published', false)->where('is_active', false))
+            ->when($status === 'published', fn (Builder $query) => $query->where('is_published', true)->where(fn (Builder $q) => $q->whereNull('effective_at')->orWhere('effective_at', '<=', now())))
+            ->when($status === 'scheduled', fn (Builder $query) => $query->where('is_published', true)->where('effective_at', '>', now()))
+            ->with(['category:id,name_en,name_ar', 'productCategory:id,name_en', 'country:id,name_en,name_ar,iso_code_2', 'displayDestinations'])
+            ->withCount(['assignments', 'marketers'])
             ->orderBy('name')
+            ->orderBy('country_id')
             ->orderByDesc('version')
-            ->get();
+            ->paginate(50)
+            ->withQueryString();
 
         $assignedCounts = $this->assignedCounts();
+        $signatureCounts = VendorContract::whereIn('contract_template_id', $templates->pluck('id'))
+            ->selectRaw('contract_template_id, COUNT(*) as total')
+            ->groupBy('contract_template_id')
+            ->pluck('total', 'contract_template_id')
+            ->union(MarketerSellerContract::whereIn('contract_template_id', $templates->pluck('id'))
+                ->selectRaw('contract_template_id, COUNT(*) as total')
+                ->groupBy('contract_template_id')
+                ->pluck('total', 'contract_template_id')->all())
+            ->union(CustomerContract::whereIn('contract_template_id', $templates->pluck('id'))
+                ->selectRaw('contract_template_id, COUNT(*) as total')
+                ->groupBy('contract_template_id')
+                ->pluck('total', 'contract_template_id')->all());
+        $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'name_ar', 'iso_code_2']);
+        $missingAgreementCountries = $this->resolver->countriesWithoutPlatformAgreement();
+        $sectionBadges = $this->sections->sectionsByTemplate($templates->getCollection()) + $this->customerAssignments->sectionsByTemplate($templates->getCollection());
+        $sectionOptions = $this->sectionTree();
+        $uncoveredSections = in_array($scope, [null, ClassifiedContractTemplate::SCOPE_CLASSIFIED], true)
+            ? $this->sections->uncoveredSections()
+            : collect();
 
-        return view('admin.contracts.templates.index', compact('templates', 'scope', 'assignedCounts'));
+        $destinations = ContractDisplayDestination::active()->orderBy('sort_order')->get();
+        $uncoveredMarketerDestinations = in_array($scope, [null, ClassifiedContractTemplate::SCOPE_MARKETER], true)
+            ? $this->collaboration->uncoveredMarketerDestinations()
+            : collect();
+
+        return view('admin.contracts.templates.index', compact(
+            'templates', 'scope', 'status', 'countryFilter', 'assignedCounts', 'signatureCounts', 'countries', 'missingAgreementCountries',
+            'sectionFilter', 'sectionBadges', 'sectionOptions', 'uncoveredSections', 'kindFilter', 'destinationFilter', 'destinations', 'uncoveredMarketerDestinations',
+        ));
     }
 
     public function create(): View
     {
         return view('admin.contracts.templates.form', [
             'template' => null,
+            'countries' => $this->activeCountries(),
             'variables' => ClassifiedContractTemplate::availableVariables(),
             'maxMb' => ContractFileService::MAX_KB / 1024,
-        ]);
+        ] + $this->sectionFormData(null) + $this->marketerFormData(null));
     }
 
     public function store(Request $request): RedirectResponse
@@ -72,7 +137,7 @@ class ContractTemplateController extends Controller
 
         $template = DB::transaction(function () use ($request, $validated) {
             $template = ClassifiedContractTemplate::create($this->attributes($validated) + [
-                'version' => $this->nextVersion($validated['name'], $validated['category_scope']),
+                'version' => $this->nextVersion($validated['name'], $validated['category_scope'], $validated['country_id'] ?? null),
                 'is_active' => true,
                 'is_published' => false,
                 'variables_schema' => ClassifiedContractTemplate::variableKeys(),
@@ -80,6 +145,8 @@ class ContractTemplateController extends Controller
             ]);
 
             $this->applyFiles($template, $request);
+            $this->syncSections($template, $request, $validated);
+            $this->syncMarketerSettings($template, $validated);
 
             return $template;
         });
@@ -93,9 +160,10 @@ class ContractTemplateController extends Controller
     {
         return view('admin.contracts.templates.form', [
             'template' => $contractTemplate,
+            'countries' => $this->activeCountries(),
             'variables' => ClassifiedContractTemplate::availableVariables(),
             'maxMb' => ContractFileService::MAX_KB / 1024,
-        ]);
+        ] + $this->sectionFormData($contractTemplate) + $this->marketerFormData($contractTemplate));
     }
 
     /**
@@ -106,21 +174,36 @@ class ContractTemplateController extends Controller
         $validated = $this->validated($request, $contractTemplate);
 
         if (! $this->documentChanged($request, $validated, $contractTemplate)) {
-            $contractTemplate->update(['name' => $validated['name']]);
+            $changes = ['name' => $validated['name']] + $this->marketerAttributes($validated);
+
+            if (! $contractTemplate->is_published) {
+                $changes += $this->countryAttributes($validated, $contractTemplate);
+            }
+
+            DB::transaction(function () use ($contractTemplate, $changes, $request, $validated) {
+                $this->detachOnCountryChange($contractTemplate, $changes, $request);
+                $contractTemplate->update($changes);
+                $this->syncSections($contractTemplate->refresh(), $request, $validated);
+                $this->syncMarketerSettings($contractTemplate, $validated);
+            });
 
             return $this->backToIndex($contractTemplate, __('admin.contracts.updated'));
         }
 
         if (! $contractTemplate->is_published) {
             DB::transaction(function () use ($request, $validated, $contractTemplate) {
-                $contractTemplate->update($this->attributes($validated));
+                $changes = $this->attributes($validated) + $this->countryAttributes($validated, $contractTemplate);
+                $this->detachOnCountryChange($contractTemplate, $changes, $request);
+                $contractTemplate->update($changes);
                 $this->applyFiles($contractTemplate, $request);
+                $this->syncSections($contractTemplate->refresh(), $request, $validated);
+                $this->syncMarketerSettings($contractTemplate, $validated);
             });
 
             return $this->backToIndex($contractTemplate, __('admin.contracts.updated'));
         }
 
-        $nextVersion = $this->nextVersion($contractTemplate->name, $contractTemplate->category_scope);
+        $nextVersion = $this->nextVersion($contractTemplate->name, $contractTemplate->category_scope, $contractTemplate->country_id);
 
         $draft = DB::transaction(function () use ($request, $validated, $contractTemplate, $nextVersion) {
             $draft = ClassifiedContractTemplate::create($this->attributes($validated) + [
@@ -128,6 +211,8 @@ class ContractTemplateController extends Controller
                 'category_scope' => $contractTemplate->category_scope,
                 'classified_category_id' => $contractTemplate->classified_category_id,
                 'product_category_id' => $contractTemplate->product_category_id,
+                'country_id' => $contractTemplate->country_id,
+                'is_country_default' => $contractTemplate->is_country_default,
                 'version' => $nextVersion,
                 'is_active' => true,
                 'is_published' => false,
@@ -137,6 +222,8 @@ class ContractTemplateController extends Controller
 
             $draft->update(['files' => $this->files->copyFiles($contractTemplate->files, $draft->id) ?: null]);
             $this->applyFiles($draft, $request);
+            $this->syncSections($draft, $request, $validated);
+            $this->syncMarketerSettings($draft, $validated);
 
             return $draft;
         });
@@ -145,7 +232,8 @@ class ContractTemplateController extends Controller
     }
 
     /**
-     * Makes this version the one vendors sign, retires the previous published version, and notifies vendors who must re-sign.
+     * Makes this version the one vendors sign in its country, retires the previous published version of the same
+     * country (never another country's), and notifies vendors who must re-sign.
      */
     public function publish(ClassifiedContractTemplate $contractTemplate): RedirectResponse
     {
@@ -157,19 +245,50 @@ class ContractTemplateController extends Controller
             return back()->with('error', __('admin.contracts.file_required_to_publish'));
         }
 
+        $previousDefaultId = $this->currentDefault($contractTemplate)?->id;
+
         if ($contractTemplate->isPlatformScope()) {
             $this->agreements->publish($contractTemplate);
             $contractTemplate->refresh();
 
             NotifyVendorsOfAgreementUpdateJob::dispatch($contractTemplate->id);
+            $this->audit('contract_template.published', $contractTemplate, ['mode' => $contractTemplate->acceptance_mode]);
 
             return $this->backToIndex($contractTemplate, $contractTemplate->isScheduled()
                 ? __('admin.contracts.published_scheduled', ['version' => $contractTemplate->version, 'date' => $contractTemplate->effective_at->format('d/m/Y')])
                 : __('admin.contracts.published_platform', ['version' => $contractTemplate->version]));
         }
 
+        if ($contractTemplate->isMarketerScope()) {
+            if ($contractTemplate->displayDestinations()->doesntExist() && $contractTemplate->marketers()->doesntExist()) {
+                return back()->with('error', __('contracts.marketer.needs_destination'));
+            }
+
+            $this->collaboration->publish($contractTemplate);
+            $contractTemplate->refresh();
+            $this->audit('contract_template.published', $contractTemplate, [
+                'kind' => $contractTemplate->contract_kind?->value,
+                'destinations' => $contractTemplate->displayDestinations()->pluck('key')->all(),
+                'marketers' => $contractTemplate->marketers()->count(),
+            ]);
+
+            return $this->backToIndex($contractTemplate, __('contracts.marketer.published', ['version' => $contractTemplate->version]));
+        }
+
+        if ($contractTemplate->isCustomerScope()) {
+            $this->customerAssignments->publish($contractTemplate);
+            $contractTemplate->refresh();
+            $this->audit('contract_template.published', $contractTemplate, [
+                'kind' => $contractTemplate->contract_kind?->value,
+                'sections' => $this->customerAssignments->categoryIdsFor($contractTemplate),
+            ]);
+
+            return $this->backToIndex($contractTemplate, __('contracts.customer.published', ['version' => $contractTemplate->version]));
+        }
+
         $vendorsToResign = $this->contracts->publish($contractTemplate);
         $contractTemplate->update(['published_at' => now(), 'effective_at' => now()]);
+        $this->sections->activateLinkedSections($contractTemplate);
 
         $vendorsToResign->each(function (Vendor $vendor) use ($contractTemplate) {
             $vendor->vendorAdmins->each(fn (VendorAdmin $vendorAdmin) => $vendorAdmin->notify(
@@ -177,23 +296,111 @@ class ContractTemplateController extends Controller
             ));
         });
 
+        $this->audit('contract_template.published', $contractTemplate, ['vendors_to_resign' => $vendorsToResign->count()]);
+
+        if ($contractTemplate->is_country_default && $previousDefaultId && $previousDefaultId !== $contractTemplate->id && ! $this->contracts->lineageIds($contractTemplate)->contains($previousDefaultId)) {
+            $this->audit('contract_template.country_default_changed', $contractTemplate, ['previous_default_template_id' => $previousDefaultId]);
+        }
+
         return $this->backToIndex($contractTemplate, __('admin.contracts.published', [
             'version' => $contractTemplate->version,
             'vendors' => $vendorsToResign->count(),
         ]));
     }
 
+    /**
+     * Takes a published contract out of use (retires it). Signatures it already collected are never touched: they
+     * stay valid and visible. When vendors have signed it the admin must confirm explicitly. Afterwards the
+     * country is served by the legacy country-agnostic contract if there is one, otherwise by none.
+     */
+    public function retire(Request $request, ClassifiedContractTemplate $contractTemplate): RedirectResponse
+    {
+        if (! $contractTemplate->is_published && ! $contractTemplate->is_active) {
+            return back()->with('error', __('contracts.admin.already_retired'));
+        }
+
+        $signatures = match (true) {
+            $contractTemplate->isMarketerScope() => MarketerSellerContract::where('contract_template_id', $contractTemplate->id)->count(),
+            $contractTemplate->isCustomerScope() => CustomerContract::where('contract_template_id', $contractTemplate->id)->count(),
+            default => VendorContract::where('contract_template_id', $contractTemplate->id)->count(),
+        };
+
+        if ($signatures > 0 && ! $request->boolean('confirm_signatures')) {
+            return back()->with('error', __('contracts.admin.retire_needs_confirmation', ['count' => $signatures]));
+        }
+
+        $contractTemplate->update(['is_published' => false, 'is_active' => false, 'is_country_default' => false]);
+
+        $this->audit('contract_template.retired', $contractTemplate, ['signatures' => $signatures]);
+
+        return $this->backToIndex($contractTemplate, __('contracts.admin.retired', ['name' => $contractTemplate->name, 'version' => $contractTemplate->version]));
+    }
+
+    /**
+     * Brings a retired version back as a draft (it is not in use until it is published again).
+     */
+    public function reactivate(ClassifiedContractTemplate $contractTemplate): RedirectResponse
+    {
+        if ($contractTemplate->is_active) {
+            return back();
+        }
+
+        $contractTemplate->update(['is_active' => true]);
+        $this->audit('contract_template.reactivated', $contractTemplate);
+
+        return $this->backToIndex($contractTemplate, __('contracts.admin.reactivated'));
+    }
+
+    /**
+     * Makes a published country contract the default individual contract of its country and scope (replacing the
+     * previous default), or removes the flag. Only one published default per country and scope can exist.
+     */
+    public function setDefault(Request $request, ClassifiedContractTemplate $contractTemplate): RedirectResponse
+    {
+        if ($contractTemplate->isPlatformScope() || $contractTemplate->isMarketerScope() || $contractTemplate->isCustomerScope() || ! $contractTemplate->country_id) {
+            return back()->with('error', __('contracts.admin.default_needs_country'));
+        }
+
+        $makeDefault = $request->boolean('default', true);
+        $previous = $makeDefault ? $this->currentDefault($contractTemplate) : null;
+
+        DB::transaction(function () use ($contractTemplate, $makeDefault) {
+            if ($makeDefault && $contractTemplate->is_published) {
+                ClassifiedContractTemplate::where('country_id', $contractTemplate->country_id)
+                    ->where('category_scope', $contractTemplate->category_scope)
+                    ->where('is_country_default', true)
+                    ->where('id', '!=', $contractTemplate->id)
+                    ->update(['is_country_default' => false]);
+            }
+
+            $contractTemplate->update(['is_country_default' => $makeDefault]);
+        });
+
+        $this->audit('contract_template.country_default_changed', $contractTemplate, [
+            'default' => $makeDefault,
+            'previous_default_template_id' => $previous?->id,
+        ]);
+
+        return $this->backToIndex($contractTemplate, $makeDefault ? __('contracts.admin.default_set') : __('contracts.admin.default_cleared'));
+    }
+
     public function destroy(ClassifiedContractTemplate $contractTemplate): RedirectResponse
     {
-        $assigned = ClassifiedCategory::where('contract_template_id', $contractTemplate->id)->exists()
-            || Category::where('contract_template_id', $contractTemplate->id)->exists();
+        $assigned = Category::where('contract_template_id', $contractTemplate->id)->exists()
+            || Product::where('contract_template_id', $contractTemplate->id)->exists()
+            || ContractCountryAssignment::where('contract_template_id', $contractTemplate->id)->where(fn ($query) => $query->whereNotNull('product_category_id')->orWhereNotNull('product_id'))->exists();
 
-        if ($contractTemplate->is_published || $assigned || VendorContract::where('contract_template_id', $contractTemplate->id)->exists()) {
+        if ($contractTemplate->is_published || $assigned || VendorContract::where('contract_template_id', $contractTemplate->id)->exists() || MarketerSellerContract::where('contract_template_id', $contractTemplate->id)->exists() || CustomerContract::where('contract_template_id', $contractTemplate->id)->exists()) {
             return back()->with('error', __('admin.contracts.cannot_delete'));
         }
 
-        $this->files->deleteTemplateFiles($contractTemplate->id);
-        $contractTemplate->delete();
+        DB::transaction(function () use ($contractTemplate) {
+            // A draft only holds inert section links; they go with it.
+            $this->sections->detach($contractTemplate);
+            $this->customerAssignments->detach($contractTemplate);
+            $this->files->deleteTemplateFiles($contractTemplate->id);
+            $contractTemplate->delete();
+        });
 
         return redirect()
             ->route('admin.contracts.templates.index', ['scope' => $contractTemplate->category_scope])
@@ -218,6 +425,14 @@ class ContractTemplateController extends Controller
      */
     public function signatures(Request $request, ClassifiedContractTemplate $contractTemplate): View
     {
+        if ($contractTemplate->isMarketerScope()) {
+            return $this->marketerSignatures($request, $contractTemplate);
+        }
+
+        if ($contractTemplate->isCustomerScope()) {
+            return $this->customerSignatures($request, $contractTemplate);
+        }
+
         $rows = $this->signatureRows($contractTemplate);
 
         $summary = [
@@ -238,6 +453,64 @@ class ContractTemplateController extends Controller
     }
 
     /**
+     * Seller signatures on a collaboration contract (all versions of its lineage), newest first.
+     */
+    private function marketerSignatures(Request $request, ClassifiedContractTemplate $template): View
+    {
+        $status = in_array($request->query('status'), ['active', 'superseded', 'revoked'], true) ? $request->query('status') : 'all';
+
+        $signatures = MarketerSellerContract::query()
+            ->whereIn('contract_template_id', $this->contracts->lineageIds($template)->push($template->id)->unique())
+            ->when($status !== 'all', fn (Builder $query) => $query->where('status', $status))
+            ->with(['vendor:id,store_name', 'marketer:id,name', 'campaign:id,title'])
+            ->orderByDesc('signed_at')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('admin.contracts.templates.marketer-signatures', ['contractTemplate' => $template, 'signatures' => $signatures, 'status' => $status]);
+    }
+
+    /**
+     * Customer acceptances of a customer purchase contract (all versions of its lineage), newest first.
+     */
+    private function customerSignatures(Request $request, ClassifiedContractTemplate $template): View
+    {
+        $status = in_array($request->query('status'), [CustomerContract::STATUS_ACTIVE, CustomerContract::STATUS_SUPERSEDED, CustomerContract::STATUS_CANCELLED], true) ? $request->query('status') : 'all';
+
+        $signatures = CustomerContract::query()
+            ->whereIn('contract_template_id', $this->customerAssignments->lineageIds($template))
+            ->when($status !== 'all', fn (Builder $query) => $query->where('status', $status))
+            ->with(['customer:id,name,email', 'classifiedCategory:id,name_en,name_ar', 'country:id,name_en,name_ar,iso_code_2'])
+            ->orderByDesc('signed_at')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('admin.contracts.templates.customer-signatures', ['contractTemplate' => $template, 'signatures' => $signatures, 'status' => $status]);
+    }
+
+    /**
+     * Marketers matching a search (for the "specific marketers" picker of the template form).
+     */
+    public function marketerSearch(Request $request): JsonResponse
+    {
+        abort_unless(auth('admin')->user()->can('marketers.view'), 403);
+
+        $term = trim((string) $request->query('q'));
+
+        if (mb_strlen($term) < 2) {
+            return response()->json([]);
+        }
+
+        return response()->json(Marketer::query()
+            ->where(fn (Builder $q) => $q->where('name', 'like', '%'.$term.'%')->orWhere('email', 'like', '%'.$term.'%'))
+            ->orderBy('name')
+            ->limit(20)
+            ->get(['id', 'name', 'email'])
+            ->map(fn (Marketer $marketer) => ['id' => $marketer->id, 'text' => $marketer->name.' ('.$marketer->email.')'])
+            ->values());
+    }
+
+    /**
      * @return Collection<int, array{vendor: Vendor, listings: int, signature: ?VendorContract}>
      */
     private function signatureRows(ClassifiedContractTemplate $template): Collection
@@ -249,17 +522,24 @@ class ContractTemplateController extends Controller
         $isProduct = $template->category_scope === CategoryContractService::SCOPE_PRODUCT;
 
         if ($isProduct) {
-            $categoryIds = Category::where('contract_template_id', $template->id)->pluck('id');
+            $categoryIds = Category::where('contract_template_id', $template->id)->pluck('id')
+                ->merge(ContractCountryAssignment::where('contract_template_id', $template->id)->whereNotNull('product_category_id')->pluck('product_category_id'))
+                ->unique();
+            $productIds = Product::where('contract_template_id', $template->id)->pluck('id')
+                ->merge(ContractCountryAssignment::where('contract_template_id', $template->id)->whereNotNull('product_id')->pluck('product_id'))
+                ->unique();
 
             $listingCounts = VendorListing::query()
                 ->join('product_variants as variant', 'variant.id', '=', 'vendor_listings.product_variant_id')
                 ->join('products as product', 'product.id', '=', 'variant.product_id')
-                ->whereIn('product.category_id', $categoryIds)
+                ->where(fn ($query) => $query->whereIn('product.category_id', $categoryIds)->orWhereIn('product.id', $productIds))
                 ->selectRaw('vendor_listings.vendor_id as vendor_id, COUNT(*) as total')
                 ->groupBy('vendor_listings.vendor_id')
                 ->pluck('total', 'vendor_id');
         } else {
-            $categoryIds = ClassifiedCategory::where('contract_template_id', $template->id)->pluck('id');
+            $categoryIds = ClassifiedCategory::where('contract_template_id', $template->id)->pluck('id')
+                ->merge(ContractCountryAssignment::where('contract_template_id', $template->id)->whereNotNull('classified_category_id')->pluck('classified_category_id'))
+                ->unique();
 
             $listingCounts = ClassifiedListing::forVendors()
                 ->whereIn('classified_category_id', $categoryIds)
@@ -299,7 +579,8 @@ class ContractTemplateController extends Controller
             ->get()
             ->keyBy('vendor_id');
 
-        return Vendor::whereIn('global_status', ['active', 'under_review'])
+        return $this->agreements->vendorsServedBy($template)
+            ->whereIn('global_status', ['active', 'under_review'])
             ->orderBy('store_name')
             ->get(['id', 'store_name', 'email'])
             ->map(fn (Vendor $vendor) => [
@@ -315,16 +596,18 @@ class ContractTemplateController extends Controller
     private function assignedCounts(): array
     {
         $counts = [];
+        $add = function ($rows) use (&$counts): void {
+            foreach ($rows as $row) {
+                $counts[$row->contract_template_id] = ($counts[$row->contract_template_id] ?? 0) + (int) $row->total;
+            }
+        };
 
-        foreach ([ClassifiedCategory::class, Category::class] as $model) {
-            $model::query()
+        foreach ([ClassifiedCategory::class, Category::class, Product::class, ContractCountryAssignment::class, CustomerContractAssignment::class] as $model) {
+            $add($model::query()
                 ->whereNotNull('contract_template_id')
                 ->selectRaw('contract_template_id, COUNT(*) as total')
                 ->groupBy('contract_template_id')
-                ->get()
-                ->each(function ($row) use (&$counts) {
-                    $counts[$row->contract_template_id] = ($counts[$row->contract_template_id] ?? 0) + (int) $row->total;
-                });
+                ->get());
         }
 
         return $counts;
@@ -332,7 +615,7 @@ class ContractTemplateController extends Controller
 
     private function scopeFilter(Request $request): ?string
     {
-        return in_array($request->query('scope'), [CategoryContractService::SCOPE_CLASSIFIED, CategoryContractService::SCOPE_PRODUCT, CategoryContractService::SCOPE_PLATFORM], true)
+        return in_array($request->query('scope'), [CategoryContractService::SCOPE_CLASSIFIED, CategoryContractService::SCOPE_PRODUCT, CategoryContractService::SCOPE_PLATFORM, ClassifiedContractTemplate::SCOPE_MARKETER, ClassifiedContractTemplate::SCOPE_CUSTOMER], true)
             ? $request->query('scope')
             : null;
     }
@@ -355,6 +638,10 @@ class ContractTemplateController extends Controller
             'file_en' => $fileRule,
             'remove_file' => 'nullable|array',
             'remove_file.*' => Rule::in(['ar', 'en']),
+            'country_id' => ['nullable', 'uuid', Rule::exists('countries', 'id')],
+            'is_country_default' => 'nullable|boolean',
+            'classified_category_ids' => 'nullable|array',
+            'classified_category_ids.*' => ['uuid', Rule::exists('classified_categories', 'id')],
         ];
 
         if (! $existing) {
@@ -362,7 +649,18 @@ class ContractTemplateController extends Controller
                 CategoryContractService::SCOPE_CLASSIFIED,
                 CategoryContractService::SCOPE_PRODUCT,
                 CategoryContractService::SCOPE_PLATFORM,
+                ClassifiedContractTemplate::SCOPE_MARKETER,
+                ClassifiedContractTemplate::SCOPE_CUSTOMER,
             ])];
+        }
+
+        if ($scope === ClassifiedContractTemplate::SCOPE_MARKETER) {
+            $rules['destination_ids'] = 'nullable|array';
+            $rules['destination_ids.*'] = ['uuid', Rule::exists('contract_display_destinations', 'id')->where('is_active', true)];
+            $rules['marketer_ids'] = 'nullable|array';
+            $rules['marketer_ids.*'] = ['uuid', 'distinct', Rule::exists('marketers', 'id')];
+            $rules['classified_category_id'] = ['nullable', 'uuid', Rule::exists('classified_categories', 'id')];
+            $rules['show_on_public_profile'] = 'nullable|boolean';
         }
 
         if ($scope === CategoryContractService::SCOPE_PLATFORM) {
@@ -378,6 +676,28 @@ class ContractTemplateController extends Controller
         }
 
         $validated['category_scope'] = $scope;
+        $validated['country_id'] = $existing?->is_published ? $existing->country_id : ($validated['country_id'] ?? null);
+        $validated['is_country_default'] = $existing?->is_published
+            ? $existing->is_country_default
+            : ($scope !== CategoryContractService::SCOPE_PLATFORM && $request->boolean('is_country_default'));
+
+        if ($scope === ClassifiedContractTemplate::SCOPE_MARKETER) {
+            $validated['is_country_default'] = false;
+            $validated['destination_ids'] = array_values(array_unique($validated['destination_ids'] ?? []));
+            $validated['marketer_ids'] = array_values(array_unique($validated['marketer_ids'] ?? []));
+
+            if ($validated['destination_ids'] === [] && $validated['marketer_ids'] === []) {
+                throw ValidationException::withMessages(['destination_ids' => __('contracts.marketer.needs_destination')]);
+            }
+        }
+
+        if ($scope === ClassifiedContractTemplate::SCOPE_CUSTOMER) {
+            $validated['is_country_default'] = false;
+        }
+
+        if ($validated['is_country_default'] && ! $validated['country_id']) {
+            throw ValidationException::withMessages(['is_country_default' => __('contracts.admin.default_needs_country')]);
+        }
 
         if ($existing) {
             $validated['name'] = $existing->name === $validated['name'] || $existing->is_published
@@ -457,9 +777,13 @@ class ContractTemplateController extends Controller
             'name' => $validated['name'],
             'category_scope' => $validated['category_scope'],
             'content_mode' => $validated['content_mode'],
+            'country_id' => $validated['country_id'] ?? null,
+            'is_country_default' => (bool) ($validated['is_country_default'] ?? false),
             'content_en' => $validated['content_mode'] === ClassifiedContractTemplate::MODE_FILE ? '' : $validated['content_en'],
             'content_ar' => $validated['content_mode'] === ClassifiedContractTemplate::MODE_FILE ? '' : $validated['content_ar'],
         ];
+
+        $attributes += $this->marketerAttributes($validated);
 
         if ($validated['category_scope'] === CategoryContractService::SCOPE_PLATFORM) {
             $attributes += [
@@ -503,11 +827,272 @@ class ContractTemplateController extends Controller
         $template->update(['files' => $files ?: null]);
     }
 
-    private function nextVersion(string $name, string $scope): int
+    /**
+     * Next version number inside one lineage: same scope, same country (null = legacy country-agnostic) and,
+     * for category contracts, same name. Versions of different countries are independent.
+     */
+    private function nextVersion(string $name, string $scope, ?string $countryId = null): int
     {
         return (int) ClassifiedContractTemplate::where('category_scope', $scope)
+            ->when($countryId, fn (Builder $query) => $query->where('country_id', $countryId), fn (Builder $query) => $query->whereNull('country_id'))
             ->when($scope !== CategoryContractService::SCOPE_PLATFORM, fn (Builder $query) => $query->where('name', $name))
             ->max('version') + 1;
+    }
+
+    /**
+     * Country columns written from the form. Published templates keep the country they were published for.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function countryAttributes(array $validated, ClassifiedContractTemplate $template): array
+    {
+        $attributes = [
+            'country_id' => $validated['country_id'] ?? null,
+            'is_country_default' => (bool) ($validated['is_country_default'] ?? false),
+        ];
+
+        if (($attributes['country_id'] ?? null) !== $template->country_id) {
+            $attributes['version'] = $this->nextVersion($template->name, $template->category_scope, $attributes['country_id']);
+        }
+
+        return $attributes;
+    }
+
+    private function currentDefault(ClassifiedContractTemplate $template): ?ClassifiedContractTemplate
+    {
+        if (! $template->country_id || $template->isPlatformScope()) {
+            return null;
+        }
+
+        return ClassifiedContractTemplate::enforceable()
+            ->where('country_id', $template->country_id)
+            ->where('category_scope', $template->category_scope)
+            ->where('is_country_default', true)
+            ->first();
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, Country>
+     */
+    private function activeCountries()
+    {
+        return Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'name_ar', 'iso_code_2']);
+    }
+
+    /**
+     * Section ids (classified scope only) the form selected; null when the form did not send the selector.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return list<string>|null
+     */
+    private function selectedSections(Request $request, array $validated, ClassifiedContractTemplate $template): ?array
+    {
+        if (! in_array($template->category_scope, [ClassifiedContractTemplate::SCOPE_CLASSIFIED, ClassifiedContractTemplate::SCOPE_CUSTOMER], true)) {
+            return null;
+        }
+
+        if (! $request->has('classified_category_ids') && ! $request->boolean('sections_submitted')) {
+            return null;
+        }
+
+        return array_values($validated['classified_category_ids'] ?? []);
+    }
+
+    /**
+     * Auto-associates the template with the selected sections (inside the caller's transaction).
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function syncSections(ClassifiedContractTemplate $template, Request $request, array $validated): void
+    {
+        $selected = $this->selectedSections($request, $validated, $template);
+
+        if ($selected === null) {
+            return;
+        }
+
+        if ($template->isCustomerScope()) {
+            $this->customerAssignments->sync($template, $selected);
+        } else {
+            $this->sections->sync($template, $selected);
+        }
+    }
+
+    /**
+     * A draft that moves to another country leaves the links of its old country behind.
+     *
+     * @param  array<string, mixed>  $changes
+     */
+    private function detachOnCountryChange(ClassifiedContractTemplate $template, array $changes, Request $request): void
+    {
+        if (! $template->is_published && array_key_exists('country_id', $changes) && ($changes['country_id'] ?? null) !== $template->country_id) {
+            $this->sections->detach($template);
+            $this->customerAssignments->detach($template);
+        }
+    }
+
+    /**
+     * Columns only seller-marketer templates have.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function marketerAttributes(array $validated): array
+    {
+        if (($validated['category_scope'] ?? null) !== ClassifiedContractTemplate::SCOPE_MARKETER) {
+            return [];
+        }
+
+        return [
+            'classified_category_id' => $validated['classified_category_id'] ?? null,
+            'show_on_public_profile' => (bool) ($validated['show_on_public_profile'] ?? false),
+        ];
+    }
+
+    /**
+     * Stores the Display On destinations and the specific marketers of a seller-marketer template (inside the caller's
+     * transaction) and audits a change.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function syncMarketerSettings(ClassifiedContractTemplate $template, array $validated): void
+    {
+        if (! $template->isMarketerScope()) {
+            return;
+        }
+
+        $before = [
+            'destinations' => $template->displayDestinations()->pluck('key')->sort()->values()->all(),
+            'marketers' => $template->marketers()->pluck('marketers.id')->sort()->values()->all(),
+        ];
+
+        $template->displayDestinations()->sync($validated['destination_ids'] ?? []);
+        $template->marketers()->sync($validated['marketer_ids'] ?? []);
+
+        $after = [
+            'destinations' => $template->displayDestinations()->pluck('key')->sort()->values()->all(),
+            'marketers' => $template->marketers()->pluck('marketers.id')->sort()->values()->all(),
+        ];
+
+        if ($before !== $after) {
+            $this->audit('contract_template.display_changed', $template, ['before' => $before, 'after' => $after]);
+        }
+    }
+
+    /**
+     * Data for the Display On / marketer pickers of the template form.
+     *
+     * @return array<string, mixed>
+     */
+    private function marketerFormData(?ClassifiedContractTemplate $template): array
+    {
+        $selectedMarketers = old('marketer_ids') !== null
+            ? Marketer::whereIn('id', (array) old('marketer_ids'))->get(['id', 'name', 'email'])
+            : ($template ? $template->marketers()->get(['marketers.id', 'name', 'email']) : collect());
+
+        return [
+            'destinations' => ContractDisplayDestination::active()->orderBy('sort_order')->get(),
+            'selectedDestinationIds' => $template ? $template->displayDestinations()->pluck('contract_display_destinations.id')->all() : [],
+            'selectedMarketers' => $selectedMarketers->map(fn (Marketer $marketer) => ['id' => $marketer->id, 'text' => $marketer->name.' ('.$marketer->email.')'])->values()->all(),
+        ];
+    }
+
+    /**
+     * Data for the section selector of the template form.
+     *
+     * @return array<string, mixed>
+     */
+    private function sectionFormData(?ClassifiedContractTemplate $template): array
+    {
+        $lineage = $template ? $this->contracts->lineageIds($template)->push($template->id)->unique()->values()->all() : [];
+        $customerLineage = $template?->isCustomerScope() ? $this->customerAssignments->lineageIds($template)->all() : [];
+
+        return [
+            'sectionTree' => $this->sectionTree(),
+            'selectedSections' => $template ? ($template->isCustomerScope() ? $this->customerAssignments->categoryIdsFor($template) : $this->sections->categoryIdsFor($template)) : [],
+            'takenSections' => $this->sections->takenSections($lineage),
+            'takenCustomerSections' => $this->customerAssignments->takenSections($customerLineage),
+        ];
+    }
+
+    /**
+     * @return Collection<int, ClassifiedCategory> top-level sections with their sub-sections
+     */
+    private function sectionTree(): Collection
+    {
+        $all = ClassifiedCategory::orderBy('sort_order')->orderBy('name_en')->get(['id', 'name_en', 'name_ar', 'parent_id', 'is_active']);
+        $byParent = $all->groupBy('parent_id');
+
+        return $all->whereNull('parent_id')
+            ->each(fn (ClassifiedCategory $root) => $root->setRelation('children', $byParent->get($root->id, collect())->values()))
+            ->values();
+    }
+
+    private function sectionFilter(Request $request): ?string
+    {
+        $value = $request->query('section');
+
+        return is_string($value) && ClassifiedCategory::whereKey($value)->exists() ? $value : null;
+    }
+
+    /**
+     * Templates that apply to a section: linked to it or to a parent (all versions of those contracts).
+     *
+     * @param  Builder<ClassifiedContractTemplate>  $query
+     * @return Builder<ClassifiedContractTemplate>
+     */
+    private function limitToSection(Builder $query, string $sectionId): Builder
+    {
+        $linked = ClassifiedContractTemplate::whereIn('id', $this->sections->templateIdsForSection($sectionId)->merge($this->customerAssignments->templateIdsForSection($sectionId)))
+            ->get(['name', 'category_scope', 'country_id']);
+
+        return $query->where(function (Builder $outer) use ($linked) {
+            $outer->whereRaw('1 = 0');
+
+            foreach ($linked as $template) {
+                $outer->orWhere(fn (Builder $match) => $match
+                    ->where('name', $template->name)
+                    ->where('category_scope', $template->category_scope)
+                    ->when($template->country_id, fn (Builder $q) => $q->where('country_id', $template->country_id), fn (Builder $q) => $q->whereNull('country_id')));
+            }
+        });
+    }
+
+    /**
+     * Country filter value: a country id, 'legacy' (country-agnostic templates) or null (all).
+     */
+    private function countryFilter(Request $request): ?string
+    {
+        $value = $request->query('country');
+
+        if ($value === 'legacy') {
+            return 'legacy';
+        }
+
+        return is_string($value) && Country::whereKey($value)->exists() ? $value : null;
+    }
+
+    /**
+     * Audit trail for contract changes (publish, retire, country default).
+     *
+     * @param  array<string, mixed>  $properties
+     */
+    private function audit(string $event, ClassifiedContractTemplate $template, array $properties = []): void
+    {
+        $this->activity->log(
+            description: $event.': '.$template->name.' v'.$template->version,
+            subject: $template,
+            causer: auth('admin')->user(),
+            properties: $properties + [
+                'template_id' => $template->id,
+                'scope' => $template->category_scope,
+                'country_id' => $template->country_id,
+                'version' => $template->version,
+            ],
+            logName: 'contracts',
+            event: $event,
+        );
     }
 
     private function backToIndex(ClassifiedContractTemplate $template, string $message): RedirectResponse

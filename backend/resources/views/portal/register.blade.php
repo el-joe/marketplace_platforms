@@ -136,7 +136,7 @@
                     x-show="step === totalSteps"
                     @click="submit()"
                     type="button"
-                    :disabled="loading || !form.terms_agreed || !form.privacy_agreed || (window._agreement && form.signature_name.trim().length < 3)"
+                    :disabled="loading || !form.terms_agreed || !form.privacy_agreed || (agreementId && form.signature_name.trim().length < 3) || (agreementEnforced && !agreementId)"
                     class="flex-1 py-2.5 rounded-xl text-sm font-bold bg-[#0F807E] hover:bg-[#0c6665] text-gray-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     <span x-show="!loading">{{ portal_content('register', 'footer_nav', 'submit_button', 'Submit Application ✓', 'إرسال الطلب ✓') }}</span>
@@ -170,8 +170,12 @@ window._routes = {
     upload:       '{{ route('portal.register.upload') }}',
     docRemove:    '{{ route('portal.register.document.remove') }}',
     complete:     '{{ route('portal.register.complete') }}',
+    track:        '{{ route('portal.register.track') }}',
 };
 window._csrf = '{{ csrf_token() }}';
-window._agreement = @json($agreement ? ['id' => $agreement->id] : null);
+window._agreementMap = @json($agreementByCountry);
+window._agreementEnforced = @json($agreementEnforced);
+window._countryNames = @json($countries->mapWithKeys(fn ($country) => [$country->id => app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en]));
+window._agreementNotConfigured = @json(__('contracts.api.not_configured', ['country' => ':country']));
 </script>
 @endsection

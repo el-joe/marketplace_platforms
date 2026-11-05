@@ -230,6 +230,10 @@ Route::middleware('web')->group(function () {
         // enhancement.md P-16: onboarding contract acceptance gate.
         Route::get('/contract', [ContractController::class, 'show'])->name('contract.show');
         Route::post('/contract/accept', [ContractController::class, 'accept'])->name('contract.accept');
+        Route::get('/contract/versions/{version}/download', [ContractController::class, 'download'])->name('contract.download');
+        Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
+        Route::get('/contracts/collaboration/{contract}', [ContractController::class, 'collaboration'])->name('contracts.collaboration');
+        Route::get('/contracts/collaboration/{contract}/file', [ContractController::class, 'collaborationFile'])->name('contracts.collaboration-file');
 
         // Finance: commissions, wallet, payout (withdrawal) requests
         Route::prefix('finance')->name('finance.')->group(function () {

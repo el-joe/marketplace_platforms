@@ -44,8 +44,60 @@
                     <option value="none" {{ request('gender') === 'none' ? 'selected' : '' }}>{{ __('admin.marketers.gender_not_set') }}</option>
                 </select>
             </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">{{ __('contracts.marketer.has_contract') }}</label>
+                <select name="has_contract" class="border rounded-lg px-3 py-2 text-sm">
+                    <option value="">{{ __('admin.marketers.all') }}</option>
+                    <option value="yes" @selected($hasContract === 'yes')>{{ __('contracts.marketer.has_contract_yes') }}</option>
+                    <option value="no" @selected($hasContract === 'no')>{{ __('contracts.marketer.has_contract_no') }}</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">{{ __('contracts.marketer.filter_type') }}</label>
+                <select name="contract_type" class="border rounded-lg px-3 py-2 text-sm">
+                    <option value="">{{ __('admin.marketers.all') }}</option>
+                    @foreach(\App\Services\Marketer\MarketerProfileContractsService::TYPES as $contractType)
+                        <option value="{{ $contractType }}" @selected($contractFilters['type'] === $contractType)>{{ __('contracts.marketer.type_'.$contractType) }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">{{ __('contracts.marketer.filter_category') }}</label>
+                <select name="contract_category" class="border rounded-lg px-3 py-2 text-sm">
+                    <option value="">{{ __('admin.marketers.all') }}</option>
+                    @foreach($contractCategories as $contractCategory)
+                        <option value="{{ $contractCategory->id }}" @selected($contractFilters['category'] === $contractCategory->id)>{{ app()->getLocale() === 'ar' ? $contractCategory->name_ar : $contractCategory->name_en }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">{{ __('contracts.marketer.filter_country') }}</label>
+                <select name="contract_country" class="border rounded-lg px-3 py-2 text-sm">
+                    <option value="">{{ __('admin.marketers.all') }}</option>
+                    @foreach($countries as $contractCountry)
+                        <option value="{{ $contractCountry->id }}" @selected($contractFilters['country'] === $contractCountry->id)>{{ app()->getLocale() === 'ar' ? $contractCountry->name_ar : $contractCountry->name_en }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">{{ __('contracts.marketer.filter_status') }}</label>
+                <select name="contract_status" class="border rounded-lg px-3 py-2 text-sm">
+                    <option value="">{{ __('admin.marketers.all') }}</option>
+                    @foreach(\App\Services\Marketer\MarketerProfileContractsService::STATUSES as $contractStatus)
+                        <option value="{{ $contractStatus }}" @selected($contractFilters['status'] === $contractStatus)>{{ __('contracts.marketer.state_'.$contractStatus) }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">{{ __('contracts.marketer.filter_from') }}</label>
+                <input type="date" name="contract_from" value="{{ $contractFilters['from'] }}" class="border rounded-lg px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">{{ __('contracts.marketer.filter_to') }}</label>
+                <input type="date" name="contract_to" value="{{ $contractFilters['to'] }}" class="border rounded-lg px-3 py-2 text-sm">
+            </div>
             <button type="submit" class="px-4 py-2 bg-gray-800 text-white text-sm rounded-lg">{{ __('admin.marketers.search') }}</button>
-            @if(request()->hasAny(['search','type','status','gender']))
+            @if(request()->hasAny(['search','type','status','gender','has_contract','contract_type','contract_category','contract_country','contract_status','contract_from','contract_to']))
                 <a href="{{ route('admin.marketers.index') }}" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg">{{ __('admin.marketers.reset') }}</a>
             @endif
             <button type="button" x-on:click="showCreateModal = true"

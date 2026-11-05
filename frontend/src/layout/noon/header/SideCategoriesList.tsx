@@ -27,7 +27,7 @@ function subCategoryHref(
 ): string {
   switch (child.type ?? parent?.type) {
     case Type.ClassiFied:
-      return `/classified/${child.id}`;
+      return `/classified/${child.slug}`;
     case Type.Travel:
       return child.slug ? `/travel?category=${child.slug}` : "/travel";
     case Type.Product:
@@ -78,27 +78,33 @@ const SideCategoriesList = () => {
                     <Skeleton className="w-full h-6 my-3" />
                   </li>
                 ))}
-              {data?.map((category) => (
-                <li
-                  key={category.id}
-                  className="py-3 border-b border-border flex justify-between items-center"
-                  onClick={() => {
-                    if (!!category.children.length) {
-                      setSelectedCategory([category]);
-                    } else {
-                      router.push(subCategoryHref(category));
-                    }
-                  }}
-                >
-                  {category.name[locale]}
-                  {!!category.children.length &&
-                    (locale === "ar" ? (
-                      <ChevronLeft className="size-3" />
-                    ) : (
-                      <ChevronRight className="size-3" />
-                    ))}
-                </li>
-              ))}
+              {data
+                ?.filter(
+                  (category) =>
+                    category.type !== Type.ClassiFied ||
+                    (category.placements ?? ["nav"]).includes("nav"),
+                )
+                .map((category) => (
+                  <li
+                    key={category.id}
+                    className="py-3 border-b border-border flex justify-between items-center"
+                    onClick={() => {
+                      if (!!category.children.length) {
+                        setSelectedCategory([category]);
+                      } else {
+                        router.push(subCategoryHref(category));
+                      }
+                    }}
+                  >
+                    {category.name[locale]}
+                    {!!category.children.length &&
+                      (locale === "ar" ? (
+                        <ChevronLeft className="size-3" />
+                      ) : (
+                        <ChevronRight className="size-3" />
+                      ))}
+                  </li>
+                ))}
             </ul>
           </div>
           {/* chields category */}

@@ -32,7 +32,7 @@
                     </td>
                     <td class="px-4 py-3">v{{ $contract->template_version }}</td>
                     <td class="px-4 py-3">{{ __('partner.contracts.scope_' . $contract->category_scope) }}</td>
-                    <td class="px-4 py-3">{{ $category?->name_en ?? '—' }}</td>
+                    <td class="px-4 py-3">{{ $contract->product?->name_en ?? $category?->name_en ?? "—" }}</td>
                     <td class="px-4 py-3 uppercase">{{ $contract->language_signed }}</td>
                     <td class="px-4 py-3">{{ __('partner.contracts.status_' . $contract->status) }}</td>
                     <td class="px-4 py-3">{{ $contract->signed_at?->format('d/m/Y H:i') }}</td>

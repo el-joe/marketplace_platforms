@@ -82,6 +82,7 @@
                             { type: "link",   label: "' . __('common.edit') . '",        url: ":edit_url",   class: "btn-secondary" },
                             { type: "button", label: "' . __('admin.admins_section.sessions') . '",    id: "sessions",     class: "btn-ghost" },
                             { type: "button", label: "' . __('admin.admins_section.reset_pwd') . '",   id: "reset-pwd",    class: "btn-ghost" },
+                            { type: "button", label: "' . __('admin.admins_section.resend_credentials') . '", id: "resend-credentials", class: "btn-ghost", condition: (row) => row.can_resend_credentials },
                             { type: "button", label: "' . __('admin.admins_section.impersonate') . '", id: "impersonate",  class: "btn-warning",   condition: (row) => row.can_impersonate },
                             { type: "button", label: "' . __('admin.admins_section.deactivate') . '",  id: "deactivate",   class: "btn-secondary", condition: (row) => !row.is_self && row.status === "active" },
                             { type: "button", label: "' . __('admin.admins_section.activate') . '",    id: "activate",     class: "btn-success",   condition: (row) => !row.is_self && row.status === "inactive" },
@@ -158,6 +159,8 @@
             resetPwdTitle: @json(__('admin.admins_section.reset_pwd_title')),
             passwordResetDone: @json(__('admin.admins_section.password_reset_done')),
             resetFailed: @json(__('admin.admins_section.reset_failed')),
+            resendCredentialsConfirm: @json(__('admin.admins_section.resend_credentials_confirm')),
+            resendCredentialsTitle: @json(__('admin.admins_section.resend_credentials')),
             impersonateConfirm: @json(__('admin.admins_section.impersonate_confirm')),
             impersonateTitle: @json(__('admin.admins_section.impersonate_title')),
             noSessionsFound: @json(__('admin.admins_section.no_sessions_found')),
@@ -219,7 +222,22 @@
                 url: row.reset_pwd_url, method: 'POST',
                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
             })
-                .done(data => { window.Toast?.success(data.message || window.TRANSLATIONS.passwordResetDone); })
+                .done(data => { data.warning ? window.Toast?.warning(data.warning) : window.Toast?.success(data.message || window.TRANSLATIONS.passwordResetDone); })
+                .fail(xhr => { window.Toast?.error(xhr.responseJSON?.message || window.TRANSLATIONS.resetFailed); });
+        };
+
+        // ── Resend credentials (welcome email with a fresh set-password link) ──────
+        window.tableActions['resend-credentials'] = async function (id, row) {
+            const confirmed = window.confirmBulkAction
+                ? await window.confirmBulkAction(window.TRANSLATIONS.resendCredentialsConfirm.replace(':name', row.name), { title: window.TRANSLATIONS.resendCredentialsTitle })
+                : confirm(window.TRANSLATIONS.resendCredentialsConfirm.replace(':name', row.name));
+            if (!confirmed) return;
+
+            $.ajax({
+                url: row.resend_credentials_url, method: 'POST',
+                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+            })
+                .done(data => { data.warning ? window.Toast?.warning(data.warning) : window.Toast?.success(data.message); })
                 .fail(xhr => { window.Toast?.error(xhr.responseJSON?.message || window.TRANSLATIONS.resetFailed); });
         };
 

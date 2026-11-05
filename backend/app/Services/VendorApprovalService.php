@@ -15,6 +15,9 @@ use App\Notifications\Vendor\PayoutHoldPlaced;
 use App\Notifications\Vendor\PayoutHoldReleased;
 use App\Notifications\Vendor\StrikeIssued;
 use App\Notifications\Vendor\VendorApproved;
+use App\Services\Auth\CredentialDeliveryResult;
+use App\Services\Vendor\OwnerEmailConflictException;
+use App\Services\Vendor\VendorOwnerService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
@@ -22,6 +25,8 @@ class VendorApprovalService
 {
     /** Required document types that must be verified before approval */
     public const REQUIRED_DOC_TYPES = ['business_license', 'tax_certificate', 'owner_id'];
+
+    public function __construct(private readonly VendorOwnerService $owners) {}
 
     // ── Approval eligibility ──────────────────────────────────────────────────
 
@@ -68,9 +73,16 @@ class VendorApprovalService
 
     // ── Approval ───────────────────────────────────────────────────────────────
 
-    public function approve(Vendor $vendor, Admin $admin): void
+    /**
+     * Approve the vendor, make sure its owner login exists and is flagged as owner, then
+     * email the owner the login URL and a set-password link (synchronously, so a failure
+     * is visible to the approving admin).
+     *
+     * @throws OwnerEmailConflictException when the store email already belongs to another seller account
+     */
+    public function approve(Vendor $vendor, Admin $admin): CredentialDeliveryResult
     {
-        DB::transaction(function () use ($vendor, $admin) {
+        $owner = DB::transaction(function () use ($vendor, $admin) {
             $vendor->update([
                 'global_status' => 'active',
                 'approved_at' => now(),
@@ -80,10 +92,16 @@ class VendorApprovalService
 
             $this->logActivity($vendor, $admin, 'approved', 'Vendor account approved');
 
+            $owner = $this->owners->ensureOwner($vendor);
+
             Notification::send($vendor->vendorAdmins, new VendorApproved());
 
-            VendorApprovedJob::dispatch($vendor->id);
+            return $owner;
         });
+
+        VendorApprovedJob::dispatch($vendor->id);
+
+        return $this->owners->sendApprovalEmail($vendor, $owner);
     }
 
     // ── Rejection ─────────────────────────────────────────────────────────────

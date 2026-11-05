@@ -29,10 +29,16 @@ export const apiPublicBaseUrlGlobal = apiBaseUrlGlobal.replace(
 
 export class ApiRequestError extends Error {
   status: number;
+  /** Stable machine-readable error code of the API (e.g. `customer_contract_required`), when it sends one. */
+  code?: string;
+  /** The API's `data` payload of an error response (e.g. the contract to review), when it sends one. */
+  data?: unknown;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, code?: string, data?: unknown) {
     super(message);
     this.status = status;
+    this.code = code;
+    this.data = data;
   }
 }
 
@@ -89,7 +95,12 @@ async function fetchWithAuth<T>(
   const body = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new ApiRequestError(body?.message ?? res.statusText, res.status);
+    throw new ApiRequestError(
+      body?.message ?? res.statusText,
+      res.status,
+      typeof body?.code === "string" ? body.code : undefined,
+      body?.data,
+    );
   }
 
   return body as T;

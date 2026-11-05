@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Customer\BookableUnitAvailabilityController;
 use App\Http\Controllers\Api\Customer\CheckoutController as ApiCheckoutController;
+use App\Http\Controllers\Api\Customer\CustomerContractController;
 use App\Http\Controllers\Api\Customer\CustomerGiftCardStoreController;
 use App\Http\Controllers\Api\Customer\GiftCardController as ApiGiftCardController;
 use App\Http\Controllers\Api\Customer\ListingController as ApiListingController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\CartRecommendationsController;
 use App\Http\Controllers\Customer\CategoryController;
 use App\Http\Controllers\Customer\CheckoutController;
+use App\Http\Controllers\Customer\ClassifiedSectionController;
 use App\Http\Controllers\Customer\CouponController;
 use App\Http\Controllers\Customer\CurrencyController;
 use App\Http\Controllers\Customer\DisputeController;
@@ -104,6 +106,8 @@ Route::get('travel', [BrowseController::class, 'travelIndex'])->name('customer.t
 Route::get('classified', [BrowseController::class, 'classifiedIndex'])->name('customer.classified.index');
 
 // GET /classified/map-pins — lightweight pin data for active classified listings with coordinates
+// GET /classified/sections — classified sections placed on a storefront surface (placement=home|landing|nav) with their newest ads
+Route::get('classified/sections', [ClassifiedSectionController::class, 'index'])->name('customer.classified.sections');
 Route::get('classified/cities', [BrowseController::class, 'classifiedCities'])->name('customer.classified.cities');
 Route::get('classified/map-pins', [BrowseController::class, 'classifiedMapPins'])->name('customer.classified.map-pins');
 
@@ -132,6 +136,16 @@ Route::post(
     'listings/classified/{slug}/inquiries',
     [ListingController::class, 'createInquiry']
 )->middleware('auth:customer')->name('customer.listings.classified.inquiries.store');
+
+// ── Customer purchase contract of a classified advertisement (authenticated) ─────
+// GET  /listings/classified/{slug}/customer-contract                 — the contract to review, or required=false
+// POST /listings/classified/{slug}/customer-contract/sign            — record the customer's acceptance
+// GET  /listings/classified/{slug}/customer-contract/file/{language} — uploaded document of the applicable contract
+Route::prefix('listings/classified/{slug}/customer-contract')->middleware('auth:customer')->name('customer.listings.classified.customer-contract.')->group(function (): void {
+    Route::get('/', [CustomerContractController::class, 'show'])->name('show');
+    Route::post('sign', [CustomerContractController::class, 'sign'])->middleware('throttle:20,1')->name('sign');
+    Route::get('file/{language}', [CustomerContractController::class, 'templateFile'])->whereIn('language', ['ar', 'en'])->name('file');
+});
 
 // ── Travel booking (authenticated) ────────────────────────────────────
 // POST /listings/travel/{slug}/bookings
@@ -596,6 +610,13 @@ Route::middleware('auth:customer')->group(function (): void {
     Route::prefix('account/inquiries')->name('customer.account.inquiries.')->group(function (): void {
         Route::get('/', [AccountController::class, 'inquiriesIndex'])->name('index');
         Route::get('{id}', [AccountController::class, 'inquiriesShow'])->name('show');
+    });
+
+    // My signed purchase contracts (customer purchase contracts)
+    Route::prefix('account/contracts')->name('customer.account.contracts.')->group(function (): void {
+        Route::get('/', [CustomerContractController::class, 'index'])->name('index');
+        Route::get('{id}', [CustomerContractController::class, 'detail'])->name('show');
+        Route::get('{id}/file', [CustomerContractController::class, 'download'])->name('file');
     });
 
     // Orders (Api\Customer)

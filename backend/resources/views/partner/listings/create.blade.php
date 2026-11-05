@@ -14,6 +14,7 @@
             availableShippingMethodsUrl: '{{ route("partner.listings.available-shipping-methods") }}',
             categorySamplesUrl: '{{ route("partner.listings.category-samples") }}',
             storeUrl: '{{ route("partner.listings.store") }}',
+            contractCheckUrl: '{{ route("partner.listings.contract-check") }}',
             csrf: '{{ csrf_token() }}',
             contractLabels: {
                 title: @js(__('partner.contracts.inline_title')),
@@ -359,6 +360,9 @@
                         <i class="fas fa-bullhorn mt-0.5"></i>
                         <span>{{ __('marketer_campaigns.wizard.listing_notice') }}</span>
                     </div>
+
+                    {{-- Shown when the chosen product needs an individual contract (set from contract-check) --}}
+                    <div id="contract-hint" class="hidden rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"></div>
 
                     <div id="contract-panel" class="hidden rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-4">
                         <div>

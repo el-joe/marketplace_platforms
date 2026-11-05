@@ -39,6 +39,9 @@ use App\Services\MarketerCampaignService;
 use App\Services\Shared\PageCacheService;
 use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\ShippingWeightService;
+use App\Exceptions\ContractNotConfiguredException;
+use App\Exceptions\ContractRequiredException;
+use App\Services\ListingContractGate;
 use App\Services\Vendor\CategoryContractService;
 use App\Support\Money;
 use App\Traits\HasDataTable;
@@ -720,6 +723,43 @@ class ListingController extends Controller
         ));
     }
 
+    /**
+     * GET partner/listings/contract-check?product_id=… : tells the listing wizard, before the vendor submits,
+     * whether this product needs an individual contract (and whether it is already signed). Display only; the
+     * rule is enforced again in store().
+     */
+    public function contractCheck(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['product_id' => ['required', 'uuid', 'exists:products,id']]);
+
+        $vendor = $this->vendor();
+        $product = Product::findOrFail($validated['product_id']);
+        $contracts = app(CategoryContractService::class);
+
+        try {
+            $resolved = $contracts->resolver()->resolveForVendorProduct($vendor, $product);
+        } catch (ContractNotConfiguredException $e) {
+            return response()->json(['success' => true, 'requires_contract' => true, 'signed' => false, 'not_configured' => true, 'message' => $e->getMessage()]);
+        }
+
+        if (! $resolved->isIndividual()) {
+            return response()->json(['success' => true, 'requires_contract' => false, 'signed' => false, 'not_configured' => false, 'message' => null]);
+        }
+
+        $signed = $contracts->unsignedFor($vendor, $resolved) === null;
+
+        return response()->json([
+            'success' => true,
+            'requires_contract' => true,
+            'signed' => $signed,
+            'not_configured' => false,
+            'name' => $resolved->template->name,
+            'message' => $signed
+                ? __('contracts.partner.hint_signed', ['name' => $resolved->template->name])
+                : __('contracts.partner.hint_required', ['name' => $resolved->template->name]),
+        ]);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Store
     // ─────────────────────────────────────────────────────────────────────────
@@ -729,26 +769,29 @@ class ListingController extends Controller
         $vendor = $this->vendor();
 
         $productId = $request->input('product_id') ?: ProductVariant::whereKey($request->input('product_variant_id'))->value('product_id');
-        $productCategoryId = $productId ? Product::whereKey($productId)->value('category_id') : null;
+        $product = $productId ? Product::find($productId) : null;
 
+        // Individual contract required by the product (product override, category switch with parent
+        // inheritance, the vendor's country). The global Seller Agreement never counts as this contract.
         $contracts = app(CategoryContractService::class);
-        $unsignedTemplate = $productCategoryId
-            ? $contracts->unsignedTemplateFor($vendor, CategoryContractService::SCOPE_PRODUCT, $productCategoryId)
-            : null;
 
-        if ($unsignedTemplate) {
-            $category = $contracts->categoryFor(CategoryContractService::SCOPE_PRODUCT, $productCategoryId);
-
+        try {
+            $pending = $product ? $contracts->unsignedForProduct($vendor, $product) : null;
+        } catch (ContractNotConfiguredException $e) {
             return response()->json([
                 'success' => false,
+                'message' => $e->getMessage(),
+                'code' => ContractNotConfiguredException::CODE,
+            ], 422);
+        }
+
+        if ($pending) {
+            return response()->json([
+                'success' => false,
+                'code' => ContractRequiredException::CODE,
                 'message' => __('partner.contracts.product_signature_required'),
                 'redirect' => route('partner.contracts.pending'),
-                'contract' => $contracts->present($unsignedTemplate, $vendor, $category) + [
-                    'category_scope' => CategoryContractService::SCOPE_PRODUCT,
-                    'category_id' => $productCategoryId,
-                    'category_name' => $category->name_en,
-                    'accept_url' => route('partner.contracts.accept', $unsignedTemplate),
-                ],
+                'contract' => $contracts->payloadFor($vendor, $pending['template'], $pending['scope'], $pending['subject'], 'partner.legal.template-file', 'partner.contracts.accept'),
             ], 422);
         }
 
@@ -1207,6 +1250,17 @@ class ListingController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'هذا المنتج يتطلب شهادة اعتماد محلية معتمدة في هذا البلد قبل تفعيل القائمة. يرجى رفع الشهادة من قسم شهادات المنتجات.',
+                ], 422);
+            }
+
+            try {
+                ListingContractGate::assertCanGoLive($listing);
+            } catch (ContractRequiredException|ContractNotConfiguredException $e) {
+                return response()->json([
+                    'success' => false,
+                    'code' => $e->errorCode(),
+                    'message' => $e->getMessage(),
+                    'redirect' => route('partner.contracts.pending'),
                 ], 422);
             }
         }

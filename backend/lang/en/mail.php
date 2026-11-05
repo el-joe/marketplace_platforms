@@ -171,4 +171,71 @@ return [
         'cta_button'           => 'Review Application',
         'footer_copyright'     => '&copy; :year — All rights reserved',
     ],
+
+    // Credential / set-password emails (CredentialLinkMail). Passwords are never emailed.
+    'credentials' => [
+        'send_failed' => 'The account was saved, but the email to :email could not be sent. Check the mail settings (Settings > Integrations) and use "Resend credentials" once mail works.',
+        'non_delivering' => 'The account was saved, but the mail driver is ":mailer", so nothing is actually delivered to :email. Configure a real SMTP mailer in Settings > Integrations, then use "Resend credentials".',
+        'greeting' => 'Hello :name,',
+        'email_label' => 'Email',
+        'link_fallback' => 'If the button does not work, copy this link into your browser:',
+        'code_intro' => 'Use this reset code in the app together with your email address:',
+        'login_label' => 'Login page',
+        'expiry_notice' => 'For your security this link works once and expires in :hours hour(s). We never send passwords by email.',
+        'ignore_notice' => 'If you were not expecting this email you can safely ignore it.',
+        'roles' => [
+            'vendor_manager' => 'Manager',
+            'vendor_staff' => 'Staff member',
+        ],
+        'kinds' => [
+            'admin_welcome' => [
+                'subject' => 'Your administrator account is ready',
+                'heading' => 'Welcome aboard',
+                'intro' => 'An administrator account has been created for you. Use the button below to choose your password and sign in.',
+                'action' => 'Set my password',
+            ],
+            'admin_reset' => [
+                'subject' => 'Reset your administrator password',
+                'heading' => 'Password reset',
+                'intro' => 'An administrator asked to reset your password. Use the button below to choose a new one.',
+                'action' => 'Choose a new password',
+            ],
+            'vendor_approved' => [
+                'subject' => 'Your seller account has been approved',
+                'heading' => 'Your store :store is approved',
+                'intro' => 'Good news: your seller account has been approved and you can start listing products. Sign in with the password you chose when you registered, or use the button below to set a new password.',
+                'action' => 'Set or reset my password',
+            ],
+            'vendor_resend' => [
+                'subject' => 'Access to your seller account',
+                'heading' => 'Your seller account access',
+                'intro' => 'Here is a fresh link to set the password for your seller account :store.',
+                'action' => 'Set my password',
+            ],
+            'vendor_team_invite' => [
+                'subject' => 'Invitation to join the seller dashboard',
+                'heading' => 'Welcome to the store team',
+                'intro' => 'You have been invited to join the seller dashboard of :store as :role. Use the button below to choose your password and sign in.',
+                'action' => 'Accept invitation and set password',
+            ],
+            'marketer_approved' => [
+                'subject' => 'Your marketer account has been approved',
+                'heading' => 'Your marketer account is approved',
+                'intro' => 'Good news: your marketer account has been approved and you can now log in. Sign in with the password you chose when you registered, or use the button below to set a new password.',
+                'action' => 'Set or reset my password',
+            ],
+            'marketer_welcome' => [
+                'subject' => 'Your marketer account is ready',
+                'heading' => 'Welcome aboard',
+                'intro' => 'A marketer account has been created for you. Use the button below to choose your own password and sign in.',
+                'action' => 'Set my password',
+            ],
+            'forgot_password' => [
+                'subject' => 'Reset your password',
+                'heading' => 'Password reset',
+                'intro' => 'We received a request to reset your password. Use the button below to choose a new one.',
+                'action' => 'Choose a new password',
+            ],
+        ],
+    ],
 ];

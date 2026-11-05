@@ -197,6 +197,9 @@
         <form method="POST" action="{{ $action }}" class="choice-form mt-10 sm:mt-12">
             @csrf
             <input type="hidden" name="{{ $fieldName }}" :value="selected">
+            @if ($currentCountry?->site_code)
+                <input type="hidden" name="country" value="{{ $currentCountry->site_code }}">
+            @endif
             @if ($countryId)
                 <input type="hidden" name="country_id" value="{{ $countryId }}">
             @endif

@@ -26,7 +26,7 @@ export default function CategoryTags({
         const isSelected = selectedCtg === tag.id;
         return (
           <Link
-            href={`/classified/${tag.id}`}
+            href={`/classified/${tag.slug}`}
             key={idx}
             type="button"
             className={`text-xs px-3 py-1.5 rounded-md font-medium border transition-colors whitespace-nowrap cursor-pointer ${

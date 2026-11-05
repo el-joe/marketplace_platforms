@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\PortalContent;
 use App\Services\PortalContentCountrySync;
+use App\Support\PortalPermissions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -104,6 +105,7 @@ class PortalContentController extends Controller
             'pageLabel' => $pageConfig['label_'.$locale] ?? $pageConfig['label_en'] ?? $pageKey,
             'pages' => $this->pageOptions($locale),
             'bands' => $bands,
+            'can' => $this->abilities(),
             'sharedLinks' => $this->sharedLinks($pageKey, $code, $locale),
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
@@ -117,10 +119,17 @@ class PortalContentController extends Controller
     // Save — bulk-update the fields of one page for one country only
     // ─────────────────────────────────────────────────────────────────────────
 
+    /**
+     * Permissions required per kind of change (all enforced here, not only by hidden buttons):
+     *   edit    - change text, links or replace an existing image (also the entry gate for saving)
+     *   publish - change a field's "Active" state
+     *   create  - set an image on a field that had none
+     *   delete  - remove an image (reset to the built-in default)
+     */
     public function save(Request $request, string $country, string $pageKey): RedirectResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('portal_content.edit'), 403);
+        $this->authorizeAbility(PortalPermissions::EDIT);
 
         $countryModel = $this->resolveCountry($country);
         $this->assertKnownPage($pageKey);
@@ -140,7 +149,10 @@ class PortalContentController extends Controller
         }
         $pageKeys = array_unique(array_map(fn ($k) => explode("\0", $k)[0], array_keys($allowed)));
 
-        $count = 0;
+        $canPublish = $admin->can(PortalPermissions::PUBLISH);
+
+        // Pass 1: resolve every change and verify permissions before anything is written.
+        $plan = [];
 
         foreach ($request->input('fields', []) as $id => $data) {
             $row = PortalContent::where('country_code', $code)->whereIn('page_key', $pageKeys)->find($id);
@@ -153,31 +165,54 @@ class PortalContentController extends Controller
             $update = [
                 'value_en' => $data['value_en'] ?? null,
                 'value_ar' => $data['value_ar'] ?? null,
-                'is_active' => isset($data['is_active']),
                 'updated_by_admin_id' => $admin->id,
             ];
+
+            // Without publish permission the "Active" checkbox is rendered disabled (never submitted), so an
+            // absent value must not deactivate the field; an attempt to switch it on is refused.
+            if ($canPublish) {
+                $update['is_active'] = isset($data['is_active']);
+            } elseif (isset($data['is_active']) && ! $row->is_active) {
+                $this->authorizeAbility(PortalPermissions::PUBLISH);
+            }
 
             if ($row->type === PortalContentType::Link) {
                 $update['value_url'] = $data['value_url'] ?? null;
             }
 
+            $uploaded = null;
+
             if ($row->type === PortalContentType::Image) {
                 $uploaded = $request->file("fields.{$id}.value_file");
+                $newUrl = $row->value_url;
 
                 if ($uploaded) {
-                    $update['value_url'] = $uploaded->store('portal-content/'.$row->page_key, 'public');
+                    $newUrl = 'uploaded';
                 } elseif (! empty($data['reset_image'])) {
                     // Empty value_url makes portal_image() fall back to the Blade default.
+                    $newUrl = null;
                     $update['value_url'] = null;
                 } elseif (array_key_exists('value_url', $data)) {
                     // URL mode only: file mode submits no value_url, so the stored image is kept.
+                    $newUrl = $data['value_url'];
                     $update['value_url'] = $data['value_url'];
                 }
+
+                $this->authorizeImageChange((string) $row->value_url, (string) $newUrl);
+            }
+
+            $plan[] = [$row, $update, $uploaded];
+        }
+
+        // Pass 2: write.
+        foreach ($plan as [$row, $update, $uploaded]) {
+            if ($uploaded) {
+                $update['value_url'] = $uploaded->store('portal-content/'.$row->page_key, 'public');
             }
 
             $row->update($update);
-            $count++;
         }
+        $count = count($plan);
 
         foreach ($pageKeys as $pk) {
             PortalContent::flush($pk, $code);
@@ -209,7 +244,48 @@ class PortalContentController extends Controller
 
     private function authorizeView(): void
     {
-        abort_unless(auth('admin')->user()->hasPermissionTo('portal_content.view'), 403);
+        $this->authorizeAbility(PortalPermissions::VIEW);
+    }
+
+    /** Uses the Gate (like the `admin.permission` middleware) so super_admin and direct grants resolve identically. */
+    private function authorizeAbility(string $permission): void
+    {
+        abort_unless(auth('admin')->user()?->can($permission), 403);
+    }
+
+    /**
+     * Setting an image where none existed needs "create", removing one needs "delete",
+     * replacing one needs "edit" (already required to reach save()).
+     */
+    private function authorizeImageChange(string $current, string $new): void
+    {
+        if ($current === $new) {
+            return;
+        }
+
+        if ($current === '') {
+            $this->authorizeAbility(PortalPermissions::CREATE);
+        } elseif ($new === '') {
+            $this->authorizeAbility(PortalPermissions::DELETE);
+        }
+    }
+
+    /**
+     * Abilities the current employee has, used by the views to hide/disable controls.
+     *
+     * @return array{edit: bool, create: bool, delete: bool, publish: bool, manage: bool}
+     */
+    private function abilities(): array
+    {
+        $admin = auth('admin')->user();
+
+        return [
+            'edit' => (bool) $admin->can(PortalPermissions::EDIT),
+            'create' => (bool) $admin->can(PortalPermissions::CREATE),
+            'delete' => (bool) $admin->can(PortalPermissions::DELETE),
+            'publish' => (bool) $admin->can(PortalPermissions::PUBLISH),
+            'manage' => (bool) $admin->can(PortalPermissions::MANAGE),
+        ];
     }
 
     /** @return Collection<int, Country> */

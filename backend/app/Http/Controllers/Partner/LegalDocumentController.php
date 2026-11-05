@@ -4,15 +4,19 @@ namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
 use App\Models\ClassifiedContractTemplate;
+use App\Models\ContractDisplayDestination;
+use App\Models\MarketerSellerContract;
 use App\Models\Vendor;
 use App\Models\VendorAdmin;
 use App\Models\VendorContract;
+use App\Services\Marketer\MarketerCollaborationContractService;
 use App\Services\Vendor\CategoryContractService;
 use App\Services\Vendor\ContractFileService;
 use App\Services\Vendor\SellerAgreementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -43,9 +47,10 @@ class LegalDocumentController extends Controller
         $vendor = $this->vendor();
 
         $signature = $this->agreements->activeSignature($vendor);
-        $inForce = $this->agreements->inForce();
-        $upcoming = $this->agreements->upcoming();
+        $inForce = $this->agreements->inForce($vendor->country_id);
+        $upcoming = $this->agreements->upcoming($vendor->country_id);
         $pending = $this->agreements->pendingFor($vendor);
+        $country = $this->contracts->resolver()->countryOf($vendor);
 
         $history = VendorContract::where('vendor_id', $vendor->id)
             ->where('category_scope', ClassifiedContractTemplate::SCOPE_PLATFORM)
@@ -54,6 +59,8 @@ class LegalDocumentController extends Controller
             ->get();
 
         return view('partner.legal.index', [
+            'country' => $country,
+            'agreementConfigured' => $inForce !== null || $upcoming !== null,
             'signature' => $signature,
             'inForce' => $inForce,
             'upcoming' => $upcoming,
@@ -62,6 +69,50 @@ class LegalDocumentController extends Controller
             'inForceDoc' => $inForce ? $this->contracts->present($inForce, $vendor, null) : null,
             'upcomingDoc' => $upcoming ? $this->contracts->present($upcoming, $vendor, null) : null,
         ]);
+    }
+
+    /**
+     * Collaboration agreements: the contracts this seller signed with influencers / celebrities / brokers (own records
+     * only) and the ones the admin placed in the general contracts section for the seller's country.
+     */
+    public function collaborations(Request $request, MarketerCollaborationContractService $collaboration): View
+    {
+        $vendor = $this->vendor();
+        $status = in_array($request->query('status'), ['active', 'superseded', 'revoked'], true) ? $request->query('status') : null;
+        $search = trim((string) $request->query('marketer'));
+
+        $signed = MarketerSellerContract::query()
+            ->where('vendor_id', $vendor->id)
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($search !== '', fn ($q) => $q->whereHas('marketer', fn ($m) => $m->where('name', 'like', '%'.$search.'%')))
+            ->when($request->query('from'), fn ($q, $d) => $q->whereDate('signed_at', '>=', $d))
+            ->when($request->query('to'), fn ($q, $d) => $q->whereDate('signed_at', '<=', $d))
+            ->with(['marketer:id,name', 'template:id,name', 'campaign:id,title'])
+            ->orderByDesc('signed_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        $general = $collaboration->forDestination(ContractDisplayDestination::TARGET_GENERAL, $vendor->country_id)
+            ->map(fn (ClassifiedContractTemplate $template) => ['template' => $template, 'doc' => $this->contracts->present($template, $vendor, null)]);
+
+        return view('partner.legal.collaborations', compact('signed', 'general', 'status', 'search'));
+    }
+
+    public function collaborationShow(string $contract): View
+    {
+        $contract = MarketerSellerContract::where('vendor_id', $this->vendor()->id)
+            ->with(['marketer:id,name', 'template:id,name', 'campaign:id,title'])
+            ->findOrFail($contract);
+
+        return view('partner.legal.collaboration-show', compact('contract'));
+    }
+
+    public function collaborationFile(string $contract): StreamedResponse
+    {
+        $contract = MarketerSellerContract::where('vendor_id', $this->vendor()->id)->findOrFail($contract);
+        abort_unless($contract->hasSignedFile() && Storage::disk('private')->exists($contract->signed_file_path), 404);
+
+        return Storage::disk('private')->download($contract->signed_file_path, $contract->signed_file_name, ['Content-Type' => $contract->signed_file_mime ?? 'application/octet-stream']);
     }
 
     /**

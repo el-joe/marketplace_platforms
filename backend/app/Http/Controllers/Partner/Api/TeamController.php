@@ -4,19 +4,18 @@ namespace App\Http\Controllers\Partner\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
-use App\Mail\TeamMemberInviteMail;
 use App\Models\VendorAdmin;
+use App\Services\Vendor\TeamService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class TeamController extends Controller
 {
+    public function __construct(private readonly TeamService $team) {}
+
     private function admin(): VendorAdmin
     {
         return Auth::guard('vendor_api')->user();
@@ -60,28 +59,15 @@ class TeamController extends Controller
             'role' => ['required', Rule::exists('roles', 'name')->where('guard_name', 'vendor'), Rule::notIn(['vendor_owner'])],
         ]);
 
-        $tempPassword = Str::password(12, symbols: false);
-
-        $member = DB::transaction(function () use ($validated, $tempPassword) {
-            $member = VendorAdmin::create([
-                'vendor_id' => $this->vendorId(),
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($tempPassword),
-                'role' => $validated['role'],
-                'is_active' => true,
-            ]);
-
-            $member->assignRole($validated['role']);
-
-            return $member;
-        });
-
-        Mail::to($member->email)->send(new TeamMemberInviteMail($member, $tempPassword));
+        [$member, $delivery] = $this->team->invite($this->admin()->vendor, [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'role' => $validated['role'],
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Invitation sent successfully.',
+            'message' => $delivery->warning() ?? 'Invitation sent successfully.',
             'data' => [
                 'id' => $member->id,
                 'name' => $member->name,
@@ -90,7 +76,7 @@ class TeamController extends Controller
                 'is_active' => $member->is_active,
                 'last_login_at' => null,
             ],
-        ], 201);
+        ] + $delivery->toResponseFields(), 201);
     }
 
     /** PUT /api/partner/v1/team/{memberId} */

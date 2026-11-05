@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Services\Vendor\ContractAssignmentService;
 use Illuminate\Validation\Rule;
 
 class UpdateCategoryRequest extends FormRequest
@@ -30,7 +31,7 @@ class UpdateCategoryRequest extends FormRequest
             'commission_fbm_fixed' => ['nullable', 'numeric', 'min:0'],
             'commission_fbn_pct' => ['nullable', 'numeric', 'between:0,100'],
             'commission_fbn_fixed' => ['nullable', 'numeric', 'min:0'],
-            'contract_template_id' => ['nullable', 'uuid', Rule::exists('classified_contract_templates', 'id')->where('category_scope', 'product')->where('is_published', true)],
+            ...app(ContractAssignmentService::class)->rules('product'),
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
             'is_visible' => ['boolean'],

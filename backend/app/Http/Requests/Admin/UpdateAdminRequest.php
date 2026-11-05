@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\AdminStatus;
+use App\Support\PortalPermissions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,6 +28,9 @@ class UpdateAdminRequest extends FormRequest
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['string', 'exists:roles,name'],
             'vendors_assigned_only' => ['sometimes', 'boolean'],
+            'portal_permissions_present' => ['sometimes', 'boolean'],
+            'portal_permissions' => ['sometimes', 'array'],
+            'portal_permissions.*' => ['string', Rule::in(PortalPermissions::directlyAssignable())],
         ];
     }
 }

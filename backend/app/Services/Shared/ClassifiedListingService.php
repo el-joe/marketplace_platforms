@@ -8,6 +8,8 @@ use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
 use App\Models\Customer;
 use App\Models\Vendor;
+use App\Services\Customer\ClassifiedSectionService;
+use App\Services\Vendor\CategoryContractService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -19,10 +21,13 @@ class ClassifiedListingService
         /** @var ClassifiedCategory $category */
         $category = ClassifiedCategory::findOrFail($data['classified_category_id']);
 
+        app(ClassifiedSectionService::class)->assertListable($category, $data['country_id'] ?? null);
+
         $this->validateCategoryRequirements($category, $data, partial: true);
 
         // Vendors pass contract_accepted when the category contract is already signed (or was signed with this request)
-        $contractAccepted = ! $category->contract_template_id || ! empty($data['contract_accepted']);
+        $template = app(CategoryContractService::class)->classifiedTemplateForOwner($owner, $category, $data['country_id'] ?? null);
+        $contractAccepted = ! $template || ! empty($data['contract_accepted']);
 
         $status = $contractAccepted
             ? ClassifiedListingStatus::PendingReview
@@ -47,8 +52,8 @@ class ClassifiedListingService
             'longitude' => $data['longitude'] ?? null,
             'vendor_listing_reference' => $data['vendor_listing_reference'] ?? null,
             'status' => $status,
-            'contract_template_id' => $contractAccepted ? $category->contract_template_id : null,
-            'contract_accepted_at' => $contractAccepted && $category->contract_template_id ? now() : null,
+            'contract_template_id' => $contractAccepted ? $template?->id : null,
+            'contract_accepted_at' => $contractAccepted && $template ? now() : null,
             'contract_signature_data' => $contractAccepted ? ($data['contract_signature_data'] ?? null) : null,
         ]);
 
@@ -106,7 +111,7 @@ class ClassifiedListingService
 
     public function acceptContract(ClassifiedListing $listing, string $signatureData): ClassifiedListing
     {
-        $template = $listing->classifiedCategory?->contractTemplate;
+        $template = app(CategoryContractService::class)->classifiedTemplateForListing($listing);
 
         if (! $template) {
             throw ValidationException::withMessages([

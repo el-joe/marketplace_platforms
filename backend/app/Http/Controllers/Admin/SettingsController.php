@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Currency;
 use App\Models\Setting;
 use App\Services\SettingsService;
+use App\Support\PortalPermissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -44,6 +45,13 @@ class SettingsController extends Controller
         abort_unless($admin->hasPermissionTo('settings.edit'), 403);
 
         $data = $request->input('settings', []);
+
+        // The /join page option toggles are portal configuration: changing them needs
+        // portal_content.manage on top of settings.edit (unchanged values never trigger the check).
+        if ($this->changesJoinOptions($data) && ! $admin->can(PortalPermissions::MANAGE)) {
+            return response()->json(['message' => __('admin.portal_permissions.join_options_forbidden')], 403);
+        }
+
         $errors = $this->settingsService->validateGroup($category, $data);
 
         if (!empty($errors)) {
@@ -108,5 +116,29 @@ class SettingsController extends Controller
         Artisan::call('view:clear');
 
         return response()->json(['message' => 'Application cache cleared successfully.']);
+    }
+
+    /**
+     * Whether the submitted settings flip any `join_option_*` visibility toggle.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function changesJoinOptions(array $data): bool
+    {
+        $keys = array_filter(array_keys($data), fn ($key) => str_starts_with((string) $key, 'join_option_'));
+
+        if ($keys === []) {
+            return false;
+        }
+
+        foreach (Setting::whereIn('key', $keys)->get() as $setting) {
+            $submitted = filter_var($data[$setting->key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            if ($submitted !== null && $submitted !== (bool) $setting->value) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

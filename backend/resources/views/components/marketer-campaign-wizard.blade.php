@@ -237,6 +237,49 @@
             <p x-show="!hasInfluencers" class="text-xs text-gray-500">{{ __('marketer_campaigns.wizard.brief_no_influencers') }}</p>
         </div>
 
+        {{-- 4. Collaboration contract(s) with the chosen marketers (only when the platform configured one for them) --}}
+        <div x-show="(quote.agreements || []).length > 0" x-cloak class="bg-white rounded-2xl border border-amber-200 p-6 space-y-4" data-testid="collaboration-contracts">
+            <div>
+                <h2 class="text-base font-semibold text-gray-900"><span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs me-2">4</span>{{ __('contracts.marketer.wizard_title') }}</h2>
+                <p class="mt-1 text-xs text-gray-500">{{ __('contracts.marketer.wizard_help') }}</p>
+            </div>
+
+            @error('collaboration_contracts')
+                <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{{ $message }}</p>
+            @enderror
+
+            <template x-for="agreement in (quote.agreements || [])" :key="agreement.template_id">
+                <div class="rounded-xl border border-gray-200 p-4 space-y-3">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="font-semibold text-gray-900 text-sm" x-text="agreement.name"></div>
+                            <div class="text-xs text-gray-500">{{ __('contracts.marketer.version') }} <span x-text="agreement.version"></span></div>
+                            <div class="text-xs text-gray-500 mt-1" x-show="agreement.marketers.length > 0">{{ __('contracts.marketer.covers') }}: <span x-text="agreement.marketers.join(', ')"></span></div>
+                            <div class="text-xs text-gray-500 mt-1" x-show="agreement.open_types.length > 0">{{ __('contracts.marketer.covers_open') }}: <span x-text="agreement.open_types.join(', ')"></span></div>
+                        </div>
+                    </div>
+                    <details class="rounded-lg bg-gray-50 border border-gray-200">
+                        <summary class="cursor-pointer px-3 py-2 text-xs font-medium text-gray-700">{{ __('contracts.marketer.read') }}</summary>
+                        <div class="px-3 py-3 text-sm text-gray-700 max-h-72 overflow-y-auto prose prose-sm max-w-none" x-html="agreement.content"></div>
+                    </details>
+                    <label class="flex items-start gap-2 text-sm text-gray-800 cursor-pointer">
+                        <input type="checkbox" name="collab_contracts[]" :value="agreement.template_id" class="mt-1 rounded border-gray-300 text-amber-600" required>
+                        <span>{{ __('contracts.marketer.i_agree') }}</span>
+                    </label>
+                </div>
+            </template>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1" for="collab_signer_name">{{ __('contracts.marketer.signer_name') }} <span class="text-red-500">*</span></label>
+                <input type="text" id="collab_signer_name" name="collab_signer_name" maxlength="150" value="{{ old('collab_signer_name') }}"
+                       class="w-full sm:w-80 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                       :required="(quote.agreements || []).length > 0">
+                @error('collab_signer_name')
+                    <p class="mt-2 text-xs text-red-700">{{ $message }}</p>
+                @enderror
+            </div>
+        </div>
+
     </div>{{-- /left column --}}
 
     {{-- Live cost summary: every figure comes from the server quote --}}

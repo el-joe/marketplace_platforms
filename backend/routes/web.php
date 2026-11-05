@@ -1,7 +1,20 @@
 <?php
 
+use App\Http\Controllers\Admin\BlogPostController;
 use App\Http\Controllers\QrScanController;
+use App\Http\Controllers\Storefront\ClassifiedController;
+use App\Http\Controllers\Storefront\DeliveryRatingController;
+use App\Http\Controllers\Storefront\PublicTravelInquiryController;
+use App\Http\Controllers\Storefront\TravelController;
+use App\Http\Controllers\Storefront\TryOnController;
+use App\Http\Controllers\WebhookController;
+use App\Http\Middleware\SetPortalCountry;
+use App\Http\Middleware\TrackPortalVisit;
+use App\Models\Customer;
+use Carbon\Carbon;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -45,7 +58,7 @@ Route::domain($adminDomain)->name('admin.')->group(function () {
 | portal.noon.loc
 |--------------------------------------------------------------------------
 */
-Route::domain($portalDomain)->name('portal.')->group(
+Route::domain($portalDomain)->name('portal.')->middleware([SetPortalCountry::class, TrackPortalVisit::class])->group(
     base_path('routes/portal.php')
 );
 
@@ -122,6 +135,12 @@ Route::prefix('{country}/classifieds')
                 ->name('draft');
             Route::post('/{listing}/sign-contract', [\App\Http\Controllers\Storefront\ClassifiedController::class, 'signContract'])
                 ->name('sign');
+            Route::post('/{listing}/customer-contract', [\App\Http\Controllers\Storefront\ClassifiedController::class, 'acceptCustomerContract'])
+                ->middleware('throttle:20,1')
+                ->name('customer-contract.accept');
+            Route::get('/{listing}/customer-contract/file/{language}', [\App\Http\Controllers\Storefront\ClassifiedController::class, 'customerContractFile'])
+                ->whereIn('language', ['ar', 'en'])
+                ->name('customer-contract.file');
         });
 
         Route::get('/{listingNumber}', [\App\Http\Controllers\Storefront\ClassifiedController::class, 'show'])

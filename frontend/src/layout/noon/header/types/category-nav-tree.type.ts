@@ -12,6 +12,8 @@ export interface ICategoryNavTree {
   brands?: Brand[];
   children: ICategoryNavTree[];
   icon?: string;
+  /** Classified sections only: surfaces the admin placed the section on (nav, landing, home). */
+  placements?: string[];
 }
 
 export interface Brand {

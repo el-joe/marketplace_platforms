@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Vendor;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\ClassifiedContractTemplate;
+use App\Models\Product;
 use App\Models\Vendor;
 use App\Models\VendorContract;
 use App\Services\Vendor\CategoryContractService;
@@ -31,44 +32,57 @@ class ContractController extends Controller
     }
 
     /**
-     * Contracts still to sign, for both classified and product categories.
+     * Individual contracts still to sign: classified categories, product categories (with parent inheritance)
+     * and products with their own contract, for the vendor's country.
      */
     public function pending(): JsonResponse
     {
         $vendor = $this->vendor();
 
         $data = $this->contracts->pendingForVendor($vendor)
-            ->unique(fn (array $item) => $item['template']->id)
-            ->map(fn (array $item) => $this->contracts->present($item['template'], $vendor, $item['category'], self::FILE_ROUTE) + [
-                'category_scope' => $item['scope'],
-                'category_name' => $item['category']->name_en,
-            ])
+            ->map(fn (array $item) => $this->contracts->payloadFor($vendor, $item['template'], $item['scope'], $item['category'], self::FILE_ROUTE))
+            ->unique('template_id')
             ->values();
 
         return ApiResponse::success($data);
     }
 
     /**
-     * Tells the app whether a category needs a signature before a listing can be created in it.
+     * Tells the app whether a category or product needs an individual signature before a listing can be created.
+     * With no contract configured for the vendor's country (while one is required) the response is the typed
+     * 422 error `contract_not_configured`, never another country's contract.
      */
     public function checkCategory(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'scope' => 'required|in:classified,product',
-            'category_id' => 'required|uuid',
+            'category_id' => 'required_without:product_id|nullable|uuid',
+            'product_id' => 'nullable|uuid|exists:products,id',
         ]);
 
         $vendor = $this->vendor();
+        $country = $this->contracts->countryPayload($this->contracts->resolver()->countryOf($vendor));
+
+        if (! empty($validated['product_id'])) {
+            $pending = $this->contracts->unsignedForProduct($vendor, Product::findOrFail($validated['product_id']));
+
+            if (! $pending) {
+                return ApiResponse::success(['requires_contract' => false, 'country' => $country]);
+            }
+
+            return ApiResponse::success(['requires_contract' => true] + $this->contracts->payloadFor($vendor, $pending['template'], $pending['scope'], $pending['subject'], self::FILE_ROUTE));
+        }
+
         $template = $this->contracts->unsignedTemplateFor($vendor, $validated['scope'], $validated['category_id']);
 
         if (! $template) {
-            return ApiResponse::success(['requires_contract' => false]);
+            return ApiResponse::success(['requires_contract' => false, 'country' => $country]);
         }
 
-        $category = $this->contracts->categoryFor($validated['scope'], $validated['category_id']);
+        $subject = $this->contracts->resolver()->resolveForVendorCategory($vendor, $validated['scope'], $this->contracts->categoryFor($validated['scope'], $validated['category_id']))->subject;
 
         return ApiResponse::success(
-            ['requires_contract' => true] + $this->contracts->present($template, $vendor, $category, self::FILE_ROUTE),
+            ['requires_contract' => true] + $this->contracts->payloadFor($vendor, $template, $validated['scope'], $subject, self::FILE_ROUTE),
         );
     }
 
@@ -83,23 +97,27 @@ class ContractController extends Controller
         $vendorAdmin = Auth::guard('vendor')->user();
         $vendor = $vendorAdmin->vendor;
 
-        $pendingItem = $this->contracts->pendingForVendor($vendor)
-            ->first(fn (array $item) => $item['template']->id === $templateId);
+        $items = $this->contracts->pendingForVendor($vendor)
+            ->filter(fn (array $item) => $item['template']->id === $templateId)
+            ->values();
 
-        if (! $pendingItem) {
+        if ($items->isEmpty()) {
             return ApiResponse::error('This contract is not pending for your account.', [], 422);
         }
 
-        $this->contracts->sign(
-            vendor: $vendor,
-            signer: $vendorAdmin,
-            scope: $pendingItem['scope'],
-            categoryId: $pendingItem['category']->id,
-            language: $validated['language'] ?? 'en',
-            signerName: $validated['signature_name'],
-            ipAddress: $request->ip(),
-            userAgent: $request->userAgent() ?? '',
-        );
+        foreach ($items as $item) {
+            $this->contracts->sign(
+                vendor: $vendor,
+                signer: $vendorAdmin,
+                scope: $item['scope'],
+                categoryId: $item['category'] instanceof Product ? (string) $item['category']->category_id : $item['category']->id,
+                language: $validated['language'] ?? 'en',
+                signerName: $validated['signature_name'],
+                ipAddress: $request->ip(),
+                userAgent: $request->userAgent() ?? '',
+                productId: $item['category'] instanceof Product ? $item['category']->id : null,
+            );
+        }
 
         $remaining = $this->contracts->pendingForVendor($vendor)->count();
 
@@ -110,17 +128,22 @@ class ContractController extends Controller
     }
 
     /**
-     * The Seller Agreement: what is in force, what the vendor signed, what is scheduled, and whether acceptance is pending.
+     * The Seller Agreement of the vendor's country: what is in force, what the vendor signed, what is scheduled,
+     * and whether acceptance is pending. `agreement_configured` is false (and `country` says for which country)
+     * while no agreement serves that country.
      */
     public function agreement(): JsonResponse
     {
         $vendor = $this->vendor();
-        $inForce = $this->agreements->inForce();
-        $upcoming = $this->agreements->upcoming();
+        $countryId = $vendor->country_id;
+        $inForce = $this->agreements->inForce($countryId);
+        $upcoming = $this->agreements->upcoming($countryId);
         $pending = $this->agreements->pendingFor($vendor);
         $signature = $this->agreements->activeSignature($vendor);
 
         return ApiResponse::success([
+            'country' => $this->contracts->countryPayload($this->contracts->resolver()->countryOf($vendor)),
+            'agreement_configured' => $this->agreements->latestPublished($countryId) !== null,
             'acceptance_required' => $pending !== null,
             'pending' => $pending ? $this->contracts->present($pending, $vendor, null, self::FILE_ROUTE) : null,
             'in_force' => $inForce ? $this->contracts->present($inForce, $vendor, null, self::FILE_ROUTE) : null,
@@ -174,6 +197,7 @@ class ContractController extends Controller
             ->map(fn (VendorContract $contract) => $this->signatureData($contract) + [
                 'name' => $contract->contractTemplate?->name,
                 'category_scope' => $contract->category_scope,
+                'product_id' => $contract->product_id,
             ]);
 
         return ApiResponse::success($signed);
@@ -209,6 +233,7 @@ class ContractController extends Controller
             'status' => $contract->status,
             'signer_name' => $contract->signer_name,
             'signed_at' => $contract->signed_at?->toIso8601String(),
+            'country_id' => $contract->country_id,
             'signed_file_url' => $contract->hasSignedFile() ? route('vendor.legal.signed-file', $contract->id) : null,
         ];
     }

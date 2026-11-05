@@ -2,7 +2,7 @@
  * admins.js — Admin management form & datatable JS
  *
  * Handles:
- *  - Admin form AJAX submit (create/edit) with generated-password reveal
+ *  - Admin form AJAX submit (create/edit); new admins get a set-password email (no password shown)
  *  - Role form AJAX submit
  *  - Reset password button (edit mode)
  */
@@ -31,18 +31,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json().catch(() => ({}));
 
                 if (res.ok && data.success) {
-                    if (!isEdit && data.generated_password) {
-                        // Show password in Alpine component before redirecting
-                        const alpine = adminForm.querySelector('[x-data]')?._x_dataStack?.[0];
-                        if (alpine) {
-                            alpine.generatedPassword = data.generated_password;
-                            alpine.showGeneratedPassword = true;
+                    if (!isEdit) {
+                        // The password is never shown or returned: the new admin receives a
+                        // single-use set-password link by email. A failed send is surfaced here.
+                        if (data.warning) {
+                            window.Toast?.warning(data.warning);
+                        } else {
+                            window.Toast?.success(t('admin.admins.admin_created'));
                         }
-                        window.Toast?.success(t('admin.admins.admin_created'));
-                        // Small delay to let user read the password before redirecting
                         setTimeout(() => {
                             if (data.redirect) window.location.href = data.redirect;
-                        }, 3000);
+                        }, data.warning ? 6000 : 1500);
                     } else {
                         window.Toast?.success(t('admin.admins.admin_saved'));
                     }
@@ -131,8 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const data = await res.json().catch(() => ({}));
 
-                if (res.ok && data.success) {
+                if (res.ok && data.success && !data.warning) {
                     window.Toast?.success(data.message || t('admin.admins.password_reset_success'));
+                } else if (res.ok && data.success) {
+                    window.Toast?.warning(data.warning);
                 } else {
                     window.Toast?.error(data.message || t('admin.admins.reset_failed'));
                 }
@@ -141,6 +142,43 @@ document.addEventListener('DOMContentLoaded', () => {
             } finally {
                 resetBtn.disabled = false;
                 resetBtn.textContent = t('admin.admins.reset_password_label');
+            }
+        });
+    }
+
+    // ─── Resend Credentials Button (edit mode) ────────────────────────────────
+    const resendBtn = document.getElementById('resend-credentials-btn');
+    if (resendBtn) {
+        resendBtn.addEventListener('click', async function () {
+            const url = resendBtn.dataset.url;
+            if (!url) return;
+
+            const originalLabel = resendBtn.textContent;
+            resendBtn.disabled = true;
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        'Accept': 'application/json',
+                    },
+                });
+
+                const data = await res.json().catch(() => ({}));
+
+                if (res.ok && data.success && !data.warning) {
+                    window.Toast?.success(data.message);
+                } else if (res.ok && data.success) {
+                    window.Toast?.warning(data.warning);
+                } else {
+                    window.Toast?.error(data.message || t('admin.admins.reset_failed'));
+                }
+            } catch (err) {
+                window.Toast?.error(t('admin.admins.network_error'));
+            } finally {
+                resendBtn.disabled = false;
+                resendBtn.textContent = originalLabel;
             }
         });
     }

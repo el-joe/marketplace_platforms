@@ -95,10 +95,14 @@ Renders the appropriate input type based on the setting's decoded PHP value.
 
         @elseif($isBool)
             {{-- ── Boolean toggle (Alpine) ── --}}
-            @php $checked = (bool) $raw; @endphp
+            @php
+                $checked = (bool) $raw;
+                // /join option toggles are portal configuration (portal_content.manage), not general settings.
+                $lockedToggle = str_starts_with($key, 'join_option_') && ! auth('admin')->user()?->can('portal_content.manage');
+            @endphp
             <div x-data="{ enabled: {{ $checked ? 'true' : 'false' }} }" class="flex items-center gap-3">
-                <button type="button" dir="ltr" @click="enabled = !enabled" :class="enabled ? 'bg-blue-600' : 'bg-gray-200'"
-                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                <button type="button" dir="ltr" @if($lockedToggle) disabled title="{{ __('admin.portal_permissions.join_options_forbidden') }}" @else @click="enabled = !enabled" @endif :class="enabled ? 'bg-blue-600' : 'bg-gray-200'"
+                    class="{{ $lockedToggle ? 'opacity-50 cursor-not-allowed' : '' }} relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     :aria-checked="enabled.toString()" role="switch">
                     <span :class="enabled ? 'translate-x-5' : 'translate-x-0'"
                         class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform"></span>

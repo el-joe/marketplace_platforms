@@ -135,19 +135,24 @@
                                       x-text="groupSelectedCount(group) + ' / ' + group.permissions.length">
                                 </span>
                             </div>
+                            <p x-show="group.description" x-text="group.description" class="text-xs text-gray-500 mb-2 ms-6"></p>
                             {{-- Individual permissions --}}
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 ml-6">
+                            <div class="grid gap-x-4 gap-y-1.5 ms-6"
+                                 :class="group.key === 'portal_content' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'">
                                 <template x-for="perm in group.permissions" :key="perm.name">
-                                    <label class="flex items-center gap-2 cursor-pointer">
+                                    <label class="flex items-start gap-2 cursor-pointer" :data-permission="perm.name">
                                         <input
                                             type="checkbox"
                                             name="permissions[]"
                                             :value="perm.name"
                                             x-model="selectedPermissions"
                                             :disabled="{{ $isSuperAdmin ? 'true' : 'false' }}"
-                                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                            class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                         >
-                                        <span class="text-xs text-gray-600" x-text="perm.label"></span>
+                                        <span>
+                                            <span class="text-xs text-gray-600" x-text="perm.label"></span>
+                                            <span x-show="perm.description" x-text="perm.description" class="block text-[11px] leading-snug text-gray-400"></span>
+                                        </span>
                                     </label>
                                 </template>
                             </div>

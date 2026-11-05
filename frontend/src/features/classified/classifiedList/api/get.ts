@@ -1,5 +1,9 @@
 import { fetchInstance } from "@/src/lib/utils";
-import { IClassifiedCategoriesList, IClassifiedsList } from "../helpers/types";
+import {
+  IClassifiedCategoriesList,
+  IClassifiedSection,
+  IClassifiedsList,
+} from "../helpers/types";
 
 /** Location filters shared by the list, the map pins and the top filter bar (all optional, URL-driven). */
 export interface ClassifiedLocationFilters {
@@ -34,6 +38,32 @@ export const getClassifiedsService = ({
   const qs = locationQuery(filters).toString();
   return fetchInstance<{ data: IClassifiedsList }>(
     `/browse/classified/${category}${qs ? `?${qs}` : ""}`,
+    { method: "GET" },
+  );
+};
+
+/** Light call that only resolves a category (slug or legacy id) for metadata, redirects and 404s. */
+export const getClassifiedCategoryService = (idOrSlug: string) =>
+  fetchInstance<{ data: IClassifiedsList }>(
+    `/browse/classified/${encodeURIComponent(idOrSlug)}?per_page=1`,
+    { method: "GET" },
+  );
+
+/** Sections the admin placed on a storefront surface, with their newest ads (no hard-coded sections). */
+export const getClassifiedSectionsService = ({
+  placement,
+  sections,
+  perSection,
+}: {
+  placement: "home" | "landing" | "nav";
+  sections?: number;
+  perSection?: number;
+}) => {
+  const params = new URLSearchParams({ placement });
+  if (sections) params.set("sections", String(sections));
+  if (perSection) params.set("per_section", String(perSection));
+  return fetchInstance<{ data: IClassifiedSection[] }>(
+    `/classified/sections?${params}`,
     { method: "GET" },
   );
 };

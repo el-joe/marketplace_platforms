@@ -19,6 +19,8 @@
     }
 
     $currentRoles = old('roles', $isEdit ? $model->getRoleNames()->toArray() : []);
+    $directPortal = old('portal_permissions', $directPortalPermissions ?? []);
+    $portalPermissionNames = \App\Support\PortalPermissions::directlyAssignable();
 
     $statusOptions = ['active' => __('common.active'), 'inactive' => __('common.inactive')];
     $countryOptions = ['' => '— ' . __('admin.admins_section.no_country') . ' —'] + $countries->pluck('name_en', 'id')->toArray();
@@ -28,16 +30,17 @@
      x-data="{
         selectedRoles: {{ json_encode($currentRoles) }},
         rolePermissions: {{ json_encode($rolePermissions) }},
+        directPortal: {{ json_encode(array_values($directPortal)) }},
+        viaRole(perm) {
+            return this.selectedRoles.some(r => (this.rolePermissions[r] || []).includes(perm));
+        },
         get effectivePermissions() {
-            if (!this.selectedRoles.length) return [];
-            const all = new Set();
+            const all = new Set(this.directPortal);
             this.selectedRoles.forEach(r => {
                 (this.rolePermissions[r] || []).forEach(p => all.add(p));
             });
             return [...all].sort();
-        },
-        showGeneratedPassword: false,
-        generatedPassword: ''
+        }
      }">
 
     {{-- ── Page Header ─────────────────────────────────────────────────── --}}
@@ -63,25 +66,10 @@
         </div>
     </div>
 
-    {{-- ── Generated Password Alert (create mode only) ─────────────────── --}}
+    {{-- ── Set-password notice (create mode only) ─────────────────────── --}}
     @if(!$isEdit)
-        <div x-show="showGeneratedPassword" x-cloak
-             class="border border-green-300 bg-green-50 rounded-lg px-4 py-3">
-            <div class="flex items-start gap-3">
-                <svg class="w-5 h-5 text-green-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                </svg>
-                <div>
-                    <p class="text-sm font-medium text-green-800">{{ __('admin.admins_section.password_generated_notice') }}</p>
-                    <div class="mt-2 flex items-center gap-2">
-                        <code class="text-sm font-mono bg-white border border-green-200 rounded px-2 py-1 text-green-900 select-all"
-                              x-text="generatedPassword"></code>
-                        <button type="button"
-                                @click="navigator.clipboard.writeText(generatedPassword); window.Toast?.success('{{ __('admin.admins_section.copied') }}')"
-                                class="btn btn-xs btn-secondary">{{ __('admin.admins_section.copy') }}</button>
-                    </div>
-                </div>
-            </div>
+        <div class="border border-blue-200 bg-blue-50 rounded-lg px-4 py-3 text-sm text-blue-800">
+            {{ __('admin.admins_section.set_password_link_notice') }}
         </div>
     @endif
 
@@ -152,11 +140,20 @@
                         <p class="text-sm text-gray-500">
                             {{ __('admin.admins_section.reset_password_notice') }}
                         </p>
-                        <button type="button" id="reset-password-btn"
-                                data-url="{{ route('admin.admins.reset-password', $model->id) }}"
-                                class="btn btn-secondary btn-sm shrink-0 ml-4">
-                            {{ __('auth.reset_password') }}
-                        </button>
+                        <div class="flex shrink-0 gap-2 ml-4">
+                            @if(auth('admin')->user()?->can('admins.edit'))
+                                <button type="button" id="resend-credentials-btn"
+                                        data-url="{{ route('admin.admins.resend-credentials', $model->id) }}"
+                                        class="btn btn-secondary btn-sm">
+                                    {{ __('admin.admins_section.resend_credentials') }}
+                                </button>
+                            @endif
+                            <button type="button" id="reset-password-btn"
+                                    data-url="{{ route('admin.admins.reset-password', $model->id) }}"
+                                    class="btn btn-secondary btn-sm">
+                                {{ __('auth.reset_password') }}
+                            </button>
+                        </div>
                     </div>
                 </div>
             @endif
@@ -214,6 +211,35 @@
                         <p class="text-xs text-gray-500 mt-2">
                             {{ __('admin.admins_section.vendor_scope_restrict_hint') }}
                         </p>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Portal content permissions (per-employee grant on top of roles) --}}
+            @if($isEdit && !$model->hasRole('super_admin'))
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm" data-portal-permissions>
+                    <div class="px-5 py-4 border-b border-gray-100">
+                        <h2 class="text-sm font-semibold text-gray-900">{{ __('admin.portal_permissions.staff_title') }}</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ __('admin.portal_permissions.staff_hint') }}</p>
+                    </div>
+                    <div class="px-5 py-4 space-y-3">
+                        <input type="hidden" name="portal_permissions_present" value="1">
+                        @foreach($portalPermissionNames as $permName)
+                            <label class="flex items-start gap-2.5 cursor-pointer group">
+                                <input
+                                    type="checkbox"
+                                    name="portal_permissions[]"
+                                    value="{{ $permName }}"
+                                    x-model="directPortal"
+                                    class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                >
+                                <span>
+                                    <span class="text-sm text-gray-700 group-hover:text-gray-900">{{ \App\Support\PortalPermissions::label($permName) }}</span>
+                                    <span x-show="viaRole('{{ $permName }}')" x-cloak class="ms-1 text-[10px] rounded bg-green-100 text-green-700 px-1.5 py-0.5">{{ __('admin.portal_permissions.staff_via_role') }}</span>
+                                    <span class="block text-xs text-gray-400">{{ \App\Support\PortalPermissions::description($permName) }}</span>
+                                </span>
+                            </label>
+                        @endforeach
                     </div>
                 </div>
             @endif

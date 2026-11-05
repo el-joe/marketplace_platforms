@@ -354,6 +354,7 @@ function selectVariant(data) {
     if (skuEl) skuEl.textContent = data.sku ? `SKU: ${data.sku}` : '';
 
     fetchCustomerUrlPreview(data.productId, data.variantId);
+    checkContractRequirement(data.productId);
 
     document.dispatchEvent(new CustomEvent('listing:product-selected', {
         detail: { productId: data.productId },
@@ -368,6 +369,26 @@ function selectVariant(data) {
 
     const fulfillmentSelect = document.querySelector('select[name="fulfillment_model"]');
     loadShippingMethods(data.variantId, fulfillmentSelect?.value);
+}
+
+// Tells the vendor, before they submit, that this product needs an individual contract (display only; store() enforces it).
+async function checkContractRequirement(productId) {
+    const hint = document.getElementById('contract-hint');
+    const url = window.LISTINGS_CREATE?.contractCheckUrl;
+    if (!hint || !url || !productId) return;
+
+    hint.classList.add('hidden');
+    try {
+        const res = await fetch(`${url}?product_id=${encodeURIComponent(productId)}`, { headers: { 'Accept': 'application/json' } });
+        const data = await res.json();
+        if (res.ok && data.requires_contract && data.message) {
+            hint.textContent = data.message;
+            hint.classList.toggle('border-red-300', !!data.not_configured);
+            hint.classList.remove('hidden');
+        }
+    } catch {
+        /* the hint is optional; submitting still enforces the contract */
+    }
 }
 
 function fetchCustomerUrlPreview(productId, variantId) {
@@ -547,6 +568,7 @@ function initContractPanel(form) {
                     agreed: 1,
                     category_scope: inlineContract.category_scope,
                     category_id: inlineContract.category_id,
+                    product_id: inlineContract.product_id,
                 }),
             });
             const data = await res.json().catch(() => ({}));

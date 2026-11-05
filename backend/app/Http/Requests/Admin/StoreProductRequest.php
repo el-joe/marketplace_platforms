@@ -6,6 +6,7 @@ use App\Enums\ProductStatus;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use App\Services\Shared\PromoBadgeSyncService;
+use App\Services\Vendor\ContractAssignmentService;
 use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
@@ -36,6 +37,8 @@ class StoreProductRequest extends FormRequest
             'min_age' => ['nullable', 'integer', 'min:1', 'max:99', 'required_if:is_age_restricted,1'],
             'is_hazardous' => ['boolean'],
             'has_custom_attributes' => ['boolean'],
+            ...app(ContractAssignmentService::class)->rules('product'),
+            'contract_requirement' => ['nullable', Rule::in(\App\Models\Product::contractRequirements())],
             'seo_title' => ['nullable', 'string', 'max:70'],
             'seo_description' => ['nullable', 'string', 'max:160'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:products,slug'],

@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\AppContextController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\Auth\LoginController;
+use App\Http\Controllers\Admin\Auth\PasswordSetupController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BestsellerController;
 use App\Http\Controllers\Admin\BlogCategoryController;
@@ -40,6 +41,7 @@ use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CouponParticipationInvitationController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\CurrencyExchangeRateController;
+use App\Http\Controllers\Admin\CustomerContractController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\CustomPageController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -62,8 +64,10 @@ use App\Http\Controllers\Admin\InternationalShippingEligibilityController;
 use App\Http\Controllers\Admin\InternationalShippingRateController;
 use App\Http\Controllers\Admin\LedgerController;
 use App\Http\Controllers\Admin\LiveStreamController;
+use App\Http\Controllers\Admin\MailTestController;
 use App\Http\Controllers\Admin\MarketerAdPackageController;
 use App\Http\Controllers\Admin\MarketerCampaignController;
+use App\Http\Controllers\Admin\MarketerCollaborationContractController;
 use App\Http\Controllers\Admin\MarketerContractController;
 use App\Http\Controllers\Admin\MarketerController;
 use App\Http\Controllers\Admin\MarketerJobController;
@@ -78,6 +82,7 @@ use App\Http\Controllers\Admin\PageBuilderController;
 use App\Http\Controllers\Admin\PaidAdBookingController;
 use App\Http\Controllers\Admin\PaymentGatewayController;
 use App\Http\Controllers\Admin\PayoutController;
+use App\Http\Controllers\Admin\PortalAnalyticsController;
 use App\Http\Controllers\Admin\PortalContentController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCostController;
@@ -140,6 +145,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest:admin')->group(function () {
     Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
+
+    // Set-password / reset page opened from the emailed single-use link (broker: admins)
+    Route::get('/reset-password/{token}', [PasswordSetupController::class, 'show'])->name('password.reset');
+    Route::post('/reset-password', [PasswordSetupController::class, 'update'])->name('password.update');
 });
 
 // ─── Locale switcher (public) ───────────────────────────────────────────────────
@@ -645,6 +654,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
         Route::post('/{vendor}/approve', [VendorController::class, 'approve'])->name('approve');
         Route::post('/{vendor}/reject', [VendorController::class, 'reject'])->name('reject');
+        Route::post('/{vendor}/resend-credentials', [VendorController::class, 'resendCredentials'])->name('resend-credentials')->middleware('admin.permission:vendors.edit');
         Route::post('/{vendor}/request-info', [VendorController::class, 'requestInfo'])->name('request-info');
         Route::post('/{vendor}/suspend', [VendorController::class, 'suspend'])->name('suspend');
         Route::post('/{vendor}/reactivate', [VendorController::class, 'reactivate'])->name('reactivate');
@@ -917,6 +927,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/{admin}/edit', [AdminController::class, 'edit'])->name('edit');
         Route::get('/{admin}/login-sessions', [AdminController::class, 'loginSessions'])->name('login-sessions');
         Route::post('/{admin}/reset-password', [AdminController::class, 'resetPassword'])->name('reset-password');
+        Route::post('/{admin}/resend-credentials', [AdminController::class, 'resendCredentials'])->name('resend-credentials')->middleware('admin.permission:admins.edit');
         Route::post('/{admin}/impersonate', [AdminController::class, 'impersonate'])->name('impersonate');
         Route::post('/{admin}/toggle-status', [AdminController::class, 'toggleStatus'])->name('toggle-status');
         Route::put('/{admin}', [AdminController::class, 'update'])->name('update');
@@ -1064,6 +1075,10 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             ->name('contract.acceptances');
         Route::get('/{marketer}/contract/versions/{version}/download', [MarketerContractController::class, 'download'])
             ->name('contract.download');
+        Route::get('/{marketer}/collaboration-contracts/{contract}', [MarketerCollaborationContractController::class, 'show'])
+            ->name('collaboration-contracts.show');
+        Route::get('/{marketer}/collaboration-contracts/{contract}/file', [MarketerCollaborationContractController::class, 'file'])
+            ->name('collaboration-contracts.file');
 
         Route::post('/{marketer}/job-categories/sync', [MarketerController::class, 'syncJobCategories'])
             ->name('job-categories.sync')->middleware('admin.permission:marketers.manage');
@@ -1229,6 +1244,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/group/{category}', [SettingsController::class, 'saveGroup'])->name('save')->middleware('admin.permission:settings.edit');
         Route::post('/reset', [SettingsController::class, 'reset'])->name('reset')->middleware('admin.permission:settings.edit');
         Route::post('/clear-cache', [SettingsController::class, 'clearCache'])->name('clear-cache')->middleware('admin.permission:settings.edit');
+        Route::post('/test-email', [MailTestController::class, 'send'])->name('test-email')->middleware(['admin.permission:settings.edit', 'throttle:6,1']);
     });
 
     // ─── Newsletter ───────────────────────────────────────────────────────────
@@ -1429,6 +1445,12 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     Route::prefix('system-tools')->name('system-tools.')->middleware('admin.permission:analytics.view')->group(function () {
         Route::post('/inventory-reconcile', [SystemToolsController::class, 'inventoryReconcile'])->name('inventory-reconcile');
         Route::post('/buybox-rebuild', [SystemToolsController::class, 'buyboxRebuild'])->name('buybox-rebuild');
+    });
+
+    // Portal visitor analytics + registration funnel (tracked by the portal, see TrackPortalVisit)
+    Route::prefix('portal-analytics')->name('portal-analytics.')->middleware('admin.permission:portal_analytics.view')->group(function () {
+        Route::get('/', [PortalAnalyticsController::class, 'index'])->name('index');
+        Route::get('/data', [PortalAnalyticsController::class, 'data'])->name('data');
     });
 
     Route::prefix('analytics')->name('analytics.')->middleware('admin.permission:analytics.view')->group(function () {
@@ -1644,9 +1666,20 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::get('/{contractTemplate}/edit', [ContractTemplateController::class, 'edit'])->name('edit');
             Route::put('/{contractTemplate}', [ContractTemplateController::class, 'update'])->name('update');
             Route::post('/{contractTemplate}/publish', [ContractTemplateController::class, 'publish'])->name('publish');
+            Route::post('/{contractTemplate}/retire', [ContractTemplateController::class, 'retire'])->name('retire');
+            Route::post('/{contractTemplate}/reactivate', [ContractTemplateController::class, 'reactivate'])->name('reactivate');
+            Route::post('/{contractTemplate}/default', [ContractTemplateController::class, 'setDefault'])->name('default');
             Route::delete('/{contractTemplate}', [ContractTemplateController::class, 'destroy'])->name('destroy');
+            Route::get('/marketer-search', [ContractTemplateController::class, 'marketerSearch'])->name('marketer-search');
             Route::get('/{contractTemplate}/signatures', [ContractTemplateController::class, 'signatures'])->name('signatures');
             Route::get('/{contractTemplate}/file/{language}', [ContractTemplateController::class, 'file'])->whereIn('language', ['ar', 'en'])->name('file');
+        });
+
+        // Signed customer purchase contracts (customers buying / renting classified items)
+        Route::prefix('customer')->name('customer.')->middleware('admin.permission:classifieds.view')->group(function () {
+            Route::get('/', [CustomerContractController::class, 'index'])->name('index');
+            Route::get('/{customerContract}', [CustomerContractController::class, 'show'])->name('show');
+            Route::get('/{customerContract}/file', [CustomerContractController::class, 'file'])->name('file');
         });
 
         Route::get('/signatures', [ContractSignatureController::class, 'index'])
@@ -1661,12 +1694,12 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
         // Categories
         Route::prefix('categories')->name('categories.')->group(function () {
-            Route::get('/', [ClassifiedCategoryController::class, 'index'])->name('index');
-            Route::post('/', [ClassifiedCategoryController::class, 'store'])->name('store');
-            Route::put('/{category}', [ClassifiedCategoryController::class, 'update'])->name('update');
-            Route::delete('/{category}', [ClassifiedCategoryController::class, 'destroy'])->name('destroy');
-            Route::post('/{category}/toggle', [ClassifiedCategoryController::class, 'toggleActive'])->name('toggle');
-            Route::post('/reorder', [ClassifiedCategoryController::class, 'reorder'])->name('reorder');
+            Route::get('/', [ClassifiedCategoryController::class, 'index'])->name('index')->middleware('admin.permission:classifieds.view');
+            Route::post('/', [ClassifiedCategoryController::class, 'store'])->name('store')->middleware('admin.permission:categories.create');
+            Route::put('/{category}', [ClassifiedCategoryController::class, 'update'])->name('update')->middleware('admin.permission:categories.edit');
+            Route::delete('/{category}', [ClassifiedCategoryController::class, 'destroy'])->name('destroy')->middleware('admin.permission:categories.delete');
+            Route::post('/{category}/toggle', [ClassifiedCategoryController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:categories.edit');
+            Route::post('/reorder', [ClassifiedCategoryController::class, 'reorder'])->name('reorder')->middleware('admin.permission:categories.edit');
         });
 
         // Listings (review queue)

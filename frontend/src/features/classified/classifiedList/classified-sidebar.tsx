@@ -39,7 +39,7 @@ export default function ClassifiedSidebar({ categories, selectedCtg }: props) {
           </Link>
           {selectedAndHasChild?.children && (
             <Link
-              href={`/classified/${selectedAndHasChild.id}`}
+              href={`/classified/${selectedAndHasChild.slug}`}
               className={`block text-gray-500 hover:text-blue-600 transition-colors ${selectedAndHasChild.id === selectedCtg ? "font-bold text-gray-900" : ""}`}
             >
               {selectedAndHasChild.name[locale]}
@@ -53,7 +53,7 @@ export default function ClassifiedSidebar({ categories, selectedCtg }: props) {
               .slice(0, showMoreCategories ? categories.length : 5)
               .map((cat) => (
                 <Link
-                  href={`/classified/${cat.id}`}
+                  href={`/classified/${cat.slug}`}
                   key={cat.id}
                   className="flex items-center justify-between text-xs text-gray-600 hover:text-blue-600 cursor-pointer transition-colors"
                 >

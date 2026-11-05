@@ -28,6 +28,12 @@
                             {{ $item['category']->name_en }} / {{ $item['category']->name_ar }}
                             · {{ __('partner.contracts.scope_' . $item['scope']) }}
                         </p>
+                        <p class="mt-1 text-xs text-amber-700">
+                            {{ __('contracts.partner.required_reason') }}
+                            @if ($item['template']->country)
+                                · {{ app()->getLocale() === 'ar' ? $item['template']->country->name_ar : $item['template']->country->name_en }}
+                            @endif
+                        </p>
                     </div>
                     <div class="flex gap-2">
                         <button type="button" @click="lang = 'en'" :class="lang === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'" class="rounded px-3 py-1 text-xs font-medium">EN</button>

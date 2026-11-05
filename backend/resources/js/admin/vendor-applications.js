@@ -289,9 +289,13 @@ function initShowPage() {
 
         try {
             const res = await postJson(window.vendorApp.approveUrl, payload);
-            window.Toast?.success(res.message ?? t('admin.vendor_applications.vendor_approved'));
+            if (res.warning) {
+                window.Toast?.warning(res.warning);
+            } else {
+                window.Toast?.success(res.message ?? t('admin.vendor_applications.vendor_approved'));
+            }
             $('#approve-modal').modal('close');
-            setTimeout(() => window.location.reload(), 1200);
+            setTimeout(() => window.location.reload(), res.warning ? 4500 : 1200);
         } catch (e) {
             window.Toast?.error(e.message ?? t('admin.vendor_applications.approval_failed'));
             btn.disabled = false;

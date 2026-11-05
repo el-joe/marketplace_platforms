@@ -42,9 +42,15 @@ class TeamController extends Controller
             return ApiResponse::error('You do not have permission to invite team members.', [], 403);
         }
 
-        $member = $this->team->invite($this->vendor(), $request->validated());
+        [$member, $delivery] = $this->team->invite($this->vendor(), $request->validated());
 
-        return ApiResponse::success(new TeamMemberResource($member), 'Team member invited.', 201);
+        $payload = (new TeamMemberResource($member))->resolve();
+
+        return ApiResponse::success(
+            $payload + $delivery->toResponseFields(),
+            $delivery->warning() ?? 'Team member invited.',
+            201,
+        );
     }
 
     // PUT /team/{id}/toggle-active

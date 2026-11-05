@@ -53,6 +53,19 @@ function registrationWizard() {
             signature_name: '', agreement_language: document.documentElement.lang === 'en' ? 'en' : 'ar',
         },
 
+        // The Seller Agreement of the country chosen in step 1 (null when that country has none configured).
+        // The server decides again on submit; this only drives what step 5 shows.
+        get agreementId() {
+            return (window._agreementMap || {})[this.form.country_id] ?? null;
+        },
+        get agreementEnforced() {
+            return !!window._agreementEnforced;
+        },
+        get agreementMissingMessage() {
+            const name = (window._countryNames || {})[this.form.country_id] || '';
+            return (window._agreementNotConfigured || '').replace(':country', name);
+        },
+
         // Dynamic document types loaded from server per country
         docTypes: [],
         docTypesLoading: false,
@@ -160,6 +173,7 @@ function registrationWizard() {
                 }
 
                 this.step = 5;
+                this.trackStepCompleted(4);
                 return;
             }
 
@@ -202,6 +216,24 @@ function registrationWizard() {
             }
 
             this.step = Math.min(this.step + 1, this.totalSteps);
+        },
+
+        // Step 4 (documents) is completed in the browser only; tell the funnel analytics.
+        // Fire-and-forget: it must never block or break the wizard.
+        trackStepCompleted(step) {
+            if (!window._routes.track) return;
+            try {
+                fetch(window._routes.track, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': window._csrf,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ flow: 'vendor', step, event: 'completed' }),
+                    keepalive: true,
+                }).catch(() => {});
+            } catch { /* analytics must never break registration */ }
         },
 
         prevStep() {
@@ -270,7 +302,7 @@ function registrationWizard() {
                         privacy_agreed: this.form.privacy_agreed ? '1' : '0',
                         signature_name: this.form.signature_name,
                         agreement_language: this.form.agreement_language,
-                        agreement_template_id: window._agreement?.id ?? null,
+                        agreement_template_id: this.agreementId,
                         doc_expiries: this.docExpiries,
                     }),
                 });

@@ -20,8 +20,10 @@ use App\Models\MarketerMarketerJobCategory;
 use App\Models\MarketerSaleSettlement;
 use App\Models\TravelCategory;
 use App\Models\Wallet;
+use App\Services\Auth\CredentialDeliveryService;
 use App\Services\Marketer\MarketerDefaultCommissionResolver;
 use App\Services\Marketer\MarketerEarningsService;
+use App\Services\Marketer\MarketerProfileContractsService;
 use App\Services\Marketer\MarketerSaleSettlementService;
 use App\Services\MarketingFeeReportService;
 use App\Support\Money;
@@ -37,7 +39,11 @@ class MarketerController extends Controller
     {
         abort_unless(auth('admin')->user()->can('marketers.view'), 403);
 
-        $marketers = Marketer::query()
+        $contracts = app(MarketerProfileContractsService::class);
+        $contractFilters = $contracts->filtersFrom($request);
+        $hasContract = in_array($request->query('has_contract'), ['yes', 'no'], true) ? $request->query('has_contract') : null;
+
+        $marketers = $contracts->filterMarketers(Marketer::query(), $contractFilters, $hasContract)
             ->with(['country', 'approvedBy', 'marketerJobs', 'marketerProfile:id,marketer_id,gender'])
             ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
@@ -55,13 +61,16 @@ class MarketerController extends Controller
             })
             ->withCount('invitations')
             ->latest()
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
+
+        $contractCategories = ClassifiedCategory::orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
 
         $pendingCount = Marketer::where('global_status', 'pending')->count();
         $countries = Country::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
         $marketerJobs = MarketerJob::where('is_active', true)->orderBy('sort_order')->get();
 
-        return view('admin.marketers.index', compact('marketers', 'pendingCount', 'countries', 'marketerJobs'));
+        return view('admin.marketers.index', compact('marketers', 'pendingCount', 'countries', 'marketerJobs', 'contractFilters', 'hasContract', 'contractCategories'));
     }
 
     public function store(Request $request)
@@ -81,7 +90,7 @@ class MarketerController extends Controller
             'categories.*.*' => ['nullable', 'array'],
         ]);
 
-        DB::transaction(function () use ($validated, $request) {
+        $owner = DB::transaction(function () use ($validated, $request) {
             $marketer = Marketer::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -92,7 +101,7 @@ class MarketerController extends Controller
                 'approved_by_admin_id' => auth('admin')->id(),
             ]);
 
-            $marketer->marketerAdmins()->create([
+            $owner = $marketer->marketerAdmins()->create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
@@ -127,9 +136,16 @@ class MarketerController extends Controller
                     }
                 }
             }
+
+            return $owner;
         });
 
-        return back()->with('success', 'تم إنشاء حساب الماركتر بنجاح.');
+        // The admin typed the initial password; the welcome email adds a link so the marketer can choose their own.
+        $delivery = app(CredentialDeliveryService::class)->sendSetPasswordLink($owner, 'marketer_admins', 'marketer_created', 'marketer_welcome');
+
+        return back()
+            ->with('success', 'تم إنشاء حساب الماركتر بنجاح.')
+            ->with('warning', $delivery->warning());
     }
 
     public function show(Marketer $marketer)
@@ -144,12 +160,17 @@ class MarketerController extends Controller
             'marketerJobs',
             'marketerJobAssignments.marketerJob.categories',
             'marketerJobAssignments.categoryScopes',
-            'exclusiveContracts' => fn ($q) => $q->latest('starts_at'),
-            'exclusiveContracts.classifiedCategory',
-            'exclusiveContracts.classifiedListing',
-            'exclusiveContracts.createdBy',
             'listings' => fn ($q) => $q->with(['country', 'productVariant.product', 'travelPackage', 'classifiedListing', 'approvedBy'])->latest(),
         ]);
+
+        $contractsService = app(MarketerProfileContractsService::class);
+        $contractFilters = $contractsService->filtersFrom(request());
+        $signedContracts = $contractsService->signed($marketer, $contractFilters);
+        $applicableContracts = $contractsService->applicable($marketer, $contractFilters, request());
+        $onboardingContract = $contractsService->onboarding($marketer, $contractFilters);
+        $exclusiveContracts = $contractsService->exclusive($marketer, $contractFilters);
+        $contractCategories = ClassifiedCategory::orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
+        $contractCountries = Country::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
 
         $categories = Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
         $cities = City::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
@@ -185,7 +206,7 @@ class MarketerController extends Controller
         $earnings = app(MarketingFeeReportService::class)->marketerEarnings($marketer->id);
         $marketerWallets = Wallet::where('owner_type', 'marketer')->where('owner_id', $marketer->id)->orderBy('currency')->get();
 
-        return view('admin.marketers.show', compact('earnings', 'marketerWallets', 'conversions', 'statementTotals', 'salesTotals', 'sales', 'marketer', 'categories', 'cities', 'classifiedCategories', 'commissionRules', 'commissionCategories', 'commissionCurrency', 'commissionTypes', 'commissionDefaults'));
+        return view('admin.marketers.show', compact('earnings', 'marketerWallets', 'conversions', 'statementTotals', 'salesTotals', 'sales', 'marketer', 'categories', 'cities', 'classifiedCategories', 'commissionRules', 'commissionCategories', 'commissionCurrency', 'commissionTypes', 'commissionDefaults', 'contractFilters', 'signedContracts', 'applicableContracts', 'onboardingContract', 'exclusiveContracts', 'contractCategories', 'contractCountries'));
     }
 
     /**
@@ -420,11 +441,15 @@ class MarketerController extends Controller
             'approved_by_admin_id' => auth('admin')->id(),
         ]);
 
-        // Notify marketer admin (first owner)
+        // Tell the owner they can log in, with a time-limited set-password link (never a password).
         $owner = $marketer->marketerAdmins()->where('is_owner', true)->first();
-        // TODO: send email/notification to $owner
+        $delivery = $owner
+            ? app(CredentialDeliveryService::class)->sendSetPasswordLink($owner, 'marketer_admins', 'marketer_approved', 'marketer_approved')
+            : null;
 
-        return back()->with('success', 'تم تفعيل حساب الماركتر بنجاح.');
+        return back()
+            ->with('success', 'تم تفعيل حساب الماركتر بنجاح.')
+            ->with('warning', $delivery?->warning());
     }
 
     public function reject(Request $request, Marketer $marketer)

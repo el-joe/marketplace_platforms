@@ -11,6 +11,7 @@ use Spatie\Permission\PermissionRegistrar;
 /**
  * Creates all Spatie permissions and roles for the 'admin' and 'vendor' guards.
  * Uses firstOrCreate() throughout — fully idempotent and safe to re-run.
+ * Never removes permissions from admin-guard roles (see run()).
  *
  * Guard scope:
  *   admin  → Admin model   (admins table)
@@ -37,14 +38,14 @@ class RolesAndPermissionsSeeder extends Seeder
         $rolesMap = [
             // ── admin guard ───────────────────────────────────────────────
             [
-                'name'        => 'super_admin',
-                'guard'       => 'admin',
+                'name' => 'super_admin',
+                'guard' => 'admin',
                 // vendors.assigned_only is a manually-granted restriction, never a
                 // system-role grant — excluded even from the otherwise-full super_admin set.
                 'permissions' => array_values(array_diff($adminPermissions, ['vendors.assigned_only'])),
             ],
             [
-                'name'  => 'operations_admin',
+                'name' => 'operations_admin',
                 'guard' => 'admin',
                 'permissions' => [
                     'dashboard.view', 'orders.view', 'orders.edit', 'orders.cancel',
@@ -55,7 +56,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 ],
             ],
             [
-                'name'  => 'finance_admin',
+                'name' => 'finance_admin',
                 'guard' => 'admin',
                 'permissions' => [
                     'dashboard.view', 'orders.view', 'orders.refund',
@@ -63,7 +64,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 ],
             ],
             [
-                'name'  => 'marketing_admin',
+                'name' => 'marketing_admin',
                 'guard' => 'admin',
                 'permissions' => [
                     'dashboard.view',
@@ -75,7 +76,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 ],
             ],
             [
-                'name'  => 'vendor_relations_admin',
+                'name' => 'vendor_relations_admin',
                 'guard' => 'admin',
                 'permissions' => [
                     'dashboard.view', 'vendors.view', 'vendors.approve',
@@ -85,17 +86,17 @@ class RolesAndPermissionsSeeder extends Seeder
 
             // ── vendor guard ──────────────────────────────────────────────
             [
-                'name'        => 'vendor_owner',
-                'guard'       => 'vendor',
+                'name' => 'vendor_owner',
+                'guard' => 'vendor',
                 'permissions' => $vendorPermissions,
             ],
             [
-                'name'  => 'vendor_manager',
+                'name' => 'vendor_manager',
                 'guard' => 'vendor',
                 'permissions' => ['listings.manage', 'orders.manage', 'payouts.view'],
             ],
             [
-                'name'  => 'vendor_staff',
+                'name' => 'vendor_staff',
                 'guard' => 'vendor',
                 'permissions' => ['orders.manage'],
             ],
@@ -110,12 +111,24 @@ class RolesAndPermissionsSeeder extends Seeder
 
             foreach ($rolesMap as $def) {
                 $role = Role::firstOrCreate(['name' => $def['name'], 'guard_name' => $def['guard']]);
-                // syncPermissions scoped to the correct guard automatically
-                $role->syncPermissions(
-                    collect($def['permissions'])->map(
-                        fn ($p) => Permission::where('name', $p)->where('guard_name', $def['guard'])->first()
-                    )->filter()->values()->all()
-                );
+                $defaults = collect($def['permissions'])->map(
+                    fn ($p) => Permission::where('name', $p)->where('guard_name', $def['guard'])->first()
+                )->filter()->values()->all();
+
+                if ($def['guard'] !== 'admin') {
+                    // Vendor-guard roles are re-synced by VendorPermissionSeeder right after this seeder.
+                    $role->syncPermissions($defaults);
+
+                    continue;
+                }
+
+                // Admin-guard roles are editable by administrators (Roles & Permissions screen), so a deploy
+                // must never remove what they granted. super_admin always receives every permission
+                // (additively, so new permissions reach it on deploy); the other system roles only get
+                // their defaults when first created. New permissions for existing roles ship in a migration.
+                if ($role->name === 'super_admin' || $role->wasRecentlyCreated) {
+                    $role->givePermissionTo($defaults);
+                }
             }
         });
 

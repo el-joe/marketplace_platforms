@@ -87,9 +87,16 @@
         <span>{{ portal_content('register', 'step_5', 'missing_docs_warning', 'Please go back to the previous step and upload the required documents before submitting.', 'يرجى العودة للخطوة السابقة ورفع الوثائق المطلوبة قبل الإرسال.') }}</span>
     </div>
 
-    @if (! empty($agreement))
-        {{-- Seller Agreement: read it, then sign with your full name. Required before the application can be submitted. --}}
-        <div class="space-y-3 rounded-xl border border-gray-700 bg-gray-800/40 p-4">
+    {{-- No Seller Agreement is configured for the country chosen in step 1: never fall back to another country's. --}}
+    <div x-show="agreementEnforced && !agreementId" x-cloak class="rounded-xl border border-amber-700 bg-amber-900/30 p-4 text-sm text-amber-200">
+        <span x-text="agreementMissingMessage"></span>
+    </div>
+
+    {{-- Seller Agreement of the seller's country: read it, then sign with your full name. Required before the application can be submitted. --}}
+    @foreach (($agreementDocs ?? []) as $templateId => $entry)
+        @php($agreement = $entry['template'])
+        @php($agreementDoc = $entry['doc'])
+        <div x-show="agreementId === '{{ $templateId }}'" x-cloak class="space-y-3 rounded-xl border border-gray-700 bg-gray-800/40 p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <h3 class="text-sm font-semibold text-white">{{ $agreement->name }} · v{{ $agreement->version }}</h3>
                 <div class="flex gap-2">
@@ -116,7 +123,11 @@
                     <div x-show="form.agreement_language === 'en'" x-cloak dir="ltr" class="max-h-96 overflow-y-auto whitespace-pre-line text-sm leading-relaxed">{!! $agreementDoc['content_en'] !!}</div>
                 @endif
             </div>
+        </div>
+    @endforeach
 
+    @if (! empty($agreementDocs))
+        <div x-show="agreementId" x-cloak class="space-y-3 rounded-xl border border-gray-700 bg-gray-800/40 p-4">
             <div>
                 <label class="mb-1 block text-xs font-medium text-gray-300">{{ __('portal.registration.signature_name_label') }}</label>
                 <input type="text" x-model="form.signature_name" maxlength="150" autocomplete="name"

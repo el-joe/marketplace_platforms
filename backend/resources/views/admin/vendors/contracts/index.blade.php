@@ -63,7 +63,7 @@
                             <td class="px-4 py-3">{{ $contract->contractTemplate?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-center">v{{ $contract->template_version }}</td>
                             <td class="px-4 py-3">{{ __('admin.contracts.scope_' . $contract->category_scope) }}</td>
-                            <td class="px-4 py-3">{{ $category?->name_en ?? '—' }}</td>
+                            <td class="px-4 py-3">{{ $contract->product?->name_en ?? $category?->name_en ?? "—" }}</td>
                             <td class="px-4 py-3 uppercase">{{ $contract->language_signed }}</td>
                             <td class="px-4 py-3">{{ $contract->signer_name }}</td>
                             <td class="px-4 py-3">{{ $contract->signed_at?->format('d/m/Y H:i') }}</td>
@@ -79,6 +79,35 @@
             </table>
         </div>
         <div>{{ $contracts->links() }}</div>
+    </section>
+
+    <section class="space-y-3" data-testid="vendor-marketer-contracts">
+        <h2 class="text-lg font-semibold text-gray-900">{{ __('contracts.marketer.vendor_profile_title') }}</h2>
+        <div class="overflow-x-auto rounded-xl border bg-white">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600"><tr>
+                    <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_name') }}</th>
+                    <th class="px-4 py-3 text-start">{{ __('contracts.marketer.col_marketer') }}</th>
+                    <th class="px-4 py-3 text-start">{{ __('contracts.marketer.col_campaign') }}</th>
+                    <th class="px-4 py-3 text-start">{{ __('contracts.marketer.col_signed_at') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('admin.contracts.col_status') }}</th>
+                </tr></thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($marketerContracts as $row)
+                        <tr>
+                            <td class="px-4 py-3">{{ $row->template?->name }} <span class="text-xs text-gray-400">v{{ $row->template_version }}</span></td>
+                            <td class="px-4 py-3">{{ $row->marketer?->name ?? __('contracts.marketer.open_call') }}</td>
+                            <td class="px-4 py-3">{{ $row->campaign?->title ?? '—' }}</td>
+                            <td class="px-4 py-3">{{ $row->signed_at?->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3 text-center">{{ __('contracts.marketer.status_'.$row->status) }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">{{ __('contracts.marketer.no_signed_seller') }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div>{{ $marketerContracts->links() }}</div>
     </section>
 </div>
 @endsection

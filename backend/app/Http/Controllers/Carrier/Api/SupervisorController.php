@@ -56,9 +56,13 @@ class SupervisorController extends Controller
             'permissions.*'  => ['in:' . implode(',', self::ALL_PERMISSIONS)],
         ]);
 
-        $newSupervisor = $this->supervisorService->invite($supervisor->company, $data);
+        [$newSupervisor, $delivery] = $this->supervisorService->invite($supervisor->company, $data);
 
-        return ApiResponse::success(['supervisor' => $this->transform($newSupervisor)], 'Supervisor invited.', 201);
+        return ApiResponse::success(
+            ['supervisor' => $this->transform($newSupervisor)] + $delivery->toResponseFields(),
+            $delivery->warning() ?? 'Supervisor invited.',
+            201,
+        );
     }
 
     public function update(Request $request, string $id): JsonResponse

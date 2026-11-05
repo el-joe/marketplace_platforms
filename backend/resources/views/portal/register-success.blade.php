@@ -24,6 +24,14 @@
                 {{ portal_content('register', 'success', 'intro_suffix', "and we'll reach out via email as soon as a decision is made.", 'وسنتواصل معك عبر البريد الإلكتروني فور اتخاذ القرار.') }}
             </p>
 
+            @if (session('registration_email_failed'))
+                <div class="mb-8 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 {{ $isAr ? 'text-right' : 'text-left' }}">
+                    {{ $isAr
+                        ? 'تم حفظ طلبك، لكن تعذّر إرسال رسالة التأكيد إلى بريدك الإلكتروني. لا داعي لإعادة التسجيل؛ سنتواصل معك عبر البريد الإلكتروني الذي أدخلته بمجرد مراجعة الطلب.'
+                        : 'Your application was saved, but we could not send the confirmation email. You do not need to register again; we will contact you at the email address you entered once the application is reviewed.' }}
+                </div>
+            @endif
+
             {{-- Steps --}}
             <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-8 {{ $isAr ? 'text-right' : 'text-left' }}">
                 <h2 class="text-sm font-semibold text-gray-300 mb-4 text-center">{{ portal_content('register', 'success', 'next_steps_title', 'What happens next?', 'ماذا سيحدث بعد ذلك؟') }}</h2>

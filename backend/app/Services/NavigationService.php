@@ -489,6 +489,13 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
+                        'label' => __('admin.nav.customer_contracts'),
+                        'route' => 'admin.contracts.customer.index',
+                        'icon' => 'clipboard-document-list',
+                        'permission' => 'classifieds.view',
+                        'badge' => null,
+                    ],
+                    [
                         'label' => __('admin.nav.contract_signatures'),
                         'route' => 'admin.contracts.signatures.index',
                         'icon' => 'pencil-square',
@@ -762,6 +769,13 @@ class NavigationService
                         'route' => 'admin.portal-content.index',
                         'icon' => 'document-text',
                         'permission' => 'portal_content.view',
+                        'badge' => null,
+                    ],
+                    [
+                        'label' => __('admin.nav.portal_analytics'),
+                        'route' => 'admin.portal-analytics.index',
+                        'icon' => 'chart-bar',
+                        'permission' => 'portal_analytics.view',
                         'badge' => null,
                     ],
                     [

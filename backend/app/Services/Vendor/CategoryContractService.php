@@ -2,24 +2,35 @@
 
 namespace App\Services\Vendor;
 
+use App\Exceptions\ContractNotConfiguredException;
+use App\Exceptions\ContractRequiredException;
 use App\Models\Category;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedContractTemplate;
 use App\Models\ClassifiedListing;
+use App\Models\ContractCountryAssignment;
+use App\Models\Country;
+use App\Models\Product;
 use App\Models\Vendor;
 use App\Models\VendorAdmin;
 use App\Models\VendorCategoryEnrollment;
 use App\Models\VendorContract;
 use App\Models\VendorListing;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Category contracts for classified and product categories.
+ * Individual contracts for classified categories, product categories and single products.
  *
- * A vendor signs a published template once per category. The signed text is frozen in vendor_contracts.
- * A newer published version of the template makes existing signatures stale (enrollment → re_sign_required).
+ * Which contract applies is decided by {@see ContractResolver}: the seller's country, the requirement switches
+ * (product override, category switch inherited from parent categories) and the country's assignments. A seller
+ * signs a published template once per subject (category or product) and template version. The signed text is
+ * frozen in vendor_contracts. A newer published version of the template makes existing signatures stale
+ * (enrollment → re_sign_required), and signatures are never deleted or edited.
  */
 class CategoryContractService
 {
@@ -29,7 +40,15 @@ class CategoryContractService
 
     public const SCOPE_PLATFORM = 'platform';
 
-    public function __construct(private readonly ContractFileService $files) {}
+    public function __construct(
+        private readonly ContractFileService $files,
+        private readonly ContractResolver $resolver,
+    ) {}
+
+    public function resolver(): ContractResolver
+    {
+        return $this->resolver;
+    }
 
     public function categoryFor(string $scope, string $categoryId): ClassifiedCategory|Category|null
     {
@@ -39,17 +58,28 @@ class CategoryContractService
     }
 
     /**
-     * The template a vendor must sign for this category, or null when the category has none enforceable.
+     * The individual template that applies to this category for a country, or null when the category does not
+     * require one (or, for a legacy link, when its template is no longer enforceable).
+     * With no country only country-agnostic templates apply.
      */
-    public function templateFor(ClassifiedCategory|Category $category): ?ClassifiedContractTemplate
+    public function templateFor(ClassifiedCategory|Category $category, ?Country $country = null): ?ClassifiedContractTemplate
     {
-        $template = $category->contractTemplate;
+        $scope = $category instanceof Category ? self::SCOPE_PRODUCT : self::SCOPE_CLASSIFIED;
 
-        return $template && $template->is_published && $template->is_active ? $template : null;
+        try {
+            $resolved = $this->resolver->resolveForCategory($scope, $category, $country);
+        } catch (ContractNotConfiguredException) {
+            return null;
+        }
+
+        return $resolved->isIndividual() ? $resolved->template : null;
     }
 
     /**
      * The template the vendor still has to sign for this category before creating a listing in it, or null.
+     * The category may be covered by a parent category's contract; one signature covers all sub-categories.
+     *
+     * @throws ContractNotConfiguredException when the category requires a contract that is not configured for the vendor's country
      */
     public function unsignedTemplateFor(Vendor $vendor, string $scope, string $categoryId): ?ClassifiedContractTemplate
     {
@@ -59,57 +89,202 @@ class CategoryContractService
             return null;
         }
 
-        $template = $this->templateFor($category);
+        return $this->unsignedFor($vendor, $this->resolver->resolveForVendorCategory($vendor, $scope, $category));
+    }
 
-        if (! $template || $this->hasCurrentSignature($vendor, $scope, $category, $template)) {
+    /**
+     * The individual contract a vendor still has to sign for this resolved requirement, or null.
+     */
+    public function unsignedFor(Vendor $vendor, ResolvedContract $resolved): ?ClassifiedContractTemplate
+    {
+        if (! $resolved->isIndividual() || $this->hasCurrentSignature($vendor, $resolved->scope, $resolved->subject, $resolved->template)) {
             return null;
         }
 
-        return $template;
+        return $resolved->template;
     }
 
-    public function hasCurrentSignature(Vendor $vendor, string $scope, ClassifiedCategory|Category $category, ClassifiedContractTemplate $template): bool
+    /**
+     * The unsigned individual contract for a vendor listing this product, resolved through the product override,
+     * the category switch (with parent inheritance) and the vendor's country. Null when the global agreement
+     * alone covers it or the contract is already signed.
+     *
+     * @return array{template: ClassifiedContractTemplate, scope: string, subject: Model, resolved: ResolvedContract}|null
+     *
+     * @throws ContractNotConfiguredException
+     */
+    public function unsignedForProduct(Vendor $vendor, Product $product): ?array
     {
-        return VendorContract::where('vendor_id', $vendor->id)
-            ->where('category_scope', $scope)
-            ->where($this->categoryColumn($scope), $category->id)
+        $resolved = $this->resolver->resolveForVendorProduct($vendor, $product);
+        $template = $this->unsignedFor($vendor, $resolved);
+
+        return $template ? ['template' => $template, 'scope' => $resolved->scope, 'subject' => $resolved->subject, 'resolved' => $resolved] : null;
+    }
+
+    /**
+     * Blocks creating or activating a listing of this product while a required individual contract is unsigned or
+     * not configured for the vendor's country. The global Seller Agreement never counts as the individual contract.
+     *
+     * @throws ContractRequiredException
+     * @throws ContractNotConfiguredException
+     */
+    public function assertCoveredForProduct(Vendor $vendor, Product $product, string $fileRoute = 'vendor.legal.template-file', string $acceptRoute = 'vendor.contracts.accept'): void
+    {
+        $pending = $this->unsignedForProduct($vendor, $product);
+
+        if (! $pending) {
+            return;
+        }
+
+        throw ContractRequiredException::for(
+            $pending['template'],
+            $this->payloadFor($vendor, $pending['template'], $pending['scope'], $pending['subject'], $fileRoute, $acceptRoute) + ['product_id' => $product->id],
+            __('contracts.api.contract_required'),
+        );
+    }
+
+    /**
+     * Presented contract plus where it belongs, for API and wizard payloads.
+     *
+     * @return array<string, mixed>
+     */
+    public function payloadFor(Vendor $vendor, ClassifiedContractTemplate $template, string $scope, Model $subject, string $fileRoute = 'partner.legal.template-file', ?string $acceptRoute = null): array
+    {
+        $payload = $this->present($template, $vendor, $subject, $fileRoute) + [
+            'category_scope' => $scope,
+            'category_id' => $subject instanceof Product ? null : $subject->getKey(),
+            'product_id' => $subject instanceof Product ? $subject->getKey() : null,
+            'category_name' => $subject->name_en,
+            'country' => $this->countryPayload($this->resolver->countryOf($vendor)),
+        ];
+
+        if ($acceptRoute !== null) {
+            $payload['accept_url'] = route($acceptRoute, $template->id);
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @return array{id: string, code: string, name: string}|null
+     */
+    public function countryPayload(?Country $country): ?array
+    {
+        return $country ? ['id' => $country->id, 'code' => $country->iso_code_2, 'name' => $country->name_en] : null;
+    }
+
+    /**
+     * The individual template a classified listing of this owner needs, or null. Vendors are resolved by their
+     * own country; customers (who list for themselves) by the listing's country.
+     *
+     * @throws ContractNotConfiguredException
+     */
+    public function classifiedTemplateForOwner(?Model $owner, ClassifiedCategory $category, ?string $listingCountryId = null): ?ClassifiedContractTemplate
+    {
+        $country = $owner instanceof Vendor
+            ? $this->resolver->countryOf($owner)
+            : ($listingCountryId ? Country::find($listingCountryId) : null);
+
+        $resolved = $this->resolver->resolveForCategory(self::SCOPE_CLASSIFIED, $category, $country);
+
+        return $resolved->isIndividual() ? $resolved->template : null;
+    }
+
+    /**
+     * @throws ContractNotConfiguredException
+     */
+    public function classifiedTemplateForListing(ClassifiedListing $listing): ?ClassifiedContractTemplate
+    {
+        $category = $listing->classifiedCategory;
+        $owner = $listing->seller_type === Vendor::class ? $listing->seller : null;
+
+        return $category ? $this->classifiedTemplateForOwner($owner, $category, $listing->country_id) : null;
+    }
+
+    public function hasCurrentSignature(Vendor $vendor, string $scope, Model $subject, ClassifiedContractTemplate $template): bool
+    {
+        return $this->currentSignatureQuery($vendor, $scope, $subject)
             ->where('contract_template_id', $template->id)
             ->where('template_version', $template->version)
-            ->where('status', 'active')
             ->exists();
     }
 
     /**
-     * Categories where the vendor currently lists and has not signed the published version.
+     * @return Builder<VendorContract>
+     */
+    private function currentSignatureQuery(Vendor $vendor, string $scope, Model $subject)
+    {
+        $query = VendorContract::where('vendor_id', $vendor->id)
+            ->where('category_scope', $scope)
+            ->where('status', 'active');
+
+        return $subject instanceof Product
+            ? $query->where('product_id', $subject->getKey())
+            : $query->whereNull('product_id')->where($this->categoryColumn($scope), $subject->getKey());
+    }
+
+    /**
+     * Individual contracts the vendor still has to sign for what they list: product categories (with parent
+     * inheritance), classified categories and products with their own contract. Subjects whose contract is not
+     * configured for the vendor's country are skipped here (they are blocked at creation with a clear error).
      *
-     * @return Collection<int, array{scope: string, category: ClassifiedCategory|Category, template: ClassifiedContractTemplate}>
+     * @return Collection<int, array{scope: string, category: Model, template: ClassifiedContractTemplate}>
      */
     public function pendingForVendor(Vendor $vendor): Collection
     {
+        $country = $this->resolver->countryOf($vendor);
+
         $classifiedIds = ClassifiedListing::forVendors()
             ->where('seller_id', $vendor->id)
             ->whereNotIn('status', ['draft', 'sold', 'expired', 'rejected'])
             ->pluck('classified_category_id')
             ->unique();
 
-        $productIds = VendorListing::where('vendor_id', $vendor->id)
-            ->with('productVariant.product:id,category_id')
+        $products = VendorListing::where('vendor_id', $vendor->id)
+            ->with('productVariant.product')
             ->get()
-            ->map(fn (VendorListing $listing) => $listing->productVariant?->product?->category_id)
+            ->map(fn (VendorListing $listing) => $listing->productVariant?->product)
             ->filter()
-            ->unique();
+            ->unique('id');
 
-        $classified = ClassifiedCategory::whereIn('id', $classifiedIds)->with('contractTemplate')->get();
-        $product = Category::whereIn('id', $productIds)->with('contractTemplate')->get();
+        $entries = collect();
 
-        return $this->pendingEntries($classified, self::SCOPE_CLASSIFIED, $vendor)
-            ->concat($this->pendingEntries($product, self::SCOPE_PRODUCT, $vendor))
-            ->values();
+        foreach (ClassifiedCategory::whereIn('id', $classifiedIds)->get() as $category) {
+            $entries->push($this->pendingEntry($vendor, fn () => $this->resolver->resolveForCategory(self::SCOPE_CLASSIFIED, $category, $country)));
+        }
+
+        foreach ($products as $product) {
+            $entries->push($this->pendingEntry($vendor, fn () => $this->resolver->resolveForProduct($product, $country)));
+        }
+
+        return $entries->filter()->unique(fn (array $entry) => $entry['scope'].':'.$entry['category']->getKey())->values();
+    }
+
+    /**
+     * @return array{scope: string, category: Model, template: ClassifiedContractTemplate}|null
+     */
+    private function pendingEntry(Vendor $vendor, \Closure $resolve): ?array
+    {
+        try {
+            $resolved = $resolve();
+        } catch (ContractNotConfiguredException $e) {
+            Log::info('Individual contract not configured for seller country', ['vendor_id' => $vendor->id, 'country_id' => $e->country?->id, 'scope' => $e->scope]);
+
+            return null;
+        }
+
+        $template = $this->unsignedFor($vendor, $resolved);
+
+        return $template ? ['scope' => $resolved->scope, 'category' => $resolved->subject, 'template' => $template] : null;
     }
 
     /**
      * Records the signature: freezes rendered text, variables and hash, supersedes older active signatures
-     * for the same category, and marks the enrollment signed.
+     * for the same subject, and marks the enrollment signed. The template is the one the resolver picks for
+     * this vendor's country, never one the client names. Idempotent and race-safe: the vendor row is locked and
+     * a signature that already covers the subject at this version is returned instead of a duplicate.
+     *
+     * @param  string  $categoryId  the category, or the product's category when $productId is given
      */
     public function sign(
         Vendor $vendor,
@@ -121,26 +296,54 @@ class CategoryContractService
         string $ipAddress,
         string $userAgent,
         ?string $signaturePath = null,
+        ?string $productId = null,
     ): VendorContract {
-        $category = $this->categoryFor($scope, $categoryId)
-            ?? throw ValidationException::withMessages(['category' => 'Unknown category.']);
+        if ($productId) {
+            $product = Product::find($productId) ?? throw ValidationException::withMessages(['product' => 'Unknown product.']);
+            $resolved = $this->resolver->resolveForVendorProduct($vendor, $product);
+        } else {
+            $category = $this->categoryFor($scope, $categoryId)
+                ?? throw ValidationException::withMessages(['category' => 'Unknown category.']);
+            $resolved = $this->resolver->resolveForVendorCategory($vendor, $scope, $category);
+        }
 
-        $template = $this->templateFor($category)
-            ?? throw ValidationException::withMessages(['contract' => 'No published contract for this category.']);
+        if (! $resolved->isIndividual()) {
+            throw ValidationException::withMessages(['contract' => __('contracts.api.no_individual_contract')]);
+        }
 
-        $frozen = $this->freeze($vendor, $template, $category, $language, $signerName);
+        $template = $resolved->template;
+        $subject = $resolved->subject;
 
-        return DB::transaction(function () use ($vendor, $signer, $scope, $category, $template, $frozen, $signerName, $ipAddress, $userAgent, $signaturePath) {
-            $enrollment = $this->enrollmentFor($vendor, $scope, $category);
+        if ($existing = $this->currentSignatureQuery($vendor, $scope, $subject)->where('contract_template_id', $template->id)->first()) {
+            return $existing;
+        }
 
-            $enrollment->contracts()->where('status', 'active')->update(['status' => 'superseded']);
+        $frozen = $this->freeze($vendor, $template, $subject, $language, $signerName);
+
+        return DB::transaction(function () use ($vendor, $signer, $scope, $subject, $template, $frozen, $signerName, $ipAddress, $userAgent, $signaturePath, $resolved) {
+            Vendor::whereKey($vendor->id)->lockForUpdate()->first();
+
+            if ($existing = $this->currentSignatureQuery($vendor, $scope, $subject)->where('contract_template_id', $template->id)->first()) {
+                return $existing;
+            }
+
+            $isProduct = $subject instanceof Product;
+            $enrollment = $isProduct ? null : $this->enrollmentFor($vendor, $scope, $subject);
+
+            if ($enrollment) {
+                $enrollment->contracts()->where('status', 'active')->update(['status' => 'superseded']);
+            } else {
+                $this->currentSignatureQuery($vendor, $scope, $subject)->update(['status' => 'superseded']);
+            }
 
             $contract = VendorContract::create($frozen + [
                 'vendor_id' => $vendor->id,
-                'vendor_category_enrollment_id' => $enrollment->id,
-                'classified_category_id' => $scope === self::SCOPE_CLASSIFIED ? $category->id : null,
+                'vendor_category_enrollment_id' => $enrollment?->id,
+                'classified_category_id' => $scope === self::SCOPE_CLASSIFIED ? $subject->getKey() : null,
                 'category_scope' => $scope,
-                'product_category_id' => $scope === self::SCOPE_PRODUCT ? $category->id : null,
+                'product_category_id' => $scope === self::SCOPE_PRODUCT && ! $isProduct ? $subject->getKey() : null,
+                'product_id' => $isProduct ? $subject->getKey() : null,
+                'country_id' => $resolved->country?->id,
                 'contract_template_id' => $template->id,
                 'template_version' => $template->version,
                 'signature_path' => $signaturePath,
@@ -153,7 +356,7 @@ class CategoryContractService
                 'acceptance_method' => 'click_wrap',
             ]);
 
-            $enrollment->update([
+            $enrollment?->update([
                 'status' => VendorCategoryEnrollment::STATUS_SIGNED,
                 'active_contract_id' => $contract->id,
                 'signed_at' => now(),
@@ -169,7 +372,7 @@ class CategoryContractService
      *
      * @return array<string, mixed>
      */
-    public function freeze(Vendor $vendor, ClassifiedContractTemplate $template, ClassifiedCategory|Category|null $category, string $language, string $signerName): array
+    public function freeze(Vendor $vendor, ClassifiedContractTemplate $template, ?Model $category, string $language, string $signerName): array
     {
         $language = $language === 'ar' ? 'ar' : 'en';
         $variables = $this->variablesFor($vendor, $category, $template, $signerName);
@@ -207,7 +410,7 @@ class CategoryContractService
      *
      * @return array{template_id: string, name: string, version: int, content_mode: string, content_en: string, content_ar: string, files: array<string, array{name: string, mime: string, size: int, url: string, inline: bool}>}
      */
-    public function present(ClassifiedContractTemplate $template, Vendor $vendor, ClassifiedCategory|Category|null $category, string $fileRoute = 'partner.legal.template-file'): array
+    public function present(ClassifiedContractTemplate $template, Vendor $vendor, ?Model $category, string $fileRoute = 'partner.legal.template-file'): array
     {
         $payload = [
             'template_id' => $template->id,
@@ -318,49 +521,95 @@ class CategoryContractService
     }
 
     /**
-     * Makes this version the one vendors sign. Categories on the older versions move to it,
-     * signed enrollments in those categories must re-sign, and the older version is retired.
+     * Makes this version the one vendors sign, within its own country lineage (same name, scope and country).
+     * Categories, products and country assignments on the older versions move to it, signed enrollments in
+     * those categories must re-sign, and the older version is retired. Other countries are never touched.
+     * Publishing a country default replaces the previous default of that country and scope.
      *
      * @return Collection<int, Vendor> vendors that must re-sign, for notification
      */
     public function publish(ClassifiedContractTemplate $template): Collection
     {
-        $lineage = ClassifiedContractTemplate::where('name', $template->name)
-            ->where('category_scope', $template->category_scope)
-            ->pluck('id');
+        $lineage = $this->lineageIds($template);
 
         return DB::transaction(function () use ($template, $lineage) {
             ClassifiedContractTemplate::whereIn('id', $lineage)
                 ->where('id', '!=', $template->id)
                 ->update(['is_published' => false, 'is_active' => false]);
 
+            if ($template->is_country_default && $template->country_id) {
+                ClassifiedContractTemplate::where('country_id', $template->country_id)
+                    ->where('category_scope', $template->category_scope)
+                    ->where('is_country_default', true)
+                    ->where('id', '!=', $template->id)
+                    ->whereNotIn('id', $lineage)
+                    ->update(['is_country_default' => false]);
+            }
+
             $template->update(['is_published' => true, 'is_active' => true]);
 
-            if ($template->category_scope === self::SCOPE_PRODUCT) {
-                $categoryIds = Category::whereIn('contract_template_id', $lineage)->pluck('id');
-                Category::whereIn('id', $categoryIds)->get()
-                    ->each(fn (Category $category) => $category->update(['contract_template_id' => $template->id]));
-            } else {
-                $categoryIds = ClassifiedCategory::whereIn('contract_template_id', $lineage)->pluck('id');
-                ClassifiedCategory::whereIn('id', $categoryIds)->get()
-                    ->each(fn (ClassifiedCategory $category) => $category->update(['contract_template_id' => $template->id]));
+            $isProduct = $template->category_scope === self::SCOPE_PRODUCT;
+            $model = $isProduct ? Category::class : ClassifiedCategory::class;
+            $column = $isProduct ? 'product_category_id' : 'classified_category_id';
+
+            $linked = $model::whereIn('contract_template_id', $lineage)->pluck('id');
+            $model::whereIn('id', $linked)->update(['contract_template_id' => $template->id]);
+
+            $assigned = ContractCountryAssignment::whereIn('contract_template_id', $lineage)->get();
+            ContractCountryAssignment::whereIn('id', $assigned->pluck('id'))->update(['contract_template_id' => $template->id]);
+
+            if ($isProduct) {
+                Product::whereIn('contract_template_id', $lineage)->update(['contract_template_id' => $template->id]);
             }
+
+            $categoryIds = $linked->merge($assigned->pluck($column)->filter())->unique();
 
             $enrollments = VendorCategoryEnrollment::where('category_scope', $template->category_scope)
                 ->whereIn($this->categoryColumn($template->category_scope), $categoryIds)
                 ->where('status', VendorCategoryEnrollment::STATUS_SIGNED);
 
-            $vendorIds = (clone $enrollments)->pluck('vendor_id')->unique();
+            $vendorIds = (clone $enrollments)->pluck('vendor_id')
+                ->merge($this->productSignatureVendorIds($lineage, $template));
             $enrollments->update(['status' => VendorCategoryEnrollment::STATUS_RE_SIGN]);
 
-            return Vendor::with('vendorAdmins')->whereIn('id', $vendorIds)->get();
+            return Vendor::with('vendorAdmins')->whereIn('id', $vendorIds->unique())->get();
         });
+    }
+
+    /**
+     * Ids of every version of the same contract in the same country: same name, scope and country.
+     *
+     * @return Collection<int, string>
+     */
+    public function lineageIds(ClassifiedContractTemplate $template): Collection
+    {
+        return ClassifiedContractTemplate::where('name', $template->name)
+            ->where('category_scope', $template->category_scope)
+            ->when($template->country_id, fn (Builder $query) => $query->where('country_id', $template->country_id), fn (Builder $query) => $query->whereNull('country_id'))
+            ->pluck('id');
+    }
+
+    /**
+     * @param  Collection<int, string>  $lineage
+     * @return Collection<int, string>
+     */
+    private function productSignatureVendorIds(Collection $lineage, ClassifiedContractTemplate $template): Collection
+    {
+        if ($template->category_scope !== self::SCOPE_PRODUCT) {
+            return collect();
+        }
+
+        return VendorContract::whereIn('contract_template_id', $lineage)
+            ->where('id', '!=', $template->id)
+            ->whereNotNull('product_id')
+            ->where('status', 'active')
+            ->pluck('vendor_id');
     }
 
     /**
      * @return array<string, string> variable values keyed without braces
      */
-    public function variablesFor(Vendor $vendor, ClassifiedCategory|Category|null $category, ClassifiedContractTemplate $template, string $signerName = ''): array
+    public function variablesFor(Vendor $vendor, ?Model $category, ClassifiedContractTemplate $template, string $signerName = ''): array
     {
         $vendor->loadMissing(['country', 'businessAddress.city']);
 
@@ -424,14 +673,16 @@ class CategoryContractService
      */
     public function vendorsRequiredToResign(ClassifiedContractTemplate $template): Collection
     {
-        $categoryIds = $template->category_scope === self::SCOPE_PRODUCT
-            ? Category::where('contract_template_id', $template->id)->pluck('id')
-            : ClassifiedCategory::where('contract_template_id', $template->id)->pluck('id');
+        $isProduct = $template->category_scope === self::SCOPE_PRODUCT;
+        $linked = ($isProduct ? Category::class : ClassifiedCategory::class)::where('contract_template_id', $template->id)->pluck('id');
+        $assigned = ContractCountryAssignment::where('contract_template_id', $template->id)
+            ->pluck($isProduct ? 'product_category_id' : 'classified_category_id')->filter();
 
         $vendorIds = VendorCategoryEnrollment::where('category_scope', $template->category_scope)
-            ->whereIn($this->categoryColumn($template->category_scope), $categoryIds)
+            ->whereIn($this->categoryColumn($template->category_scope), $linked->merge($assigned)->unique())
             ->where('status', VendorCategoryEnrollment::STATUS_RE_SIGN)
             ->pluck('vendor_id')
+            ->merge($this->productSignatureVendorIds($this->lineageIds($template), $template))
             ->unique();
 
         return Vendor::with('vendorAdmins')->whereIn('id', $vendorIds)->get();
@@ -440,7 +691,7 @@ class CategoryContractService
     /**
      * Ensures an enrollment row exists for the vendor and category, without changing its status.
      */
-    public function enrollmentFor(Vendor $vendor, string $scope, ClassifiedCategory|Category $category): VendorCategoryEnrollment
+    public function enrollmentFor(Vendor $vendor, string $scope, Model $category): VendorCategoryEnrollment
     {
         return VendorCategoryEnrollment::firstOrCreate(
             [
@@ -453,19 +704,6 @@ class CategoryContractService
                 'requested_at' => now(),
             ],
         );
-    }
-
-    private function pendingEntries(Collection $categories, string $scope, Vendor $vendor): Collection
-    {
-        return $categories
-            ->map(fn (ClassifiedCategory|Category $category) => [
-                'scope' => $scope,
-                'category' => $category,
-                'template' => $this->templateFor($category),
-            ])
-            ->filter(fn (array $entry) => $entry['template'] !== null
-                && ! $this->hasCurrentSignature($vendor, $scope, $entry['category'], $entry['template']))
-            ->values();
     }
 
     private function categoryColumn(string $scope): string

@@ -3,6 +3,7 @@
 namespace App\Services\Vendor;
 
 use App\Enums\GlobalSystemType;
+use App\Models\Country;
 use App\Models\OrderItem;
 use App\Models\ProductVariant;
 use App\Models\Setting;
@@ -10,7 +11,9 @@ use App\Models\SubOrder;
 use App\Models\VendorListing;
 use App\Models\Vendor;
 use App\Services\ListingCertificationGate;
+use App\Services\ListingContractGate;
 use App\Services\ListingShippingResolver;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ListingService
@@ -29,11 +32,17 @@ class ListingService
 
         $this->assertPromotionFieldsMeetMinimums($data);
 
+        // An individual contract the product requires (product override, category switch, country) must be
+        // signed before the listing exists; the global Seller Agreement never stands in for it.
+        app(CategoryContractService::class)->assertCoveredForProduct($vendor, $variant->product);
+
         return VendorListing::create([
+            'id'                     => (string) Str::uuid(),
             'vendor_id'              => $vendor->id,
             'product_variant_id'     => $data['product_variant_id'],
             'country_id'             => $data['country_id'],
             'price'                  => $data['price'],
+            'currency'               => Country::find($data['country_id'])?->currency_code ?? '',
             'compare_at_price'       => $data['compare_at_price'] ?? null,
             'condition'              => $data['condition'],
             'fulfillment_model'      => $data['fulfillment_model'],
@@ -94,6 +103,7 @@ class ListingService
     {
         if ($status === 'active') {
             ListingCertificationGate::assertCanGoLive($listing);
+            ListingContractGate::assertCanGoLive($listing);
         }
 
         $listing->update(['status' => $status]);

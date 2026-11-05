@@ -10,8 +10,9 @@ use App\Jobs\VendorApprovedJob;
 use App\Models\Admin;
 use App\Models\Country;
 use App\Models\Vendor;
-use App\Models\VendorAdmin;
 use App\Models\VendorDocument;
+use App\Services\Vendor\OwnerEmailConflictException;
+use App\Services\Vendor\VendorOwnerService;
 use App\Services\VendorApprovalService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
@@ -19,8 +20,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -32,7 +31,10 @@ class VendorApplicationController extends Controller
     /** Required document types that must be verified before approval */
     private const REQUIRED_DOC_TYPES = ['business_license', 'tax_certificate', 'owner_id'];
 
-    public function __construct(private VendorApprovalService $approvalService) {}
+    public function __construct(
+        private VendorApprovalService $approvalService,
+        private VendorOwnerService $owners,
+    ) {}
 
     // ─── Index ────────────────────────────────────────────────────────────────
 
@@ -308,39 +310,38 @@ class VendorApplicationController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($vendor, $admin, $request) {
-            // 1. Update vendor status
-            $vendor->update([
-                'global_status' => VendorGlobalStatus::Active,
-                'approved_by_admin_id' => $admin->id,
-                'approved_at' => now(),
-            ]);
-
-            // 3. Account manager
-            if ($request->filled('account_manager_admin_id')) {
-                $vendor->update(['account_manager_admin_id' => $request->input('account_manager_admin_id')]);
-            }
-
-            // 4. Create VendorAdmin (owner role) if not exists
-            $exists = VendorAdmin::where('vendor_id', $vendor->id)->where('is_owner', true)->exists();
-            if (! $exists) {
-                $owner = VendorAdmin::create([
-                    'vendor_id' => $vendor->id,
-                    'name' => $vendor->business_name ?? $vendor->store_name,
-                    'email' => $vendor->email,
-                    'password' => Hash::make(Str::random(12)),
-                    'role' => 'vendor_owner',
-                    'is_owner' => true,
-                    'is_active' => true,
+        try {
+            $owner = DB::transaction(function () use ($vendor, $admin, $request) {
+                $vendor->update([
+                    'global_status' => VendorGlobalStatus::Active,
+                    'approved_by_admin_id' => $admin->id,
+                    'approved_at' => now(),
                 ]);
-                $owner->assignRole('vendor_owner');
-            }
 
-            // 5. Dispatch welcome job
-            VendorApprovedJob::dispatch($vendor->id);
-        });
+                if ($request->filled('account_manager_admin_id')) {
+                    $vendor->update(['account_manager_admin_id' => $request->input('account_manager_admin_id')]);
+                }
 
-        return response()->json(['message' => 'Vendor approved. Welcome email dispatched.']);
+                // Reuse the owner login created at registration (flagging it as owner) instead of
+                // creating a second account with an unknown password; a conflicting email rolls back.
+                return $this->owners->ensureOwner($vendor);
+            });
+        } catch (OwnerEmailConflictException $e) {
+            return response()->json([
+                'message' => __('admin.credentials.approval_owner_conflict', ['email' => $e->email]),
+            ], 422);
+        }
+
+        VendorApprovedJob::dispatch($vendor->id);
+
+        // Synchronous on purpose: the approving admin must see whether the owner was told.
+        $delivery = $this->owners->sendApprovalEmail($vendor, $owner);
+
+        return response()->json([
+            'message' => $delivery->delivered()
+                ? __('admin.credentials.approval_email_sent', ['email' => $delivery->recipient])
+                : 'Vendor approved.',
+        ] + $delivery->toResponseFields());
     }
 
     // ─── Reject ───────────────────────────────────────────────────────────────

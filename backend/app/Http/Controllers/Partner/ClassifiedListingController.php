@@ -13,6 +13,7 @@ use App\Models\Vendor;
 use App\Notifications\Admin\NewClassifiedListingPendingReview;
 use App\Services\Marketer\ClassifiedSaleService;
 use App\Services\Shared\ClassifiedListingService;
+use App\Exceptions\ContractNotConfiguredException;
 use App\Services\Vendor\CategoryContractService;
 use App\Support\Money;
 use App\Traits\HasDataTable;
@@ -192,7 +193,16 @@ class ClassifiedListingController extends Controller
      */
     private function appendContractState(ClassifiedCategory $category, Vendor $vendor, CategoryContractService $contracts): void
     {
-        $template = $contracts->unsignedTemplateFor($vendor, CategoryContractService::SCOPE_CLASSIFIED, $category->id);
+        try {
+            $template = $contracts->unsignedTemplateFor($vendor, CategoryContractService::SCOPE_CLASSIFIED, $category->id);
+        } catch (ContractNotConfiguredException $e) {
+            $category->setAttribute('contract_pending', false);
+            $category->setAttribute('contract_not_configured', $e->getMessage());
+            $category->setAttribute('contract_template_content', null);
+            $category->unsetRelation('contractTemplate');
+
+            return;
+        }
 
         $category->setAttribute('contract_pending', $template !== null);
         $category->setAttribute(
@@ -450,9 +460,8 @@ class ClassifiedListingController extends Controller
             return response()->json(['success' => false, 'message' => 'لا يوجد عقد بانتظار الموافقة.'], 422);
         }
 
-        $template = $listing->classifiedCategory?->contractTemplate;
-
         $contracts = app(CategoryContractService::class);
+        $template = $contracts->classifiedTemplateForListing($listing);
         $text = $template?->content ?? '';
         $files = [];
 

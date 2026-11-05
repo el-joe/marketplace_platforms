@@ -14,10 +14,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -247,12 +249,17 @@ class TeamController extends Controller
             return $member;
         });
 
-        $member->notify(new TravelAgencyMemberWelcome($member, $plainPassword));
+        // Sent synchronously (not queued) so a failure is visible and logged.
+        $emailFailed = ! $this->sendMemberEmail($member, new TravelAgencyMemberWelcome($member, $plainPassword), 'travel_member_welcome');
 
         $this->forgetSidebarCache();
 
-        return redirect()->route('travel-agency.team.index')
+        $redirect = redirect()->route('travel-agency.team.index')
             ->with('success', __('travel.team.member_created'));
+
+        return $emailFailed
+            ? $redirect->with('error', __('mail.credentials.send_failed', ['email' => $member->email]))
+            : $redirect;
     }
 
     public function edit(TravelAgencyMember $member): View
@@ -329,9 +336,17 @@ class TeamController extends Controller
 
         $tempPassword = Str::random(12);
 
-        $member->update(['password' => Hash::make($tempPassword)]);
+        // Email first: if it cannot be sent the current password is left untouched, so the
+        // member is never locked out behind a password nobody received.
+        if (! $this->sendMemberEmail($member, new TravelAgencyMemberPasswordReset($member, $tempPassword), 'travel_member_password_reset')) {
+            return response()->json([
+                'success' => false,
+                'email_sent' => false,
+                'message' => __('mail.credentials.send_failed', ['email' => $member->email]),
+            ], 502);
+        }
 
-        $member->notify(new TravelAgencyMemberPasswordReset($member, $tempPassword));
+        $member->update(['password' => Hash::make($tempPassword)]);
 
         return response()->json([
             'success' => true,
@@ -366,5 +381,27 @@ class TeamController extends Controller
 
         return redirect()->route('travel-agency.team.index')
             ->with('success', __('travel.team.member_restored'));
+    }
+
+    /**
+     * Send a credential notification synchronously; failures are logged (no password) and reported.
+     */
+    private function sendMemberEmail(TravelAgencyMember $member, Notification $notification, string $flow): bool
+    {
+        try {
+            $member->notifyNow($notification);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('Credential email failed', [
+                'flow' => $flow,
+                'recipient' => $member->email,
+                'mailer' => config('mail.default'),
+                'exception' => $e::class,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 }

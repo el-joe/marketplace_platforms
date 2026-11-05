@@ -1,5 +1,6 @@
 import TopFilterBar from "./top-filter-bar";
 import BreadcrumbAndHeader from "./breadcrumb-and-header";
+import CategoryHeader from "./category-header";
 import CategoryTags from "./category-tags";
 import ClassifiedsPageClient from "./classified-page-client";
 import {
@@ -10,21 +11,25 @@ import {
   getClassifiedMapPinsService,
 } from "./api/get";
 import getLocale from "@/src/helpers/getLocale";
-import getSelectedCategoryTree from "./helpers/get-selected-categories-tree";
-import { getTranslations } from "next-intl/server";
+import toCategoryTrail from "./helpers/to-category-trail";
+import { CLASSIFIED_PLACEMENT, LEGACY_PLACEMENTS } from "./helpers/constants";
+import { IClassifiedBrowseCategory } from "./helpers/types";
 import { MapPin } from "./api/get";
 
 type ClassifiedsListProps = {
-  categoryId?: string;
+  /** Slug of the resolved category; omitted on the all-ads landing page. */
+  categorySlug?: string;
+  /** The category the route already resolved (single source for breadcrumb, header and selection). */
+  category?: IClassifiedBrowseCategory | null;
   /** Raw URL search params; only the location filters are used. */
   location?: Record<string, string>;
 };
 
 export default async function ClassifiedsList({
-  categoryId,
+  categorySlug,
+  category = null,
   location = {},
 }: ClassifiedsListProps) {
-  const t = await getTranslations("classified");
   const locale = await getLocale();
   const filters: ClassifiedLocationFilters = {
     city_id: location.city_id,
@@ -33,7 +38,7 @@ export default async function ClassifiedsList({
     radius_km: location.radius_km,
   };
   const [{ data }, { data: categories }, citiesRes] = await Promise.all([
-    getClassifiedsService({ category: categoryId || "all", filters }),
+    getClassifiedsService({ category: categorySlug || "all", filters }),
     getClassifiedCategoriesService(),
     getClassifiedCitiesService(locale).catch(() => null),
   ]);
@@ -42,7 +47,7 @@ export default async function ClassifiedsList({
   let initialPins: MapPin[] = [];
   try {
     const pinsRes = await getClassifiedMapPinsService({
-      category: categoryId,
+      category: category?.id,
       location: filters,
     });
     initialPins = pinsRes?.data ?? [];
@@ -50,15 +55,17 @@ export default async function ClassifiedsList({
     initialPins = [];
   }
 
-  const classifiedCategories = categories?.filter(
-    (cat) => cat.type === "classified",
+  // The landing page lists the sections the admin placed there; a section without
+  // placements data (older API) keeps its previous behaviour.
+  const classifiedCategories = (categories ?? []).filter(
+    (cat) =>
+      cat.type === "classified" &&
+      (cat.placements ?? LEGACY_PLACEMENTS).includes(
+        CLASSIFIED_PLACEMENT.landing,
+      ),
   );
-  const SelectedCategoryTree = getSelectedCategoryTree(
-    categoryId || null,
-    classifiedCategories || [],
-  );
-  const selectedCategory =
-    SelectedCategoryTree?.[SelectedCategoryTree.length - 1];
+  const trail = toCategoryTrail(category);
+  const selectedCategory = trail[trail.length - 1] ?? null;
 
   return (
     <div className="bg-[#f8f9fa] min-h-screen py-4 sm:py-6">
@@ -69,14 +76,16 @@ export default async function ClassifiedsList({
         {/* Breadcrumb, Page Title & Sort Selector */}
         <BreadcrumbAndHeader
           totalCount={data?.listings?.meta?.total}
-          selectedCtg={categoryId || null}
-          categories={classifiedCategories || []}
+          trail={trail}
         />
+
+        {/* Section banner: image, description and sub-categories */}
+        {category && <CategoryHeader category={category} />}
 
         {/* Category Pills Bar */}
         <CategoryTags
           categories={classifiedCategories}
-          selectedCtg={SelectedCategoryTree[0]?.id || null}
+          selectedCtg={trail[0]?.id || null}
         />
 
         {/* Client component: manages list/map toggle, hover state, pin updates */}
@@ -84,9 +93,9 @@ export default async function ClassifiedsList({
           initialPins={initialPins}
           location={filters}
           data={data ?? null}
-          classifiedCategories={classifiedCategories || []}
-          categoryId={categoryId}
-          selectedCategory={selectedCategory ?? null}
+          classifiedCategories={classifiedCategories}
+          categoryId={category?.id}
+          selectedCategory={selectedCategory}
         />
       </div>
     </div>
