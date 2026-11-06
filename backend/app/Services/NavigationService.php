@@ -42,6 +42,26 @@ class NavigationService
     protected const BADGE_CACHE_TTL = 60;
 
     /**
+     * URL of the first admin page the current user may open (null if none).
+     */
+    public function firstAccessibleAdminUrl(): ?string
+    {
+        foreach ($this->adminNavigation() as $group) {
+            foreach ($group['items'] as $item) {
+                if (!empty($item['route']) && \Illuminate\Support\Facades\Route::has($item['route'])) {
+                    try {
+                        return route($item['route'], $item['route_params'] ?? []);
+                    } catch (\Throwable $e) {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Build the admin sidebar navigation, filtered by permissions.
      *
      * @return array<int, array{group: string, icon: string, items: array<int, array<string, mixed>>}>

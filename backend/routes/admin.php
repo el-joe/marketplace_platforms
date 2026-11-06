@@ -178,7 +178,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // ─── Dashboard ────────────────────────────────────────────────────────────────
-    Route::get('/', [DashboardController::class, 'index'])->middleware('admin.permission:dashboard.view')->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/stats', [DashboardController::class, 'stats'])->middleware('admin.permission:dashboard.view')->name('dashboard.stats');
     Route::get('/dashboard/revenue-chart', [DashboardController::class, 'revenueChart'])->middleware('admin.permission:dashboard.view')->name('dashboard.revenue-chart');
     Route::get('/dashboard/orders-by-status', [DashboardController::class, 'ordersByStatus'])->middleware('admin.permission:dashboard.view')->name('dashboard.orders-by-status');

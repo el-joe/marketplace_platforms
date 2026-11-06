@@ -68,7 +68,13 @@ class LoginController extends Controller
             'started_at' => now(),
         ]);
 
-        return redirect()->intended(route('admin.dashboard'));
+        // Admins without dashboard access land on the first page they may open.
+        $default = route('admin.dashboard');
+        if (!$admin->can('dashboard.view')) {
+            $default = app(\App\Services\NavigationService::class)->firstAccessibleAdminUrl() ?? $default;
+        }
+
+        return redirect()->intended($default);
     }
 
     public function logout(Request $request): RedirectResponse

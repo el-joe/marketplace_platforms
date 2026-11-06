@@ -28,6 +28,12 @@ class DashboardController extends Controller
 {
     public function index(Request $request): View
     {
+        if (!auth()->guard('admin')->user()?->can('dashboard.view')) {
+            return view('admin.dashboard.welcome', [
+                'breadcrumbs' => [['label' => __('admin.nav.dashboard')]],
+            ]);
+        }
+
         $countries = Country::where('is_active', 1)->orderBy('name_en')->get();
         $defaultCountryId = auth()->guard('admin')->user()?->country_id;
 
