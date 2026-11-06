@@ -82,7 +82,7 @@ class MarketerContractAuditTrailTest extends TestCase
 
     public function test_admin_upload_creates_v1_then_v2_keeping_v1_inactive(): void
     {
-        Storage::fake('local');
+        Storage::fake('private');
         Notification::fake();
         $s = $this->scenario();
         $admin = $this->admin();
@@ -91,6 +91,8 @@ class MarketerContractAuditTrailTest extends TestCase
         $this->actingAs($admin, 'admin')->post($url, ['content_type' => 'text', 'text_content' => 'one'])->assertSessionHasNoErrors();
         $this->actingAs($admin, 'admin')->post($url, [
             'content_type' => 'pdf', 'contract_file' => UploadedFile::fake()->create('c.pdf', 10, 'application/pdf'),
+            // The browser also submits the hidden, empty textarea (arrives as null).
+            'text_content' => null, 'title_en' => 'Title', 'title_ar' => null,
         ])->assertSessionHasNoErrors();
 
         $c = MarketerContract::where('marketer_id', $s->marketer->id)->firstOrFail();
@@ -100,7 +102,7 @@ class MarketerContractAuditTrailTest extends TestCase
         $this->assertFalse($v1->is_active);
         $this->assertTrue($v2->is_active);
         $this->assertNotNull($v2->file_url);
-        Storage::disk('local')->assertExists($v2->file_url);
+        Storage::disk('private')->assertExists($v2->file_url);
     }
 
     public function test_customer_show_returns_active_version_only(): void

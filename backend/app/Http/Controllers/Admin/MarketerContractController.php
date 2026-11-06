@@ -30,8 +30,8 @@ class MarketerContractController extends Controller
 
         $validated = $request->validate([
             'content_type' => ['required', 'in:pdf,text'],
-            'contract_file' => ['required_if:content_type,pdf', 'file', 'mimes:pdf', 'max:10240'],
-            'text_content' => ['required_if:content_type,text', 'string'],
+            'contract_file' => ['required_if:content_type,pdf', 'nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'text_content' => ['required_if:content_type,text', 'nullable', 'string'],
             'title_en' => ['nullable', 'string', 'max:255'],
             'title_ar' => ['nullable', 'string', 'max:255'],
         ]);
@@ -51,8 +51,12 @@ class MarketerContractController extends Controller
                 $fileUrl = $request->file('contract_file')->storeAs(
                     'marketer-contracts',
                     "{$marketer->id}_v{$nextVersion}_".Str::random(8).'.pdf',
-                    'local'
+                    'private'
                 );
+
+                if ($fileUrl === false) {
+                    throw new \RuntimeException('Could not store the contract file (check storage permissions).');
+                }
             }
 
             MarketerContractVersion::create([

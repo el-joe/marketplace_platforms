@@ -75,7 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const fd = new FormData(roleForm);
                 const res = await fetch(roleForm.action, {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        'Accept': 'application/json',
+                    },
                     body: fd,
                 });
 

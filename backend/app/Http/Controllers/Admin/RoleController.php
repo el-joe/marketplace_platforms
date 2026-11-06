@@ -74,7 +74,7 @@ class RoleController extends Controller
     public function create(): View
     {
         $authAdmin = auth('admin')->user();
-        if (!$authAdmin->hasPermissionTo('roles.create')) {
+        if (! $authAdmin->hasPermissionTo('roles.create')) {
             abort(403);
         }
 
@@ -92,9 +92,11 @@ class RoleController extends Controller
     public function store(Request $request): JsonResponse
     {
         $authAdmin = auth('admin')->user();
-        if (!$authAdmin->hasPermissionTo('roles.create')) {
+        if (! $authAdmin->hasPermissionTo('roles.create')) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
+
+        $request->merge(['name' => $this->normalizeRoleName($request->input('name'))]);
 
         $request->validate([
             'name' => ['required', 'string', 'max:100', 'regex:/^[a-z0-9_]+$/', 'unique:roles,name'],
@@ -113,6 +115,7 @@ class RoleController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('RoleController@store failed', ['error' => $e->getMessage()]);
+
             return response()->json(['message' => 'Failed to create role.'], 500);
         }
 
@@ -126,7 +129,7 @@ class RoleController extends Controller
     public function edit(Role $role): View
     {
         $authAdmin = auth('admin')->user();
-        if (!$authAdmin->hasPermissionTo('roles.edit')) {
+        if (! $authAdmin->hasPermissionTo('roles.edit')) {
             abort(403);
         }
 
@@ -144,13 +147,15 @@ class RoleController extends Controller
     public function update(Request $request, Role $role): JsonResponse
     {
         $authAdmin = auth('admin')->user();
-        if (!$authAdmin->hasPermissionTo('roles.edit')) {
+        if (! $authAdmin->hasPermissionTo('roles.edit')) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
         if ($role->name === 'super_admin') {
             return response()->json(['message' => 'Cannot edit the super_admin role.'], 422);
         }
+
+        $request->merge(['name' => $this->normalizeRoleName($request->input('name'))]);
 
         $request->validate([
             'name' => ['required', 'string', 'max:100', 'regex:/^[a-z0-9_]+$/', "unique:roles,name,{$role->id}"],
@@ -167,6 +172,7 @@ class RoleController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('RoleController@update failed', ['role' => $role->id, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => 'Failed to update role.'], 500);
         }
 
@@ -180,7 +186,7 @@ class RoleController extends Controller
     public function destroy(Role $role): JsonResponse
     {
         $authAdmin = auth('admin')->user();
-        if (!$authAdmin->hasPermissionTo('roles.delete')) {
+        if (! $authAdmin->hasPermissionTo('roles.delete')) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -217,6 +223,18 @@ class RoleController extends Controller
     // ─────────────────────────────────────────────────────────────────────────
     // Private
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Turn a human-typed role name ("portal Editor") into the stored slug ("portal_editor").
+     */
+    private function normalizeRoleName(mixed $name): mixed
+    {
+        if (! is_string($name)) {
+            return $name;
+        }
+
+        return trim(preg_replace('/[\s\-]+/', '_', mb_strtolower(trim($name))), '_');
+    }
 
     private function groupedPermissions(): array
     {
@@ -283,6 +301,7 @@ class RoleController extends Controller
 
         $parts = explode('.', $permission, 2);
         $action = $parts[1] ?? $parts[0];
+
         return ucwords(str_replace(['_', '.'], ' ', $action));
     }
 
