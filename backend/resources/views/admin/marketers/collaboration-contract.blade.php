@@ -10,7 +10,7 @@
             <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_seller') }}</dt><dd>{{ $contract->vendor?->store_name }}</dd></div>
             <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_marketer') }}</dt><dd>{{ $marketer->name }}</dd></div>
             <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_campaign') }}</dt><dd>{{ $contract->campaign?->title ?? '—' }}</dd></div>
-            <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_signed_at') }}</dt><dd>{{ $contract->signed_at?->format('Y-m-d H:i') }} · {{ $contract->signer_name }}</dd></div>
+            <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_signed_at') }}</dt><dd>{{ admin_tz($contract->signed_at)?->format('Y-m-d H:i') }} · {{ $contract->signer_name }}</dd></div>
             <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.signed_ip') }}</dt><dd>{{ $contract->signed_ip }}</dd></div>
             <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.hash') }}</dt><dd class="break-all font-mono text-xs">{{ $contract->rendered_content_hash }}</dd></div>
         </dl>

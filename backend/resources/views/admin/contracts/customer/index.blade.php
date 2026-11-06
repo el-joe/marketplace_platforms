@@ -81,7 +81,7 @@
                         <td class="px-4 py-3">{{ $contract->country ? (app()->getLocale() === 'ar' ? $contract->country->name_ar : $contract->country->name_en) : '—' }}</td>
                         <td class="px-4 py-3">{{ __('contracts.customer.purpose_'.$contract->purpose) }}</td>
                         <td class="px-4 py-3 text-center">v{{ $contract->template_version }}</td>
-                        <td class="px-4 py-3">{{ $contract->signed_at?->format('d/m/Y H:i') }}</td>
+                        <td class="px-4 py-3">{{ admin_tz($contract->signed_at)?->format('d/m/Y H:i') }}</td>
                         <td class="px-4 py-3 text-center">{{ __('contracts.customer.status_'.$contract->status) }}</td>
                         <td class="px-4 py-3 text-end"><a href="{{ route('admin.contracts.customer.show', $contract) }}" class="text-xs font-medium text-primary-600 hover:underline">{{ __('contracts.customer.view') }}</a></td>
                     </tr>

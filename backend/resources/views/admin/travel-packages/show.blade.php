@@ -43,7 +43,7 @@
         </span>
         @if($travelPackage->approved_at && $travelPackage->approvedByAdmin)
             <span class="text-xs text-gray-400">
-                {{ __('admin.travel.approved_by_at', ['name' => $travelPackage->approvedByAdmin->name, 'date' => $travelPackage->approved_at->format('d M Y H:i')]) }}
+                {{ __('admin.travel.approved_by_at', ['name' => $travelPackage->approvedByAdmin->name, 'date' => admin_tz($travelPackage->approved_at)?->format('d M Y H:i')]) }}
             </span>
         @endif
     </div>

@@ -173,7 +173,7 @@
                                             @if($doc->verifiedByAdmin)
                                                 {{ $doc->verifiedByAdmin->name }}
                                                 @if($doc->verified_at)
-                                                    <br><span class="text-gray-400">{{ $doc->verified_at->format('d M Y') }}</span>
+                                                    <br><span class="text-gray-400">{{ admin_tz($doc->verified_at)?->format('d M Y') }}</span>
                                                 @endif
                                             @else
                                                 —

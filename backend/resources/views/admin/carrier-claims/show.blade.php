@@ -62,7 +62,7 @@
                     </div>
                     <div>
                         <dt class="text-gray-500">{{ __('admin.carriers_section.submitted_label') }}</dt>
-                        <dd>{{ $claim->created_at->format('d M Y H:i') }}</dd>
+                        <dd>{{ admin_tz($claim->created_at)?->format('d M Y H:i') }}</dd>
                     </div>
                 </dl>
                 <div>
@@ -111,7 +111,7 @@
                         </div>
                         <div>
                             <dt class="text-gray-500">{{ __('admin.carriers_section.resolved_at_label') }}</dt>
-                            <dd>{{ $claim->resolved_at?->format('d M Y H:i') ?? '—' }}</dd>
+                            <dd>{{ admin_tz($claim->resolved_at)?->format('d M Y H:i') ?? '—' }}</dd>
                         </div>
                     </dl>
                     @if($claim->resolution_notes)

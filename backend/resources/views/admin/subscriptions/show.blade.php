@@ -76,7 +76,7 @@
                     @if($subscription->cancelled_at)
                         <div class="flex justify-between">
                             <dt class="text-gray-500">{{ __('admin.subscriptions.cancelled_at') }}</dt>
-                            <dd class="text-red-500">{{ $subscription->cancelled_at->format('d M Y') }}</dd>
+                            <dd class="text-red-500">{{ admin_tz($subscription->cancelled_at)?->format('d M Y') }}</dd>
                         </div>
                     @endif
                     @if($subscription->cancellation_reason)
@@ -169,7 +169,7 @@
                                             {{ $invoice->period_start?->format('d M') }} → {{ $invoice->period_end?->format('d M Y') }}
                                         </td>
                                         <td class="px-4 py-3 text-xs text-gray-500">
-                                            {{ $invoice->paid_at?->format('d M Y H:i') ?? '—' }}
+                                            {{ admin_tz($invoice->paid_at)?->format('d M Y H:i') ?? '—' }}
                                         </td>
                                         <td class="px-4 py-3">
                                             @if($invoice->status !== \App\Enums\VendorSubscriptionInvoiceStatus::Paid)

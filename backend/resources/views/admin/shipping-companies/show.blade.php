@@ -83,7 +83,7 @@
                 @if($shippingCompany->approved_at)
                 <div>
                     <dt class="text-gray-500 text-xs uppercase tracking-wide">{{ __('admin.shipping_section.approved_at') }}</dt>
-                    <dd class="font-medium text-gray-800">{{ $shippingCompany->approved_at->format('Y-m-d H:i') }}</dd>
+                    <dd class="font-medium text-gray-800">{{ admin_tz($shippingCompany->approved_at)?->format('Y-m-d H:i') }}</dd>
                 </div>
                 @endif
             </dl>

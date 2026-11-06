@@ -88,7 +88,7 @@
                                         <button class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">{{ __('admin.wallets.mark_settled') }}</button>
                                     </form>
                                 @else
-                                    <span class="text-xs text-gray-400">{{ $s->settled_at?->format('d M Y') ?? '—' }}</span>
+                                    <span class="text-xs text-gray-400">{{ admin_tz($s->settled_at)?->format('d M Y') ?? '—' }}</span>
                                 @endif
                             </td>
                         </tr>

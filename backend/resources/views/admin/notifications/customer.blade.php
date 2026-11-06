@@ -39,7 +39,7 @@
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ __('common.no') }}</span>
                                 @endif
                             </td>
-                            <td class="py-2">{{ $notification->sent_at?->format('d M Y H:i') ?? '—' }}</td>
+                            <td class="py-2">{{ admin_tz($notification->sent_at)?->format('d M Y H:i') ?? '—' }}</td>
                         </tr>
                     @empty
                         <tr>

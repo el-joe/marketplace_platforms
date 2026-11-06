@@ -101,7 +101,7 @@
             <tbody class="divide-y divide-gray-100">
                 @forelse($transactions as $tx)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-gray-500 text-xs">{{ $tx->created_at->format('d M Y H:i') }}</td>
+                        <td class="px-4 py-3 text-gray-500 text-xs">{{ admin_tz($tx->created_at)?->format('d M Y H:i') }}</td>
                         <td class="px-4 py-3">
                             @if((($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit'))
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">+ {{ __('admin.wallets.credit') }}</span>

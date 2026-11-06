@@ -303,7 +303,7 @@
 
                     <div>
                         <dt class="text-xs text-gray-500 mb-0.5">{{ __('admin.returns_section.created_at') }}</dt>
-                        <dd class="text-sm text-gray-700">{{ $returnRequest->created_at->format('M d, Y H:i') }}</dd>
+                        <dd class="text-sm text-gray-700">{{ admin_tz($returnRequest->created_at)?->format('M d, Y H:i') }}</dd>
                     </div>
 
                 </dl>

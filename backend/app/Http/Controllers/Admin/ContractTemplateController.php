@@ -90,18 +90,18 @@ class ContractTemplateController extends Controller
             ->withQueryString();
 
         $assignedCounts = $this->assignedCounts();
-        $signatureCounts = VendorContract::whereIn('contract_template_id', $templates->pluck('id'))
-            ->selectRaw('contract_template_id, COUNT(*) as total')
-            ->groupBy('contract_template_id')
-            ->pluck('total', 'contract_template_id')
-            ->union(MarketerSellerContract::whereIn('contract_template_id', $templates->pluck('id'))
+        $templateIds = $templates->pluck('id');
+        $signatureCounts = [];
+        foreach ([VendorContract::class, MarketerSellerContract::class, CustomerContract::class] as $signedModel) {
+            $signedModel::query()
+                ->whereIn('contract_template_id', $templateIds)
                 ->selectRaw('contract_template_id, COUNT(*) as total')
                 ->groupBy('contract_template_id')
-                ->pluck('total', 'contract_template_id')->all())
-            ->union(CustomerContract::whereIn('contract_template_id', $templates->pluck('id'))
-                ->selectRaw('contract_template_id, COUNT(*) as total')
-                ->groupBy('contract_template_id')
-                ->pluck('total', 'contract_template_id')->all());
+                ->pluck('total', 'contract_template_id')
+                ->each(function ($total, $templateId) use (&$signatureCounts) {
+                    $signatureCounts[$templateId] = ($signatureCounts[$templateId] ?? 0) + (int) $total;
+                });
+        }
         $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'name_ar', 'iso_code_2']);
         $missingAgreementCountries = $this->resolver->countriesWithoutPlatformAgreement();
         $sectionBadges = $this->sections->sectionsByTemplate($templates->getCollection()) + $this->customerAssignments->sectionsByTemplate($templates->getCollection());

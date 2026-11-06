@@ -63,7 +63,7 @@
                             {{ $inq->statusLabel() }}
                         </span>
                     </td>
-                    <td class="px-4 py-3 text-gray-500 text-xs">{{ $inq->created_at->format('d M Y') }}</td>
+                    <td class="px-4 py-3 text-gray-500 text-xs">{{ admin_tz($inq->created_at)?->format('d M Y') }}</td>
                     <td class="px-4 py-3 text-end">
                         @if($canConvert)
                         <form method="POST" action="{{ route('admin.travel.inquiries.convert', $inq) }}"

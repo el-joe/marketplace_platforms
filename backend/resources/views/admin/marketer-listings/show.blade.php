@@ -80,12 +80,12 @@
             </div>
             <div>
                 <div class="text-gray-400 text-xs mb-0.5">{{ __('admin.marketer_listings.col_created') }}</div>
-                <div class="font-semibold text-gray-800">{{ $listing->created_at->format('Y-m-d') }}</div>
+                <div class="font-semibold text-gray-800">{{ admin_tz($listing->created_at)?->format('Y-m-d') }}</div>
             </div>
             @if($listing->approved_at)
             <div>
                 <div class="text-gray-400 text-xs mb-0.5">{{ __('admin.marketer_listings.approved_at') }}</div>
-                <div class="font-semibold text-gray-800">{{ $listing->approved_at->format('Y-m-d') }}
+                <div class="font-semibold text-gray-800">{{ admin_tz($listing->approved_at)?->format('Y-m-d') }}
                     <span class="text-gray-400 font-normal">— {{ $listing->approvedBy?->name ?? '-' }}</span>
                 </div>
             </div>

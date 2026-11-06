@@ -272,7 +272,7 @@
 
                     <div>
                         <dt class="text-xs text-gray-500 mb-0.5">{{ __('admin.opened') ?? 'Opened' }}</dt>
-                        <dd class="text-sm text-gray-700">{{ $claim->created_at->format('M d, Y H:i') }}</dd>
+                        <dd class="text-sm text-gray-700">{{ admin_tz($claim->created_at)?->format('M d, Y H:i') }}</dd>
                     </div>
 
                     @if($claim->resolved_at)

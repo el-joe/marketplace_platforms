@@ -27,7 +27,7 @@
                             <td class="px-4 py-3">{{ __('admin.contracts.scope_' . $enrollment->category_scope) }}</td>
                             <td class="px-4 py-3">{{ $category?->name_en ?? '—' }}</td>
                             <td class="px-4 py-3">{{ __('admin.vendor_contracts.enrollment_' . $enrollment->status) }}</td>
-                            <td class="px-4 py-3">{{ $enrollment->signed_at?->format('d/m/Y H:i') ?? '—' }}</td>
+                            <td class="px-4 py-3">{{ admin_tz($enrollment->signed_at)?->format('d/m/Y H:i') ?? '—' }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">{{ __('admin.vendor_contracts.no_enrollments') }}</td></tr>
@@ -66,7 +66,7 @@
                             <td class="px-4 py-3">{{ $contract->product?->name_en ?? $category?->name_en ?? "—" }}</td>
                             <td class="px-4 py-3 uppercase">{{ $contract->language_signed }}</td>
                             <td class="px-4 py-3">{{ $contract->signer_name }}</td>
-                            <td class="px-4 py-3">{{ $contract->signed_at?->format('d/m/Y H:i') }}</td>
+                            <td class="px-4 py-3">{{ admin_tz($contract->signed_at)?->format('d/m/Y H:i') }}</td>
                             <td class="px-4 py-3 font-mono text-xs">{{ $contract->signed_ip ?? '—' }}</td>
                             <td class="px-4 py-3">{{ __('admin.contracts.sig_' . $contract->status) }}</td>
                             <td class="px-4 py-3">{{ __('admin.contracts.method_' . $contract->acceptance_method) }}</td>
@@ -98,7 +98,7 @@
                             <td class="px-4 py-3">{{ $row->template?->name }} <span class="text-xs text-gray-400">v{{ $row->template_version }}</span></td>
                             <td class="px-4 py-3">{{ $row->marketer?->name ?? __('contracts.marketer.open_call') }}</td>
                             <td class="px-4 py-3">{{ $row->campaign?->title ?? '—' }}</td>
-                            <td class="px-4 py-3">{{ $row->signed_at?->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3">{{ admin_tz($row->signed_at)?->format('Y-m-d') }}</td>
                             <td class="px-4 py-3 text-center">{{ __('contracts.marketer.status_'.$row->status) }}</td>
                         </tr>
                     @empty

@@ -122,9 +122,9 @@
                             __('admin.vendors.commission_rate') => $vendor->commission_rate ? $vendor->commission_rate . '%' : __('admin.vendors.platform_default'),
                             __('admin.vendors.payout_schedule') => $vendor->payout_schedule ? __('admin.vendors.payout_schedule_' . $vendor->payout_schedule->value) : '—',
                             __('admin.vendors.country')         => $vendor->country?->name_en ?? '—',
-                            __('admin.vendors.approved_at')     => $vendor->approved_at?->format('d M Y') ?? '—',
+                            __('admin.vendors.approved_at')     => admin_tz($vendor->approved_at)?->format('d M Y') ?? '—',
                             __('admin.vendors.approved_by')     => $vendor->approvedByAdmin?->name ?? '—',
-                            __('admin.vendors.joined')          => $vendor->created_at->format('d M Y'),
+                            __('admin.vendors.joined')          => admin_tz($vendor->created_at)?->format('d M Y'),
                         ] as $label => $value)
                             <div>
                                 <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ $label }}</dt>
@@ -339,7 +339,7 @@
                             <tbody class="divide-y divide-gray-50">
                                 @forelse($vendor->strikes->sortByDesc('created_at') as $strike)
                                     <tr class="hover:bg-gray-50/50">
-                                        <td class="py-3 pr-4 text-gray-600 whitespace-nowrap">{{ $strike->created_at->format('d M Y') }}</td>
+                                        <td class="py-3 pr-4 text-gray-600 whitespace-nowrap">{{ admin_tz($strike->created_at)?->format('d M Y') }}</td>
                                         <td class="py-3 pr-4 text-gray-900 max-w-xs">
                                             <div class="font-medium">{{ $strike->reason->label() }}</div>
                                             @if($strike->description)
@@ -564,7 +564,7 @@
                                                 <x-badge color="gray">{{ __('admin.vendors.team_deactivated') }}</x-badge>
                                             @endif
                                         </td>
-                                        <td class="py-3 pr-4 text-xs text-gray-500 whitespace-nowrap">{{ $member->last_login_at?->format('d M Y H:i') ?? '—' }}</td>
+                                        <td class="py-3 pr-4 text-xs text-gray-500 whitespace-nowrap">{{ admin_tz($member->last_login_at)?->format('d M Y H:i') ?? '—' }}</td>
                                         <td class="py-3 text-end">
                                             @if(!$member->trashed())
                                                 <div class="flex items-center justify-end gap-2">

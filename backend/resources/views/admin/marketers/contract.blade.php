@@ -42,7 +42,7 @@
                 <div class="font-semibold text-gray-900">
                     Active Contract — Version {{ $activeVersion->version_number }}
                 </div>
-                <span class="text-xs text-gray-400">Uploaded {{ $activeVersion->created_at->format('d M Y H:i') }}</span>
+                <span class="text-xs text-gray-400">Uploaded {{ admin_tz($activeVersion->created_at)?->format('d M Y H:i') }}</span>
             </div>
 
             @if($activeVersion->content_type === 'pdf')
@@ -80,7 +80,7 @@
                 <tr class="border-b last:border-0">
                     <td class="py-1.5 pr-3">v{{ $v->version_number }}</td>
                     <td class="py-1.5 pr-3">{{ $v->content_type }}</td>
-                    <td class="py-1.5 pr-3">{{ $v->created_at->format('d M Y H:i') }}</td>
+                    <td class="py-1.5 pr-3">{{ admin_tz($v->created_at)?->format('d M Y H:i') }}</td>
                     <td class="py-1.5 pr-3">
                         @if($v->is_active)
                             <span class="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">active</span>

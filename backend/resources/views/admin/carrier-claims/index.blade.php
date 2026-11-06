@@ -91,7 +91,7 @@
                                     {{ $statusLabels[$claim->status->value] ?? Str::title(str_replace('_',' ',$claim->status->value)) }}
                                 </span>
                             </td>
-                            <td class="td text-gray-500 text-xs">{{ $claim->created_at->format('d M Y') }}</td>
+                            <td class="td text-gray-500 text-xs">{{ admin_tz($claim->created_at)?->format('d M Y') }}</td>
                             <td class="td text-end">
                                 <a href="{{ route('admin.carrier-claims.show', $claim) }}"
                                    class="text-primary-600 hover:underline text-xs font-medium">{{ __('admin.carriers_section.view') }}</a>

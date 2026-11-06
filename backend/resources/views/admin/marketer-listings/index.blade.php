@@ -105,7 +105,7 @@
                                 {{ $listing->status?->value }}
                             </span>
                         </td>
-                        <td class="px-6 py-3 text-center text-gray-400 text-xs">{{ $listing->created_at->format('Y-m-d') }}</td>
+                        <td class="px-6 py-3 text-center text-gray-400 text-xs">{{ admin_tz($listing->created_at)?->format('Y-m-d') }}</td>
                         <td class="px-6 py-3 text-end">
                             <a href="{{ route('admin.marketer-listings.show', $listing) }}" class="text-xs font-semibold text-blue-600 hover:underline">{{ __('admin.view') }}</a>
                         </td>

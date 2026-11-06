@@ -572,7 +572,7 @@
             {{-- Meta --}}
             @if($flashSale->createdBy)
                 <div class="text-xs text-gray-400 text-center">
-                    {{ __('admin.flash_sales.created_by', ['name' => $flashSale->createdBy->name, 'date' => $flashSale->created_at->format('M j, Y')]) }}
+                    {{ __('admin.flash_sales.created_by', ['name' => $flashSale->createdBy->name, 'date' => admin_tz($flashSale->created_at)?->format('M j, Y')]) }}
                 </div>
             @endif
 

@@ -61,7 +61,7 @@
                     @endif
                     <div>
                         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('admin.vendor_product_certifications.uploaded_at') }}</dt>
-                        <dd class="mt-1 text-gray-700">{{ $certification->created_at->format('d M Y H:i') }}</dd>
+                        <dd class="mt-1 text-gray-700">{{ admin_tz($certification->created_at)?->format('d M Y H:i') }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('admin.vendor_product_certifications.uploaded_file') }}</dt>
@@ -90,7 +90,7 @@
                         </div>
                         <div>
                             <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('admin.vendor_product_certifications.reviewed_at') }}</dt>
-                            <dd class="mt-1 text-gray-700">{{ $certification->reviewed_at->format('d M Y H:i') }}</dd>
+                            <dd class="mt-1 text-gray-700">{{ admin_tz($certification->reviewed_at)?->format('d M Y H:i') }}</dd>
                         </div>
                     @endif
                 </dl>

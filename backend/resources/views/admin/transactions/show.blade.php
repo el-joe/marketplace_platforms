@@ -139,12 +139,12 @@
 
                     <div>
                         <dt class="text-xs font-medium text-gray-400 uppercase mb-0.5">{{ __('admin.transactions.processed_at') }}</dt>
-                        <dd class="text-sm text-gray-700">{{ $transaction->processed_at?->format('M d, Y H:i:s') ?? '—' }}</dd>
+                        <dd class="text-sm text-gray-700">{{ admin_tz($transaction->processed_at)?->format('M d, Y H:i:s') ?? '—' }}</dd>
                     </div>
 
                     <div>
                         <dt class="text-xs font-medium text-gray-400 uppercase mb-0.5">{{ __('common.created_at') }}</dt>
-                        <dd class="text-sm text-gray-700">{{ $transaction->created_at->format('M d, Y H:i:s') }}</dd>
+                        <dd class="text-sm text-gray-700">{{ admin_tz($transaction->created_at)?->format('M d, Y H:i:s') }}</dd>
                     </div>
 
                 </dl>
@@ -287,7 +287,7 @@
                                         @endphp
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $rsBadge }}">{{ $rsLabel }}</span>
                                     </td>
-                                    <td class="py-2 text-gray-500">{{ $refund->created_at->format('M d, Y') }}</td>
+                                    <td class="py-2 text-gray-500">{{ admin_tz($refund->created_at)?->format('M d, Y') }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

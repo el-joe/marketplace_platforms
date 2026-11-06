@@ -18,7 +18,7 @@
         <div><dt class="text-xs text-gray-500">{{ __('contracts.customer.col_purpose') }}</dt><dd class="font-medium text-gray-900">{{ __('contracts.customer.purpose_'.$contract->purpose) }}</dd></div>
         <div><dt class="text-xs text-gray-500">{{ __('admin.contracts.col_category') }}</dt><dd class="font-medium text-gray-900">{{ $categoryName }}</dd></div>
         <div><dt class="text-xs text-gray-500">{{ __('contracts.admin.col_country') }}</dt><dd class="font-medium text-gray-900">{{ $countryName }}</dd></div>
-        <div><dt class="text-xs text-gray-500">{{ __('contracts.customer.col_signed_at') }}</dt><dd class="font-medium text-gray-900">{{ $contract->signed_at?->format('Y-m-d H:i:s') }}</dd></div>
+        <div><dt class="text-xs text-gray-500">{{ __('contracts.customer.col_signed_at') }}</dt><dd class="font-medium text-gray-900">{{ admin_tz($contract->signed_at)?->format('Y-m-d H:i:s') }}</dd></div>
         <div><dt class="text-xs text-gray-500">{{ __('admin.contracts.col_status') }}</dt><dd class="font-medium text-gray-900">{{ __('contracts.customer.status_'.$contract->status) }}</dd></div>
         <div><dt class="text-xs text-gray-500">{{ __('admin.contracts.col_language') }}</dt><dd class="font-medium uppercase text-gray-900">{{ $contract->language_signed }}</dd></div>
         <div><dt class="text-xs text-gray-500">{{ __('contracts.customer.ip') }}</dt><dd class="font-medium text-gray-900">{{ $contract->signed_ip ?? '—' }}</dd></div>

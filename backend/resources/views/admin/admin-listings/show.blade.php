@@ -403,11 +403,11 @@
                         </div>
                         <div>
                             <dt class="text-gray-400 text-xs">{{ __('admin.admin_listings.created_at_dt') }}</dt>
-                            <dd class="text-gray-800">{{ $listing->created_at?->format('Y-m-d H:i') }}</dd>
+                            <dd class="text-gray-800">{{ admin_tz($listing->created_at)?->format('Y-m-d H:i') }}</dd>
                         </div>
                         <div>
                             <dt class="text-gray-400 text-xs">{{ __('admin.admin_listings.last_updated_dt') }}</dt>
-                            <dd class="text-gray-800">{{ $listing->updated_at?->format('Y-m-d H:i') }}</dd>
+                            <dd class="text-gray-800">{{ admin_tz($listing->updated_at)?->format('Y-m-d H:i') }}</dd>
                         </div>
                     </dl>
                 </div>

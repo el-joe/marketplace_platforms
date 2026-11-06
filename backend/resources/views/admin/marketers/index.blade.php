@@ -225,7 +225,7 @@
                     <td class="px-4 py-3 text-center text-gray-500 text-xs">{{ $marketer->country?->name_ar ?? '-' }}</td>
                     <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded text-xs {{ $statusCls }}">{{ $marketer->global_status?->value }}</span></td>
                     <td class="px-4 py-3 text-center">{{ $marketer->invitations_count }}</td>
-                    <td class="px-4 py-3 text-center text-xs text-gray-500">{{ $marketer->created_at->format('Y-m-d') }}</td>
+                    <td class="px-4 py-3 text-center text-xs text-gray-500">{{ admin_tz($marketer->created_at)?->format('Y-m-d') }}</td>
                     <td class="px-4 py-3 text-center">
                         @if($marketer->global_status?->value === 'pending')
                             <form method="POST" action="{{ route('admin.marketers.approve', $marketer) }}" class="inline">

@@ -295,7 +295,7 @@
                                     </span>
                                 </td>
                                 <td class="text-gray-500 text-xs">{{ $alert->reviewedBy->name ?? '—' }}</td>
-                                <td class="text-gray-400 text-xs">{{ $alert->reviewed_at?->format('M d, Y') ?? '—' }}</td>
+                                <td class="text-gray-400 text-xs">{{ admin_tz($alert->reviewed_at)?->format('M d, Y') ?? '—' }}</td>
                             </tr>
                         @endforeach
                     </tbody>

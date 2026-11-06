@@ -116,9 +116,9 @@
                             __('admin.delivery_section.field_emergency_phone')         => $agent->emergency_contact_phone ?? '—',
                             __('admin.delivery_section.field_base_salary')             => $agent->base_salary ? number_format($agent->base_salary, 2) : '—',
                             __('admin.delivery_section.field_per_delivery_fee')        => number_format($agent->per_delivery_fee, 2),
-                            __('admin.delivery_section.field_last_login')              => $agent->last_login_at?->format('d M Y H:i') ?? __('admin.delivery_section.never'),
+                            __('admin.delivery_section.field_last_login')              => admin_tz($agent->last_login_at)?->format('d M Y H:i') ?? __('admin.delivery_section.never'),
                             __('admin.delivery_section.field_last_login_ip')           => $agent->last_login_ip ?? '—',
-                            __('admin.delivery_section.field_joined')                  => $agent->created_at->format('d M Y'),
+                            __('admin.delivery_section.field_joined')                  => admin_tz($agent->created_at)?->format('d M Y'),
                         ] as $label => $value)
                             <div>
                                 <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">{{ $label }}</dt>
@@ -294,7 +294,7 @@
 
                     @if($doc->verified_at)
                         <p class="text-xs text-gray-400 mt-2">
-                            {{ __('admin.delivery_section.verified_on', ['date' => $doc->verified_at->format('d M Y')]) }}
+                            {{ __('admin.delivery_section.verified_on', ['date' => admin_tz($doc->verified_at)?->format('d M Y')]) }}
                         </p>
                     @endif
                 </div>

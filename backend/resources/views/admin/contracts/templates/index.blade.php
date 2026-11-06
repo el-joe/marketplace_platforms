@@ -122,6 +122,7 @@
                     <th class="px-4 py-3 text-center">{{ __('admin.contracts.col_version') }}</th>
                     <th class="px-4 py-3 text-center">{{ __('admin.contracts.col_status') }}</th>
                     <th class="px-4 py-3 text-center">{{ __('admin.contracts.col_assigned') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('admin.contracts.signatures') }}</th>
                     <th class="px-4 py-3"></th>
                 </tr>
             </thead>
@@ -198,6 +199,7 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 text-center">{{ $assignedCounts[$template->id] ?? 0 }}</td>
+                        <td class="px-4 py-3 text-center">{{ $signatureCounts[$template->id] ?? 0 }}</td>
                         <td class="px-4 py-3 text-end whitespace-nowrap space-x-3">
                             <a href="{{ route('admin.contracts.templates.signatures', $template) }}" class="text-xs font-medium text-primary-600 hover:underline">{{ __('admin.contracts.signatures') }}</a>
                             <a href="{{ route('admin.contracts.templates.edit', $template) }}" class="text-xs font-medium text-primary-600 hover:underline">{{ __('common.edit') }}</a>
@@ -241,7 +243,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="px-4 py-10 text-center text-gray-400">{{ __('admin.contracts.no_templates') }}</td>
+                        <td colspan="10" class="px-4 py-10 text-center text-gray-400">{{ __('admin.contracts.no_templates') }}</td>
                     </tr>
                 @endforelse
             </tbody>

@@ -83,6 +83,9 @@ return [
 
     'timezone' => 'UTC',
 
+    // Timezone used to DISPLAY timestamps in the admin panel (storage stays UTC).
+    'admin_timezone' => env('ADMIN_TIMEZONE', 'Asia/Muscat'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

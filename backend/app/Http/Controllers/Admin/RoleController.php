@@ -49,8 +49,8 @@ class RoleController extends Controller
 
         $query = Role::query()
             ->where('guard_name', 'admin')
-            ->withCount('permissions')
-            ->select(['roles.id', 'roles.name', 'roles.guard_name', 'roles.created_at']);
+            ->select(['roles.id', 'roles.name', 'roles.guard_name', 'roles.created_at'])
+            ->withCount('permissions');
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) use ($adminCounts) {
             return [

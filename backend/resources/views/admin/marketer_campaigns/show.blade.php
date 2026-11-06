@@ -133,7 +133,7 @@
                     __('admin.marketer_campaigns.per_marketer_sample_qty')    => $marketerCampaign->per_marketer_sample_qty_snapshot ?? 0,
                     __('admin.marketer_campaigns.auto_approve_at')            => $marketerCampaign->auto_approve_at?->format('d M Y H:i') ?? '—',
                     __('admin.marketer_campaigns.reviewed_by')                => $marketerCampaign->reviewedBy?->name ?? '—',
-                    __('admin.marketer_campaigns.reviewed_at')                => $marketerCampaign->reviewed_at?->format('d M Y H:i') ?? '—',
+                    __('admin.marketer_campaigns.reviewed_at')                => admin_tz($marketerCampaign->reviewed_at)?->format('d M Y H:i') ?? '—',
                 ] as $label => $value)
                     <div>
                         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ $label }}</dt>
@@ -291,10 +291,10 @@
                                             —
                                         @endif
                                     </td>
-                                    <td class="py-2 pr-4">{{ $invitation->created_at?->format('d M Y H:i') }}</td>
+                                    <td class="py-2 pr-4">{{ admin_tz($invitation->created_at)?->format('d M Y H:i') }}</td>
                                     <td class="py-2 pr-4 text-xs" data-testid="whatsapp-status">
                                         @if($invitation->whatsapp_sent)
-                                            <span class="text-green-600">{{ __('admin.marketer_campaigns.whatsapp_sent') }} {{ $invitation->whatsapp_sent_at?->format('d M H:i') }}</span>
+                                            <span class="text-green-600">{{ __('admin.marketer_campaigns.whatsapp_sent') }} {{ admin_tz($invitation->whatsapp_sent_at)?->format('d M H:i') }}</span>
                                         @elseif($invitation->whatsappFailed())
                                             <span class="text-red-600" title="{{ $invitation->whatsapp_last_error }}">{{ __('admin.marketer_campaigns.whatsapp_failed') }}</span>
                                         @else
@@ -312,7 +312,7 @@
                                             @endif
                                         @endif
                                     </td>
-                                    <td class="py-2 pr-4">{{ $invitation->responded_at?->format('d M Y H:i') ?? '—' }}</td>
+                                    <td class="py-2 pr-4">{{ admin_tz($invitation->responded_at)?->format('d M Y H:i') ?? '—' }}</td>
                                     <td class="px-4 py-3 text-center text-xs">
                                         @if($invitation->influencer_fixed_status !== \App\Models\MarketerCampaignInvitation::FIXED_NONE)
                                             <span class="font-semibold text-gray-800">{{ \App\Support\Money::format($invitation->influencer_fixed_amount) }} {{ $marketerCampaign->currency }}</span>
@@ -357,7 +357,7 @@
                                     <td class="py-2 pe-4">{{ $old?->marketer?->name ?? '—' }}</td>
                                     <td class="py-2 pe-4">{{ $new->marketer?->name ?? '—' }}</td>
                                     <td class="py-2 pe-4">{{ __('admin.marketer_campaigns.transfer_reason_'.($old?->status ?? 'rejected')) }}</td>
-                                    <td class="py-2 pe-4">{{ $new->created_at?->format('d M Y H:i') }}</td>
+                                    <td class="py-2 pe-4">{{ admin_tz($new->created_at)?->format('d M Y H:i') }}</td>
                                 </tr>
                             @endforeach
                             @foreach($unreplaced as $old)
@@ -365,7 +365,7 @@
                                     <td class="py-2 pe-4">{{ $old->marketer?->name ?? '—' }}</td>
                                     <td class="py-2 pe-4 text-red-600">{{ __('admin.marketer_campaigns.transfer_none') }}</td>
                                     <td class="py-2 pe-4">{{ __('admin.marketer_campaigns.transfer_reason_'.$old->status) }}</td>
-                                    <td class="py-2 pe-4">{{ $old->responded_at?->format('d M Y H:i') ?? '—' }}</td>
+                                    <td class="py-2 pe-4">{{ admin_tz($old->responded_at)?->format('d M Y H:i') ?? '—' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -407,7 +407,7 @@
                                         </td>
                                         <td class="py-2 pe-4">{{ $inv->marketer?->name ?? '—' }}</td>
                                         <td class="py-2 pe-4">{{ __('admin.marketer_campaigns.transfer_reason_'.$inv->status) }}</td>
-                                        <td class="py-2 pe-4">{{ $inv->created_at?->format('d M Y H:i') }}</td>
+                                        <td class="py-2 pe-4">{{ admin_tz($inv->created_at)?->format('d M Y H:i') }}</td>
                                         <td class="py-2 pe-4">{{ $step['closed_at']?->format('d M Y H:i') ?? '—' }}</td>
                                         <td class="py-2 pe-4">{{ __('admin.marketer_campaigns.code_state_'.$step['state'], ['date' => $step['grace_until']?->format('d M Y')]) }}</td>
                                         <td class="py-2 pe-4">{{ $inv->conversions_count }}</td>
@@ -495,7 +495,7 @@
                                 <td class="py-2 pr-4">{{ $conversion->referral_clicked_at?->format('d M Y H:i') ?? '—' }}</td>
                                 <td class="py-2 pr-4">
                                     @if($conversion->paid_at)
-                                        {{ $conversion->paid_at->format('d M Y H:i') }}
+                                        {{ admin_tz($conversion->paid_at)?->format('d M Y H:i') }}
                                     @else
                                         <x-badge color="warning">{{ __('admin.marketer_campaigns.conversion_not_paid') }}</x-badge>
                                     @endif
@@ -575,7 +575,7 @@
                                     @endif
                                 </td>
                                 <td class="py-2 pr-4">{{ $sample->dispatched_at?->format('d M Y H:i') ?? '—' }}</td>
-                                <td class="py-2 pr-4">{{ $sample->delivered_at?->format('d M Y H:i') ?? '—' }}</td>
+                                <td class="py-2 pr-4">{{ admin_tz($sample->delivered_at)?->format('d M Y H:i') ?? '—' }}</td>
                                 <td class="py-2 pr-4">
                                     @if($sample->status === 'pending' && $sample->invitation && $sample->invitation->status !== 'accepted')
                                         <span class="text-xs text-amber-600">{{ __('admin.marketer_campaigns.sample_awaiting_acceptance') }}</span>

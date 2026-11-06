@@ -38,7 +38,7 @@
                         <span class="text-gray-400">{{ __('admin.gift_cards_section.redeemed_by') }}:</span>
                         {{ $card->redeemedBy?->name ?? '—' }}
                         @if($card->redeemedBy && $card->redeemed_at)
-                            ({{ $card->redeemed_at->format('Y-m-d H:i') }})
+                            ({{ admin_tz($card->redeemed_at)?->format('Y-m-d H:i') }})
                         @endif
                     </div>
                 </div>
@@ -91,7 +91,7 @@
                             <td class="py-1.5">{{ $tx->balance_after }}</td>
                             <td class="py-1.5">{{ $tx->order?->order_number ?? '—' }}</td>
                             <td class="py-1.5">{{ $tx->performedByAdmin?->name ?? $tx->performedByCustomer?->name ?? '—' }}</td>
-                            <td class="py-1.5">{{ $tx->created_at->format('Y-m-d H:i') }}</td>
+                            <td class="py-1.5">{{ admin_tz($tx->created_at)?->format('Y-m-d H:i') }}</td>
                         </tr>
                         @empty
                         <tr><td colspan="6" class="py-3 text-center text-gray-400">{{ __('admin.gift_cards_section.no_transactions') }}</td></tr>

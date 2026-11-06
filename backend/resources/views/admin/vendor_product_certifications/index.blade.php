@@ -100,7 +100,7 @@
                                     {{ __('admin.vendor_product_certifications.' . $cert->status) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-gray-500 text-xs">{{ $cert->created_at->format('Y-m-d H:i') }}</td>
+                            <td class="px-4 py-3 text-gray-500 text-xs">{{ admin_tz($cert->created_at)?->format('Y-m-d H:i') }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $cert->reviewedByAdmin?->name ?? '—' }}</td>
                             <td class="px-4 py-3">
                                 <a href="{{ route('admin.vendor-product-certifications.show', $cert->id) }}"

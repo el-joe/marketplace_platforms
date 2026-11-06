@@ -84,7 +84,7 @@
                                         <td class="font-medium text-gray-900">{{ $rate->effective_at?->format('Y-m-d H:i') }}</td>
                                         <td class="text-end">{{ number_format($rate->rate_numerator) }}</td>
                                         <td class="text-end">{{ number_format($rate->rate_denominator) }}</td>
-                                        <td class="text-gray-500">{{ $rate->created_at?->format('Y-m-d H:i') }}</td>
+                                        <td class="text-gray-500">{{ admin_tz($rate->created_at)?->format('Y-m-d H:i') }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

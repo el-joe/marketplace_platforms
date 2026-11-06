@@ -19,7 +19,6 @@ use App\Notifications\Admin\NewVendorApplicationSubmitted;
 use App\Services\ActivityLoggerService;
 use App\Services\PortalAnalytics\PortalTracker;
 use App\Services\Vendor\CategoryContractService;
-use App\Exceptions\ContractNotConfiguredException;
 use App\Services\Vendor\ContractResolver;
 use App\Services\Vendor\SellerAgreementService;
 use Illuminate\Http\JsonResponse;
@@ -135,7 +134,8 @@ class RegistrationController extends Controller
             }
         }
 
-        $agreementEnforced = $this->resolver->anyPlatformAgreementPublished();
+        // Registration is never blocked for a country that has no Seller Agreement; its agreement step is skipped.
+        $agreementEnforced = false;
         $agreementNotConfiguredMessage = __('contracts.api.not_configured', ['country' => ':country']);
 
         return view('portal.register', compact('countries', 'currentStep', 'savedData', 'agreementByCountry', 'agreementDocs', 'agreementEnforced', 'agreementNotConfiguredMessage'));
@@ -306,17 +306,8 @@ class RegistrationController extends Controller
         $country = ($countryId = session('reg_data.step1.country_id')) ? Country::find($countryId) : null;
         $agreement = $this->agreements->latestPublished($country?->id);
 
-        if (! $agreement && $this->resolver->anyPlatformAgreementPublished()) {
-            $this->tracker->stepFailed(RegistrationFlow::Vendor, 5);
-            $notConfigured = ContractNotConfiguredException::forCountry($country);
-
-            return response()->json([
-                'success' => false,
-                'code' => ContractNotConfiguredException::CODE,
-                'message' => $notConfigured->getMessage(),
-                'errors' => $notConfigured->errors(),
-            ], 422);
-        }
+        // A country without a published Seller Agreement does not block registration: the agreement step is
+        // simply skipped for it (no signature is collected or required).
 
         $rules = [
             'terms_agreed' => 'required|accepted',

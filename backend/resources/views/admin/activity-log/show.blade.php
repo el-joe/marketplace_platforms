@@ -85,7 +85,7 @@
                         <span class="text-xs font-mono text-gray-500">{{ $entry->subject_id }}</span>
                     </div>
                 @endif
-                <p class="text-sm text-gray-700">{{ $entry->created_at->format('M d, Y H:i:s') }}</p>
+                <p class="text-sm text-gray-700">{{ admin_tz($entry->created_at)?->format('M d, Y H:i:s') }}</p>
                 <p class="text-xs text-gray-400">{{ $entry->created_at->diffForHumans() }}</p>
                 @if($entry->ip_address)
                     <p class="text-xs font-mono text-gray-400">{{ __('admin.activity_log_section.ip_label') }}: {{ $entry->ip_address }}</p>

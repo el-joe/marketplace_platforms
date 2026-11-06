@@ -42,7 +42,7 @@
         </div>
     @elseif($settlement->status === \App\Enums\DeliveryAgentCodSettlementStatus::Settled)
         <div class="text-end">
-            <p class="text-xs text-green-600 font-semibold">{{ __('admin.cod.settled_on') }} {{ $settlement->settled_at?->format('M d, Y H:i') }}</p>
+            <p class="text-xs text-green-600 font-semibold">{{ __('admin.cod.settled_on') }} {{ admin_tz($settlement->settled_at)?->format('M d, Y H:i') }}</p>
             @if($settlement->notes)
                 <p class="text-xs text-gray-500 mt-1 max-w-xs">{{ $settlement->notes }}</p>
             @endif
@@ -83,7 +83,7 @@
                                         <span class="text-gray-400">—</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-2 text-xs text-gray-600">{{ $a->delivered_at?->format('M d, Y') ?? '—' }}</td>
+                                <td class="px-4 py-2 text-xs text-gray-600">{{ admin_tz($a->delivered_at)?->format('M d, Y') ?? '—' }}</td>
                                 <td class="px-4 py-2 text-end font-medium">{{ number_format($a->cod_amount_collected, 2) }}</td>
                             </tr>
                         @endforeach
@@ -164,7 +164,7 @@
                                         <span class="text-gray-400">—</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-2 text-xs text-gray-600">{{ $a->delivered_at?->format('M d, Y') ?? '—' }}</td>
+                                <td class="px-4 py-2 text-xs text-gray-600">{{ admin_tz($a->delivered_at)?->format('M d, Y') ?? '—' }}</td>
                                 <td class="px-4 py-2 text-end font-medium">{{ number_format($a->cod_amount_collected, 2) }}</td>
                             </tr>
                         @endforeach
@@ -225,7 +225,7 @@
                                 </p>
                                 <p class="text-xs text-gray-500">{{ __('admin.cod.net_label') }} {{ number_format($h->net_to_remit, 2) }}</p>
                                 @if($h->settled_at)
-                                    <p class="text-xs text-gray-400">{{ $h->settled_at->format('M d, Y') }}</p>
+                                    <p class="text-xs text-gray-400">{{ admin_tz($h->settled_at)?->format('M d, Y') }}</p>
                                 @endif
                             </div>
                             <div class="flex flex-col items-end gap-1">

@@ -122,7 +122,7 @@
                                 {{ __('admin.marketer_campaigns.status_' . $campaign->status) }}
                             </x-badge>
                         </td>
-                        <td class="py-2 pr-4">{{ $campaign->created_at->format('d M Y') }}</td>
+                        <td class="py-2 pr-4">{{ admin_tz($campaign->created_at)?->format('d M Y') }}</td>
                         <td class="py-2 pr-4 text-end">
                             <a href="{{ route('admin.marketer-campaigns.show', $campaign) }}" class="text-primary-600 hover:underline">
                                 {{ __('admin.marketer_campaigns.view') }}

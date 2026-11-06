@@ -74,7 +74,7 @@
                         <td class="px-4 py-3 text-center">v{{ $contract->template_version }}</td>
                         <td class="px-4 py-3 uppercase">{{ $contract->language_signed }}</td>
                         <td class="px-4 py-3">{{ $contract->signer_name }}</td>
-                        <td class="px-4 py-3">{{ $contract->signed_at?->format('d/m/Y H:i') }}</td>
+                        <td class="px-4 py-3">{{ admin_tz($contract->signed_at)?->format('d/m/Y H:i') }}</td>
                         <td class="px-4 py-3">{{ __('admin.contracts.sig_' . $contract->status) }}</td>
                         <td class="px-4 py-3">{{ __('admin.contracts.method_' . $contract->acceptance_method) }}</td>
                         <td class="px-4 py-3 text-end">@if ($contract->hasSignedFile())<a href="{{ route('admin.contracts.signatures.download', $contract) }}" class="text-xs font-medium text-emerald-700 hover:underline">{{ __('admin.contracts.download_signed') }}</a>@endif</td>

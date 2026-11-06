@@ -227,7 +227,7 @@
                     </div>
                     <div>
                         <dt class="text-xs text-gray-500">{{ __('admin.warehouses_section.created_column') }}</dt>
-                        <dd class="mt-0.5">{{ $transfer->created_at?->format('M d, Y H:i') }}</dd>
+                        <dd class="mt-0.5">{{ admin_tz($transfer->created_at)?->format('M d, Y H:i') }}</dd>
                     </div>
                     @if($transfer->expected_arrival_date)
                         <div>
@@ -249,13 +249,13 @@
                     @if($transfer->shipped_at)
                         <div>
                             <dt class="text-xs text-gray-500">{{ __('admin.warehouses_section.shipped') }}</dt>
-                            <dd class="mt-0.5">{{ $transfer->shipped_at->format('M d, Y H:i') }}</dd>
+                            <dd class="mt-0.5">{{ admin_tz($transfer->shipped_at)?->format('M d, Y H:i') }}</dd>
                         </div>
                     @endif
                     @if($transfer->received_at)
                         <div>
                             <dt class="text-xs text-gray-500">{{ __('admin.warehouses_section.received') }}</dt>
-                            <dd class="mt-0.5">{{ $transfer->received_at->format('M d, Y H:i') }}</dd>
+                            <dd class="mt-0.5">{{ admin_tz($transfer->received_at)?->format('M d, Y H:i') }}</dd>
                         </div>
                     @endif
                     @if($transfer->notes)

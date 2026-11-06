@@ -233,7 +233,7 @@
                                                 <span class="text-gray-400">—</span>
                                             @endif
                                         </td>
-                                        <td class="py-2 pr-4 text-gray-500">{{ $review->created_at->format('d M Y') }}</td>
+                                        <td class="py-2 pr-4 text-gray-500">{{ admin_tz($review->created_at)?->format('d M Y') }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -267,7 +267,7 @@
                                         <td class="py-2 pr-4">
                                             <x-badge color="gray">{{ $ret->status->label() }}</x-badge>
                                         </td>
-                                        <td class="py-2 pr-4 text-gray-500">{{ $ret->created_at->format('d M Y') }}</td>
+                                        <td class="py-2 pr-4 text-gray-500">{{ admin_tz($ret->created_at)?->format('d M Y') }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -301,7 +301,7 @@
                                         <td class="py-2 pr-4">
                                             <x-badge color="gray">{{ ucfirst(str_replace('_', ' ', $dispute->status->value)) }}</x-badge>
                                         </td>
-                                        <td class="py-2 pr-4 text-gray-500">{{ $dispute->created_at->format('d M Y') }}</td>
+                                        <td class="py-2 pr-4 text-gray-500">{{ admin_tz($dispute->created_at)?->format('d M Y') }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -347,7 +347,7 @@
                                         <td class="py-2 pr-4">
                                             <x-badge :color="$sColor">{{ $ticket->status?->label() ?? '—' }}</x-badge>
                                         </td>
-                                        <td class="py-2 pr-4 text-gray-500">{{ $ticket->created_at->format('d M Y') }}</td>
+                                        <td class="py-2 pr-4 text-gray-500">{{ admin_tz($ticket->created_at)?->format('d M Y') }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -552,7 +552,7 @@
                                         <td class="py-2 pr-4">
                                             <x-badge :color="$claimStatusColors[$claim->status] ?? 'gray'">{{ ucfirst(str_replace('_', ' ', $claim->status)) }}</x-badge>
                                         </td>
-                                        <td class="py-2 pr-4 text-gray-500">{{ $claim->created_at->format('d M Y') }}</td>
+                                        <td class="py-2 pr-4 text-gray-500">{{ admin_tz($claim->created_at)?->format('d M Y') }}</td>
                                         <td class="py-2 pr-4">
                                             <a href="{{ route('admin.warranty-claims.show', $claim->id) }}" class="text-primary-600 hover:underline text-xs">
                                                 {{ __('admin.customers_section.view_claim') }}
@@ -656,15 +656,15 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-5">
                         <div class="flex items-center justify-between gap-2 rounded-lg border border-gray-200 p-3">
                             <span class="text-gray-500">{{ __('admin.customers_section.email_verified_at_label') }}</span>
-                            <span class="text-gray-900">{{ $customer->email_verified_at?->format('d M Y, H:i') ?? __('admin.customers_section.not_verified') }}</span>
+                            <span class="text-gray-900">{{ admin_tz($customer->email_verified_at)?->format('d M Y, H:i') ?? __('admin.customers_section.not_verified') }}</span>
                         </div>
                         <div class="flex items-center justify-between gap-2 rounded-lg border border-gray-200 p-3">
                             <span class="text-gray-500">{{ __('admin.customers_section.phone_verified_at_label') }}</span>
-                            <span class="text-gray-900">{{ $customer->phone_verified_at?->format('d M Y, H:i') ?? __('admin.customers_section.not_verified') }}</span>
+                            <span class="text-gray-900">{{ admin_tz($customer->phone_verified_at)?->format('d M Y, H:i') ?? __('admin.customers_section.not_verified') }}</span>
                         </div>
                         <div class="flex items-center justify-between gap-2 rounded-lg border border-gray-200 p-3">
                             <span class="text-gray-500">{{ __('admin.customers_section.last_login') }}</span>
-                            <span class="text-gray-900">{{ $customer->last_login_at?->format('d M Y, H:i') ?? '—' }}</span>
+                            <span class="text-gray-900">{{ admin_tz($customer->last_login_at)?->format('d M Y, H:i') ?? '—' }}</span>
                         </div>
                         <div class="flex items-center justify-between gap-2 rounded-lg border border-gray-200 p-3">
                             <span class="text-gray-500">{{ __('admin.customers_section.active_devices') }}</span>
@@ -700,7 +700,7 @@
                                     @foreach($deviceTokens as $token)
                                     <tr class="hover:bg-gray-50 js-device-row">
                                         <td class="py-2 pr-4">{{ ucfirst($token->platform?->value ?? '—') }}</td>
-                                        <td class="py-2 pr-4 text-gray-500">{{ $token->last_used_at?->format('d M Y, H:i') ?? '—' }}</td>
+                                        <td class="py-2 pr-4 text-gray-500">{{ admin_tz($token->last_used_at)?->format('d M Y, H:i') ?? '—' }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -727,7 +727,7 @@
                                     @if($entry->event)
                                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-600 mr-2">{{ $entry->event }}</span>
                                     @endif
-                                    <span class="text-xs text-gray-400">{{ $entry->created_at->format('d M Y, H:i') }}</span>
+                                    <span class="text-xs text-gray-400">{{ admin_tz($entry->created_at)?->format('d M Y, H:i') }}</span>
                                     @if($entry->ip_address)
                                         <span class="text-xs text-gray-400 ml-2">· {{ $entry->ip_address }}</span>
                                     @endif
@@ -822,14 +822,14 @@
                     {{-- Joined --}}
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-gray-500">{{ __('admin.customers_section.joined_column') }}</span>
-                        <span class="text-gray-900">{{ $customer->created_at->format('d M Y') }}</span>
+                        <span class="text-gray-900">{{ admin_tz($customer->created_at)?->format('d M Y') }}</span>
                     </div>
 
                     {{-- Last login --}}
                     <div class="flex items-start justify-between gap-2">
                         <span class="text-gray-500 shrink-0">{{ __('admin.customers_section.last_login') }}</span>
                         <div class="text-end">
-                            <span class="text-gray-900 block">{{ $customer->last_login_at?->format('d M Y, H:i') ?? '—' }}</span>
+                            <span class="text-gray-900 block">{{ admin_tz($customer->last_login_at)?->format('d M Y, H:i') ?? '—' }}</span>
                             @if($customer->last_login_ip)
                                 <span class="text-xs text-gray-400 font-mono">{{ $customer->last_login_ip }}</span>
                             @endif

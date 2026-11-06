@@ -22,7 +22,7 @@
                         {{ ucfirst(str_replace('_', ' ', $review->status->value)) }}
                     </span>
                 </td>
-                <td>{{ $review->created_at->format('Y-m-d') }}</td>
+                <td>{{ admin_tz($review->created_at)?->format('Y-m-d') }}</td>
                 <td class="text-end whitespace-nowrap">
                     <a href="{{ route('admin.reviews.show', $review) }}" class="text-primary-600 hover:underline text-xs" target="_blank">{{ __('admin.view') }}</a>
                     <button type="button" @click="approveReview('{{ $review->id }}')" class="text-green-600 hover:underline text-xs ms-2">{{ __('admin.approve') }}</button>

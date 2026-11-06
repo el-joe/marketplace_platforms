@@ -87,7 +87,7 @@
                                 {{ __('admin.classifieds.status_' . $listing->status->value) }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-gray-500 text-xs">{{ $listing->created_at->format('Y-m-d') }}</td>
+                        <td class="px-4 py-3 text-gray-500 text-xs">{{ admin_tz($listing->created_at)?->format('Y-m-d') }}</td>
                         <td class="px-4 py-3">
                             <a href="{{ route('admin.classifieds.listings.show', $listing) }}"
                                class="text-xs text-primary-600 font-medium hover:underline">{{ __('common.view') }}</a>

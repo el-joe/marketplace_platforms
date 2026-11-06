@@ -38,7 +38,7 @@
                         <td class="px-4 py-3">{{ $signature->listing_number }}<div class="text-xs text-gray-400">{{ $signature->listing_title }}</div></td>
                         <td class="px-4 py-3">{{ $signature->country ? (app()->getLocale() === 'ar' ? $signature->country->name_ar : $signature->country->name_en) : '—' }}</td>
                         <td class="px-4 py-3 text-center">v{{ $signature->template_version }}</td>
-                        <td class="px-4 py-3">{{ $signature->signed_at?->format('Y-m-d H:i') }}</td>
+                        <td class="px-4 py-3">{{ admin_tz($signature->signed_at)?->format('Y-m-d H:i') }}</td>
                         <td class="px-4 py-3 text-center">{{ __('contracts.customer.status_'.$signature->status) }}</td>
                         <td class="px-4 py-3 text-end"><a href="{{ route('admin.contracts.customer.show', $signature) }}" class="text-xs font-medium text-primary-600 hover:underline">{{ __('contracts.customer.view') }}</a></td>
                     </tr>

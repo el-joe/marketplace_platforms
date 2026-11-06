@@ -275,11 +275,11 @@ $warehouse — Warehouse model (edit mode only)
                 <div class="bg-gray-50 rounded-xl border border-gray-200 px-5 py-4 text-xs text-gray-500 space-y-1.5">
                     <div class="flex justify-between">
                         <span>{{ __('admin.warehouses_section.created_meta') }}</span>
-                        <span>{{ $warehouse->created_at->format('Y-m-d') }}</span>
+                        <span>{{ admin_tz($warehouse->created_at)?->format('Y-m-d') }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span>{{ __('admin.warehouses_section.updated_meta') }}</span>
-                        <span>{{ $warehouse->updated_at->format('Y-m-d') }}</span>
+                        <span>{{ admin_tz($warehouse->updated_at)?->format('Y-m-d') }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span>{{ __('admin.warehouses_section.id_meta') }}</span>

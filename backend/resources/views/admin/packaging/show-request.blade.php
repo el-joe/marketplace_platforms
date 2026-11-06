@@ -80,34 +80,34 @@
                     <li class="ms-4">
                         <div class="absolute w-2.5 h-2.5 bg-primary-500 rounded-full mt-1.5 -start-1.25"></div>
                         <p class="text-sm font-medium text-gray-900">{{ __('admin.packaging_show_request_section.timeline_requested') }}</p>
-                        <p class="text-xs text-gray-400">{{ $req->created_at->format('d M Y H:i') }}</p>
+                        <p class="text-xs text-gray-400">{{ admin_tz($req->created_at)?->format('d M Y H:i') }}</p>
                     </li>
                     @if($req->approved_at)
                     <li class="ms-4">
                         <div class="absolute w-2.5 h-2.5 bg-blue-500 rounded-full mt-1.5 -start-1.25"></div>
                         <p class="text-sm font-medium text-gray-900">{{ __('admin.packaging_show_request_section.timeline_approved') }}</p>
-                        <p class="text-xs text-gray-400">{{ $req->approved_at->format('d M Y H:i') }} @if($req->approvedBy){{ __('admin.packaging_show_request_section.by') }} {{ $req->approvedBy->name }}@endif</p>
+                        <p class="text-xs text-gray-400">{{ admin_tz($req->approved_at)?->format('d M Y H:i') }} @if($req->approvedBy){{ __('admin.packaging_show_request_section.by') }} {{ $req->approvedBy->name }}@endif</p>
                     </li>
                     @endif
                     @if($req->shipped_at)
                     <li class="ms-4">
                         <div class="absolute w-2.5 h-2.5 bg-indigo-500 rounded-full mt-1.5 -start-1.25"></div>
                         <p class="text-sm font-medium text-gray-900">{{ __('admin.packaging_show_request_section.timeline_shipped') }}</p>
-                        <p class="text-xs text-gray-400">{{ $req->shipped_at->format('d M Y H:i') }}</p>
+                        <p class="text-xs text-gray-400">{{ admin_tz($req->shipped_at)?->format('d M Y H:i') }}</p>
                     </li>
                     @endif
                     @if($req->delivered_at)
                     <li class="ms-4">
                         <div class="absolute w-2.5 h-2.5 bg-emerald-500 rounded-full mt-1.5 -start-1.25"></div>
                         <p class="text-sm font-medium text-gray-900">{{ __('admin.packaging_show_request_section.timeline_delivered') }}</p>
-                        <p class="text-xs text-gray-400">{{ $req->delivered_at->format('d M Y H:i') }}</p>
+                        <p class="text-xs text-gray-400">{{ admin_tz($req->delivered_at)?->format('d M Y H:i') }}</p>
                     </li>
                     @endif
                     @if($req->status->value === 'rejected')
                     <li class="ms-4">
                         <div class="absolute w-2.5 h-2.5 bg-red-500 rounded-full mt-1.5 -start-1.25"></div>
                         <p class="text-sm font-medium text-gray-900">{{ __('admin.packaging_show_request_section.timeline_rejected') }}</p>
-                        <p class="text-xs text-gray-400">{{ $req->updated_at->format('d M Y H:i') }}</p>
+                        <p class="text-xs text-gray-400">{{ admin_tz($req->updated_at)?->format('d M Y H:i') }}</p>
                     </li>
                     @endif
                 </ol>

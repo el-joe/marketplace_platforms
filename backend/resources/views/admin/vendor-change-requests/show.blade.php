@@ -85,7 +85,7 @@
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.vendor_change_requests.requested_at_column') }}</dt>
-                    <dd class="font-medium text-gray-900">{{ $changeRequest->created_at->format('d M Y H:i') }}</dd>
+                    <dd class="font-medium text-gray-900">{{ admin_tz($changeRequest->created_at)?->format('d M Y H:i') }}</dd>
                 </div>
                 @if($changeRequest->reviewed_at)
                     <div class="flex justify-between">
@@ -94,7 +94,7 @@
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">{{ __('admin.vendor_change_requests.reviewed_at_column') }}</dt>
-                        <dd class="font-medium text-gray-900">{{ $changeRequest->reviewed_at->format('d M Y H:i') }}</dd>
+                        <dd class="font-medium text-gray-900">{{ admin_tz($changeRequest->reviewed_at)?->format('d M Y H:i') }}</dd>
                     </div>
                 @endif
             </dl>

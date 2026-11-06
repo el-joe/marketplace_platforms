@@ -275,7 +275,7 @@ Object.assign(window.TRANSLATIONS, {
 
                     <div>
                         <dt class="text-xs text-gray-500 mb-0.5">{{ __('admin.support_tickets.opened') }}</dt>
-                        <dd class="text-sm text-gray-700">{{ $ticket->created_at->format('M d, Y H:i') }}</dd>
+                        <dd class="text-sm text-gray-700">{{ admin_tz($ticket->created_at)?->format('M d, Y H:i') }}</dd>
                     </div>
 
                     <div>

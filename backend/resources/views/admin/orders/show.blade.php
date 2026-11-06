@@ -543,7 +543,7 @@
                                             <x-badge :color="match($da->status->value) { 'delivered' => 'success', 'failed' => 'danger', default => 'gray' }">
                                                 {{ ucfirst(str_replace('_', ' ', $da->status->value)) }}
                                             </x-badge>
-                                            <p class="text-xs text-gray-500 mt-1">{{ __('admin.orders.assigned_at') }}: {{ $da->assigned_at?->format('M d, Y H:i') }}</p>
+                                            <p class="text-xs text-gray-500 mt-1">{{ __('admin.orders.assigned_at') }}: {{ admin_tz($da->assigned_at)?->format('M d, Y H:i') }}</p>
                                         </div>
                                         <div>
                                             <p class="text-xs text-gray-500">{{ __('admin.orders.delivery_otp') }}</p>

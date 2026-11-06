@@ -238,7 +238,7 @@
                             @forelse($recentMovements as $mv)
                                 <tr>
                                     <td class="py-2.5 pr-4 text-xs text-gray-400 whitespace-nowrap">
-                                        {{ $mv->created_at->format('M d, H:i') }}
+                                        {{ admin_tz($mv->created_at)?->format('M d, H:i') }}
                                     </td>
                                     <td class="py-2.5 pr-4">
                                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono
@@ -334,7 +334,7 @@
                                         </span>
                                     </td>
                                     <td class="py-2.5 pr-4 text-xs text-gray-400">
-                                        {{ $tf->created_at?->format('M d, Y') }}
+                                        {{ admin_tz($tf->created_at)?->format('M d, Y') }}
                                     </td>
                                     <td class="py-2.5">
                                         <a href="{{ route('admin.warehouses.transfers.show', $tf->id) }}"

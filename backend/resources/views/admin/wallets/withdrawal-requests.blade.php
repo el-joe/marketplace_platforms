@@ -58,7 +58,7 @@
                             @php $colors = ['pending'=>'bg-yellow-100 text-yellow-700','approved'=>'bg-blue-100 text-blue-700','processed'=>'bg-green-100 text-green-700','rejected'=>'bg-red-100 text-red-700']; $wrStatus = $wr->status->value; @endphp
                             <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ $colors[$wrStatus] ?? '' }}">{{ __('admin.wallets.' . $wrStatus) }}</span>
                         </td>
-                        <td class="px-4 py-3 text-gray-500 text-xs">{{ $wr->created_at->format('d M Y') }}</td>
+                        <td class="px-4 py-3 text-gray-500 text-xs">{{ admin_tz($wr->created_at)?->format('d M Y') }}</td>
                         <td class="px-4 py-3 text-end">
                             <div class="flex justify-end gap-2">
                                 @if($wrStatus === 'pending')

@@ -60,7 +60,7 @@
                             <td class="py-3 pr-4 text-sm text-gray-700">{{ __('admin.travel_agency_change_requests.section_' . $r->section) }}</td>
                             <td class="py-3 pr-4 text-xs text-gray-500">{{ ucfirst($r->request_type) }}</td>
                             <td class="py-3 pr-4 text-sm text-gray-700">{{ $r->requestedBy?->name ?? '—' }}</td>
-                            <td class="py-3 pr-4 text-xs text-gray-500 whitespace-nowrap">{{ $r->created_at->format('M d, Y H:i') }}</td>
+                            <td class="py-3 pr-4 text-xs text-gray-500 whitespace-nowrap">{{ admin_tz($r->created_at)?->format('M d, Y H:i') }}</td>
                             <td class="py-3 pr-4">
                                 <x-badge :color="match($r->status) { 'approved' => 'success', 'rejected' => 'danger', default => 'gray' }">
                                     {{ __('admin.travel_agency_change_requests.' . $r->status) }}

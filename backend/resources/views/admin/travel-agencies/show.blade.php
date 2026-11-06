@@ -50,7 +50,7 @@
                 <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.phone') }}</dt><dd class="text-gray-900">{{ $travelAgency->phone ?? '—' }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.license_number') }}</dt><dd class="text-gray-900">{{ $travelAgency->license_number ?? '—' }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">{{ __('common.country') }}</dt><dd class="text-gray-900">{{ $travelAgency->country?->name_en }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.registered') }}</dt><dd class="text-gray-900">{{ $travelAgency->created_at->format('d M Y') }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.registered') }}</dt><dd class="text-gray-900">{{ admin_tz($travelAgency->created_at)?->format('d M Y') }}</dd></div>
             </dl>
         </div>
 
@@ -58,7 +58,7 @@
             <h3 class="font-semibold text-gray-700 text-sm uppercase tracking-wide">{{ __('admin.travel.approval') }}</h3>
             <dl class="space-y-2 text-sm">
                 <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.approved_by') }}</dt><dd class="text-gray-900">{{ $travelAgency->approvedByAdmin?->name ?? '—' }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.approved_at') }}</dt><dd class="text-gray-900">{{ $travelAgency->approved_at?->format('d M Y H:i') ?? '—' }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.approved_at') }}</dt><dd class="text-gray-900">{{ admin_tz($travelAgency->approved_at)?->format('d M Y H:i') ?? '—' }}</dd></div>
             </dl>
         </div>
     </div>

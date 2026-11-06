@@ -100,12 +100,12 @@
             </div>
             <div>
                 <div class="text-gray-400 text-xs mb-0.5">{{ __('admin.marketers.registered_at') }}</div>
-                <div class="font-semibold text-gray-800">{{ $marketer->created_at->format('Y-m-d') }}</div>
+                <div class="font-semibold text-gray-800">{{ admin_tz($marketer->created_at)?->format('Y-m-d') }}</div>
             </div>
             @if($marketer->approved_at)
             <div>
                 <div class="text-gray-400 text-xs mb-0.5">{{ __('admin.marketers.approved_at') }}</div>
-                <div class="font-semibold text-gray-800">{{ $marketer->approved_at->format('Y-m-d') }} <span class="text-gray-400 font-normal">— {{ $marketer->approvedBy?->name ?? '-' }}</span></div>
+                <div class="font-semibold text-gray-800">{{ admin_tz($marketer->approved_at)?->format('Y-m-d') }} <span class="text-gray-400 font-normal">— {{ $marketer->approvedBy?->name ?? '-' }}</span></div>
             </div>
             @endif
         </div>
@@ -636,7 +636,7 @@
                     <td class="px-4 py-3 text-xs text-gray-600 max-w-[200px]">{{ $contract->notes ?: '—' }}</td>
                     <td class="px-4 py-3 text-center text-xs text-gray-500">
                         {{ $contract->createdBy?->name ?? '—' }}
-                        <div class="text-gray-400">{{ $contract->created_at?->format('Y-m-d') }}</div>
+                        <div class="text-gray-400">{{ admin_tz($contract->created_at)?->format('Y-m-d') }}</div>
                     </td>
                     <td class="px-4 py-3 text-center">
                         @if(in_array($contract->status, ['pending', 'active']))
@@ -763,7 +763,7 @@
                             {{ $listing->status?->value }}
                         </span>
                     </td>
-                    <td class="px-6 py-3 text-center text-gray-400 text-xs">{{ $listing->created_at->format('Y-m-d') }}</td>
+                    <td class="px-6 py-3 text-center text-gray-400 text-xs">{{ admin_tz($listing->created_at)?->format('Y-m-d') }}</td>
                     <td class="px-6 py-3 text-end space-x-2">
                         <a href="{{ route('admin.marketer-listings.show', $listing) }}" class="text-xs font-semibold text-blue-600 hover:underline">{{ __('admin.view') }}</a>
                         @if($listing->status?->value === 'pending_review' && auth('admin')->user()->can('marketers.manage'))

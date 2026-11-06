@@ -42,7 +42,7 @@
                 </div>
                 <div class="flex justify-between py-2">
                     <dt class="text-gray-500">{{ __('admin.warranty_purchases_section.date_col') }}</dt>
-                    <dd class="font-medium">{{ $warrantyPurchase->created_at->format('M d, Y H:i') }}</dd>
+                    <dd class="font-medium">{{ admin_tz($warrantyPurchase->created_at)?->format('M d, Y H:i') }}</dd>
                 </div>
                 @if($warrantyPurchase->order)
                     <div class="flex justify-between py-2">

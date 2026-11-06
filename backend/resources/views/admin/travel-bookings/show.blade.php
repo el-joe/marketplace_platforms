@@ -10,7 +10,7 @@
         <div>
             <a href="{{ route('admin.travel.bookings.index') }}" class="text-xs text-gray-400 hover:text-gray-600 mb-1 inline-block">{{ __('admin.travel.back_to_bookings') }}</a>
             <h1 class="text-2xl font-bold text-gray-900 font-mono">{{ $travelBooking->booking_number }}</h1>
-            <p class="text-sm text-gray-500 mt-0.5">{{ __('admin.travel.booked_at', ['date' => $travelBooking->created_at->format('d M Y H:i')]) }}</p>
+            <p class="text-sm text-gray-500 mt-0.5">{{ __('admin.travel.booked_at', ['date' => admin_tz($travelBooking->created_at)?->format('d M Y H:i')]) }}</p>
         </div>
         @php
         $statusColors = [
@@ -60,7 +60,7 @@
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.travel.contract_signed') }}</dt>
                     <dd class="text-gray-900">
-                        {{ $travelBooking->contract_signed_at ? $travelBooking->contract_signed_at->format('d M Y H:i') : '—' }}
+                        {{ $travelBooking->contract_signed_at ? admin_tz($travelBooking->contract_signed_at)?->format('d M Y H:i') : '—' }}
                     </dd>
                 </div>
                 @if($travelBooking->passport_file_path)

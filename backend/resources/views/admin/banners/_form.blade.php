@@ -444,7 +444,7 @@
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-gray-500">{{ __('admin.banners.created') }}</dt>
-                            <dd class="text-gray-700">{{ $banner->created_at?->format('d M Y') }}</dd>
+                            <dd class="text-gray-700">{{ admin_tz($banner->created_at)?->format('d M Y') }}</dd>
                         </div>
                     </dl>
                 </x-card>

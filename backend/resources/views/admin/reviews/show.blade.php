@@ -81,7 +81,7 @@
                         </div>
                         <div>
                             <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">{{ __('admin.reviews_section.submitted') }}</p>
-                            <span>{{ $review->created_at->format('d M Y H:i') }}</span>
+                            <span>{{ admin_tz($review->created_at)?->format('d M Y H:i') }}</span>
                         </div>
                         @if($review->adminListing)
                             <div>
@@ -309,7 +309,7 @@
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">{{ __('admin.reviews_section.submitted') }}</dt>
-                        <dd class="text-xs">{{ $review->created_at->format('d M Y H:i') }}</dd>
+                        <dd class="text-xs">{{ admin_tz($review->created_at)?->format('d M Y H:i') }}</dd>
                     </div>
                     @if($review->moderatedByAdmin)
                         <div class="flex justify-between">

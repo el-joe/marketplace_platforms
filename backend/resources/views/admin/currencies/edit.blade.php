@@ -144,7 +144,7 @@
 
                 @if ($currency->rate_updated_at)
                     <p class="text-xs text-gray-400 pt-1">
-                        {{ __('admin.currencies_section.rate_last_updated', ['date' => $currency->rate_updated_at->format('d M Y, H:i'), 'diff' => $currency->rate_updated_at->diffForHumans()]) }}
+                        {{ __('admin.currencies_section.rate_last_updated', ['date' => admin_tz($currency->rate_updated_at)?->format('d M Y, H:i'), 'diff' => $currency->rate_updated_at->diffForHumans()]) }}
                     </p>
                 @endif
             </div>

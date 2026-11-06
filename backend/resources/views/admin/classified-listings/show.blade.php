@@ -28,7 +28,7 @@
                 @else
                     <span class="inline-flex items-center rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">{{ __('admin.classifieds.customer') }}</span>
                 @endif
-                · {{ $listing->created_at->format('Y-m-d H:i') }}
+                · {{ admin_tz($listing->created_at)?->format('Y-m-d H:i') }}
             </p>
         </div>
 

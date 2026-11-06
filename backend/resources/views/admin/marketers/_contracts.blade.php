@@ -133,7 +133,7 @@
                         <td class="px-3 py-2">{{ $signed->vendor?->store_name }}</td>
                         <td class="px-3 py-2 text-xs">{{ $signed->country ? $localName($signed->country) : '—' }}</td>
                         <td class="px-3 py-2 text-xs">{{ $signed->template?->category ? $localName($signed->template->category) : '—' }}</td>
-                        <td class="px-3 py-2 text-xs">{{ $signed->signed_at?->format('Y-m-d') }}</td>
+                        <td class="px-3 py-2 text-xs">{{ admin_tz($signed->signed_at)?->format('Y-m-d') }}</td>
                         <td class="px-3 py-2 text-center"><span class="rounded-full px-2 py-0.5 text-xs {{ $statusBadge[$signed->status] ?? 'bg-gray-100' }}">{{ __('contracts.marketer.status_'.$signed->status) }}</span></td>
                         <td class="px-3 py-2 text-end"><a class="text-xs text-primary-600 hover:underline" href="{{ route('admin.marketers.collaboration-contracts.show', [$marketer, $signed]) }}">{{ __('contracts.marketer.view') }}</a></td>
                     </tr>
