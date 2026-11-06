@@ -16,9 +16,14 @@ class CurrencyController extends Controller
      */
     public function index($country): JsonResponse
     {
-        $currencies = SafeCache::remember('currencies:active', 3600, function () {
-            return Currency::where('is_active', true)->orderBy('code')->get();
+        // Cache plain arrays: cache.serializable_classes=false turns cached
+        // Eloquent objects into __PHP_Incomplete_Class on read.
+        $rows = SafeCache::remember('currencies:active:v2', 3600, function () {
+            return Currency::where('is_active', true)->orderBy('code')->get()
+                ->map(fn ($c) => $c->getAttributes())->all();
         });
+
+        $currencies = Currency::hydrate($rows);
 
         return response()->json([
             'success' => true,

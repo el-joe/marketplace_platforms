@@ -75,6 +75,7 @@ class ClassifiedSectionContractService
             ->whereNotNull('classified_category_id')
             ->get(['contract_template_id', 'classified_category_id'])
             ->map(fn ($row) => [$row->contract_template_id, $row->classified_category_id])
+            ->toBase()
             ->merge(
                 ClassifiedCategory::whereIn('contract_template_id', $ids)->get(['id', 'contract_template_id'])
                     ->map(fn ($category) => [$category->contract_template_id, $category->id]),
