@@ -2,10 +2,11 @@
 
 namespace App\Services\Customer;
 
+use App\Enums\ClassifiedPlacement;
 use App\Http\Resources\Customer\CategoryTreeResource;
 use App\Http\Resources\Customer\ClassifiedCategoryTreeResource;
 use App\Http\Resources\Customer\TravelCategoryTreeResource;
-use App\Enums\ClassifiedPlacement;
+use App\Models\AttributeValue;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\ClassifiedCategory;
@@ -18,6 +19,7 @@ use App\Models\TravelCategory;
 use App\Services\PageBuilderService;
 use App\Support\Bilingual;
 use App\Support\SafeCache;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -41,34 +43,34 @@ class CategoryService
         $version = Cache::get(self::CACHE_VERSION_KEY, 1);
 
         return SafeCache::remember("category_tree_v{$version}_{$country->id}", 600, function () use ($country) {
-                // toTree() builds the hierarchy in PHP from a single lft/rgt-ordered query.
-                $productNodes = Category::where('is_active', true)
-                    ->where('is_visible', true)
-                    ->orderBy('sort_order')
-                    ->get()
-                    ->toTree();
+            // toTree() builds the hierarchy in PHP from a single lft/rgt-ordered query.
+            $productNodes = Category::where('is_active', true)
+                ->where('is_visible', true)
+                ->orderBy('sort_order')
+                ->get()
+                ->toTree();
 
-                $classifiedNodes = $this->classifiedNavNodes($country);
+            $classifiedNodes = $this->classifiedNavNodes($country);
 
-                $travelNodes = TravelCategory::whereNull('parent_id')
-                    ->where('is_active', true)
-                    ->orderBy('sort_order')
-                    ->with(['children' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
-                    ->get();
+            $travelNodes = TravelCategory::whereNull('parent_id')
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->with(['children' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
+                ->get();
 
-                return array_merge(
-                    CategoryTreeResource::collection($productNodes)->resolve(),
-                    ClassifiedCategoryTreeResource::collection($classifiedNodes)->resolve(),
-                    TravelCategoryTreeResource::collection($travelNodes)->resolve(),
-                );
-            });
+            return array_merge(
+                CategoryTreeResource::collection($productNodes)->resolve(),
+                ClassifiedCategoryTreeResource::collection($classifiedNodes)->resolve(),
+                TravelCategoryTreeResource::collection($travelNodes)->resolve(),
+            );
+        });
     }
 
     /**
      * Visible classified sections for this country that the admin placed in the navigation or on the
      * classified landing page (each node carries its `placements`, so every surface filters for itself).
      *
-     * @return \Illuminate\Support\Collection<int, ClassifiedCategory>
+     * @return Collection<int, ClassifiedCategory>
      */
     private function classifiedNavNodes(Country $country)
     {
@@ -228,7 +230,10 @@ class CategoryService
         $rolledUp = []; // categoryId => ['product_count' => int, 'brands' => [brandId => count]]
 
         $rollUp = function (Category $category) use (&$rollUp, $byParent, $ownCounts, &$rolledUp) {
-            $agg = $ownCounts[$category->id] ?? ['product_count' => 0, 'brands' => []];
+            $agg = [
+                'product_count' => $ownCounts[$category->id]['product_count'] ?? 0,
+                'brands' => $ownCounts[$category->id]['brands'] ?? [],
+            ];
 
             foreach ($byParent->get($category->id, collect()) as $child) {
                 $childAgg = $rollUp($child);
@@ -262,22 +267,22 @@ class CategoryService
                     }
 
                     $node = [
-                        'id'            => $category->id,
-                        'type'          => 'product',
-                        'name'          => Bilingual::pair($category, 'name'),
-                        'slug'          => $category->slug,
-                        'parent_id'     => $category->parent_id,
-                        'image_url'     => $imagesById[$category->id] ?? null,
+                        'id' => $category->id,
+                        'type' => 'product',
+                        'name' => Bilingual::pair($category, 'name'),
+                        'slug' => $category->slug,
+                        'parent_id' => $category->parent_id,
+                        'image_url' => $imagesById[$category->id] ?? null,
                         'product_count' => (int) $agg['product_count'],
-                        'brands'        => collect($brandIds)
+                        'brands' => collect($brandIds)
                             ->filter(fn ($id) => $brandsById->has($id))
                             ->map(fn ($id) => [
-                                'id'       => $brandsById[$id]->id,
-                                'name'     => Bilingual::pair($brandsById[$id], 'name'),
-                                'slug'     => $brandsById[$id]->slug,
+                                'id' => $brandsById[$id]->id,
+                                'name' => Bilingual::pair($brandsById[$id], 'name'),
+                                'slug' => $brandsById[$id]->slug,
                                 'logo_url' => $brandsById[$id]->logo_url,
                             ])->values()->all(),
-                        'children'      => $build($category->id),
+                        'children' => $build($category->id),
                     ];
 
                     if ($withAttributes) {
@@ -298,7 +303,7 @@ class CategoryService
      * queries total instead of one `->attributes()->with('values')->get()`
      * call per category node.
      *
-     * @param list<string> $categoryIds
+     * @param  list<string>  $categoryIds
      * @return array<string, array<int, array<string, mixed>>>
      */
     private function loadAttributesForCategories(array $categoryIds): array
@@ -335,19 +340,19 @@ class CategoryService
         $byCategory = [];
         foreach ($pivots as $pivot) {
             $byCategory[$pivot->category_id][] = [
-                'id'          => $pivot->attribute_id,
-                'code'        => $pivot->code,
-                'name'        => Bilingual::pairFromKeys($pivot, 'name_ar', 'name_en'),
-                'type'        => is_string($pivot->type) ? $pivot->type : $pivot->type->value,
-                'unit'        => $pivot->unit,
+                'id' => $pivot->attribute_id,
+                'code' => $pivot->code,
+                'name' => Bilingual::pairFromKeys($pivot, 'name_ar', 'name_en'),
+                'type' => is_string($pivot->type) ? $pivot->type : $pivot->type->value,
+                'unit' => $pivot->unit,
                 'is_required' => (bool) $pivot->is_required,
-                'values'      => ($valuesByAttribute[$pivot->attribute_id] ?? collect())
+                'values' => ($valuesByAttribute[$pivot->attribute_id] ?? collect())
                     ->map(fn ($value) => [
-                        'id'        => $value->id,
-                        'value'     => Bilingual::pairFromKeys($value, 'value_ar', 'value_en'),
+                        'id' => $value->id,
+                        'value' => Bilingual::pairFromKeys($value, 'value_ar', 'value_en'),
                         'color_hex' => $value->code_hex,
                         'swatch_image_url' => $value->swatch_image_path
-                            ? (new \App\Models\AttributeValue(['swatch_image_path' => $value->swatch_image_path]))->swatch_image_url
+                            ? (new AttributeValue(['swatch_image_path' => $value->swatch_image_path]))->swatch_image_url
                             : null,
                     ])->values()->all(),
             ];
@@ -387,7 +392,7 @@ class CategoryService
             $model = $slug->sluggable;
 
             return match (true) {
-                $model instanceof Category   => ['type' => 'category', 'model' => $model],
+                $model instanceof Category => ['type' => 'category', 'model' => $model],
                 $model instanceof CustomPage => ['type' => 'custom_page', 'model' => $model],
                 default => null,
             };
@@ -415,7 +420,7 @@ class CategoryService
     {
         $resolved = $this->resolveSlug($idOrSlug);
 
-        if (!$resolved) {
+        if (! $resolved) {
             return [$idOrSlug];
         }
 
@@ -437,7 +442,7 @@ class CategoryService
     public function resolveCustomPageScope(CustomPage $page): array
     {
         $ids = null;
-        if (!$page->all_categories) {
+        if (! $page->all_categories) {
             $ids = [];
             foreach ($page->categories()->get() as $category) {
                 $ids = array_merge($ids, $this->getDescendantIds($category));
@@ -508,23 +513,23 @@ class CategoryService
                         ->where('is_default', true)
                         ->first();
 
-                    if (!$page) {
+                    if (! $page) {
                         return ['found' => false, 'blocks' => [], 'sections' => []];
                     }
 
                     $pageData = $this->pageBuilder->getPageWithBlocks($page->id);
 
                     return [
-                        'found'    => true,
-                        'blocks'   => $pageData['blocks'],
+                        'found' => true,
+                        'blocks' => $pageData['blocks'],
                         'sections' => $pageData['sections'],
                     ];
                 });
 
             if ($cached['found']) {
                 return [
-                    'blocks'       => $cached['blocks'],
-                    'sections'     => $cached['sections'],
+                    'blocks' => $cached['blocks'],
+                    'sections' => $cached['sections'],
                     'has_sections' => count($cached['sections']) > 0,
                 ];
             }
