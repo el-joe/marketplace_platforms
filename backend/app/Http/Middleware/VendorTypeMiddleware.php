@@ -33,11 +33,11 @@ class VendorTypeMiddleware
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'This section is not available for your account type.',
+                    'message' => __('partner.section_unavailable.heading'),
                 ], 403);
             }
 
-            abort(403, 'This section is not available for your account type.');
+            return response()->view('partner.section-unavailable', [], 403);
         }
 
         return $next($request);

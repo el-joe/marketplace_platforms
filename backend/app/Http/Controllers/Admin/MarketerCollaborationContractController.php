@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Marketer;
+use App\Models\MarketerCampaign;
 use App\Models\MarketerSellerContract;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -19,7 +20,7 @@ class MarketerCollaborationContractController extends Controller
     {
         $this->authorizeFor($marketer, $contract);
 
-        $contract->load(['vendor:id,store_name', 'template:id,name,classified_category_id', 'template.category:id,name_en,name_ar', 'country:id,name_en,name_ar', 'campaign:id,title', 'signedBy:id,name']);
+        $contract->load(['vendor:id,store_name', 'template:id,name,classified_category_id', 'template.category:id,name_en,name_ar', 'country:id,name_en,name_ar', 'campaign', ...MarketerCampaign::promotedTitleRelations('campaign.'), 'signedBy:id,name']);
 
         return view('admin.marketers.collaboration-contract', compact('marketer', 'contract'));
     }

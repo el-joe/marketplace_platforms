@@ -260,8 +260,6 @@
     "disputes": "Disputes",
     "greeting": "Hala {name}!",
     "profileCompletion": "Profile Completion",
-    "tryNoonOne": "Try",
-    "tryNoonOneForFree": "for free",
     "orders": "Orders",
     "returns": "Returns",
     "wishlist": "Wishlist",
@@ -1719,6 +1717,8 @@
     "subtitle": "Purchase and rental contracts you accepted for classified advertisements.",
     "empty": "You have not accepted any contracts yet.",
     "view": "View contract",
+    "download": "Download",
+    "downloadFailed": "The contract could not be downloaded. Please try again.",
     "back": "Back to my contracts",
     "version": "Version {version}",
     "status": {

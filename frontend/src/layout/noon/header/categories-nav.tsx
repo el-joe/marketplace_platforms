@@ -197,16 +197,6 @@ const CategoriesNav = () => {
         <SwiperButtons />
       </Swiper>
 
-      {/* right banner */}
-      <div>
-        <Image
-          src={"/images/header-badge.png"}
-          alt=""
-          width={230}
-          height={30}
-        />
-      </div>
-
       {/* category details dropdown */}
       <div
         className={`fixed top-26 inset-x-0 left-0 z-30 bg-[#0000005b] h-screen ${

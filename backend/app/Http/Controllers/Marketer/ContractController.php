@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Marketer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Marketer;
+use App\Models\MarketerCampaign;
 use App\Models\MarketerContractAcceptance;
 use App\Models\MarketerContractVersion;
 use App\Models\MarketerSellerContract;
@@ -60,7 +61,7 @@ class ContractController extends Controller
     public function collaboration(string $contract): View
     {
         $contract = MarketerSellerContract::where('marketer_id', $this->marketer()->id)
-            ->with(['vendor:id,store_name', 'template:id,name', 'campaign:id,title'])
+            ->with(['vendor:id,store_name', 'template:id,name', 'campaign', ...MarketerCampaign::promotedTitleRelations('campaign.')])
             ->findOrFail($contract);
 
         return view('marketer.contract.collaboration', compact('contract'));

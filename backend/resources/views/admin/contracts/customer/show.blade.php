@@ -18,14 +18,14 @@
         <div><dt class="text-xs text-gray-500">{{ __('contracts.customer.col_purpose') }}</dt><dd class="font-medium text-gray-900">{{ __('contracts.customer.purpose_'.$contract->purpose) }}</dd></div>
         <div><dt class="text-xs text-gray-500">{{ __('admin.contracts.col_category') }}</dt><dd class="font-medium text-gray-900">{{ $categoryName }}</dd></div>
         <div><dt class="text-xs text-gray-500">{{ __('contracts.admin.col_country') }}</dt><dd class="font-medium text-gray-900">{{ $countryName }}</dd></div>
-        <div><dt class="text-xs text-gray-500">{{ __('contracts.customer.col_signed_at') }}</dt><dd class="font-medium text-gray-900">{{ admin_tz($contract->signed_at)?->format('Y-m-d H:i:s') }}</dd></div>
+        <div><dt class="text-xs text-gray-500">{{ __('contracts.customer.col_signed_at') }}</dt><dd class="font-medium text-gray-900">{{ format_tz(admin_tz($contract->signed_at), 'Y-m-d H:i:s') }}</dd></div>
         <div><dt class="text-xs text-gray-500">{{ __('admin.contracts.col_status') }}</dt><dd class="font-medium text-gray-900">{{ __('contracts.customer.status_'.$contract->status) }}</dd></div>
         <div><dt class="text-xs text-gray-500">{{ __('admin.contracts.col_language') }}</dt><dd class="font-medium uppercase text-gray-900">{{ $contract->language_signed }}</dd></div>
         <div><dt class="text-xs text-gray-500">{{ __('contracts.customer.ip') }}</dt><dd class="font-medium text-gray-900">{{ $contract->signed_ip ?? '—' }}</dd></div>
         <div class="sm:col-span-2"><dt class="text-xs text-gray-500">{{ __('contracts.customer.user_agent') }}</dt><dd class="break-all text-gray-700">{{ $contract->signed_user_agent ?? '—' }}</dd></div>
         <div class="sm:col-span-2"><dt class="text-xs text-gray-500">{{ __('contracts.customer.hash') }}</dt><dd class="break-all font-mono text-xs text-gray-700">{{ $contract->rendered_content_hash }}</dd></div>
         @if ($contract->classified_inquiry_id)
-            <div><dt class="text-xs text-gray-500">{{ __('contracts.customer.inquiry') }}</dt><dd class="text-gray-700">{{ $contract->inquiry?->created_at?->format('Y-m-d H:i') }}</dd></div>
+            <div><dt class="text-xs text-gray-500">{{ __('contracts.customer.inquiry') }}</dt><dd class="text-gray-700">{{ format_tz(admin_tz($contract->inquiry?->created_at), 'Y-m-d H:i') }}</dd></div>
         @endif
     </dl>
 

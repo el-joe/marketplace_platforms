@@ -1,10 +1,6 @@
 "use client";
-import Image from "next/image";
-import { Link } from "@/i18n/navigation";
 import Card from "@/src/components/shared/Card";
 import { useTranslations } from "next-intl";
-import useLocale from "@/src/hooks/use-locale";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useAuth } from "@/src/hooks/use-auth";
 
 export default function UserSummary() {
@@ -42,33 +38,7 @@ export default function UserSummary() {
           style={{ width: `${completion}%` }}
         />
       </div>
-      <Link
-        href="/noon-one"
-        className="bg-main/10 mt-4 flex items-center justify-between rounded-md border border-red px-3 py-2.5"
-      >
-        <span className="text-sm">
-          {t("tryNoonOne")}{" "}
-          <Image
-            src="/images/profile/noon-one-logo.svg"
-            alt="Nawy one"
-            width={69}
-            height={20}
-            className="inline-block align-middle"
-          />{" "}
-          {t("tryNoonOneForFree")}
-        </span>
-        <ChevronEndIcon />
-      </Link>
     </Card>
   );
 }
 
-const ChevronEndIcon = () => {
-  const locale = useLocale();
-
-  return locale.endsWith("ar") ? (
-    <ChevronLeftIcon className="size-4" />
-  ) : (
-    <ChevronRightIcon className="size-4" />
-  );
-};

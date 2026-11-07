@@ -14,6 +14,12 @@
             storeUrl:      "{{ route('partner.ads.store') }}",
             listingsUrl:   "{{ route('partner.listings.datatable') }}",
             categoriesUrl: "{{ route('partner.ads.categories') }}",
+            currency:      @json(auth()->guard('vendor')->user()->vendor?->country?->currency_code ?? ''),
+            locale:        @json(app()->getLocale()),
+            labels: {
+                clickBid: @json(__('partner.ads.click_bid')),
+                cpmBid:   @json(__('partner.ads.cpm_bid')),
+            },
         };
         window.PARTNER_TRANSLATIONS = window.PARTNER_TRANSLATIONS || {};
         Object.assign(window.PARTNER_TRANSLATIONS, {

@@ -320,6 +320,23 @@ class ClassifiedSectionContractTest extends TestCase
             ->assertSee($category->name_ar);
     }
 
+    public function test_the_category_list_shows_the_per_country_contracts_and_labels_the_legacy_one(): void
+    {
+        $uae = $this->scenario->country;
+        $category = ClassifiedCategory::factory()->create(['requires_contract' => true]);
+        $countryTemplate = $this->contractTemplate('classified', 'UAE Real Estate Terms', $uae);
+        $legacyDraft = $this->contractTemplate('classified', 'Old Draft Terms', null, 1, false);
+        $category->update(['contract_template_id' => $legacyDraft->id]);
+        ContractCountryAssignment::create([
+            'classified_category_id' => $category->id, 'country_id' => $uae->id, 'contract_template_id' => $countryTemplate->id,
+        ]);
+
+        $this->actingAs($this->admin, 'admin')
+            ->get(route('admin.classifieds.categories.index'))
+            ->assertOk()
+            ->assertSeeInOrder(['UAE Real Estate Terms', __('contracts.admin.legacy_country'), 'Old Draft Terms', __('contracts.admin.list_not_in_force')]);
+    }
+
     public function test_deleting_a_draft_removes_its_links_but_a_published_contract_stays(): void
     {
         $uae = $this->scenario->country;

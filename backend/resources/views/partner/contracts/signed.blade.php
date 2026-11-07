@@ -9,7 +9,7 @@
             <h2 class="text-lg font-semibold text-gray-900">{{ $contract->contractTemplate?->name ?? __('partner.contracts.signed_title') }}</h2>
             <p class="text-xs text-gray-500">
                 v{{ $contract->template_version }} · {{ __('partner.contracts.scope_' . $contract->category_scope) }}
-                · {{ __('partner.contracts.signed_on', ['date' => $contract->signed_at?->format('d/m/Y H:i')]) }}
+                · {{ __('partner.contracts.signed_on', ['date' => format_tz(vendor_tz($contract->signed_at))]) }}
                 · <span class="uppercase">{{ $contract->language_signed }}</span>
             </p>
         </div>

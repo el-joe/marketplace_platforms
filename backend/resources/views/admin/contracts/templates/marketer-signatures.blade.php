@@ -37,7 +37,7 @@
                         <td class="px-4 py-3">{{ $signature->marketer?->name ?? __('contracts.marketer.open_call') }}</td>
                         <td class="px-4 py-3">{{ $signature->campaign?->title ?? '—' }}</td>
                         <td class="px-4 py-3 text-center">v{{ $signature->template_version }}</td>
-                        <td class="px-4 py-3">{{ admin_tz($signature->signed_at)?->format('Y-m-d H:i') }}</td>
+                        <td class="px-4 py-3">{{ format_tz(admin_tz($signature->signed_at), 'Y-m-d H:i') }}</td>
                         <td class="px-4 py-3 text-center">{{ __('contracts.marketer.status_'.$signature->status) }}</td>
                     </tr>
                 @empty

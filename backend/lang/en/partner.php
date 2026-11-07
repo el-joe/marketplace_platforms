@@ -748,6 +748,7 @@ return [
             'listings_not_owned' => 'One or more selected products do not belong to your store.',
         ],
         'click_bid' => 'Click Bid',
+        'cpm_bid' => 'CPM Bid',
         'loading_categories' => 'Loading categories…',
         'loading_products' => 'Loading products…',
         'no_active_products' => 'No active products found.',
@@ -2275,6 +2276,13 @@ return [
             'cannot_update_tracking_stage' => 'Cannot update tracking at this stage.',
             'tracking_number_saved' => 'Tracking number saved.',
         ],
+    ],
+
+    'section_unavailable' => [
+        'page_title' => 'Section unavailable',
+        'heading' => 'This section isn\'t available for your account type',
+        'message' => 'This section is reserved for a different type of seller account, so it can\'t be opened from your current account.',
+        'back_to_dashboard' => 'Back to dashboard',
     ],
 
     'suspended' => [

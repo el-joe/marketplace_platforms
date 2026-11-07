@@ -68,6 +68,8 @@ export type MyContract = {
   has_file: boolean;
   file_name: string | null;
   file_url: string | null;
+  /** Authenticated URL of a copy to keep: the signed document, or a printable record of the accepted text. */
+  download_url: string | null;
 };
 
 export type MyContractDetail = MyContract & {
@@ -138,4 +140,26 @@ export async function getContractFileBlob(fileUrl: string): Promise<Blob> {
   });
   if (!res.ok) throw new Error(res.statusText);
   return res.blob();
+}
+
+/** Downloads an accepted contract (auth-only route) and saves it under the server's file name. */
+export async function downloadMyContract(downloadUrl: string, fallbackName: string): Promise<void> {
+  const token = await resolveCookie("access_token");
+  const res = await fetch(downloadUrl, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(res.statusText);
+
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const name = /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? fallbackName;
+  const objectUrl = URL.createObjectURL(await res.blob());
+
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 }

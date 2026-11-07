@@ -41,6 +41,10 @@ class ClassifiedCategoryController extends Controller
             'primaryImage', 'countries:id,name_en,name_ar,iso_code_2',
             'children.contractTemplate', 'children.primaryImage', 'children.countries:id,name_en,name_ar,iso_code_2',
             'contractTemplate', 'contractAssignments', 'children.contractAssignments',
+            'contractAssignments.contractTemplate:id,name,version,is_published,is_active',
+            'contractAssignments.country:id,name_en,name_ar',
+            'children.contractAssignments.contractTemplate:id,name,version,is_published,is_active',
+            'children.contractAssignments.country:id,name_en,name_ar',
         ])
             ->withCount(['listings as active_listing_count' => fn ($q) => $q->where('status', 'active')])
             ->whereNull('parent_id')
@@ -57,8 +61,17 @@ class ClassifiedCategoryController extends Controller
         $contractData = app(ContractAssignmentService::class)->formData('classified');
         $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'name_ar', 'iso_code_2']);
         $placements = ClassifiedPlacement::cases();
+        $countryDefaultTemplates = ClassifiedContractTemplate::forScope('classified')
+            ->enforceable()
+            ->where('is_country_default', true)
+            ->whereNotNull('country_id')
+            ->with('country:id,name_en,name_ar')
+            ->orderByDesc('version')
+            ->get(['id', 'name', 'version', 'country_id', 'is_published', 'is_active'])
+            ->unique('country_id')
+            ->keyBy('country_id');
 
-        return view('admin.classified-categories.index', compact('roots', 'templates', 'contractData', 'countries', 'placements'));
+        return view('admin.classified-categories.index', compact('roots', 'templates', 'contractData', 'countries', 'placements', 'countryDefaultTemplates'));
     }
 
     public function store(Request $request): JsonResponse

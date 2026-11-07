@@ -13,6 +13,8 @@ return [
         'no' => 'No',
         'col_country' => 'Country',
         'col_individual_contract' => 'Individual contract',
+        'list_not_in_force' => 'Not in force (draft/inactive)',
+        'list_no_contract_configured' => 'Individual contract required but none linked',
         'legacy_country' => 'All countries (legacy)',
         'legacy_signed' => 'Signed before countries (legacy)',
         'all_countries_option' => 'All countries / legacy (no country)',
@@ -222,6 +224,14 @@ return [
         'user_agent' => 'Browser',
         'hash' => 'Content hash (SHA-256)',
         'inquiry' => 'First inquiry sent under this acceptance',
+
+        // Downloaded copy
+        'download_title' => 'Accepted purchase contract',
+        'download_version' => 'Version :version',
+        'download_category' => 'Category',
+        'download_country' => 'Country',
+        'download_timezone_note' => 'Times are shown in the contract country\'s local time (:timezone).',
+        'download_generated' => 'Downloaded on :date',
     ],
 
     'portal' => [

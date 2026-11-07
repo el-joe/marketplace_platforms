@@ -222,6 +222,34 @@ class MarketerCampaign extends Model
         };
     }
 
+    /**
+     * Relations getPromotedTitle() reads, for eager loading through a parent relation (e.g. "campaign.").
+     *
+     * @return list<string>
+     */
+    public static function promotedTitleRelations(string $prefix = ''): array
+    {
+        return array_map(fn (string $relation) => $prefix.$relation, [
+            'travelPackage', 'classifiedListing', 'vendorListing.productVariant.product',
+            'adminListing.productVariant.product', 'marketerListing.productVariant.product',
+        ]);
+    }
+
+    /**
+     * A label for the campaign: its own title, else the promoted item, else a short reference (campaigns created from
+     * a product page usually have no title).
+     */
+    public function displayTitle(): string
+    {
+        if (filled($this->title)) {
+            return $this->title;
+        }
+
+        $promoted = $this->getPromotedTitle();
+
+        return filled($promoted) && $promoted !== '—' ? $promoted : '#'.substr((string) $this->id, 0, 8);
+    }
+
     public function getPromotedTitle(): string
     {
         return match ($this->campaign_category) {

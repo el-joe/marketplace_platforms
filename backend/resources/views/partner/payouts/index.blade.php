@@ -8,6 +8,7 @@
     <script>
         window.PAYOUTS = {
             earningsSummaryUrl: '{{ route('partner.payouts.earnings-summary') }}',
+            currency: @json(auth()->guard('vendor')->user()->vendor?->country?->currency_code ?? ''),
         };
     </script>
 @endpush

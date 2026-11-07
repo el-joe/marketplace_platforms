@@ -391,7 +391,7 @@
                     <div id="create-error" class="hidden text-sm text-red-600 bg-red-50 rounded-lg p-4"></div>
 
                     <button type="submit" id="create-submit-btn"
-                        class="w-full bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-semibold py-3 rounded-xl transition-colors text-sm">
+                        class="w-full bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-semibold py-3 rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-yellow-400">
                         {{ __('partner.listings.create_listing_button') }}
                     </button>
 

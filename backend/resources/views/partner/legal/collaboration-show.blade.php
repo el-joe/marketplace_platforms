@@ -8,8 +8,8 @@
     <div class="space-y-4 rounded-2xl bg-white p-6 shadow-sm">
         <dl class="grid gap-3 text-sm sm:grid-cols-2">
             <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_marketer') }}</dt><dd>{{ $contract->marketer?->name ?? __('contracts.marketer.open_call') }}</dd></div>
-            <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_campaign') }}</dt><dd>{{ $contract->campaign?->title ?? '—' }}</dd></div>
-            <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_signed_at') }}</dt><dd>{{ $contract->signed_at?->format('d/m/Y H:i') }} · {{ $contract->signer_name }}</dd></div>
+            <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_campaign') }}</dt><dd>{{ $contract->campaign?->displayTitle() ?? '—' }}</dd></div>
+            <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_signed_at') }}</dt><dd>{{ format_tz(vendor_tz($contract->signed_at)) }} · {{ $contract->signer_name }}</dd></div>
             <div><dt class="text-xs text-gray-500">{{ __('admin.contracts.col_version') }}</dt><dd>v{{ $contract->template_version }}</dd></div>
         </dl>
         <div class="border-t pt-4">

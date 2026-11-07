@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\Vendor;
 use App\Models\VendorContract;
 use App\Services\Vendor\ContractAssignmentService;
+use App\Services\Vendor\ContractResolver;
 use App\Services\Vendor\SellerAgreementService;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -155,6 +156,25 @@ class CountryContractAdminAndPortalTest extends TestCase
         $this->assertSame('active', $signature->fresh()->status, 'the signature stays valid');
         $this->assertSame(1, Activity::where('event', 'contract_template.retired')->count());
         $this->assertNull($this->agreements()->latestPublished($uae->id), 'no fallback to another country, and no legacy agreement exists');
+    }
+
+    public function test_a_retired_version_with_signatures_cannot_be_deleted_and_hides_the_delete_action(): void
+    {
+        $uae = $this->scenario->country;
+        $agreement = $this->contractTemplate('platform', 'Signed Seller Agreement', $uae);
+        $this->agreements()->sign($this->scenario->vendor, null, $agreement, 'en', 'Jane', '127.0.0.1', 'phpunit');
+        $agreement->update(['is_published' => false, 'is_active' => false]);
+
+        $this->actingAs($this->admin, 'admin')
+            ->get(route('admin.contracts.templates.index', ['scope' => 'platform']))
+            ->assertOk()
+            ->assertSee('Signed Seller Agreement')
+            ->assertDontSee('action="'.route('admin.contracts.templates.destroy', $agreement).'"', false);
+
+        $this->actingAs($this->admin, 'admin')
+            ->delete(route('admin.contracts.templates.destroy', $agreement))
+            ->assertSessionHas('error');
+        $this->assertNotNull($agreement->fresh(), 'a signed version is kept as evidence');
     }
 
     public function test_country_default_can_be_changed_and_only_one_default_survives(): void
@@ -408,18 +428,22 @@ class CountryContractAdminAndPortalTest extends TestCase
             ->assertSee($oman->id, false);
     }
 
-    public function test_registration_for_a_country_without_an_agreement_is_blocked_with_a_clear_error_when_other_countries_have_one(): void
+    public function test_registration_for_a_country_without_an_agreement_proceeds_without_a_signature_when_other_countries_have_one(): void
     {
         $oman = $this->extraCountry('OM', 'Oman');
-        $uaeAgreement = $this->contractTemplate('platform', 'Seller Agreement', $this->scenario->country);
+        $this->contractTemplate('platform', 'Seller Agreement', $this->scenario->country);
 
-        $this->complete($oman, ['signature_name' => 'Omar Seller', 'agreement_language' => 'en', 'agreement_template_id' => $uaeAgreement->id])
-            ->assertStatus(422)
-            ->assertJsonPath('code', 'contract_not_configured')
-            ->assertJsonPath('success', false);
+        // Matches the admin banner: sellers of a country without a published agreement are not asked to sign one.
+        $this->complete($oman)->assertOk()->assertJsonPath('success', true);
 
-        $this->assertDatabaseMissing('vendors', ['email' => 'new-seller@example.test']);
+        $vendor = Vendor::where('email', 'new-seller@example.test')->firstOrFail();
+        $this->assertSame($oman->id, $vendor->country_id);
         $this->assertSame(0, VendorContract::count());
+        $this->assertTrue($this->app->make(ContractResolver::class)
+            ->platformQuery($oman->id)->doesntExist());
+
+        $this->get(route('portal.register'))->assertOk()
+            ->assertSee('window._agreementEnforced = false', false);
     }
 
     public function test_registration_with_only_a_legacy_agreement_works_for_every_country(): void

@@ -8,7 +8,7 @@
     <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         <dl class="grid gap-3 sm:grid-cols-2 text-sm">
             <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_seller') }}</dt><dd>{{ $contract->vendor?->store_name }}</dd></div>
-            <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_campaign') }}</dt><dd>{{ $contract->campaign?->title ?? '—' }}</dd></div>
+            <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_campaign') }}</dt><dd>{{ $contract->campaign?->displayTitle() ?? '—' }}</dd></div>
             <div><dt class="text-xs text-gray-500">{{ __('contracts.marketer.col_signed_at') }}</dt><dd>{{ $contract->signed_at?->format('Y-m-d') }}</dd></div>
             <div><dt class="text-xs text-gray-500">{{ __('admin.contracts.col_version') }}</dt><dd>v{{ $contract->template_version }}</dd></div>
         </dl>

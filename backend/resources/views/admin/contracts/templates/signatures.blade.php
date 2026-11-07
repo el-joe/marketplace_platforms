@@ -56,7 +56,7 @@
                         </td>
                         <td class="px-4 py-3">{{ $signature?->signer_name ?? '—' }}</td>
                         <td class="px-4 py-3 uppercase">{{ $signature?->language_signed ?? '—' }}@if ($signature) <span class="block text-[10px] normal-case text-gray-400">{{ __('admin.contracts.method_' . $signature->acceptance_method) }}</span>@endif</td>
-                        <td class="px-4 py-3">{{ $signature?->signed_at?->format('d/m/Y H:i') ?? '—' }}</td>
+                        <td class="px-4 py-3">{{ format_tz(admin_tz($signature?->signed_at), 'd/m/Y H:i') ?: '—' }}</td>
                         <td class="px-4 py-3 font-mono text-xs">{{ $signature?->signed_ip ?? '—' }}</td>
                         <td class="space-x-3 px-4 py-3 text-end">
                             @if ($signature?->hasSignedFile())

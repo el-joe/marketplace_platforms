@@ -15,6 +15,7 @@ use App\Services\Customer\CustomerContractService;
 use App\Services\Vendor\ContractFileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -131,6 +132,40 @@ class CustomerContractController extends Controller
         return $this->files->respondToCustomerSigned($this->ownContract($id));
     }
 
+    /**
+     * A copy of the accepted contract to keep: the signed document when one was uploaded, otherwise a self-contained,
+     * printable HTML record of the frozen text, typed name, acceptance time (contract country's local time) and hash.
+     */
+    public function export(Request $request, $country, string $id): Response|StreamedResponse
+    {
+        $contract = $this->ownContract($id);
+
+        if ($contract->hasSignedFile() && $this->files->exists($contract->signed_file_path)) {
+            return $this->files->respondToCustomerSigned($contract);
+        }
+
+        abort_if(blank($contract->rendered_content), 404);
+
+        $timezone = $contract->country?->timezone;
+        $timezone = is_string($timezone) && in_array($timezone, timezone_identifiers_list(), true)
+            ? $timezone
+            : config('app.admin_timezone', config('app.timezone'));
+
+        $html = view('storefront.contracts.customer-download', [
+            'contract' => $contract,
+            'timezone' => $timezone,
+            'locale' => app()->getLocale() === 'ar' ? 'ar' : 'en',
+        ])->render();
+
+        $fileName = 'contract-'.Str::slug((string) ($contract->listing_number ?: $contract->id)).'-v'.$contract->template_version.'.html';
+
+        return response($html, 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function customer(): Customer
@@ -153,7 +188,7 @@ class CustomerContractController extends Controller
         abort_unless(Str::isUuid($id), 404);
 
         return $this->customer()->customerContracts()
-            ->with(['template:id,name', 'classifiedCategory:id,name_en,name_ar', 'country:id,name_en,name_ar,iso_code_2', 'listing:id,slug'])
+            ->with(['template:id,name', 'classifiedCategory:id,name_en,name_ar', 'country:id,name_en,name_ar,iso_code_2,timezone', 'listing:id,slug'])
             ->findOrFail($id);
     }
 

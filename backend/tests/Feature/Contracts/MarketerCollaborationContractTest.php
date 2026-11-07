@@ -19,6 +19,7 @@ use App\Models\VendorContract;
 use App\Services\Marketer\MarketerCollaborationContractService;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -393,6 +394,25 @@ class MarketerCollaborationContractTest extends TestCase
 
         $this->actingAs($owner, 'vendor')->get(route('partner.legal.collaborations.show', $mine->id))->assertOk();
         $this->actingAs($owner, 'vendor')->get(route('partner.legal.collaborations.show', $foreign->id))->assertNotFound();
+    }
+
+    public function test_the_seller_list_names_an_untitled_campaign_by_its_product_and_shows_local_signing_time(): void
+    {
+        $marketer = F::influencer($this->s);
+        $template = $this->collaborationTemplate('Deal', ['influencer_profile']);
+        $campaign = $this->s->marketerCampaign;
+        $campaign->update(['title' => null, 'vendor_listing_id' => $this->s->vendorListingFbp->id, 'admin_listing_id' => null, 'marketer_listing_id' => null]);
+        $this->s->country->update(['timezone' => 'Asia/Dubai']);
+        $this->signedCollaboration($this->s->vendor, $marketer, $template, [
+            'marketer_campaign_id' => $campaign->id,
+            'signed_at' => Carbon::parse('2026-11-07 13:51:00', 'UTC'),
+        ]);
+
+        $this->actingAs($this->ownerFor($this->s->vendor), 'vendor')
+            ->get(route('partner.legal.collaborations'))
+            ->assertOk()
+            ->assertSee($this->s->product->name_ar)
+            ->assertSee('07/11/2026 17:51 (GMT+04:00)');
     }
 
     public function test_the_public_profile_exposes_only_public_contract_types_and_no_private_data(): void

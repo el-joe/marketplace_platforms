@@ -38,6 +38,8 @@
             qualityScoreUrl: "{{ route('partner.ads.quality-score', $campaign->id) }}",
             pauseUrl:        "{{ route('partner.ads.pause', $campaign->id) }}",
             resumeUrl:       "{{ route('partner.ads.resume', $campaign->id) }}",
+            currency:        @json($campaign->country?->currency_code ?? ''),
+            locale:          @json(app()->getLocale()),
         };
     </script>
 

@@ -25,21 +25,21 @@ async function loadEarningsSummary() {
         const elMonth = document.getElementById('stat-this-month');
         if (elMonth) {
             elMonth.className = 'text-2xl font-bold text-gray-900';
-            elMonth.textContent = fmt(data.this_month, 'ر.س');
+            elMonth.textContent = fmt(data.this_month, (window.PAYOUTS?.currency || ''));
         }
 
         // Pending
         const elPending = document.getElementById('stat-pending');
         if (elPending) {
             elPending.className = `text-2xl font-bold ${data.pending > 0 ? 'text-yellow-500' : 'text-gray-400'}`;
-            elPending.textContent = fmt(data.pending, 'ر.س');
+            elPending.textContent = fmt(data.pending, (window.PAYOUTS?.currency || ''));
         }
 
         // YTD
         const elYtd = document.getElementById('stat-ytd');
         if (elYtd) {
             elYtd.className = 'text-2xl font-bold text-green-600';
-            elYtd.textContent = fmt(data.ytd, 'ر.س');
+            elYtd.textContent = fmt(data.ytd, (window.PAYOUTS?.currency || ''));
         }
 
         // Last payout
@@ -48,7 +48,7 @@ async function loadEarningsSummary() {
         if (elAmount) {
             if (data.last_payout) {
                 elAmount.className = 'text-2xl font-bold text-gray-900';
-                elAmount.textContent = fmt(data.last_payout.amount, 'ر.س');
+                elAmount.textContent = fmt(data.last_payout.amount, (window.PAYOUTS?.currency || ''));
                 if (elDate) elDate.textContent = data.last_payout.date ?? '—';
             } else {
                 elAmount.className = 'text-2xl font-bold text-gray-400';

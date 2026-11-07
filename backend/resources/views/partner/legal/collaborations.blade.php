@@ -61,8 +61,8 @@
                     <tr class="border-t">
                         <td class="p-3">{{ $row->template?->name }} <span class="text-xs text-gray-400">v{{ $row->template_version }}</span></td>
                         <td class="p-3">{{ $row->marketer?->name ?? __('contracts.marketer.open_call') }}</td>
-                        <td class="p-3">{{ $row->campaign?->title ?? '—' }}</td>
-                        <td class="p-3 text-xs">{{ $row->signed_at?->format('d/m/Y H:i') }}</td>
+                        <td class="p-3">{{ $row->campaign?->displayTitle() ?? '—' }}</td>
+                        <td class="p-3 text-xs">{{ format_tz(vendor_tz($row->signed_at)) }}</td>
                         <td class="p-3 text-xs">{{ __('contracts.marketer.status_'.$row->status) }}</td>
                         <td class="p-3 text-end"><a class="text-blue-600" href="{{ route('partner.legal.collaborations.show', $row->id) }}">{{ __('contracts.marketer.view') }}</a></td>
                     </tr>

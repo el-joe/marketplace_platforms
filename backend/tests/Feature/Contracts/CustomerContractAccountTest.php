@@ -10,6 +10,7 @@ use App\Models\CustomerContract;
 use App\Services\Vendor\ContractFileService;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Str;
 use Tests\Support\ContractDocumentFixtures;
@@ -106,6 +107,37 @@ class CustomerContractAccountTest extends TestCase
             ->assertNotFound();
         $this->actingAs($this->scenario->customer, 'customer')
             ->getJson($this->accountUrl('account/contracts/not-a-uuid'))
+            ->assertNotFound();
+    }
+
+    public function test_the_owner_downloads_a_text_contract_as_a_dated_record_and_nobody_else_can(): void
+    {
+        $category = ClassifiedCategory::factory()->create();
+        $template = $this->customerTemplate('Property purchase');
+        $this->home->update(['timezone' => 'Asia/Dubai']);
+        $contract = $this->signedBy($this->scenario->customer, $category, $template, [
+            'rendered_content' => '<p>FROZEN TEXT</p>',
+            'signed_at' => Carbon::parse('2026-11-06 17:43:00', 'UTC'),
+            'country_id' => $this->home->id,
+        ]);
+
+        $this->getJson($this->accountUrl('account/contracts/'.$contract->id.'/download'))->assertUnauthorized();
+
+        $this->actingAs($this->scenario->customer, 'customer')
+            ->getJson($this->accountUrl('account/contracts/'.$contract->id))
+            ->assertOk()
+            ->assertJsonPath('data.download_url', route('customer.account.contracts.download', ['country' => $this->home->site_code, 'id' => $contract->id]));
+
+        $response = $this->actingAs($this->scenario->customer, 'customer')
+            ->get($this->accountUrl('account/contracts/'.$contract->id.'/download'))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'text/html; charset=UTF-8');
+        $this->assertStringContainsString('attachment;', (string) $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('FROZEN TEXT', $response->getContent());
+        $this->assertStringContainsString('2026-11-06 21:43 (GMT+04:00)', $response->getContent(), 'acceptance time in the contract country\'s local time, with its offset');
+
+        $this->actingAs($this->anotherCustomer(), 'customer')
+            ->get($this->accountUrl('account/contracts/'.$contract->id.'/download'))
             ->assertNotFound();
     }
 

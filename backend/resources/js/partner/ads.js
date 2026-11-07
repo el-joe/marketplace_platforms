@@ -13,12 +13,34 @@ function csrfToken() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Utilities
 // ─────────────────────────────────────────────────────────────────────────────
+function adsCurrency() {
+    return cfg().currency || '';
+}
+
+function numberLocale() {
+    return cfg().locale === 'en' ? 'en-US' : 'ar-SA';
+}
+
 function formatMoney(amount) {
-    return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
+    const currency = adsCurrency();
+    const value = Number(amount ?? 0);
+    if (!currency) {
+        return new Intl.NumberFormat(numberLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+    }
+    try {
+        return new Intl.NumberFormat(numberLocale(), { style: 'currency', currency }).format(value);
+    } catch (e) {
+        return value.toFixed(2) + ' ' + currency;
+    }
+}
+
+function withCurrency(amount) {
+    const currency = adsCurrency();
+    return currency ? amount + ' ' + currency : String(amount);
 }
 
 function formatNumber(n) {
-    return new Intl.NumberFormat('ar-SA').format(n ?? 0);
+    return new Intl.NumberFormat(numberLocale()).format(n ?? 0);
 }
 
 function toast(msg, type = 'success') {
@@ -250,9 +272,12 @@ function wizShowStep(step) {
     if (step === 4) {
         const bidLabel = el('wiz-bid-label');
         if (bidLabel) {
-            bidLabel.textContent = wizGetType() === 'cpc'
-                ? 'مزايدة النقرة (ر.س)'
-                : 'مزايدة الألف ظهور (ر.س)';
+            const labels   = cfg().labels || {};
+            const base     = wizGetType() === 'cpc'
+                ? (labels.clickBid || 'مزايدة النقرة')
+                : (labels.cpmBid || 'مزايدة الألف ظهور');
+            const currency = adsCurrency();
+            bidLabel.textContent = currency ? `${base} (${currency})` : base;
         }
     }
 }
@@ -448,9 +473,9 @@ function wizRenderReview() {
         wizNeedsKeywords()   ? ['الكلمات المفتاحية',  wizKeywords.filter(k => k.keyword.trim()).length + ' كلمة']  : null,
         wizNeedsCategories() ? ['الفئات المستهدفة',   wizSelectedCategories.length + ' فئة']                       : null,
         ['عدد المنتجات',         wizSelectedProducts.length],
-        ['الميزانية الإجمالية', budgetTotal ? budgetTotal + ' ر.س' : '—'],
-        budgetDaily ? ['الميزانية اليومية', budgetDaily + ' ر.س'] : null,
-        ['المزايدة',             bid ? bid + ' ر.س' : '—'],
+        ['الميزانية الإجمالية', budgetTotal ? withCurrency(budgetTotal) : '—'],
+        budgetDaily ? ['الميزانية اليومية', withCurrency(budgetDaily)] : null,
+        ['المزايدة',             bid ? withCurrency(bid) : '—'],
         ['تاريخ البدء',          startsAt || '—'],
         endsAt ? ['تاريخ الانتهاء', endsAt] : null,
     ].filter(Boolean);
@@ -477,7 +502,7 @@ function wizValidateStep(s) {
         const bd  = Number(el('wiz-budget-daily')?.value);
         const bid = Number(el('wiz-bid')?.value);
         if (!bt || bt < 1)            return 'الميزانية الإجمالية مطلوبة.';
-        if (!bid || bid < 0.01)       return 'مبلغ المزايدة مطلوب (0.01 ر.س على الأقل).';
+        if (!bid || bid < 0.01)       return `مبلغ المزايدة مطلوب (${withCurrency('0.01')} على الأقل).`;
         if (!el('wiz-starts-at')?.value) return 'تاريخ البدء مطلوب.';
         if (bd && bd > bt)            return 'الميزانية اليومية لا يمكن أن تتجاوز الإجمالية.';
     }

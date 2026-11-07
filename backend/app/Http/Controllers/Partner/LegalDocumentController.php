@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Partner;
 use App\Http\Controllers\Controller;
 use App\Models\ClassifiedContractTemplate;
 use App\Models\ContractDisplayDestination;
+use App\Models\MarketerCampaign;
 use App\Models\MarketerSellerContract;
 use App\Models\Vendor;
 use App\Models\VendorAdmin;
@@ -87,7 +88,7 @@ class LegalDocumentController extends Controller
             ->when($search !== '', fn ($q) => $q->whereHas('marketer', fn ($m) => $m->where('name', 'like', '%'.$search.'%')))
             ->when($request->query('from'), fn ($q, $d) => $q->whereDate('signed_at', '>=', $d))
             ->when($request->query('to'), fn ($q, $d) => $q->whereDate('signed_at', '<=', $d))
-            ->with(['marketer:id,name', 'template:id,name', 'campaign:id,title'])
+            ->with(['marketer:id,name', 'template:id,name', 'campaign', ...MarketerCampaign::promotedTitleRelations('campaign.')])
             ->orderByDesc('signed_at')
             ->paginate(15)
             ->withQueryString();
@@ -101,7 +102,7 @@ class LegalDocumentController extends Controller
     public function collaborationShow(string $contract): View
     {
         $contract = MarketerSellerContract::where('vendor_id', $this->vendor()->id)
-            ->with(['marketer:id,name', 'template:id,name', 'campaign:id,title'])
+            ->with(['marketer:id,name', 'template:id,name', 'campaign', ...MarketerCampaign::promotedTitleRelations('campaign.')])
             ->findOrFail($contract);
 
         return view('partner.legal.collaboration-show', compact('contract'));

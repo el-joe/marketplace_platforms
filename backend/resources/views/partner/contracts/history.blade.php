@@ -35,7 +35,7 @@
                     <td class="px-4 py-3">{{ $contract->product?->name_en ?? $category?->name_en ?? "—" }}</td>
                     <td class="px-4 py-3 uppercase">{{ $contract->language_signed }}</td>
                     <td class="px-4 py-3">{{ __('partner.contracts.status_' . $contract->status) }}</td>
-                    <td class="px-4 py-3">{{ $contract->signed_at?->format('d/m/Y H:i') }}</td>
+                    <td class="px-4 py-3">{{ format_tz(vendor_tz($contract->signed_at)) }}</td>
                     <td class="px-4 py-3 font-mono text-xs">{{ $contract->signed_ip ?? '—' }}</td>
                 </tr>
             @empty

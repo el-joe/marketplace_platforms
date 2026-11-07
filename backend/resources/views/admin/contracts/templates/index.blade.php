@@ -231,7 +231,7 @@
                                     <button type="submit" class="text-xs font-medium text-gray-600 hover:underline">{{ __('contracts.admin.reactivate') }}</button>
                                 </form>
                             @endif
-                            @if (! $template->is_published)
+                            @if (! $template->is_published && (int) ($signatureCounts[$template->id] ?? 0) === 0)
                                 <form method="POST" action="{{ route('admin.contracts.templates.destroy', $template) }}" class="inline"
                                       onsubmit="return confirm(@js(__('admin.contracts.delete_confirm')))">
                                     @csrf

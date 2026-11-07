@@ -13,6 +13,8 @@ return [
         'no' => 'لا',
         'col_country' => 'الدولة',
         'col_individual_contract' => 'عقد مستقل',
+        'list_not_in_force' => 'غير ساري (مسودة/موقوف)',
+        'list_no_contract_configured' => 'مطلوب عقد مستقل ولم يُربط أي عقد',
         'legacy_country' => 'كل الدول (قديم)',
         'legacy_signed' => 'وُقّع قبل ربط العقود بالدول (قديم)',
         'all_countries_option' => 'كل الدول / قديم (بدون دولة)',
@@ -222,6 +224,14 @@ return [
         'user_agent' => 'المتصفح',
         'hash' => 'بصمة المحتوى (SHA-256)',
         'inquiry' => 'أول استفسار أُرسل بهذا القبول',
+
+        // Downloaded copy
+        'download_title' => 'عقد الشراء المقبول',
+        'download_version' => 'النسخة :version',
+        'download_category' => 'القسم',
+        'download_country' => 'الدولة',
+        'download_timezone_note' => 'الأوقات معروضة بالتوقيت المحلي لدولة العقد (:timezone).',
+        'download_generated' => 'تم التنزيل في :date',
     ],
 
     'portal' => [

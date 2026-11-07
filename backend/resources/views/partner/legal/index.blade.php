@@ -53,7 +53,7 @@
         @if ($signature)
             <div class="grid gap-2 rounded-lg bg-gray-50 p-4 text-sm text-gray-700 sm:grid-cols-2">
                 <p>{{ __('partner.legal.signed_version') }}: <strong>v{{ $signature->template_version }}</strong></p>
-                <p>{{ __('partner.legal.signed_on') }}: <strong>{{ $signature->signed_at?->format('d/m/Y H:i') }}</strong></p>
+                <p>{{ __('partner.legal.signed_on') }}: <strong>{{ format_tz(vendor_tz($signature->signed_at)) }}</strong></p>
                 <p>{{ __('partner.legal.signed_by') }}: <strong>{{ $signature->signer_name }}</strong></p>
                 <p>{{ __('partner.legal.method') }}: <strong>{{ __('partner.legal.method_' . $signature->acceptance_method) }}</strong></p>
             </div>
@@ -94,7 +94,7 @@
                             <td class="px-3 py-2">v{{ $row->template_version }}</td>
                             <td class="px-3 py-2">{{ __('partner.contracts.status_' . $row->status) }}</td>
                             <td class="px-3 py-2">{{ __('partner.legal.method_' . $row->acceptance_method) }}</td>
-                            <td class="px-3 py-2">{{ $row->signed_at?->format('d/m/Y H:i') }}</td>
+                            <td class="px-3 py-2">{{ format_tz(vendor_tz($row->signed_at)) }}</td>
                             <td class="px-3 py-2 text-end">
                                 @if ($row->hasSignedFile())
                                     <a href="{{ route('partner.legal.signed-file', $row) }}" class="text-blue-600 hover:underline">{{ __('partner.legal.download_signed_copy') }}</a>

@@ -371,6 +371,25 @@ function selectVariant(data) {
     loadShippingMethods(data.variantId, fulfillmentSelect?.value);
 }
 
+let listingContractBlocked = false;
+
+/** Disables "Create listing" while the chosen product has no contract configured for the vendor's country. */
+function setContractBlocked(blocked) {
+    listingContractBlocked = blocked;
+    const submitBtn = document.getElementById('create-submit-btn');
+    if (!submitBtn) return;
+    submitBtn.disabled = blocked;
+    submitBtn.setAttribute('aria-disabled', blocked ? 'true' : 'false');
+    const hint = document.getElementById('contract-hint');
+    if (blocked && hint) {
+        submitBtn.setAttribute('aria-describedby', 'contract-hint');
+        submitBtn.title = hint.textContent;
+    } else {
+        submitBtn.removeAttribute('aria-describedby');
+        submitBtn.removeAttribute('title');
+    }
+}
+
 // Tells the vendor, before they submit, that this product needs an individual contract (display only; store() enforces it).
 async function checkContractRequirement(productId) {
     const hint = document.getElementById('contract-hint');
@@ -378,14 +397,20 @@ async function checkContractRequirement(productId) {
     if (!hint || !url || !productId) return;
 
     hint.classList.add('hidden');
+    setContractBlocked(false);
     try {
         const res = await fetch(`${url}?product_id=${encodeURIComponent(productId)}`, { headers: { 'Accept': 'application/json' } });
         const data = await res.json();
+        // Ignore a late response for a product the vendor has already swapped out.
+        if (document.getElementById('form-product-variant-id')?.dataset.productId !== String(productId)) return;
         if (res.ok && data.requires_contract && data.message) {
             hint.textContent = data.message;
             hint.classList.toggle('border-red-300', !!data.not_configured);
             hint.classList.remove('hidden');
         }
+        // No contract exists for the vendor's country: the listing can never be saved, so block submit now
+        // instead of letting the vendor fill the whole form first. store() still enforces the same rule.
+        setContractBlocked(res.ok && !!data.not_configured);
     } catch {
         /* the hint is optional; submitting still enforces the contract */
     }
@@ -630,6 +655,11 @@ function initCreateForm() {
             return;
         }
 
+        if (listingContractBlocked) {
+            showError('create-error', document.getElementById('contract-hint')?.textContent || '');
+            return;
+        }
+
         const formData = new FormData(form);
         const payload = {};
         for (const [key, value] of formData.entries()) {
@@ -651,6 +681,8 @@ function initCreateForm() {
         }
 
         const submitBtn = document.getElementById('create-submit-btn');
+        const submitLabel = submitBtn.dataset.label || submitBtn.textContent.trim();
+        submitBtn.dataset.label = submitLabel;
         submitBtn.disabled = true;
         submitBtn.textContent = 'جاري الإنشاء...';
 
@@ -671,8 +703,11 @@ function initCreateForm() {
         } else {
             showError('create-error', data.message ?? 'حدث خطأ. يرجى التحقق من البيانات.');
             if (data.contract) showContractPanel(data.contract);
+            submitBtn.textContent = submitLabel;
             submitBtn.disabled = false;
-            submitBtn.textContent = 'إنشاء القائمة';
+            if (data.code === 'contract_not_configured' || data.error_code === 'contract_not_configured') {
+                setContractBlocked(true);
+            }
         }
     });
 }

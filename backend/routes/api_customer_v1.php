@@ -617,6 +617,7 @@ Route::middleware('auth:customer')->group(function (): void {
         Route::get('/', [CustomerContractController::class, 'index'])->name('index');
         Route::get('{id}', [CustomerContractController::class, 'detail'])->name('show');
         Route::get('{id}/file', [CustomerContractController::class, 'download'])->name('file');
+        Route::get('{id}/download', [CustomerContractController::class, 'export'])->name('download');
     });
 
     // Orders (Api\Customer)

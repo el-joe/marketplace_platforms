@@ -48,6 +48,9 @@ class CustomerContractResource extends JsonResource
             'file_url' => $this->hasSignedFile() && $country
                 ? route('customer.account.contracts.file', ['country' => $country->site_code, 'id' => $this->id])
                 : null,
+            'download_url' => $country
+                ? route('customer.account.contracts.download', ['country' => $country->site_code, 'id' => $this->id])
+                : null,
         ];
 
         if ($this->detailed) {

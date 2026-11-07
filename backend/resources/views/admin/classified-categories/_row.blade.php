@@ -53,9 +53,53 @@
             {{ $cat->countries->map(fn ($c) => $locale === 'ar' ? $c->name_ar : $c->name_en)->implode(', ') }}
         @endif
     </td>
+    @php
+        $countryLabel = fn ($country) => $country ? ($locale === 'ar' ? $country->name_ar : $country->name_en) : '';
+        $assignedCountryIds = $cat->contractAssignments->pluck('country_id')->filter()->all();
+        $categoryCountryIds = $cat->countries->pluck('id')->all();
+        $inheritedDefaults = collect($countryDefaultTemplates ?? [])
+            ->reject(fn ($template, $countryId) => in_array($countryId, $assignedCountryIds, true))
+            ->filter(fn ($template, $countryId) => $categoryCountryIds === [] || in_array($countryId, $categoryCountryIds, true));
+        $countryAssignments = $cat->contractAssignments
+            ->filter(fn ($assignment) => $assignment->contractTemplate !== null)
+            ->sortByDesc(fn ($assignment) => (int) ($assignment->contractTemplate->is_published && $assignment->contractTemplate->is_active));
+    @endphp
     <td class="px-4 py-3 text-gray-500 text-xs">
-        {{ $cat->contractTemplate?->name ?? '—' }}
-        @if ($cat->contractTemplate)<span class="text-gray-300">v{{ $cat->contractTemplate->version }}</span>@endif
+        @if (! $cat->requiresIndividualContract())
+            <span class="text-gray-300">—</span>
+        @else
+            <ul class="space-y-1">
+                @foreach ($countryAssignments as $assignment)
+                    @php $assigned = $assignment->contractTemplate; @endphp
+                    <li>
+                        <span class="font-medium text-gray-600">{{ $countryLabel($assignment->country) }}:</span>
+                        {{ $assigned->name }} <span class="text-gray-300">v{{ $assigned->version }}</span>
+                        @unless ($assigned->is_published && $assigned->is_active)
+                            <span class="ms-1 rounded bg-gray-100 px-1 text-[10px] text-gray-500">{{ __('contracts.admin.list_not_in_force') }}</span>
+                        @endunless
+                    </li>
+                @endforeach
+                @foreach ($inheritedDefaults as $default)
+                    <li>
+                        <span class="font-medium text-gray-600">{{ $countryLabel($default->country) }}:</span>
+                        {{ $default->name }} <span class="text-gray-300">v{{ $default->version }}</span>
+                        <span class="ms-1 rounded bg-blue-50 px-1 text-[10px] text-blue-600">{{ __('contracts.admin.default_badge') }}</span>
+                    </li>
+                @endforeach
+                @if ($cat->contractTemplate)
+                    <li class="text-gray-400">
+                        <span class="font-medium">{{ __('contracts.admin.legacy_country') }}:</span>
+                        {{ $cat->contractTemplate->name }} <span class="text-gray-300">v{{ $cat->contractTemplate->version }}</span>
+                        @unless ($cat->contractTemplate->is_published && $cat->contractTemplate->is_active)
+                            <span class="ms-1 rounded bg-gray-100 px-1 text-[10px] text-gray-500">{{ __('contracts.admin.list_not_in_force') }}</span>
+                        @endunless
+                    </li>
+                @endif
+                @if ($countryAssignments->isEmpty() && $inheritedDefaults->isEmpty() && ! $cat->contractTemplate)
+                    <li class="text-amber-600">{{ __('contracts.admin.list_no_contract_configured') }}</li>
+                @endif
+            </ul>
+        @endif
     </td>
     <td class="px-4 py-3 text-center">
         @if ($cat->requires_location_map)

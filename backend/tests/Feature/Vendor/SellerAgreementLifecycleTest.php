@@ -202,6 +202,29 @@ class SellerAgreementLifecycleTest extends TestCase
         $this->get(route('portal.legal.seller-agreement.file', [$productTemplate, 'ar']))->assertNotFound();
     }
 
+    // ── Partner: sections reserved for another vendor type ───────────────────
+
+    public function test_product_vendor_opening_classifieds_gets_a_localized_page_inside_the_portal_layout(): void
+    {
+        $scenario = $this->activeScenario();
+        $owner = $this->ownerOf($scenario->vendor);
+
+        $this->actingAs($owner, 'vendor')->withSession(['locale' => 'ar'])->get(route('partner.classifieds.index'))
+            ->assertForbidden()
+            ->assertViewIs('partner.section-unavailable')
+            ->assertSee(__('partner.section_unavailable.heading', [], 'ar'))
+            ->assertSee(route('partner.dashboard'), false)
+            ->assertDontSee('This section is not available for your account type.');
+
+        $this->actingAs($owner, 'vendor')->getJson(route('partner.classifieds.index'))
+            ->assertForbidden()
+            ->assertJsonPath('success', false);
+
+        $this->actingAs($owner, 'vendor')->get(route('partner.dashboard'))
+            ->assertOk()
+            ->assertDontSee(route('partner.classifieds.index'), false);
+    }
+
     // ── Partner: click-wrap gate and Legal Documents ─────────────────────────
 
     public function test_vendor_is_gated_until_the_agreement_is_accepted_then_returns_where_they_were(): void

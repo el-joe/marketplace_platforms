@@ -1,10 +1,12 @@
-import { format } from "date-fns";
+import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/src/components/ui/badge";
 import Card from "@/src/components/shared/Card";
+import LocalDateTime from "@/src/components/shared/local-date-time";
 import type { MyContractDetail } from "@/src/services/customer-contracts";
 import ContractDocument from "../components/contract-document";
+import ContractDownloadButton from "../components/contract-download-button";
 import { STATUS_VARIANT } from "../helpers/constants";
 
 type Props = {
@@ -14,14 +16,14 @@ type Props = {
 export default async function CustomerContractDetail({ contract }: Props) {
   const t = await getTranslations("myContracts");
 
-  const facts: [string, string | null][] = [
+  const facts: [string, ReactNode][] = [
     [t("listing"), [contract.listing.title, contract.listing.number].filter(Boolean).join(" · ")],
     [t("category"), contract.category?.name ?? null],
     [t("country"), contract.country?.name ?? null],
     [t("purposeLabel"), t(`purpose.${contract.purpose}`)],
     [t("versionLabel"), t("version", { version: contract.template_version })],
     [t("signerName"), contract.signer_name],
-    [t("acceptedAt"), format(new Date(contract.signed_at), "MMM d, yyyy HH:mm")],
+    [t("acceptedAt"), <LocalDateTime key="acceptedAt" value={contract.signed_at} />],
   ];
 
   return (
@@ -35,6 +37,15 @@ export default async function CustomerContractDetail({ contract }: Props) {
         <Badge variant={STATUS_VARIANT[contract.status]}>
           {t(`status.${contract.status}`)}
         </Badge>
+        {contract.download_url && (
+          <ContractDownloadButton
+            downloadUrl={contract.download_url}
+            fileName={contract.file_name ?? `contract-${contract.listing.number ?? contract.id}.html`}
+            label={t("download")}
+            failedMessage={t("downloadFailed")}
+            className="ms-auto"
+          />
+        )}
       </div>
 
       {contract.status === "superseded" && (

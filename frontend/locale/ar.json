@@ -260,8 +260,6 @@
     "disputes": "النزاعات",
     "greeting": "هلا {name}!",
     "profileCompletion": "اكتمال الملف الشخصي",
-    "tryNoonOne": "جرّب",
-    "tryNoonOneForFree": "مجانًا",
     "orders": "الطلبات",
     "returns": "المرتجعات",
     "wishlist": "المفضلة",
@@ -1719,6 +1717,8 @@
     "subtitle": "عقود الشراء والإيجار التي قبلتها للإعلانات المبوّبة.",
     "empty": "لم تقبل أي عقود بعد.",
     "view": "عرض العقد",
+    "download": "تنزيل العقد",
+    "downloadFailed": "تعذر تنزيل العقد. يرجى المحاولة مرة أخرى.",
     "back": "العودة إلى عقودي",
     "version": "النسخة {version}",
     "status": {
