@@ -3,19 +3,23 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminListingStatus;
+use App\Enums\MarketplaceShippingRuleCommissionType;
+use App\Enums\WarehouseType;
 use App\Http\Controllers\Controller;
 use App\Models\AdminListing;
-use App\Enums\MarketplaceShippingRuleCommissionType;
 use App\Models\Country;
+use App\Models\InternationalShippingEligibility;
 use App\Models\MarketplaceShippingRule;
 use App\Models\ProductCostReference;
 use App\Models\ProductVariant;
 use App\Models\ShippingMethod;
-use App\Enums\WarehouseType;
 use App\Models\Warehouse;
-use App\Services\ShippingMethodResolverService;
-use App\Services\Shared\PageCacheService;
 use App\Models\WarehouseInventory;
+use App\Services\ActivityLoggerService;
+use App\Services\CachedListingResolver;
+use App\Services\Shared\PageCacheService;
+use App\Services\Shared\PromoBadgeSyncService;
+use App\Services\ShippingMethodResolverService;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -34,8 +38,8 @@ class AdminListingController extends Controller
     {
         $query = AdminListing::query()
             ->with([
-                'productVariant' => fn($q) => $q->withTrashed(),
-                'productVariant.product' => fn($q) => $q->withTrashed(),
+                'productVariant' => fn ($q) => $q->withTrashed(),
+                'productVariant.product' => fn ($q) => $q->withTrashed(),
                 'productVariant.product.images',
                 'country',
                 'warehouseInventory',
@@ -47,17 +51,17 @@ class AdminListingController extends Controller
                         ->orWhere('name_ar', 'like', "%{$term}%");
                 });
             })
-            ->when($request->filled('country_id'), fn($q) => $q->where('country_id', $request->input('country_id')))
+            ->when($request->filled('country_id'), fn ($q) => $q->where('country_id', $request->input('country_id')))
             ->when($request->filled('status') && $request->input('status') !== 'all',
-                fn($q) => $q->where('status', $request->input('status')))
-            ->when($request->boolean('daily_deal'), fn($q) => $q->where('is_daily_deal', true))
+                fn ($q) => $q->where('status', $request->input('status')))
+            ->when($request->boolean('daily_deal'), fn ($q) => $q->where('is_daily_deal', true))
             ->latest('created_at');
 
         return view('admin.admin-listings.index', [
             'listings' => $query->paginate(25)->withQueryString(),
             'countries' => Country::query()->orderBy('name_en')->pluck('name_en', 'id'),
             'statuses' => collect(AdminListingStatus::cases())
-                ->mapWithKeys(fn($status) => [$status->value => Str::headline($status->value)]),
+                ->mapWithKeys(fn ($status) => [$status->value => Str::headline($status->value)]),
             'stats' => $this->buildStats(),
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
@@ -153,8 +157,8 @@ class AdminListingController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'country_id' => fn($q, $v) => $q->where('admin_listings.country_id', $v),
-            'status' => fn($q, $v) => $q->where('admin_listings.status', $v),
+            'country_id' => fn ($q, $v) => $q->where('admin_listings.country_id', $v),
+            'status' => fn ($q, $v) => $q->where('admin_listings.status', $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
@@ -175,7 +179,7 @@ class AdminListingController extends Controller
                 ] : null,
                 'product_name' => e($row->product_name),
                 'variant_name' => e($row->variant_name),
-                'display_name' => e(trim($row->product_name . ' ' . $row->variant_name)),
+                'display_name' => e(trim($row->product_name.' '.$row->variant_name)),
                 'variant_sku' => e($row->variant_sku),
                 'country' => e($row->country_name),
                 'currency' => e($row->currency),
@@ -217,11 +221,11 @@ class AdminListingController extends Controller
     public function create(): View
     {
         return view('admin.admin-listings.create', [
-            'countries'       => Country::where('is_active', true)->orderBy('name_en')->get(),
-            'warehouses'      => Warehouse::where('type', 'platform_fbn')->where('is_active', true)->orderBy('name')->get(),
+            'countries' => Country::where('is_active', true)->orderBy('name_en')->get(),
+            'warehouses' => Warehouse::where('type', 'platform_fbn')->where('is_active', true)->orderBy('name')->get(),
             'shippingMethods' => ShippingMethod::where('is_active', true)->orderBy('name')->get(),
             'selectedVariant' => null,
-            'breadcrumbs'     => [
+            'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.admin_listings.title'), 'url' => route('admin.admin-listings.index')],
                 ['label' => __('admin.admin_listings.new_listing')],
@@ -231,36 +235,36 @@ class AdminListingController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate($this->storeRules() + \App\Services\Shared\PromoBadgeSyncService::rules());
+        $data = $request->validate($this->storeRules() + PromoBadgeSyncService::rules());
         $badges = $data['promo_badges'] ?? [];
         unset($data['promo_badges']);
 
-        if (!empty($data['warehouse_id'])) {
+        if (! empty($data['warehouse_id'])) {
             $warehouse = Warehouse::find($data['warehouse_id']);
-            if (!$warehouse || $warehouse->type !== WarehouseType::PlatformFbn) {
+            if (! $warehouse || $warehouse->type !== WarehouseType::PlatformFbn) {
                 return back()->withErrors(['warehouse_id' => 'Only platform FBN warehouses are allowed.'])->withInput();
             }
         }
 
         $listing = DB::transaction(function () use ($data, $badges) {
             $listing = AdminListing::create(array_merge($data, [
-                'currency'               => Country::findOrFail($data['country_id'])->currency_code,
-                'created_by_admin_id'    => auth('admin')->id(),
+                'currency' => Country::findOrFail($data['country_id'])->currency_code,
+                'created_by_admin_id' => auth('admin')->id(),
             ]));
 
-            if (!empty($listing->warehouse_id)) {
+            if (! empty($listing->warehouse_id)) {
                 WarehouseInventory::create([
-                    'admin_listing_id'  => $listing->id,
+                    'admin_listing_id' => $listing->id,
                     'vendor_listing_id' => null,
-                    'warehouse_id'      => $listing->warehouse_id,
-                    'quantity_on_hand'  => 0,
+                    'warehouse_id' => $listing->warehouse_id,
+                    'quantity_on_hand' => 0,
                     'quantity_reserved' => 0,
-                    'quantity_inbound'  => 0,
-                    'quantity_damaged'  => 0,
+                    'quantity_inbound' => 0,
+                    'quantity_damaged' => 0,
                 ]);
             }
 
-            if (!empty($badges)) {
+            if (! empty($badges)) {
                 $this->syncListingBadges($listing, $badges);
             }
 
@@ -274,11 +278,11 @@ class AdminListingController extends Controller
 
     public function updatePromoBadges(Request $request, AdminListing $adminListing): RedirectResponse
     {
-        $data = $request->validate(\App\Services\Shared\PromoBadgeSyncService::rules());
+        $data = $request->validate(PromoBadgeSyncService::rules());
 
         $this->syncListingBadges($adminListing, $data['promo_badges'] ?? []);
 
-        return back()->with('success', __('admin.products.tab_promo_badges') . ' ✓');
+        return back()->with('success', __('admin.products.tab_promo_badges').' ✓');
     }
 
     private function syncListingBadges(AdminListing $listing, array $badges): void
@@ -287,13 +291,13 @@ class AdminListingController extends Controller
             ->map(fn ($b) => ['label_en' => $b->label_en, 'label_ar' => $b->label_ar, 'is_active' => (bool) $b->is_active])->values()->all();
         $before = $labels();
 
-        app(\App\Services\Shared\PromoBadgeSyncService::class)->sync(
+        app(PromoBadgeSyncService::class)->sync(
             $listing->productVariant->product_id, 'admin_listing_id', $listing->id, $badges,
         );
 
         $after = $labels();
         if ($before !== $after) {
-            app(\App\Services\ActivityLoggerService::class)->log(
+            app(ActivityLoggerService::class)->log(
                 description: 'Admin listing promo badges changed',
                 subject: $listing,
                 causer: auth('admin')->user(),
@@ -309,21 +313,21 @@ class AdminListingController extends Controller
         $adminListing->load('promoBadges');
 
         return view('admin.admin-listings.edit', [
-            'listing'         => $adminListing,
-            'countries'       => Country::where('is_active', true)->orderBy('name_en')->get(),
-            'warehouses'      => Warehouse::where('type', 'platform_fbn')->where('is_active', true)->orderBy('name')->get(),
+            'listing' => $adminListing,
+            'countries' => Country::where('is_active', true)->orderBy('name_en')->get(),
+            'warehouses' => Warehouse::where('type', 'platform_fbn')->where('is_active', true)->orderBy('name')->get(),
             'shippingMethods' => ShippingMethod::where('is_active', true)->orderBy('name')->get(),
             'selectedVariant' => $adminListing->productVariant()->with('product')->first(),
             'shipsToCountries' => Country::where('is_active', true)
                 ->where('id', '!=', $adminListing->country_id)
                 ->orderBy('name_en')
                 ->get(),
-            'selectedDestinationIds' => \App\Models\InternationalShippingEligibility::query()
+            'selectedDestinationIds' => InternationalShippingEligibility::query()
                 ->where('admin_listing_id', $adminListing->id)
                 ->where('is_active', true)
                 ->pluck('destination_country_id')
                 ->all(),
-            'breadcrumbs'     => [
+            'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.admin_listings.title'), 'url' => route('admin.admin-listings.index')],
                 ['label' => __('admin.admin_listings.edit_listing_title')],
@@ -335,9 +339,9 @@ class AdminListingController extends Controller
     {
         $data = $request->validate($this->updateRules());
 
-        if (!empty($data['warehouse_id'])) {
+        if (! empty($data['warehouse_id'])) {
             $warehouse = Warehouse::find($data['warehouse_id']);
-            if (!$warehouse || $warehouse->type !== WarehouseType::PlatformFbn) {
+            if (! $warehouse || $warehouse->type !== WarehouseType::PlatformFbn) {
                 return back()->withErrors(['warehouse_id' => 'Only platform FBN warehouses are allowed.'])->withInput();
             }
         }
@@ -346,15 +350,15 @@ class AdminListingController extends Controller
             'updated_by_admin_id' => auth('admin')->id(),
         ]));
 
-        if (!empty($data['warehouse_id']) && !$adminListing->warehouseInventories()->exists()) {
+        if (! empty($data['warehouse_id']) && ! $adminListing->warehouseInventories()->exists()) {
             WarehouseInventory::create([
-                'admin_listing_id'  => $adminListing->id,
+                'admin_listing_id' => $adminListing->id,
                 'vendor_listing_id' => null,
-                'warehouse_id'      => $data['warehouse_id'],
-                'quantity_on_hand'  => 0,
+                'warehouse_id' => $data['warehouse_id'],
+                'quantity_on_hand' => 0,
                 'quantity_reserved' => 0,
-                'quantity_inbound'  => 0,
-                'quantity_damaged'  => 0,
+                'quantity_inbound' => 0,
+                'quantity_damaged' => 0,
             ]);
         }
 
@@ -371,7 +375,7 @@ class AdminListingController extends Controller
             : AdminListingStatus::Active;
 
         $adminListing->update([
-            'status'              => $newStatus,
+            'status' => $newStatus,
             'updated_by_admin_id' => auth('admin')->id(),
         ]);
 
@@ -445,11 +449,11 @@ class AdminListingController extends Controller
                 ?->defaultShippingMethod()->first(),
             'warehouses' => Warehouse::where('type', 'platform_fbn')->where('is_active', true)->orderBy('name')->get(),
             'statuses' => collect(AdminListingStatus::cases())
-                ->mapWithKeys(fn($status) => [$status->value => Str::headline($status->value)]),
+                ->mapWithKeys(fn ($status) => [$status->value => Str::headline($status->value)]),
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.admin_listings.title'), 'url' => route('admin.admin-listings.index')],
-                ['label' => e($adminListing->productVariant->product->name_en)],
+                ['label' => $adminListing->productVariant->product->name_en],
             ],
         ]);
     }
@@ -513,7 +517,7 @@ class AdminListingController extends Controller
         abort_unless($admin->hasPermissionTo('admin_listings.edit'), 403);
 
         // Bust buy-box resolution cache
-        app(\App\Services\CachedListingResolver::class)->bustAdminListing($adminListing);
+        app(CachedListingResolver::class)->bustAdminListing($adminListing);
 
         // Bust any page builder blocks that reference this listing
         $pageCache->bustAdminListing($adminListing);
@@ -744,10 +748,10 @@ class AdminListingController extends Controller
             ->get(['product_variants.id', 'product_variants.product_id', 'p.name_en', 'product_variants.sku', 'product_variants.variant_name', 'product_variants.slug']);
 
         return response()->json([
-            'results' => $variants->map(fn($v) => [
+            'results' => $variants->map(fn ($v) => [
                 'id' => $v->id,
                 'product_id' => $v->product_id,
-                'text' => $v->name_en . ($v->variant_name ? " ({$v->variant_name})" : '') . " [{$v->slug}] — {$v->sku}",
+                'text' => $v->name_en.($v->variant_name ? " ({$v->variant_name})" : '')." [{$v->slug}] — {$v->sku}",
             ]),
         ]);
     }
@@ -784,33 +788,33 @@ class AdminListingController extends Controller
     private function storeRules(): array
     {
         return [
-            'product_variant_id'         => ['required', 'uuid', 'exists:product_variants,id'],
-            'country_id'                 => ['required', 'exists:countries,id'],
-            'warehouse_id'               => ['nullable', 'exists:warehouses,id'],
-            'price'                      => ['required', 'numeric', 'decimal:0,2', 'min:0'],
-            'compare_at_price'           => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
-            'cost_price'                 => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
-            'condition'                  => ['required', 'in:new,like_new,good,acceptable,refurbished'],
-            'condition_notes'            => ['nullable', 'string', 'max:500'],
+            'product_variant_id' => ['required', 'uuid', 'exists:product_variants,id'],
+            'country_id' => ['required', 'exists:countries,id'],
+            'warehouse_id' => ['nullable', 'exists:warehouses,id'],
+            'price' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
+            'compare_at_price' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'cost_price' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
+            'condition_notes' => ['nullable', 'string', 'max:500'],
             'primary_shipping_method_id' => ['nullable', 'exists:shipping_methods,id'],
-            'vendor_covers_delivery'     => ['boolean'],
-            'max_order_quantity'         => ['nullable', 'integer', 'min:1'],
-            'low_stock_threshold'        => ['required', 'integer', 'min:0'],
-            'status'                     => ['required', 'in:active,paused,out_of_stock,archived'],
-            'campaign_enabled'           => ['boolean'],
-            'sold_by_label_en'           => ['nullable', 'string', 'max:150'],
-            'sold_by_label_ar'           => ['nullable', 'string', 'max:150'],
-            'express_badge_label_en'     => ['nullable', 'string', 'max:100'],
-            'express_badge_label_ar'     => ['nullable', 'string', 'max:100'],
-            'search_boost'               => ['integer', 'min:0', 'max:20'],
-            'is_daily_deal'              => ['boolean'],
-            'daily_deal_ends_at'         => ['nullable', 'date', 'after:now'],
-            'weight_class'               => ['nullable', 'in:light,medium,heavy'],
-            'handling_class'             => ['required', 'in:standard,refrigerated,fragile,special_tech'],
-            'declared_weight_grams'      => ['nullable', 'integer', 'min:1'],
-            'declared_length_cm'         => ['nullable', 'numeric', 'min:0'],
-            'declared_width_cm'          => ['nullable', 'numeric', 'min:0'],
-            'declared_height_cm'         => ['nullable', 'numeric', 'min:0'],
+            'vendor_covers_delivery' => ['boolean'],
+            'max_order_quantity' => ['nullable', 'integer', 'min:1'],
+            'low_stock_threshold' => ['required', 'integer', 'min:0'],
+            'status' => ['required', 'in:active,paused,out_of_stock,archived'],
+            'campaign_enabled' => ['boolean'],
+            'sold_by_label_en' => ['nullable', 'string', 'max:150'],
+            'sold_by_label_ar' => ['nullable', 'string', 'max:150'],
+            'express_badge_label_en' => ['nullable', 'string', 'max:100'],
+            'express_badge_label_ar' => ['nullable', 'string', 'max:100'],
+            'search_boost' => ['integer', 'min:0', 'max:20'],
+            'is_daily_deal' => ['boolean'],
+            'daily_deal_ends_at' => ['nullable', 'date', 'after:now'],
+            'weight_class' => ['nullable', 'in:light,medium,heavy'],
+            'handling_class' => ['required', 'in:standard,refrigerated,fragile,special_tech'],
+            'declared_weight_grams' => ['nullable', 'integer', 'min:1'],
+            'declared_length_cm' => ['nullable', 'numeric', 'min:0'],
+            'declared_width_cm' => ['nullable', 'numeric', 'min:0'],
+            'declared_height_cm' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -823,7 +827,7 @@ class AdminListingController extends Controller
     {
         return array_diff_key($this->storeRules(), [
             'product_variant_id' => true,
-            'country_id'         => true,
+            'country_id' => true,
         ]);
     }
 }

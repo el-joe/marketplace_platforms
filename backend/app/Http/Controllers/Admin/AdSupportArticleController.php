@@ -68,7 +68,7 @@ class AdSupportArticleController extends Controller
             ['searchable_columns' => [], 'orderable_column' => null], // actions
         ];
 
-        if (!$query->getQuery()->orders) {
+        if (! $query->getQuery()->orders) {
             $query->orderByDesc('ad_support_articles.updated_at');
         }
 
@@ -79,23 +79,23 @@ class AdSupportArticleController extends Controller
 
         return $this->dataTableResponse($request, $query, $columns, function (AdSupportArticle $row) use ($statusColors) {
             $featuredStar = $row->is_featured
-                ? '<span class="inline-block text-amber-400" title="' . __('admin.adsupport.featured_tooltip') . '">★</span> '
+                ? '<span class="inline-block text-amber-400" title="'.__('admin.adsupport.featured_tooltip').'">★</span> '
                 : '';
 
             $titleHtml = '<div class="min-w-0">'
-                . '<div class="font-medium text-gray-900 truncate max-w-xs">' . $featuredStar . e($row->title) . '</div>'
-                . '<div class="text-xs text-gray-400 truncate max-w-xs font-mono">' . e($row->slug) . '</div>'
-                . '</div>';
+                .'<div class="font-medium text-gray-900 truncate max-w-xs">'.$featuredStar.e($row->title).'</div>'
+                .'<div class="text-xs text-gray-400 truncate max-w-xs font-mono">'.e($row->slug).'</div>'
+                .'</div>';
 
             $collectionHtml = $row->collection
-                ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-primary-50 text-primary-700">' . e($row->collection->name) . '</span>'
+                ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-primary-50 text-primary-700">'.e($row->collection->name).'</span>'
                 : '<span class="text-gray-400 text-xs">—</span>';
 
             $sc = $statusColors[$row->status->value] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-600', 'label' => $row->status->label()];
-            $statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' . $sc['bg'] . ' ' . $sc['text'] . '">' . $sc['label'] . '</span>';
+            $statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium '.$sc['bg'].' '.$sc['text'].'">'.$sc['label'].'</span>';
 
             $dateHtml = $row->published_at
-                ? '<div class="text-xs text-gray-700">' . $row->published_at->format('d M Y') . '</div>'
+                ? '<div class="text-xs text-gray-700">'.$row->published_at->format('d M Y').'</div>'
                 : '<span class="text-gray-300 text-xs">—</span>';
 
             $editUrl = route('admin.adsupport.articles.edit', $row->id);
@@ -105,12 +105,12 @@ class AdSupportArticleController extends Controller
             $featureLabel = $row->is_featured ? __('admin.adsupport.unfeature') : __('admin.adsupport.feature_on_home');
 
             $actionsHtml = '<div class="relative" x-data="{open:false}">'
-                . '<button @click="open=!open" class="btn btn-ghost btn-sm">⋮</button>'
-                . '<div x-show="open" @click.away="open=false" x-cloak class="absolute right-0 z-10 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 text-sm">'
-                . '<a href="' . $editUrl . '" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">' . __('admin.edit') . '</a>'
-                . '<button type="button" class="btn-feature w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-50" data-id="' . $row->id . '" data-url="' . $featureUrl . '">' . $featureLabel . '</button>'
-                . '<button type="button" class="btn-delete w-full text-left px-4 py-2 text-red-500 hover:bg-gray-50" data-id="' . $row->id . '" data-url="' . $deleteUrl . '">' . __('admin.delete') . '</button>'
-                . '</div></div>';
+                .'<button @click="open=!open" class="btn btn-ghost btn-sm">⋮</button>'
+                .'<div x-show="open" @click.away="open=false" x-cloak class="absolute right-0 z-10 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 text-sm">'
+                .'<a href="'.$editUrl.'" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">'.__('admin.edit').'</a>'
+                .'<button type="button" class="btn-feature w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-50" data-id="'.$row->id.'" data-url="'.$featureUrl.'">'.$featureLabel.'</button>'
+                .'<button type="button" class="btn-delete w-full text-left px-4 py-2 text-red-500 hover:bg-gray-50" data-id="'.$row->id.'" data-url="'.$deleteUrl.'">'.__('admin.delete').'</button>'
+                .'</div></div>';
 
             return [
                 'title' => $titleHtml,
@@ -164,7 +164,7 @@ class AdSupportArticleController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.adsupport.articles'), 'url' => route('admin.adsupport.articles.index')],
-                ['label' => e($article->title)],
+                ['label' => $article->title],
             ],
         ]));
     }
@@ -207,7 +207,7 @@ class AdSupportArticleController extends Controller
 
     public function feature(AdSupportArticle $article): JsonResponse
     {
-        $newFeatured = !$article->is_featured;
+        $newFeatured = ! $article->is_featured;
         $article->update(['is_featured' => $newFeatured]);
         $this->syncFeatured($article);
 
@@ -245,7 +245,7 @@ class AdSupportArticleController extends Controller
             'title' => 'nullable|string|max:255',
             'title_en' => 'required|string|max:255',
             'title_ar' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:ad_support_articles,slug,' . ($excludeArticleId ?? 'NULL'),
+            'slug' => 'nullable|string|max:255|unique:ad_support_articles,slug,'.($excludeArticleId ?? 'NULL'),
             'excerpt' => 'nullable|string|max:500',
             'excerpt_en' => 'nullable|string|max:500',
             'excerpt_ar' => 'nullable|string|max:500',
@@ -314,7 +314,7 @@ class AdSupportArticleController extends Controller
                 ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
                 ->exists()
         ) {
-            $slug = $base . '-' . $i++;
+            $slug = $base.'-'.$i++;
         }
 
         return $slug;

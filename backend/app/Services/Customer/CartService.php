@@ -3,15 +3,18 @@
 namespace App\Services\Customer;
 
 use App\Enums\AdminListingStatus;
+use App\Enums\MarketerListingStatus;
 use App\Enums\VendorListingStatus;
 use App\Models\AdminListing;
 use App\Models\Cart;
 use App\Models\CartInventoryLock;
 use App\Models\CartItem;
-use App\Models\Coupon;
 use App\Models\Country;
-use App\Models\Customer;
 use App\Models\CountryShippingSetting;
+use App\Models\Coupon;
+use App\Models\Customer;
+use App\Models\MarketerListing;
+use App\Models\Product;
 use App\Models\VendorListing;
 use App\Services\AppContextService;
 use App\Services\Media\ListingImageResolver;
@@ -43,8 +46,7 @@ class CartService
         private readonly AppContextService $appContextService,
         private readonly ShippingMethodResolverService $shippingMethodResolver,
         private readonly ListingImageResolver $imageResolver,
-    ) {
-    }
+    ) {}
 
     /**
      * Validates the requested shipping method against the listing's available
@@ -55,7 +57,7 @@ class CartService
     {
         if ($shippingMethodId) {
             $valid = $this->shippingMethodResolver->validateMethodForListing($shippingMethodId, $listingId, $listingType, $countryId);
-            if (!$valid) {
+            if (! $valid) {
                 throw new \DomainException(__('common.exceptions.cart.invalid_shipping_method'));
             }
 
@@ -98,11 +100,11 @@ class CartService
         $cart = Cart::where('session_token', $sessionToken)
             ->whereNull('user_id')
             ->where('country_id', $countryId)
-            ->where(fn($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->with(['items.vendorListing', 'coupon'])
             ->first();
 
-        if (!$cart) {
+        if (! $cart) {
             $cart = Cart::create([
                 'session_token' => $sessionToken,
                 'user_id' => null,
@@ -129,7 +131,7 @@ class CartService
 
         $customerCart = $this->getOrCreateCart($customer, $countryId, $currency);
 
-        if (!$guestCart || $guestCart->items->isEmpty()) {
+        if (! $guestCart || $guestCart->items->isEmpty()) {
             return $customerCart;
         }
 
@@ -163,9 +165,9 @@ class CartService
      * (newly created) cart item. Never touches the `attribute_values` table
      * — that table is reserved for variant-defining pick-list attributes.
      *
-     * @param array<int, array{product_custom_attribute_id: string, value: string}> $values
+     * @param  array<int, array{product_custom_attribute_id: string, value: string}>  $values
      */
-    private function applyCustomAttributeValues(CartItem $item, \App\Models\Product $product, array $values): void
+    private function applyCustomAttributeValues(CartItem $item, Product $product, array $values): void
     {
         foreach ($this->normalizeCustomAttributeValues($product, $values) as $attrId => $val) {
             $item->customAttributeValues()->create([
@@ -181,7 +183,7 @@ class CartService
      *
      * @return array<string, string>
      */
-    private function normalizeCustomAttributeValues(\App\Models\Product $product, array $values): array
+    private function normalizeCustomAttributeValues(Product $product, array $values): array
     {
         $defs = $product->customAttributes()->get()->keyBy('id');
         $out = [];
@@ -192,18 +194,18 @@ class CartService
                 continue;
             }
             $def = $defs->get($id);
-            if (!$def) {
+            if (! $def) {
                 throw new \DomainException(__('common.exceptions.cart.custom_attribute_invalid'));
             }
             $type = $def->type ?: 'text';
-            if ($type === 'number' && !is_numeric($val)) {
+            if ($type === 'number' && ! is_numeric($val)) {
                 throw new \DomainException(__('common.exceptions.cart.custom_attribute_invalid'));
             }
-            if ($type === 'select' && !in_array($val, (array) $def->options, true)) {
+            if ($type === 'select' && ! in_array($val, (array) $def->options, true)) {
                 throw new \DomainException(__('common.exceptions.cart.custom_attribute_invalid'));
             }
             if ($type === 'checkbox') {
-                if (!in_array(strtolower($val), ['1', '0', 'true', 'false'], true)) {
+                if (! in_array(strtolower($val), ['1', '0', 'true', 'false'], true)) {
                     throw new \DomainException(__('common.exceptions.cart.custom_attribute_invalid'));
                 }
                 $val = in_array(strtolower($val), ['1', 'true'], true) ? '1' : '0';
@@ -211,7 +213,7 @@ class CartService
             $out[$id] = $val;
         }
         foreach ($defs as $id => $def) {
-            if ($def->is_required && (!isset($out[$id]) || ($def->type === 'checkbox' && $out[$id] !== '1'))) {
+            if ($def->is_required && (! isset($out[$id]) || ($def->type === 'checkbox' && $out[$id] !== '1'))) {
                 throw new \DomainException(__('common.exceptions.cart.custom_attribute_required'));
             }
         }
@@ -220,7 +222,7 @@ class CartService
     }
 
     /** Finds an existing cart line whose custom values match exactly (keeps differing values on separate lines). */
-    private function findMatchingLine(Cart $cart, string $column, string $listingId, \App\Models\Product $product, array $values): ?CartItem
+    private function findMatchingLine(Cart $cart, string $column, string $listingId, Product $product, array $values): ?CartItem
     {
         $sig = $this->normalizeCustomAttributeValues($product, $values);
         ksort($sig);
@@ -285,7 +287,7 @@ class CartService
     }
 
     /**
-     * @param array<int, array{vendor_listing_id?: string, admin_listing_id?: string, listing_type?: string, quantity: int, shipping_method_id?: ?string, custom_attribute_values?: array}> $items
+     * @param  array<int, array{vendor_listing_id?: string, admin_listing_id?: string, listing_type?: string, quantity: int, shipping_method_id?: ?string, custom_attribute_values?: array}>  $items
      * @return array<int, CartItem>
      */
     public function addItems(Cart $cart, array $items, string $countryId): array
@@ -313,7 +315,7 @@ class CartService
      */
     public function addAdminItem(Cart $cart, string $adminListingId, int $quantity, ?string $shippingMethodId, string $countryId, array $customAttributeValues = []): CartItem
     {
-        if (!$this->appContextService->isNawyNow()) {
+        if (! $this->appContextService->isNawyNow()) {
             throw new \DomainException(__('common.exceptions.cart.admin_listing_not_allowed'));
         }
 
@@ -376,7 +378,7 @@ class CartService
      */
     public function addMarketerItem(Cart $cart, string $marketerListingId, int $quantity, string $countryId): CartItem
     {
-        $listing = \App\Models\MarketerListing::with(['productVariant.product'])
+        $listing = MarketerListing::with(['productVariant.product'])
             ->where('id', $marketerListingId)
             ->where('country_id', $countryId)
             ->where('status', 'active')
@@ -396,11 +398,11 @@ class CartService
             }
             $item = $cart->items()->create([
                 'marketer_listing_id' => $marketerListingId,
-                'vendor_listing_id'   => null,
-                'admin_listing_id'    => null,
-                'quantity'            => $quantity,
-                'unit_price'          => $listing->price,
-                'added_at'            => now(),
+                'vendor_listing_id' => null,
+                'admin_listing_id' => null,
+                'quantity' => $quantity,
+                'unit_price' => $listing->price,
+                'added_at' => now(),
             ]);
         }
 
@@ -419,7 +421,7 @@ class CartService
         $item = $cart->items()->findOrFail($itemId);
 
         if ($item->marketer_listing_id !== null) {
-            \App\Models\MarketerListing::where('id', $item->marketer_listing_id)
+            MarketerListing::where('id', $item->marketer_listing_id)
                 ->where('status', 'active')
                 ->firstOrFail();
 
@@ -486,7 +488,7 @@ class CartService
             ->where('valid_until', '>=', now())
             ->firstOrFail();
 
-        $subtotal = Money::number(round($cart->items()->get()->sum(fn(CartItem $item) => $item->unit_price * $item->quantity), 2));
+        $subtotal = Money::number(round($cart->items()->get()->sum(fn (CartItem $item) => $item->unit_price * $item->quantity), 2));
 
         $result = $this->calculationService->applyCoupon(
             $coupon,
@@ -536,8 +538,9 @@ class CartService
             if ($item->marketer_listing_id !== null) {
                 $listing = $item->marketerListing;
 
-                if (!$listing || $listing->status !== \App\Enums\MarketerListingStatus::Active) {
+                if (! $listing || $listing->status !== MarketerListingStatus::Active) {
                     $item->delete();
+
                     continue;
                 }
 
@@ -554,8 +557,9 @@ class CartService
             if ($item->admin_listing_id !== null) {
                 $listing = $item->adminListing;
 
-                if (!$listing || $listing->status !== AdminListingStatus::Active) {
+                if (! $listing || $listing->status !== AdminListingStatus::Active) {
                     $item->delete();
+
                     continue;
                 }
 
@@ -563,8 +567,9 @@ class CartService
             } else {
                 $listing = $item->vendorListing;
 
-                if (!$listing || $listing->status !== VendorListingStatus::Active) {
+                if (! $listing || $listing->status !== VendorListingStatus::Active) {
                     $item->delete();
+
                     continue;
                 }
 
@@ -580,7 +585,7 @@ class CartService
         $cart->unsetRelation('items');
         $cart->load(self::itemEagerLoads());
 
-        $subtotal = Money::number(round($cart->items->sum(fn(CartItem $item) => $item->unit_price * $item->quantity), 2));
+        $subtotal = Money::number(round($cart->items->sum(fn (CartItem $item) => $item->unit_price * $item->quantity), 2));
 
         $discount = 0;
         $couponError = null;
@@ -674,8 +679,8 @@ class CartService
 
         $variantIds = $items->map(function (CartItem $item) {
             $isMarketer = (bool) $item->marketer_listing_id;
-            $isVendor   = !$isMarketer && (bool) $item->vendor_listing_id;
-            $listing    = $isMarketer
+            $isVendor = ! $isMarketer && (bool) $item->vendor_listing_id;
+            $listing = $isMarketer
                 ? $item->marketerListing
                 : ($isVendor ? $item->vendorListing : $item->adminListing);
 
@@ -687,7 +692,7 @@ class CartService
         return $groups->map(function ($groupItems) use ($countryId, $imagesByVariant) {
             $method = $groupItems->first()->selectedShippingMethod;
 
-            $groupSubtotal = Money::number(round($groupItems->sum(fn(CartItem $item) => $item->unit_price * $item->quantity), 2));
+            $groupSubtotal = Money::number(round($groupItems->sum(fn (CartItem $item) => $item->unit_price * $item->quantity), 2));
 
             $threshold = ($method && $countryId)
                 ? CountryShippingSetting::where('country_id', $countryId)
@@ -712,8 +717,8 @@ class CartService
                 'items_count' => $groupItems->count(),
                 'items' => $groupItems->map(function (CartItem $item) use ($method, $imagesByVariant) {
                     $isMarketer = (bool) $item->marketer_listing_id;
-                    $isVendor   = !$isMarketer && (bool) $item->vendor_listing_id;
-                    $listing    = $isMarketer
+                    $isVendor = ! $isMarketer && (bool) $item->vendor_listing_id;
+                    $listing = $isMarketer
                         ? $item->marketerListing
                         : ($isVendor ? $item->vendorListing : $item->adminListing);
                     $listingType = $isMarketer ? 'marketer' : ($isVendor ? 'vendor' : 'admin');
@@ -728,7 +733,7 @@ class CartService
                         'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price,
                         'line_total' => Money::number(round($item->unit_price * $item->quantity, 2)),
-                        'product_url' => "/products/{$variant?->id}/" . ($isMarketer ? $item->marketer_listing_id : ($isVendor ? $item->vendor_listing_id : $item->admin_listing_id)),
+                        'product_url' => "/products/{$variant?->id}/".($isMarketer ? $item->marketer_listing_id : ($isVendor ? $item->vendor_listing_id : $item->admin_listing_id)),
                         'product_name_en' => $product?->name_en,
                         'product_name_ar' => $product?->name_ar,
                         'max_order_quantity' => $listing?->max_order_quantity,
@@ -738,7 +743,7 @@ class CartService
                         'images' => array_map(fn ($i) => $i->toArray(), $images),
                         'listing_id' => $isMarketer ? $item->marketer_listing_id : ($isVendor ? $item->vendor_listing_id : $item->admin_listing_id),
                         'listing_type' => $listingType,
-                        'vendor' => $isVendor ? [
+                        'vendor' => ($isVendor && $item->vendorListing?->vendor) ? [
                             'id' => $item->vendorListing->vendor->id,
                             'store_name' => $item->vendorListing->vendor->store_name,
                         ] : null,

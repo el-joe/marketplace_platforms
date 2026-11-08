@@ -1,6 +1,7 @@
 "use client";
 import { useCartContext } from "@/src/providers/cart-provider";
 import CartItem from "./cart-item";
+import CartItemBoundary from "./cart-item-boundary";
 import { ShippingMethod } from "@/types/cart.type";
 import useLocale from "@/src/hooks/use-locale";
 
@@ -10,7 +11,7 @@ export default function CartItems() {
 
   return (
     <>
-      {cart?.shipping_groups.map((group) => (
+      {cart?.shipping_groups?.map((group) => (
         <div
           className="relative rounded-[16px] overflow-hidden"
           key={group.shipping_method?.id}
@@ -34,12 +35,13 @@ export default function CartItems() {
             style={{ borderColor: group.shipping_method?.badge_color_hex }}
           >
             {group.items?.map((item) => (
-              <CartItem
-                key={item.id}
-                item={item}
-                isFreeShipping={group.is_free_shipping}
-                shippingMethod={group?.shipping_method as ShippingMethod}
-              />
+              <CartItemBoundary key={item.id} cartItemId={item.id}>
+                <CartItem
+                  item={item}
+                  isFreeShipping={group.is_free_shipping}
+                  shippingMethod={group?.shipping_method as ShippingMethod}
+                />
+              </CartItemBoundary>
             ))}
           </div>
         </div>

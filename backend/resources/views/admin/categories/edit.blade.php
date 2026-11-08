@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', __('admin.edit') . ': ' . e($category->name_en))
+@section('title', __('admin.edit') . ': ' . $category->name_en)
 
 @push('styles')
 @vite([

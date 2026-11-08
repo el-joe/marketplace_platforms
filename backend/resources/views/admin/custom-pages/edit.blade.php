@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', __('admin.edit') . ': ' . e($customPage->name_en))
+@section('title', __('admin.edit') . ': ' . $customPage->name_en)
 
 @push('styles')
 @vite([

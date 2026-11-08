@@ -59,7 +59,7 @@ class AttributeController extends Controller
         ]);
 
         $query = $this->applyFilters($query, $request, [
-            'type' => fn($q, $v) => $q->where('type', $v),
+            'type' => fn ($q, $v) => $q->where('type', $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
@@ -117,8 +117,9 @@ class AttributeController extends Controller
             // Seed initial values for types that require them
             if (in_array($request->type, ['select', 'multi_select', 'color'], true)) {
                 foreach ($request->input('values', []) as $value) {
-                    if (empty($value['value_en']))
+                    if (empty($value['value_en'])) {
                         continue;
+                    }
                     $providedSlug = trim($value['slug'] ?? '');
                     $slug = ($providedSlug !== '' && preg_match('/^[a-z0-9-]+$/', $providedSlug) && ! AttributeValue::query()->where('slug', $providedSlug)->exists())
                         ? $providedSlug
@@ -174,7 +175,7 @@ class AttributeController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.attributes'), 'url' => route('admin.attributes.index')],
-                ['label' => e($attributeModel->name_en)],
+                ['label' => $attributeModel->name_en],
             ],
             'attribute' => $attributeModel,
         ]);
@@ -204,6 +205,7 @@ class AttributeController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Attribute update failed', ['id' => $attribute, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.attributes_section.update_failed')], 500);
         }
     }
@@ -414,8 +416,8 @@ class AttributeController extends Controller
         $file = $request->file('swatch_image');
         $ext = $file->getClientOriginalExtension() ?: $file->guessExtension();
         $path = $file->storeAs(
-            'attribute-values/' . $attributeValue->id,
-            'swatch_' . Str::random(8) . '.' . $ext,
+            'attribute-values/'.$attributeValue->id,
+            'swatch_'.Str::random(8).'.'.$ext,
             'public'
         );
 
@@ -435,7 +437,7 @@ class AttributeController extends Controller
             ->where('attribute_id', $attribute)
             ->firstOrFail();
 
-        if (!$attributeValue->swatch_image_path) {
+        if (! $attributeValue->swatch_image_path) {
             return response()->json(['message' => __('admin.attributes_section.no_swatch_to_remove')], 404);
         }
 

@@ -22,13 +22,13 @@
                 <button type="button"
                     class="btn btn-success js-approve-booking-btn"
                     data-url="{{ route('admin.paid-ad-bookings.approve', $paidAdBooking->id) }}"
-                    data-ref="{{ e($paidAdBooking->booking_reference) }}">
+                    data-ref="{{ $paidAdBooking->booking_reference }}">
                     {{ __('admin.paid_ad_bookings.approve_booking_btn') }}
                 </button>
                 <button type="button"
                     class="btn btn-danger js-reject-booking-btn"
                     data-url="{{ route('admin.paid-ad-bookings.reject', $paidAdBooking->id) }}"
-                    data-ref="{{ e($paidAdBooking->booking_reference) }}">
+                    data-ref="{{ $paidAdBooking->booking_reference }}">
                     {{ __('admin.paid_ad_bookings.reject_booking_btn') }}
                 </button>
             @endif

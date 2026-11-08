@@ -397,6 +397,7 @@ async function checkContractRequirement(productId) {
     if (!hint || !url || !productId) return;
 
     hint.classList.add('hidden');
+    hideContractPanel();
     setContractBlocked(false);
     try {
         const res = await fetch(`${url}?product_id=${encodeURIComponent(productId)}`, { headers: { 'Accept': 'application/json' } });
@@ -408,9 +409,13 @@ async function checkContractRequirement(productId) {
             hint.classList.toggle('border-red-300', !!data.not_configured);
             hint.classList.remove('hidden');
         }
+        // The product's individual contract is unsigned: show it now so the vendor reads and signs it before
+        // filling the form, and keep "Create listing" disabled until it is signed. store() enforces the same rule.
+        const needsSignature = res.ok && data.requires_contract && !data.signed && !!data.contract;
+        if (needsSignature) showContractPanel(data.contract, { submitAfterSign: false });
         // No contract exists for the vendor's country: the listing can never be saved, so block submit now
-        // instead of letting the vendor fill the whole form first. store() still enforces the same rule.
-        setContractBlocked(res.ok && !!data.not_configured);
+        // instead of letting the vendor fill the whole form first.
+        setContractBlocked(res.ok && (!!data.not_configured || needsSignature));
     } catch {
         /* the hint is optional; submitting still enforces the contract */
     }
@@ -526,10 +531,21 @@ async function loadWarehousesByCountry(countryId, fulfillmentModel) {
 
 let inlineContract = null;
 let inlinePanelLanguage = 'en';
+// true when the panel was opened by a rejected submit (sign, then resubmit); false when opened on product selection.
+let inlineSubmitAfterSign = true;
 
-function showContractPanel(contract) {
+function hideContractPanel() {
+    inlineContract = null;
+    document.getElementById('contract-panel')?.classList.add('hidden');
+}
+
+function showContractPanel(contract, { submitAfterSign = true } = {}) {
     const labels = window.LISTINGS_CREATE.contractLabels;
     inlineContract = contract;
+    inlineSubmitAfterSign = submitAfterSign;
+
+    const signBtn = document.getElementById('contract-sign-btn');
+    if (signBtn) signBtn.textContent = submitAfterSign ? labels.signAndSubmit : (labels.signOnly || labels.signAndSubmit);
 
     document.getElementById('contract-panel-title').textContent =
         `${labels.title}: ${contract.name} · v${contract.version} · ${contract.category_name}`;
@@ -575,12 +591,16 @@ function initContractPanel(form) {
         if (!signerName) return fail(labels.signerRequired);
         if (!document.getElementById('contract-agree').checked) return fail(labels.agreeRequired);
 
+        // The vendor may switch product while this request is in flight; only clear the panel for the contract signed here.
+        const signedContract = inlineContract;
+        if (!signedContract) return;
+
         signBtn.disabled = true;
         signBtn.textContent = labels.signing;
         errorEl.classList.add('hidden');
 
         try {
-            const res = await fetch(inlineContract.accept_url, {
+            const res = await fetch(signedContract.accept_url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -591,9 +611,9 @@ function initContractPanel(form) {
                     signature_name: signerName,
                     language: inlinePanelLanguage,
                     agreed: 1,
-                    category_scope: inlineContract.category_scope,
-                    category_id: inlineContract.category_id,
-                    product_id: inlineContract.product_id,
+                    category_scope: signedContract.category_scope,
+                    category_id: signedContract.category_id,
+                    product_id: signedContract.product_id,
                 }),
             });
             const data = await res.json().catch(() => ({}));
@@ -602,15 +622,28 @@ function initContractPanel(form) {
                 throw new Error(data.message ?? labels.signError);
             }
 
-            inlineContract = null;
-            document.getElementById('contract-panel').classList.add('hidden');
-            toast(labels.signedSubmitting);
-            form.requestSubmit();
+            if (inlineContract !== signedContract) return;
+
+            const submitAfterSign = inlineSubmitAfterSign;
+            hideContractPanel();
+            setContractBlocked(false);
+
+            if (submitAfterSign) {
+                toast(labels.signedSubmitting);
+                form.requestSubmit();
+            } else {
+                const hint = document.getElementById('contract-hint');
+                if (hint && labels.signedReady) {
+                    hint.textContent = labels.signedReady;
+                    hint.classList.remove('hidden', 'border-red-300');
+                }
+                toast(labels.signedReady || labels.signedSubmitting);
+            }
         } catch (error) {
             fail(error.message || labels.signError);
         } finally {
             signBtn.disabled = false;
-            signBtn.textContent = labels.signAndSubmit;
+            signBtn.textContent = inlineSubmitAfterSign ? labels.signAndSubmit : (labels.signOnly || labels.signAndSubmit);
         }
     });
 }

@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Portal;
 
-use App\Http\Controllers\Controller;
 use App\Enums\RegistrationFlow;
+use App\Enums\VendorType;
+use App\Http\Controllers\Controller;
 use App\Mail\NewVendorApplicationAdminMail;
 use App\Mail\VendorApplicationReceivedMail;
 use App\Models\Address;
@@ -105,8 +106,14 @@ class RegistrationController extends Controller
     /**
      * GET /register — show multi-step wizard
      */
-    public function show(): View
+    public function show(Request $request): View
     {
+        // The account type is decided by the entry point: the Open Souq landing links here with
+        // ?account=classified and creates a classified-ads vendor; every other link creates a product vendor.
+        $vendorType = $request->query('account') === 'classified' ? VendorType::ClassifiedVendor : VendorType::ProductVendor;
+        session(['reg_data.vendor_type' => $vendorType->value]);
+        $isClassifiedAccount = $vendorType === VendorType::ClassifiedVendor;
+
         $countries = Country::where('is_active', true)->orderBy('name_ar')->get();
         $currentStep = session('reg_data.current_step', 1);
         $savedData = session('reg_data', []);
@@ -138,7 +145,7 @@ class RegistrationController extends Controller
         $agreementEnforced = false;
         $agreementNotConfiguredMessage = __('contracts.api.not_configured', ['country' => ':country']);
 
-        return view('portal.register', compact('countries', 'currentStep', 'savedData', 'agreementByCountry', 'agreementDocs', 'agreementEnforced', 'agreementNotConfiguredMessage'));
+        return view('portal.register', compact('countries', 'currentStep', 'savedData', 'agreementByCountry', 'agreementDocs', 'agreementEnforced', 'agreementNotConfiguredMessage', 'isClassifiedAccount'));
     }
 
     /**
@@ -341,6 +348,7 @@ class RegistrationController extends Controller
         $step2 = session('reg_data.step2', []);
         $step3 = session('reg_data.step3', []);
         $docs = session('reg_data.documents', []);
+        $vendorType = VendorType::tryFrom((string) session('reg_data.vendor_type')) ?? VendorType::ProductVendor;
         $docExpiries = $request->input('doc_expiries', []);
 
         // Guard: all steps must be present
@@ -392,7 +400,7 @@ class RegistrationController extends Controller
         $createdVendor = null;
 
         // try {
-        DB::transaction(function () use ($request, $agreement, &$signedContract, &$confirmationEmailFailed, &$createdVendor, $step1, $step2, $step3, $docs, $docExpiries, $acceptableCodes) {
+        DB::transaction(function () use ($request, $agreement, &$signedContract, &$confirmationEmailFailed, &$createdVendor, $step1, $step2, $step3, $docs, $docExpiries, $acceptableCodes, $vendorType) {
             // ① Create Vendor
             $vendor = Vendor::create([
                 'name' => $step1['name'],
@@ -412,6 +420,7 @@ class RegistrationController extends Controller
                 'contact_phone' => $step3['contact_phone'],
                 'whatsapp_number' => $step3['whatsapp_number'] ?? null,
                 'global_status' => 'pending',
+                'vendor_type' => $vendorType,
                 // 'approved_at' => 0,
             ]);
             $createdVendor = $vendor;

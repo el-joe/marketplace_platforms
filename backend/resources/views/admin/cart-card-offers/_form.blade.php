@@ -68,7 +68,7 @@
                             <option value="">{{ __('admin.cart_card_offers_section.select_country') }}</option>
                             @foreach($countries as $country)
                                 <option value="{{ $country->id }}" {{ $val('country_id') === $country->id ? 'selected' : '' }}>
-                                    {{ e($country->name_en) }}
+                                    {{ $country->name_en }}
                                 </option>
                             @endforeach
                         </select>

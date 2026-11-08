@@ -169,7 +169,7 @@
                                 <select name="country_id" class="input w-full" data-select2-init data-placeholder="{{ __('admin.vouchers_section.all_countries') }}">
                                     <option value=""></option>
                                     @foreach($countries ?? [] as $country)
-                                        <option value="{{ $country->id }}">{{ e($country->name_en) }}</option>
+                                        <option value="{{ $country->id }}">{{ $country->name_en }}</option>
                                     @endforeach
                                 </select>
                             </div>

@@ -702,6 +702,9 @@
     "proofUploadFailedFallback": "Your gift card order was placed, but we couldn't upload your payment proof. Please try again from your order history."
   },
   "cart": {
+    "itemUnavailable": "This item can't be displayed — it may no longer be available.",
+    "remove": "Remove",
+    "soldBy": "Sold by {store}",
     "freeShipping": "Free shipping",
     "getItBy": "Get it by",
     "orderIn": "Order in",
@@ -1256,7 +1259,8 @@
     "country": "Egypt",
     "home": "Home",
     "classifieds": "Classifieds",
-    "pageTitle": "{category} for Sale ({count})",
+    "pageTitle": "{category} ads in {country} ({count})",
+    "pageTitleNoCountry": "{category} ads ({count})",
     "globalPageTitle": "Buy & Sell Anything ({count})",
     "sortRelevant": "Relevant",
     "sortNewest": "Newest First",
@@ -1324,6 +1328,7 @@
     "metaDescriptionAll": "Browse the latest classified ads across all sections and find great deals."
   },
   "classifiedSidebar": {
+    "showPhone": "Show phone number",
     "chat": "Chat",
     "following": "Following",
     "follow": "Follow",
@@ -1456,6 +1461,7 @@
     "back": "Back"
   },
   "marketerProfile": {
+    "contractType": "Contract type:",
     "classifiedListings": "Open Market Listings",
     "activeExclusiveContracts": "Active exclusive contracts",
     "priceNegotiable": "Negotiable",
@@ -1689,7 +1695,7 @@
     "startFailed": "Couldn't start the chat. Please try again.",
     "loading": "Loading…",
     "loadFailed": "Couldn't load your chats.",
-    "empty": "No conversations yet. Open a marketer's profile and tap Chat to start one.",
+    "empty": "No conversations yet. Your chats with marketers will appear here. To contact an advertiser, use Chat or “Ask the lister” on the ad page.",
     "back": "Back to chats",
     "noMessages": "Say hello 👋",
     "typeMessage": "Type a message…",

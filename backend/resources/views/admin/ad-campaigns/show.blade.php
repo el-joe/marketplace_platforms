@@ -96,27 +96,27 @@
                 <button type="button"
                     class="btn btn-success js-approve-btn"
                     data-url="{{ route('admin.ad-campaigns.approve', $campaign->id) }}"
-                    data-name="{{ e($campaign->name) }}">
+                    data-name="{{ $campaign->name }}">
                     {{ __('admin.ad_campaigns.approve_campaign_btn') }}
                 </button>
                 <button type="button"
                     class="btn btn-danger js-reject-btn"
                     data-url="{{ route('admin.ad-campaigns.reject', $campaign->id) }}"
-                    data-name="{{ e($campaign->name) }}">
+                    data-name="{{ $campaign->name }}">
                     {{ __('admin.ad_campaigns.reject_campaign_btn') }}
                 </button>
             @elseif($campaign->status->value === 'active')
                 <button type="button"
                     class="btn btn-warning js-pause-btn"
                     data-url="{{ route('admin.ad-campaigns.pause', $campaign->id) }}"
-                    data-name="{{ e($campaign->name) }}">
+                    data-name="{{ $campaign->name }}">
                     {{ __('admin.ad_campaigns.pause_campaign_btn') }}
                 </button>
             @elseif($campaign->status->value === 'paused')
                 <button type="button"
                     class="btn btn-success js-resume-btn"
                     data-url="{{ route('admin.ad-campaigns.resume', $campaign->id) }}"
-                    data-name="{{ e($campaign->name) }}">
+                    data-name="{{ $campaign->name }}">
                     {{ __('admin.ad_campaigns.resume_campaign_btn') }}
                 </button>
             @endif

@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', __('admin.cart_card_offers_section.edit_offer') . ': ' . e($offer->card_name_en))
+@section('title', __('admin.cart_card_offers_section.edit_offer') . ': ' . $offer->card_name_en)
 
 @push('styles')
     @vite(['resources/js/components/flatpickr.js', 'resources/js/components/select2.js', 'resources/js/components/file-upload.js', 'resources/js/admin/cart-card-offers.js'])

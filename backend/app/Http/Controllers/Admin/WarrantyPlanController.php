@@ -66,8 +66,8 @@ class WarrantyPlanController extends Controller
             ->with(['category.parent.parent.parent.parent']);
 
         $query = $this->applyFilters($query, $request, [
-            'category_id' => fn($q, $v) => $q->where('warranty_plans.category_id', $v),
-            'is_active' => fn($q, $v) => $q->where('warranty_plans.is_active', (bool) $v),
+            'category_id' => fn ($q, $v) => $q->where('warranty_plans.category_id', $v),
+            'is_active' => fn ($q, $v) => $q->where('warranty_plans.is_active', (bool) $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function (WarrantyPlan $plan) {
@@ -76,7 +76,7 @@ class WarrantyPlanController extends Controller
                 'name_en' => e($plan->name_en),
                 'category_path' => e($this->categoryBreadcrumb($plan->category)),
                 'duration_months' => (int) $plan->duration_months,
-                'price_display' => number_format($plan->price, 2) . ' ' . e($plan->currency),
+                'price_display' => number_format($plan->price, 2).' '.e($plan->currency),
                 'is_active' => (bool) $plan->is_active,
                 'sort_order' => (int) $plan->sort_order,
                 'edit_url' => route('admin.warranty-plans.edit', $plan->id),
@@ -128,7 +128,7 @@ class WarrantyPlanController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.warranty_plans'), 'url' => route('admin.warranty-plans.index')],
-                ['label' => e($plan->name_en)],
+                ['label' => $plan->name_en],
             ],
             'plan' => $plan,
             'categories' => $this->categoryOptions(),
@@ -159,7 +159,7 @@ class WarrantyPlanController extends Controller
     public function toggleActive(string $warrantyPlan): JsonResponse
     {
         $plan = WarrantyPlan::findOrFail($warrantyPlan);
-        $plan->is_active = !$plan->is_active;
+        $plan->is_active = ! $plan->is_active;
         $plan->save();
 
         return response()->json(['success' => true, 'is_active' => $plan->is_active]);
@@ -194,14 +194,14 @@ class WarrantyPlanController extends Controller
     private function rules(bool $categoryRequired): array
     {
         return [
-            'category_id' => ($categoryRequired ? 'required' : 'nullable') . '|uuid|exists:categories,id',
+            'category_id' => ($categoryRequired ? 'required' : 'nullable').'|uuid|exists:categories,id',
             'name_en' => 'required|string|max:150',
             'name_ar' => 'required|string|max:150',
             'duration_months' => 'required|integer|min:1|max:120',
             'price_type' => 'nullable|in:flat,percentage',
             'price' => 'required_if:price_type,flat|nullable|numeric|min:0.01',
             'price_pct' => 'required_if:price_type,percentage|nullable|numeric|min:0.01|max:100',
-            'currency' => 'required|string|size:3|in:' . implode(',', self::CURRENCIES),
+            'currency' => 'required|string|size:3|in:'.implode(',', self::CURRENCIES),
             'image' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:2048',
             'features_en' => 'required|array|min:1|max:8',
             'features_en.*' => 'required|string|max:200',
@@ -226,7 +226,7 @@ class WarrantyPlanController extends Controller
             'currency' => strtoupper($validated['currency']),
             'features_en' => array_values($validated['features_en']),
             'features_ar' => array_values($validated['features_ar']),
-            'country_ids' => !empty($validated['country_ids']) ? array_values($validated['country_ids']) : null,
+            'country_ids' => ! empty($validated['country_ids']) ? array_values($validated['country_ids']) : null,
             'sort_order' => (int) ($validated['sort_order'] ?? 0),
             'is_active' => (bool) ($validated['is_active'] ?? false),
         ];
@@ -265,7 +265,7 @@ class WarrantyPlanController extends Controller
 
     private function categoryBreadcrumb(?Category $category): string
     {
-        if (!$category) {
+        if (! $category) {
             return '';
         }
 

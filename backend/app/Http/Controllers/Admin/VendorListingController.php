@@ -143,7 +143,7 @@ class VendorListingController extends Controller
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => 'Vendor Listings', 'url' => route('admin.vendor-listings.index')],
-                ['label' => e($vendorListing->productVariant->product->name_en)],
+                ['label' => $vendorListing->productVariant->product->name_en],
             ],
         ]);
     }
@@ -169,7 +169,7 @@ class VendorListingController extends Controller
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => 'Vendor Listings', 'url' => route('admin.vendor-listings.index')],
-                ['label' => e($vendorListing->productVariant->product->name_en), 'url' => route('admin.vendor-listings.show', $vendorListing)],
+                ['label' => $vendorListing->productVariant->product->name_en, 'url' => route('admin.vendor-listings.show', $vendorListing)],
                 ['label' => 'Edit'],
             ],
         ]);

@@ -1,8 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import useLocale from "@/src/hooks/use-locale";
+import useRegion from "@/src/hooks/use-region";
+import { getCountriesService } from "@/src/services/countries";
 import { Breadcrumb } from "@/src/components/ui/breadcrumb";
 import { Select } from "@/src/components/ui/base-inputs/select";
 import { IClassifiedCategoryRef } from "./helpers/types";
@@ -21,7 +24,18 @@ export default function BreadcrumbAndHeader({
 }: BreadcrumbAndHeaderProps) {
   const t = useTranslations("classified");
   const locale = useLocale();
+  const region = useRegion();
   const [selectedSort, setSelectedSort] = useState("relevant");
+  const { data: countriesData } = useQuery({
+    queryKey: ["countries", locale],
+    queryFn: getCountriesService,
+    staleTime: 60 * 60 * 1000,
+  });
+  const countryName = countriesData?.data?.find(
+    (country) => country.site_code === region,
+  )?.name;
+  const sectionName = categoryTree[categoryTree.length - 1]?.name[locale];
+  const count = totalCount.toLocaleString();
 
   const SORT_OPTIONS = [
     { value: "relevant", label: t("sortRelevant") },
@@ -47,16 +61,11 @@ export default function BreadcrumbAndHeader({
       {/* Title & Sort Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-3">
         <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-snug">
-          {!!categoryTree[categoryTree.length - 1]?.name[locale]
-            ? t("pageTitle", {
-                category: categoryTree[categoryTree.length - 1]?.name[
-                  locale
-                ] as string,
-                count: totalCount.toLocaleString(),
-              })
-            : t("globalPageTitle", {
-                count: totalCount.toLocaleString(),
-              })}
+          {sectionName
+            ? countryName
+              ? t("pageTitle", { category: sectionName, country: countryName, count })
+              : t("pageTitleNoCountry", { category: sectionName, count })
+            : t("globalPageTitle", { count })}
         </h1>
 
         {/* Sort Select */}

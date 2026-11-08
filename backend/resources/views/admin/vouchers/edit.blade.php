@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', __('admin.vouchers_section.edit_voucher') . ': ' . e($voucher->code))
+@section('title', __('admin.vouchers_section.edit_voucher') . ': ' . $voucher->code)
 
 @push('styles')
     @vite(['resources/js/components/flatpickr.js', 'resources/js/components/select2.js'])

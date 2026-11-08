@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Services\Vendor\ContractAssignmentService;
+use App\Enums\VendorListingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
@@ -17,26 +17,32 @@ use App\Models\MarketerListing;
 use App\Models\Product;
 use App\Models\ProductCountrySetting;
 use App\Models\ProductHighlight;
-use App\Models\ProductPromoBadge;
 use App\Models\ProductImage;
+use App\Models\ProductPromoBadge;
 use App\Models\ProductSpecification;
 use App\Models\ProductVariant;
 use App\Models\ProductVariantAttribute;
 use App\Models\VendorListing;
 use App\Models\VendorProductCertification;
+use App\Services\ActivityLoggerService;
 use App\Services\ProductService;
+use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\VariantSlugService;
+use App\Services\Vendor\ContractAssignmentService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProductController extends Controller
 {
@@ -46,14 +52,13 @@ class ProductController extends Controller
     public function __construct(
         private readonly ProductService $productService,
         private readonly VariantSlugService $variantSlugService,
-    ) {
-    }
+    ) {}
 
     // ──────────────────────────────────────────────────────────────────────────
     // Index / Listing
     // ──────────────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportProducts($request);
@@ -85,14 +90,14 @@ class ProductController extends Controller
      * Note: `products` has no `sku` column (see migrations) — it lives on the default
      * `product_variants` row and is substituted accordingly below.
      */
-    private function buildProductsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildProductsQuery(Request $request): Builder
     {
         $query = Product::withTrashed()
             ->leftJoin('categories as c', 'c.id', '=', 'products.category_id')
             ->leftJoin('brands as b', 'b.id', '=', 'products.brand_id')
             ->when($request->input('trashed') === '1',
-                fn($q) => $q->whereNotNull('products.deleted_at'),
-                fn($q) => $q->whereNull('products.deleted_at')
+                fn ($q) => $q->whereNotNull('products.deleted_at'),
+                fn ($q) => $q->whereNull('products.deleted_at')
             )
             ->select([
                 'products.id',
@@ -133,10 +138,10 @@ class ProductController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('products.status', $v),
-            'category_id' => fn($q, $v) => $q->where('products.category_id', $v),
-            'brand_id' => fn($q, $v) => $q->where('products.brand_id', $v),
-            'search' => fn($q, $v) => $q->where(function ($sub) use ($v) {
+            'status' => fn ($q, $v) => $q->where('products.status', $v),
+            'category_id' => fn ($q, $v) => $q->where('products.category_id', $v),
+            'brand_id' => fn ($q, $v) => $q->where('products.brand_id', $v),
+            'search' => fn ($q, $v) => $q->where(function ($sub) use ($v) {
                 $sub->where('products.name_en', 'like', "%{$v}%")
                     ->orWhere('products.name_ar', 'like', "%{$v}%")
                     ->orWhereExists(function ($existsQuery) use ($v) {
@@ -152,13 +157,13 @@ class ProductController extends Controller
         return $query;
     }
 
-    private function exportProducts(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportProducts(Request $request): StreamedResponse
     {
         $products = $this->buildProductsQuery($request)->orderByDesc('products.created_at')->get();
 
         $headers = ['ID', 'Name EN', 'Name AR', 'SKU', 'Category', 'Brand', 'Active', 'Created'];
 
-        $rows = $products->map(fn($row) => [
+        $rows = $products->map(fn ($row) => [
             $row->id,
             $row->name_en,
             $row->name_ar,
@@ -223,76 +228,76 @@ class ProductController extends Controller
 
         DB::beginTransaction();
         try {
-        $id = (string) Str::uuid();
-        $slug = $request->slug ?: Str::slug($request->name_en) . '-' . Str::lower(Str::random(5));
+            $id = (string) Str::uuid();
+            $slug = $request->slug ?: Str::slug($request->name_en).'-'.Str::lower(Str::random(5));
 
-        Product::query()->insert([
-            'id' => $id,
-            'name_en' => $request->name_en,
-            'name_ar' => $request->name_ar,
-            'slug' => $slug,
-            'category_id' => $request->category_id,
-            'brand_id' => $request->brand_id ?: null,
-            'gtin' => $request->gtin ?: null,
-            'model_number' => $request->model_number ?: null,
-            'description_en' => $request->description_en ?: null,
-            'description_ar' => $request->description_ar ?: null,
-            'short_desc_en' => $request->short_desc_en ?: null,
-            'short_desc_ar' => $request->short_desc_ar ?: null,
-            'status' => $request->status ?? 'draft',
-            'has_variants' => $request->boolean('has_variants'),
-            'is_featured' => $request->boolean('is_featured'),
-            'requires_brand_auth' => $request->boolean('requires_brand_auth'),
-            'is_age_restricted' => $request->boolean('is_age_restricted'),
-            'min_age' => $request->min_age ?: null,
-            'is_hazardous' => $request->boolean('is_hazardous'),
-            'has_custom_attributes' => $request->boolean('has_custom_attributes'),
-            'seo_title_en' => $request->seo_title ?: null,
-            'seo_description_en' => $request->seo_description ?: null,
-            'total_sold' => 0,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        app(ContractAssignmentService::class)->apply(Product::findOrFail($id), 'product', $request->all());
-
-        // Default variant when product has no variants
-        if (!$request->boolean('has_variants')) {
-            ProductVariant::query()->insert([
-                'id' => (string) Str::uuid(),
-                'product_id' => $id,
-                'sku' => $this->resolveVariantSku(null),
-                'is_default' => true,
-                'is_active' => true,
-                'position' => 0,
+            Product::query()->insert([
+                'id' => $id,
+                'name_en' => $request->name_en,
+                'name_ar' => $request->name_ar,
+                'slug' => $slug,
+                'category_id' => $request->category_id,
+                'brand_id' => $request->brand_id ?: null,
+                'gtin' => $request->gtin ?: null,
+                'model_number' => $request->model_number ?: null,
+                'description_en' => $request->description_en ?: null,
+                'description_ar' => $request->description_ar ?: null,
+                'short_desc_en' => $request->short_desc_en ?: null,
+                'short_desc_ar' => $request->short_desc_ar ?: null,
+                'status' => $request->status ?? 'draft',
+                'has_variants' => $request->boolean('has_variants'),
+                'is_featured' => $request->boolean('is_featured'),
+                'requires_brand_auth' => $request->boolean('requires_brand_auth'),
+                'is_age_restricted' => $request->boolean('is_age_restricted'),
+                'min_age' => $request->min_age ?: null,
+                'is_hazardous' => $request->boolean('is_hazardous'),
+                'has_custom_attributes' => $request->boolean('has_custom_attributes'),
+                'seo_title_en' => $request->seo_title ?: null,
+                'seo_description_en' => $request->seo_description ?: null,
+                'total_sold' => 0,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-        } else {
-            $this->syncVariants($id, $request->input('variants', []));
-        }
 
-        // Country settings for all launched countries
-        $this->syncCountrySettings($id, $request->input('countries', []));
+            app(ContractAssignmentService::class)->apply(Product::findOrFail($id), 'product', $request->all());
 
-        // Attach uploaded images to this product
-        $this->syncImages($id, $request->input('images', []));
+            // Default variant when product has no variants
+            if (! $request->boolean('has_variants')) {
+                ProductVariant::query()->insert([
+                    'id' => (string) Str::uuid(),
+                    'product_id' => $id,
+                    'sku' => $this->resolveVariantSku(null),
+                    'is_default' => true,
+                    'is_active' => true,
+                    'position' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $this->syncVariants($id, $request->input('variants', []));
+            }
 
-        $this->syncHighlights($id, $request->input('highlights', []));
-        $this->syncPromoBadges($id, $request->input('promo_badges', []));
-        $this->syncSpecifications($id, $request->input('specifications', []));
+            // Country settings for all launched countries
+            $this->syncCountrySettings($id, $request->input('countries', []));
 
-        DB::commit();
+            // Attach uploaded images to this product
+            $this->syncImages($id, $request->input('images', []));
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'redirect' => route('admin.products.index'),
-            ]);
-        }
+            $this->syncHighlights($id, $request->input('highlights', []));
+            $this->syncPromoBadges($id, $request->input('promo_badges', []));
+            $this->syncSpecifications($id, $request->input('specifications', []));
 
-        return redirect()->route('admin.products.index')
-            ->with('success', 'Product created successfully.');
+            DB::commit();
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'redirect' => route('admin.products.index'),
+                ]);
+            }
+
+            return redirect()->route('admin.products.index')
+                ->with('success', 'Product created successfully.');
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Product creation failed', ['error' => $e->getMessage()]);
@@ -415,7 +420,7 @@ class ProductController extends Controller
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => 'Products', 'url' => route('admin.products.index')],
-                ['label' => e($productData->name_en)],
+                ['label' => $productData->name_en],
             ],
             'product' => $productData,
             'variants' => $variants,
@@ -438,58 +443,59 @@ class ProductController extends Controller
 
         DB::beginTransaction();
         try {
-        $data = [
-            'name_en' => $request->name_en,
-            'name_ar' => $request->name_ar,
-            'category_id' => $request->category_id,
-            'brand_id' => $request->brand_id ?: null,
-            'gtin' => $request->gtin ?: null,
-            'model_number' => $request->model_number ?: null,
-            'description_en' => $request->description_en ?: null,
-            'description_ar' => $request->description_ar ?: null,
-            'short_desc_en' => $request->short_desc_en ?: null,
-            'short_desc_ar' => $request->short_desc_ar ?: null,
-            'status' => $request->status,
-            'has_variants' => $request->boolean('has_variants'),
-            'is_featured' => $request->boolean('is_featured'),
-            'requires_brand_auth' => $request->boolean('requires_brand_auth'),
-            'is_age_restricted' => $request->boolean('is_age_restricted'),
-            'min_age' => $request->min_age ?: null,
-            'is_hazardous' => $request->boolean('is_hazardous'),
-            'has_custom_attributes' => $request->boolean('has_custom_attributes'),
-            'seo_title_en' => $request->seo_title ?: null,
-            'seo_description_en' => $request->seo_description ?: null,
-            'updated_at' => now(),
-        ];
+            $data = [
+                'name_en' => $request->name_en,
+                'name_ar' => $request->name_ar,
+                'category_id' => $request->category_id,
+                'brand_id' => $request->brand_id ?: null,
+                'gtin' => $request->gtin ?: null,
+                'model_number' => $request->model_number ?: null,
+                'description_en' => $request->description_en ?: null,
+                'description_ar' => $request->description_ar ?: null,
+                'short_desc_en' => $request->short_desc_en ?: null,
+                'short_desc_ar' => $request->short_desc_ar ?: null,
+                'status' => $request->status,
+                'has_variants' => $request->boolean('has_variants'),
+                'is_featured' => $request->boolean('is_featured'),
+                'requires_brand_auth' => $request->boolean('requires_brand_auth'),
+                'is_age_restricted' => $request->boolean('is_age_restricted'),
+                'min_age' => $request->min_age ?: null,
+                'is_hazardous' => $request->boolean('is_hazardous'),
+                'has_custom_attributes' => $request->boolean('has_custom_attributes'),
+                'seo_title_en' => $request->seo_title ?: null,
+                'seo_description_en' => $request->seo_description ?: null,
+                'updated_at' => now(),
+            ];
 
-        if ($request->filled('slug')) {
-            $data['slug'] = $request->slug;
-        }
+            if ($request->filled('slug')) {
+                $data['slug'] = $request->slug;
+            }
 
-        Product::query()->where('id', $product)->update($data);
+            Product::query()->where('id', $product)->update($data);
 
-        app(ContractAssignmentService::class)->apply($productModel->fresh(), 'product', $request->all());
+            app(ContractAssignmentService::class)->apply($productModel->fresh(), 'product', $request->all());
 
-        if ($request->boolean('has_variants') && $request->has('variants')) {
-            $this->syncVariants($product, $request->input('variants', []), update: true);
-        }
+            if ($request->boolean('has_variants') && $request->has('variants')) {
+                $this->syncVariants($product, $request->input('variants', []), update: true);
+            }
 
-        if ($request->has('countries')) {
-            $this->syncCountrySettings($product, $request->input('countries', []), update: true);
-        }
+            if ($request->has('countries')) {
+                $this->syncCountrySettings($product, $request->input('countries', []), update: true);
+            }
 
-        $this->syncImages($product, $request->input('images', []));
+            $this->syncImages($product, $request->input('images', []));
 
-        $this->syncHighlights($product, $request->input('highlights', []), update: true);
-        $this->syncPromoBadges($product, $request->input('promo_badges', []));
-        $this->syncSpecifications($product, $request->input('specifications', []), update: true);
+            $this->syncHighlights($product, $request->input('highlights', []), update: true);
+            $this->syncPromoBadges($product, $request->input('promo_badges', []));
+            $this->syncSpecifications($product, $request->input('specifications', []), update: true);
 
-        DB::commit();
+            DB::commit();
 
-        return response()->json(['success' => true, 'message' => 'Product updated successfully.']);
+            return response()->json(['success' => true, 'message' => 'Product updated successfully.']);
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Product update failed', ['id' => $product, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => 'Failed to update product.'], 500);
         }
     }
@@ -590,7 +596,7 @@ class ProductController extends Controller
     /**
      * Count non-deleted vendor/admin/marketer listings referencing any of the given variant IDs.
      */
-    private function countListings(\Illuminate\Support\Collection $variantIds): int
+    private function countListings(Collection $variantIds): int
     {
         if ($variantIds->isEmpty()) {
             return 0;
@@ -658,6 +664,7 @@ class ProductController extends Controller
 
                     if ($this->countListings($variantIds) > 0) {
                         $blocked++;
+
                         continue;
                     }
 
@@ -674,15 +681,15 @@ class ProductController extends Controller
                 break;
             case 'publish':
                 Product::query()->whereIn('id', $ids)->update(['status' => 'active', 'updated_at' => now()]);
-                $message = count($ids) . ' product(s) published.';
+                $message = count($ids).' product(s) published.';
                 break;
             case 'archive':
                 Product::query()->whereIn('id', $ids)->update(['status' => 'discontinued', 'updated_at' => now()]);
-                $message = count($ids) . ' product(s) archived.';
+                $message = count($ids).' product(s) archived.';
                 break;
             case 'feature':
                 Product::query()->whereIn('id', $ids)->update(['is_featured' => true, 'updated_at' => now()]);
-                $message = count($ids) . ' product(s) featured.';
+                $message = count($ids).' product(s) featured.';
                 break;
             default:
                 return response()->json(['message' => 'Unknown action.'], 422);
@@ -725,7 +732,7 @@ class ProductController extends Controller
                             'value_id' => $v->value_id,
                             'value_name' => $v->value_name,
                             'value_name_ar' => $v->value_name_ar,
-                        ]
+                        ],
                     ]);
                 }
             }
@@ -844,7 +851,7 @@ class ProductController extends Controller
         $attributes = $variantModel->variantAttributeValues()
             ->with('attribute')
             ->get()
-            ->map(fn($value) => [
+            ->map(fn ($value) => [
                 'name' => $value->attribute?->name_en,
                 'value' => $value->value_en,
             ])
@@ -881,7 +888,7 @@ class ProductController extends Controller
      * Attach `best_listing_id` and `customer_url` to each variant: the cheapest
      * active VendorListing for that variant across all countries (admin sees all).
      */
-    private function attachBestListingUrls(\Illuminate\Support\Collection $variants): void
+    private function attachBestListingUrls(Collection $variants): void
     {
         if ($variants->isEmpty()) {
             return;
@@ -889,7 +896,7 @@ class ProductController extends Controller
 
         $bestListingIds = VendorListing::query()
             ->whereIn('product_variant_id', $variants->pluck('id'))
-            ->where('status', \App\Enums\VendorListingStatus::Active)
+            ->where('status', VendorListingStatus::Active)
             ->whereNull('deleted_at')
             ->orderBy('price')
             ->get(['id', 'product_variant_id'])
@@ -909,7 +916,7 @@ class ProductController extends Controller
     {
         return VendorListing::query()
             ->where('product_variant_id', $variantId)
-            ->where('status', \App\Enums\VendorListingStatus::Active)
+            ->where('status', VendorListingStatus::Active)
             ->whereNull('deleted_at')
             ->orderBy('price')
             ->value('id');
@@ -970,11 +977,10 @@ class ProductController extends Controller
             $ids[] = $imageId;
         }
 
-
         return response()->json([
             'ids' => $ids,
-            'urls' => array_map(fn($id) => Storage::url(ProductImage::query()->where('id', $id)->value('path')), $ids),
-            'filenames' => array_map(fn($id) => ProductImage::query()->where('id', $id)->value('path'), $ids),
+            'urls' => array_map(fn ($id) => Storage::url(ProductImage::query()->where('id', $id)->value('path')), $ids),
+            'filenames' => array_map(fn ($id) => ProductImage::query()->where('id', $id)->value('path'), $ids),
         ]);
     }
 
@@ -982,7 +988,7 @@ class ProductController extends Controller
     {
         $image = ProductImage::query()->where('id', $mediaId)->first();
 
-        if (!$image) {
+        if (! $image) {
             return response()->json(['message' => 'Image not found.'], 404);
         }
 
@@ -1011,7 +1017,7 @@ class ProductController extends Controller
             ->select('id', 'name_en', 'status')
             ->first();
 
-        if (!$product) {
+        if (! $product) {
             return response()->json(['data' => ['exists' => false]]);
         }
 
@@ -1037,13 +1043,13 @@ class ProductController extends Controller
         $gtin = trim($request->input('gtin', ''));
         $exceptId = $request->input('except_id');
 
-        if (!preg_match('/^\d{8}$|^\d{12}$|^\d{13}$|^\d{14}$/', $gtin)) {
+        if (! preg_match('/^\d{8}$|^\d{12}$|^\d{13}$|^\d{14}$/', $gtin)) {
             return response()->json(['data' => ['exists' => false]]);
         }
 
         $product = $this->productService->checkGtinDuplicate($gtin, $exceptId);
 
-        if (!$product) {
+        if (! $product) {
             return response()->json(['data' => ['exists' => false]]);
         }
 
@@ -1090,7 +1096,7 @@ class ProductController extends Controller
             ->get(['id', 'path', 'disk', 'is_primary', 'position']);
 
         return response()->json([
-            'images' => $images->map(fn(ProductImage $image) => [
+            'images' => $images->map(fn (ProductImage $image) => [
                 'id' => $image->id,
                 'url' => $image->url,
                 'is_primary' => $image->is_primary,
@@ -1156,8 +1162,8 @@ class ProductController extends Controller
             ->get(['products.id', 'products.name_en']);
 
         return response()->json([
-            'results' => $items->map(fn($item) => [
-                'id'   => $item->id,
+            'results' => $items->map(fn ($item) => [
+                'id' => $item->id,
                 'text' => $item->name_en,
                 'position' => $item->pivot->position,
             ])->values(),
@@ -1174,12 +1180,12 @@ class ProductController extends Controller
             ->where('id', '!=', $product)
             ->whereNotIn('id', $existingIds)
             ->whereNull('deleted_at')
-            ->when($q !== '', fn($query) => $query->where('name_en', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%"))
             ->limit(20)
             ->get(['id', 'name_en']);
 
         return response()->json([
-            'results' => $rows->map(fn($p) => ['id' => $p->id, 'text' => $p->name_en])->values(),
+            'results' => $rows->map(fn ($p) => ['id' => $p->id, 'text' => $p->name_en])->values(),
         ]);
     }
 
@@ -1265,7 +1271,7 @@ class ProductController extends Controller
     {
         $incomingIds = collect($variants)
             ->pluck('id')
-            ->filter(fn($id) => filled($id))
+            ->filter(fn ($id) => filled($id))
             ->values()
             ->all();
 
@@ -1276,9 +1282,9 @@ class ProductController extends Controller
             $removableIds = ProductVariant::query()
                 ->where('product_id', $productId)
                 ->whereNull('deleted_at')
-                ->when(!empty($incomingIds), fn($q) => $q->whereNotIn('id', $incomingIds))
+                ->when(! empty($incomingIds), fn ($q) => $q->whereNotIn('id', $incomingIds))
                 ->pluck('id')
-                ->reject(fn($id) => $this->countListings(collect([$id])) > 0)
+                ->reject(fn ($id) => $this->countListings(collect([$id])) > 0)
                 ->values();
 
             if ($removableIds->isNotEmpty()) {
@@ -1301,7 +1307,7 @@ class ProductController extends Controller
                 'variant_name_ar' => isset($v['variant_name_ar']) ? trim((string) $v['variant_name_ar']) ?: null : null,
                 'weight_grams' => isset($v['weight_grams']) && $v['weight_grams'] !== '' ? (int) $v['weight_grams'] : null,
                 'is_default' => isset($v['is_default']) && (bool) $v['is_default'],
-                'is_active' => !isset($v['is_active']) || (bool) $v['is_active'],
+                'is_active' => ! isset($v['is_active']) || (bool) $v['is_active'],
                 'position' => $i,
                 'updated_at' => now(),
             ];
@@ -1313,9 +1319,10 @@ class ProductController extends Controller
                     ->update(array_merge($payload, ['deleted_at' => null]));
 
                 if ($updated) {
-                    if (!empty($v['image_ids'])) {
+                    if (! empty($v['image_ids'])) {
                         $this->syncVariantImages($productId, $variantId, (array) $v['image_ids']);
                     }
+
                     continue;
                 }
             }
@@ -1328,7 +1335,7 @@ class ProductController extends Controller
                 'created_at' => now(),
             ]));
 
-            if (!empty($v['image_ids'])) {
+            if (! empty($v['image_ids'])) {
                 $this->syncVariantImages($productId, $newVariantId, (array) $v['image_ids']);
             }
         }
@@ -1344,7 +1351,7 @@ class ProductController extends Controller
 
         $exists = ProductVariant::query()
             ->where('sku', $sku)
-            ->when($ignoreVariantId, fn($q) => $q->where('id', '!=', $ignoreVariantId))
+            ->when($ignoreVariantId, fn ($q) => $q->where('id', '!=', $ignoreVariantId))
             ->exists();
 
         if ($exists) {
@@ -1367,7 +1374,7 @@ class ProductController extends Controller
                 ->where('product_id', $productId)
                 ->whereNull('deleted_at')
                 ->where('slug', $slug)
-                ->when($ignoreVariantId, fn($q) => $q->where('id', '!=', $ignoreVariantId))
+                ->when($ignoreVariantId, fn ($q) => $q->where('id', '!=', $ignoreVariantId))
                 ->exists();
 
             if ($exists) {
@@ -1388,7 +1395,7 @@ class ProductController extends Controller
                 ->where('product_id', $productId)
                 ->whereNull('deleted_at')
                 ->where('slug', $slug)
-                ->when($ignoreVariantId, fn($q) => $q->where('id', '!=', $ignoreVariantId))
+                ->when($ignoreVariantId, fn ($q) => $q->where('id', '!=', $ignoreVariantId))
                 ->exists()
         ) {
             $slug = "{$base}-{$counter}";
@@ -1401,9 +1408,9 @@ class ProductController extends Controller
     private function generateUniqueVariantSku(): string
     {
         for ($i = 0; $i < 10; $i++) {
-            $candidate = 'SKU-' . strtoupper(Str::random(8));
+            $candidate = 'SKU-'.strtoupper(Str::random(8));
 
-            if (!ProductVariant::query()->where('sku', $candidate)->exists()) {
+            if (! ProductVariant::query()->where('sku', $candidate)->exists()) {
                 return $candidate;
             }
         }
@@ -1436,7 +1443,7 @@ class ProductController extends Controller
                         'requires_local_cert' => (bool) ($setting['requires_local_cert'] ?? false),
                         'updated_at' => now(),
                     ]);
-            } elseif (!$exists) {
+            } elseif (! $exists) {
                 ProductCountrySetting::query()->insert([
                     'id' => (string) Str::uuid(),
                     'product_id' => $productId,
@@ -1460,7 +1467,7 @@ class ProductController extends Controller
         $removed = ProductImage::query()
             ->where('product_id', $productId)
             ->whereNull('product_variant_id')
-            ->when(!empty($imageIds), fn($q) => $q->whereNotIn('id', $imageIds))
+            ->when(! empty($imageIds), fn ($q) => $q->whereNotIn('id', $imageIds))
             ->get(['id', 'path', 'disk']);
 
         foreach ($removed as $img) {
@@ -1516,11 +1523,11 @@ class ProductController extends Controller
     private function syncPromoBadges(string $productId, array $badges): void
     {
         $before = $this->badgeLabels(ProductPromoBadge::query()->where('product_id', $productId)->productLevel()->orderBy('sort_order')->get());
-        app(\App\Services\Shared\PromoBadgeSyncService::class)->sync($productId, null, null, $badges);
+        app(PromoBadgeSyncService::class)->sync($productId, null, null, $badges);
         $after = $this->badgeLabels(ProductPromoBadge::query()->where('product_id', $productId)->productLevel()->orderBy('sort_order')->get());
 
         if ($before !== $after) {
-            app(\App\Services\ActivityLoggerService::class)->log(
+            app(ActivityLoggerService::class)->log(
                 description: 'Product promo badges changed',
                 subject: Product::query()->find($productId),
                 causer: auth('admin')->user(),
@@ -1539,15 +1546,15 @@ class ProductController extends Controller
     private function syncHighlights(string $productId, array $highlights, bool $update = false): void
     {
         $rows = collect($highlights)
-            ->filter(fn($h) => filled($h['text_en'] ?? null) && filled($h['text_ar'] ?? null))
+            ->filter(fn ($h) => filled($h['text_en'] ?? null) && filled($h['text_ar'] ?? null))
             ->values();
 
-        $incomingIds = $rows->pluck('id')->filter(fn($id) => filled($id))->values()->all();
+        $incomingIds = $rows->pluck('id')->filter(fn ($id) => filled($id))->values()->all();
 
         if ($update) {
             ProductHighlight::query()
                 ->where('product_id', $productId)
-                ->when(!empty($incomingIds), fn($q) => $q->whereNotIn('id', $incomingIds))
+                ->when(! empty($incomingIds), fn ($q) => $q->whereNotIn('id', $incomingIds))
                 ->delete();
         }
 
@@ -1583,15 +1590,15 @@ class ProductController extends Controller
     private function syncSpecifications(string $productId, array $specifications, bool $update = false): void
     {
         $rows = collect($specifications)
-            ->filter(fn($s) => filled($s['key_en'] ?? null) && filled($s['key_ar'] ?? null) && filled($s['value_en'] ?? null) && filled($s['value_ar'] ?? null))
+            ->filter(fn ($s) => filled($s['key_en'] ?? null) && filled($s['key_ar'] ?? null) && filled($s['value_en'] ?? null) && filled($s['value_ar'] ?? null))
             ->values();
 
-        $incomingIds = $rows->pluck('id')->filter(fn($id) => filled($id))->values()->all();
+        $incomingIds = $rows->pluck('id')->filter(fn ($id) => filled($id))->values()->all();
 
         if ($update) {
             ProductSpecification::query()
                 ->where('product_id', $productId)
-                ->when(!empty($incomingIds), fn($q) => $q->whereNotIn('id', $incomingIds))
+                ->when(! empty($incomingIds), fn ($q) => $q->whereNotIn('id', $incomingIds))
                 ->delete();
         }
 

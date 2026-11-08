@@ -141,13 +141,14 @@ export default function CartItem({
           <Swiper slidesPerView={"auto"} spaceBetween={8} className="w-full">
             {cart?.cart.items
               .find((e) => e.cart_item_id === item.id)
-              ?.applicable_coupons?.map((c, i) => (
+              ?.applicable_coupons?.filter((c) => !!c?.title)
+              .map((c, i) => (
                 <SwiperSlide key={i} className="w-fit!">
                   <CouponDetailsModal
                     coupon={c}
                     trigger={
                       <button className="py-1 px-2 bg-light-green cursor-pointer border border-dashed border-green text-light rounded-md w-fit font-bold text-sm">
-                        {c.title[locale]}
+                        {c.title[locale] || c.title.en || c.title.ar}
                       </button>
                     }
                   />
@@ -168,10 +169,10 @@ export default function CartItem({
                 <span>{t("freeShipping")}</span>
               </p>
             )}
-            {item.vendor.store_name && (
+            {item.vendor?.store_name && (
               <p className="text-gray text-xs flex gap-1">
                 <StoreIcon size={"16px"} />
-                <span>sold by {item.vendor.store_name}</span>
+                <span>{t("soldBy", { store: item.vendor.store_name })}</span>
               </p>
             )}
           </div>

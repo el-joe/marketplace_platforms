@@ -2,9 +2,9 @@
 
 @php
     $isAr = session('locale', 'ar') === 'ar';
-    // Open Souq does not have its own registration wizard yet; it temporarily
-    // hands off to the product-seller /vendors/register flow.
-    $registerUrl = route('portal.register');
+    // Open Souq reuses the /vendors/register wizard; ?account=classified makes it
+    // create a classified-ads (Open Souq) vendor account instead of a product seller.
+    $registerUrl = route('portal.register', ['account' => 'classified']);
     $registerCta = portal_link('open-souq', 'hero', 'cta_button', 'Start selling', 'ابدأ البيع', $registerUrl);
 
     $benefits = [

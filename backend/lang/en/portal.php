@@ -162,6 +162,8 @@ return [
 
     'registration' => [
         'signature_name_required' => 'Type your full name to sign the Seller Agreement.',
+        'classified_account_notice' => 'You are registering an Open Souq account for classified ads (real estate, cars, services…).',
+        'switch_to_product_account' => 'Want to sell products instead?',
         'agreement_changed' => 'The Seller Agreement was updated while you were registering. Reload the page and review it again.',
         'agreement_download' => 'Download the agreement',
         'signature_name_label' => 'Sign with your full name',

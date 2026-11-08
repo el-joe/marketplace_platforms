@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', __('admin.admins_section.edit_administrator_title', ['name' => e($model->name)]))
+@section('title', __('admin.admins_section.edit_administrator_title', ['name' => $model->name]))
 
 @push('styles')
     @vite(['resources/js/components/select2.js', 'resources/js/admin/admins.js'])

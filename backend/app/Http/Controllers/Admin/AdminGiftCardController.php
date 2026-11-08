@@ -2,31 +2,31 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Support\Money;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdjustGiftCardBalanceRequest;
 use App\Http\Requests\Admin\StoreBatchRequest;
 use App\Http\Requests\Admin\UpdateBatchRequest;
 use App\Jobs\SendGiftCardDeliveryJob;
+use App\Models\Admin;
 use App\Models\GiftCard;
 use App\Models\GiftCardBatch;
 use App\Models\GiftCardPurchase;
 use App\Models\GiftCardTransaction;
 use App\Services\GiftCardService;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class AdminGiftCardController extends Controller
 {
     use HasDataTable;
 
-    public function __construct(private readonly GiftCardService $giftCardService)
-    {
-    }
+    public function __construct(private readonly GiftCardService $giftCardService) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Card index (all cards, across batches)
@@ -84,10 +84,10 @@ class AdminGiftCardController extends Controller
             ->with('redeemedBy:id,name');
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('gift_cards.status', $v),
-            'currency_code' => fn($q, $v) => $q->where('gift_cards.currency_code', $v),
-            'batch_id' => fn($q, $v) => $q->where('gift_cards.gift_card_batch_id', $v),
-            'search' => fn($q, $v) => $q->where('gift_cards.code', 'like', "%{$v}%"),
+            'status' => fn ($q, $v) => $q->where('gift_cards.status', $v),
+            'currency_code' => fn ($q, $v) => $q->where('gift_cards.currency_code', $v),
+            'batch_id' => fn ($q, $v) => $q->where('gift_cards.gift_card_batch_id', $v),
+            'search' => fn ($q, $v) => $q->where('gift_cards.code', 'like', "%{$v}%"),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
@@ -118,8 +118,8 @@ class AdminGiftCardController extends Controller
     {
         $batches = GiftCardBatch::query()
             ->withCount([
-                'giftCards as active_count' => fn($q) => $q->where('status', 'active'),
-                'giftCards as redeemed_count' => fn($q) => $q->where('status', 'redeemed'),
+                'giftCards as active_count' => fn ($q) => $q->where('status', 'active'),
+                'giftCards as redeemed_count' => fn ($q) => $q->where('status', 'redeemed'),
             ])
             ->with('createdByAdmin:id,name')
             ->latest('created_at')
@@ -162,8 +162,8 @@ class AdminGiftCardController extends Controller
             ->where('gift_card_batch_id', $batch->id);
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('gift_cards.status', $v),
-            'search' => fn($q, $v) => $q->where('gift_cards.code', 'like', "%{$v}%"),
+            'status' => fn ($q, $v) => $q->where('gift_cards.status', $v),
+            'search' => fn ($q, $v) => $q->where('gift_cards.code', 'like', "%{$v}%"),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
@@ -198,7 +198,7 @@ class AdminGiftCardController extends Controller
 
     public function batchStore(StoreBatchRequest $request): RedirectResponse
     {
-        /** @var \App\Models\Admin $admin */
+        /** @var Admin $admin */
         $admin = Auth::guard('admin')->user();
 
         $result = $this->giftCardService->generateBatch($request->validated(), $admin);
@@ -226,10 +226,10 @@ class AdminGiftCardController extends Controller
     public function batchShow(GiftCardBatch $batch): View
     {
         $batch->loadCount([
-            'giftCards as active_count' => fn($q) => $q->where('status', 'active'),
-            'giftCards as inactive_count' => fn($q) => $q->where('status', 'inactive'),
-            'giftCards as redeemed_count' => fn($q) => $q->where('status', 'redeemed'),
-            'giftCards as expired_count' => fn($q) => $q->where('status', 'expired'),
+            'giftCards as active_count' => fn ($q) => $q->where('status', 'active'),
+            'giftCards as inactive_count' => fn ($q) => $q->where('status', 'inactive'),
+            'giftCards as redeemed_count' => fn ($q) => $q->where('status', 'redeemed'),
+            'giftCards as expired_count' => fn ($q) => $q->where('status', 'expired'),
         ]);
         $batch->load('createdByAdmin:id,name');
 
@@ -246,7 +246,7 @@ class AdminGiftCardController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.gift_cards_section.batches_title'), 'url' => route('admin.gift-cards.batches.index')],
-                ['label' => e($batch->name)],
+                ['label' => $batch->name],
             ],
         ]);
     }
@@ -262,7 +262,7 @@ class AdminGiftCardController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.gift_cards_section.batches_title'), 'url' => route('admin.gift-cards.batches.index')],
-                ['label' => e($batch->name), 'url' => route('admin.gift-cards.batches.show', $batch->id)],
+                ['label' => $batch->name, 'url' => route('admin.gift-cards.batches.show', $batch->id)],
                 ['label' => __('admin.gift_cards_section.edit_batch')],
             ],
         ]);
@@ -302,7 +302,7 @@ class AdminGiftCardController extends Controller
             ->where('gift_card_batch_id', $batch->id);
 
         $query = $this->applyFilters($query, $request, [
-            'delivery_status' => fn($q, $v) => $q->where('gift_card_purchases.delivery_status', $v),
+            'delivery_status' => fn ($q, $v) => $q->where('gift_card_purchases.delivery_status', $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
@@ -333,7 +333,7 @@ class AdminGiftCardController extends Controller
     // Batch PIN download (one-time, session-flashed CSV only)
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function downloadPins(GiftCardBatch $batch): \Symfony\Component\HttpFoundation\Response
+    public function downloadPins(GiftCardBatch $batch): Response
     {
         $csv = session('pins_csv');
         $filename = session('pins_filename', 'gift_cards_'.$batch->id.'.csv');
@@ -397,7 +397,7 @@ class AdminGiftCardController extends Controller
 
     public function adjustBalance(AdjustGiftCardBalanceRequest $request, GiftCard $card): RedirectResponse
     {
-        /** @var \App\Models\Admin $admin */
+        /** @var Admin $admin */
         $admin = Auth::guard('admin')->user();
 
         $this->giftCardService->adminAdjust($card, $request->validated('delta'), $request->validated('notes'), $admin);

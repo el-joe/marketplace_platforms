@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import { ApiRequestError } from "@/src/lib/utils";
 import useLocale from "@/src/hooks/use-locale";
+import { useAuthContext } from "@/src/providers/auth-provider";
 import {
   signListingCustomerContract,
   type CustomerContractPayload,
@@ -26,6 +27,7 @@ export function useInquiryActions(slug: string) {
   const t = useTranslations("classifiedInquiry");
   const tc = useTranslations("customerContract");
   const locale = useLocale();
+  const { isLogged, setAuthDialogIsOpen } = useAuthContext();
 
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -66,6 +68,10 @@ export function useInquiryActions(slug: string) {
   const sendInquiry = async () => {
     const text = message.trim();
     if (!text || isSending) return;
+    if (!isLogged) {
+      setAuthDialogIsOpen(true);
+      return;
+    }
     await deliver(text);
   };
 

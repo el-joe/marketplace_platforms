@@ -247,7 +247,7 @@ class CouponController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.coupons'), 'url' => route('admin.coupons.index')],
-                ['label' => e($coupon->code)],
+                ['label' => $coupon->code],
             ],
         ]);
     }
@@ -272,7 +272,7 @@ class CouponController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.coupons'), 'url' => route('admin.coupons.index')],
-                ['label' => e($model->code)],
+                ['label' => $model->code],
             ],
             'categories' => Category::query()->where('is_active', true)->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en']),
             'countries' => Country::query()->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en']),

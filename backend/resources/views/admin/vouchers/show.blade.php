@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', __('admin.vouchers_section.voucher_detail') . ': ' . e($voucher->code))
+@section('title', __('admin.vouchers_section.voucher_detail') . ': ' . $voucher->code)
 
 @push('styles')
     @vite(['resources/js/components/datatable.js', 'resources/js/components/column-renderers.js'])

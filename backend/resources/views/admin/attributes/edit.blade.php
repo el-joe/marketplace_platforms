@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', __('admin.attributes_section.edit_attribute_prefix') . e($attribute->name_en))
+@section('title', __('admin.attributes_section.edit_attribute_prefix') . $attribute->name_en)
 
 @push('styles')
     @vite(['resources/js/admin/attributes.js'])

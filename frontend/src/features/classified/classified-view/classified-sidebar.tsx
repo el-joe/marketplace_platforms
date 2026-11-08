@@ -34,17 +34,31 @@ export default function ClassifiedSidebar({
     <aside className="w-full flex flex-col gap-4">
       {/* 1. Primary Action Buttons (Call / Chat) */}
       <div className="flex flex-col gap-2.5">
-        {/* Phone Call / Reveal Button */}
-        <button
-          onClick={() => setPhoneRevealed(true)}
-          className="w-full bg-[#0070f3] hover:bg-blue-600 active:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-xs flex items-center justify-center gap-2.5 text-base sm:text-lg transition-colors cursor-pointer"
-        >
-          <Phone className="w-5 h-5 fill-white text-white" />
-          <span>{phoneRevealed ? seller.phone : seller.phoneMasked}</span>
-        </button>
+        {/* Phone Call / Reveal Button — only when the advertiser shares a phone number */}
+        {seller.phone ? (
+          phoneRevealed ? (
+            <a
+              href={`tel:${seller.phone}`}
+              className="w-full bg-[#0070f3] hover:bg-blue-600 active:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-xs flex items-center justify-center gap-2.5 text-base sm:text-lg transition-colors"
+            >
+              <Phone className="w-5 h-5 fill-white text-white" />
+              <span dir="ltr">{seller.phone}</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setPhoneRevealed(true)}
+              className="w-full bg-[#0070f3] hover:bg-blue-600 active:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-xs flex items-center justify-center gap-2.5 text-base sm:text-lg transition-colors cursor-pointer"
+            >
+              <Phone className="w-5 h-5 fill-white text-white" />
+              <span dir="ltr">{seller.phoneMasked || t("showPhone")}</span>
+            </button>
+          )
+        ) : null}
 
         {/* Chat Button */}
         <button
+          type="button"
           onClick={onOpenChat}
           className="w-full bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-900 font-bold py-2.5 px-4 rounded-xl border border-gray-200 shadow-xs flex items-center justify-center gap-2.5 text-sm sm:text-base transition-colors cursor-pointer"
         >

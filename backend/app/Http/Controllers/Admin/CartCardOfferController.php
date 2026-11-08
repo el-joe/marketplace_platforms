@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Support\Money;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCartCardOfferRequest;
 use App\Http\Requests\Admin\UpdateCartCardOfferRequest;
+use App\Models\Admin;
 use App\Models\CartCardOffer;
 use App\Models\Country;
 use App\Services\Admin\CartCardOfferService;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -17,15 +18,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class CartCardOfferController extends Controller
 {
-    use HasDataTable, AuthorizesRequests;
+    use AuthorizesRequests, HasDataTable;
 
-    public function __construct(private readonly CartCardOfferService $offers)
-    {
-    }
+    public function __construct(private readonly CartCardOfferService $offers) {}
 
     public function index(): View
     {
@@ -71,7 +71,7 @@ class CartCardOfferController extends Controller
             return [
                 'id' => $row->id,
                 'card_image_url' => $row->card_image_path
-                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($row->card_image_path)
+                    ? Storage::disk('public')->url($row->card_image_path)
                     : null,
                 'card_name_en' => e($row->card_name_en),
                 'country_name' => e($row->country_name),
@@ -106,7 +106,7 @@ class CartCardOfferController extends Controller
     {
         Gate::forUser(Auth::guard('admin')->user())->authorize('create', CartCardOffer::class);
 
-        /** @var \App\Models\Admin $admin */
+        /** @var Admin $admin */
         $admin = Auth::guard('admin')->user();
 
         try {
@@ -117,6 +117,7 @@ class CartCardOfferController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['message' => __('admin.cart_card_offers_section.create_failed')], 500);
             }
+
             return back()->withInput()->withErrors(['error' => __('admin.cart_card_offers_section.create_failed')]);
         }
 
@@ -142,7 +143,7 @@ class CartCardOfferController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.cart_card_offers'), 'url' => route('admin.cart-card-offers.index')],
-                ['label' => e($model->card_name_en)],
+                ['label' => $model->card_name_en],
             ],
             'countries' => Country::query()->orderBy('name_en')->get(['id', 'name_en']),
         ]);
@@ -158,6 +159,7 @@ class CartCardOfferController extends Controller
             $this->offers->update($model, $request->validated(), $request->file('card_image'));
         } catch (\Throwable $e) {
             Log::error('CartCardOfferController@update failed', ['cart_card_offer' => $cartCardOffer, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.cart_card_offers_section.update_failed')], 500);
         }
 

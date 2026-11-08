@@ -3195,6 +3195,8 @@ return [
         'agree_required' => 'Confirm that you have read and agree to the contract.',
         'sign_failed' => 'The contract could not be signed. Please try again.',
         'sign_and_submit' => 'Sign contract and submit listing',
+        'sign_only' => 'Sign contract',
+        'signed_ready' => 'Contract signed. You can now complete and create the listing.',
         'nav_group' => 'Contracts',
         'scope_classified' => 'Classified',
         'scope_product' => 'Product',

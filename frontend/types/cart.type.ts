@@ -177,7 +177,8 @@ export interface ShippingGroupItem {
   listing_id: string;
   listing_type: string;
   max_order_quantity: number | null;
-  vendor: Vendor;
+  /** Null for platform (admin) and marketer listings. */
+  vendor: Vendor | null;
   selected_shipping_method: SelectedShippingMethod;
   warranty_plan: WarrantyPlanSummary | null;
 }

@@ -11,6 +11,7 @@ use App\Models\Country;
 use App\Models\File;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BlogPostController extends Controller
 {
@@ -28,7 +30,7 @@ class BlogPostController extends Controller
     // Index
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportPosts($request);
@@ -84,7 +86,7 @@ class BlogPostController extends Controller
             ['searchable_columns' => [], 'orderable_column' => null], // actions
         ];
 
-        if (!$query->getQuery()->orders) {
+        if (! $query->getQuery()->orders) {
             $query->orderByDesc('blog_posts.published_at');
         }
 
@@ -97,30 +99,30 @@ class BlogPostController extends Controller
 
         return $this->dataTableResponse($request, $query, $columns, function (BlogPost $row) use ($statusColors) {
             $imgHtml = $row->featured_image_path
-                ? '<img src="' . e(Storage::disk('public')->url($row->featured_image_path)) . '" class="w-10 h-10 object-cover rounded-lg">'
+                ? '<img src="'.e(Storage::disk('public')->url($row->featured_image_path)).'" class="w-10 h-10 object-cover rounded-lg">'
                 : '<div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-300 text-xs">—</div>';
 
             $categoryBadge = $row->category
-                ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-primary-50 text-primary-700">' . e($row->category->name_en) . '</span>'
+                ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-primary-50 text-primary-700">'.e($row->category->name_en).'</span>'
                 : '';
 
             $titleHtml = '<div class="min-w-0">'
-                . '<div class="font-medium text-gray-900 truncate max-w-xs">' . e($row->title_en) . '</div>'
-                . '<div class="text-xs text-gray-400 truncate max-w-xs" dir="rtl">' . e($row->title_ar) . '</div>'
-                . '<div class="mt-0.5">' . $categoryBadge . '</div>'
-                . '</div>';
+                .'<div class="font-medium text-gray-900 truncate max-w-xs">'.e($row->title_en).'</div>'
+                .'<div class="text-xs text-gray-400 truncate max-w-xs" dir="rtl">'.e($row->title_ar).'</div>'
+                .'<div class="mt-0.5">'.$categoryBadge.'</div>'
+                .'</div>';
 
             $countryHtml = $row->country
-                ? e(($row->country->flag_emoji ? $row->country->flag_emoji . ' ' : '') . $row->country->name_en)
+                ? e(($row->country->flag_emoji ? $row->country->flag_emoji.' ' : '').$row->country->name_en)
                 : '<span class="text-gray-400 text-xs">All Countries</span>';
 
             $sc = $statusColors[$row->status->value] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-600', 'label' => $row->status->label()];
-            $statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' . $sc['bg'] . ' ' . $sc['text'] . '">' . $sc['label'] . '</span>';
+            $statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium '.$sc['bg'].' '.$sc['text'].'">'.$sc['label'].'</span>';
 
             $dateHtml = $row->status === BlogPostStatus::Scheduled && $row->scheduled_for
-                ? '<div class="text-xs text-blue-600">' . $row->scheduled_for->format('d M Y H:i') . '</div><div class="text-xs text-gray-400">Scheduled</div>'
+                ? '<div class="text-xs text-blue-600">'.$row->scheduled_for->format('d M Y H:i').'</div><div class="text-xs text-gray-400">Scheduled</div>'
                 : ($row->published_at
-                    ? '<div class="text-xs text-gray-700">' . $row->published_at->format('d M Y') . '</div>'
+                    ? '<div class="text-xs text-gray-700">'.$row->published_at->format('d M Y').'</div>'
                     : '<span class="text-gray-300 text-xs">—</span>');
 
             $featuredStar = $row->is_featured
@@ -136,13 +138,13 @@ class BlogPostController extends Controller
             $featureClass = $row->is_featured ? 'text-amber-500' : 'text-gray-500';
 
             $actionsHtml = '<div class="relative" x-data="{open:false}">'
-                . '<button @click="open=!open" class="btn btn-ghost btn-sm">⋮</button>'
-                . '<div x-show="open" @click.away="open=false" x-cloak class="absolute right-0 z-10 w-40 bg-white border border-gray-200 rounded-lg shadow-lg py-1 text-sm">'
-                . '<a href="' . $editUrl . '" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Edit</a>'
-                . '<button type="button" class="btn-feature w-full text-left px-4 py-2 ' . $featureClass . ' hover:bg-gray-50" data-id="' . $row->id . '" data-url="' . $featureUrl . '">' . $featuredStar . $featureLabel . '</button>'
-                . '<button type="button" class="btn-archive w-full text-left px-4 py-2 text-amber-600 hover:bg-gray-50" data-id="' . $row->id . '" data-url="' . $archiveUrl . '">Archive</button>'
-                . '<button type="button" class="btn-delete w-full text-left px-4 py-2 text-red-500 hover:bg-gray-50" data-id="' . $row->id . '" data-url="' . $deleteUrl . '">Delete</button>'
-                . '</div></div>';
+                .'<button @click="open=!open" class="btn btn-ghost btn-sm">⋮</button>'
+                .'<div x-show="open" @click.away="open=false" x-cloak class="absolute right-0 z-10 w-40 bg-white border border-gray-200 rounded-lg shadow-lg py-1 text-sm">'
+                .'<a href="'.$editUrl.'" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Edit</a>'
+                .'<button type="button" class="btn-feature w-full text-left px-4 py-2 '.$featureClass.' hover:bg-gray-50" data-id="'.$row->id.'" data-url="'.$featureUrl.'">'.$featuredStar.$featureLabel.'</button>'
+                .'<button type="button" class="btn-archive w-full text-left px-4 py-2 text-amber-600 hover:bg-gray-50" data-id="'.$row->id.'" data-url="'.$archiveUrl.'">Archive</button>'
+                .'<button type="button" class="btn-delete w-full text-left px-4 py-2 text-red-500 hover:bg-gray-50" data-id="'.$row->id.'" data-url="'.$deleteUrl.'">Delete</button>'
+                .'</div></div>';
 
             return [
                 'image' => $imgHtml,
@@ -214,7 +216,7 @@ class BlogPostController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.blog_posts'), 'url' => route('admin.blog.posts.index')],
-                ['label' => e($post->title_en)],
+                ['label' => $post->title_en],
             ],
         ]));
     }
@@ -272,7 +274,7 @@ class BlogPostController extends Controller
 
     private function storeAttachments(Request $request, BlogPost $post): void
     {
-        if (!$request->hasFile('attachments')) {
+        if (! $request->hasFile('attachments')) {
             return;
         }
 
@@ -280,7 +282,7 @@ class BlogPostController extends Controller
 
         foreach ($request->file('attachments') as $uploaded) {
             $position++;
-            $path = $uploaded->store('blog-attachments/' . $post->id, 'public');
+            $path = $uploaded->store('blog-attachments/'.$post->id, 'public');
 
             File::create([
                 'model_type' => BlogPost::class,
@@ -336,7 +338,7 @@ class BlogPostController extends Controller
 
     public function feature(BlogPost $post): JsonResponse
     {
-        $newFeatured = !$post->is_featured;
+        $newFeatured = ! $post->is_featured;
 
         if ($newFeatured) {
             // Unfeat all other published posts in the same country scope
@@ -372,7 +374,7 @@ class BlogPostController extends Controller
     // Query building / Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildPostsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildPostsQuery(Request $request): Builder
     {
         $query = BlogPost::query()
             ->select('blog_posts.*')
@@ -380,32 +382,32 @@ class BlogPostController extends Controller
             ->withoutTrashed();
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where(function ($qq) use ($v) {
-                $qq->where('blog_posts.title_en', 'like', '%' . $v . '%')
-                    ->orWhere('blog_posts.slug', 'like', '%' . $v . '%');
+            'search' => fn ($q, $v) => $q->where(function ($qq) use ($v) {
+                $qq->where('blog_posts.title_en', 'like', '%'.$v.'%')
+                    ->orWhere('blog_posts.slug', 'like', '%'.$v.'%');
             }),
-            'status' => fn($q, $v) => $q->where('blog_posts.status', $v),
-            'category_id' => fn($q, $v) => $q->where('blog_posts.blog_category_id', $v),
-            'blog_category_id' => fn($q, $v) => $q->where('blog_posts.blog_category_id', $v),
-            'country_id' => fn($q, $v) => $q->where('blog_posts.country_id', $v),
-            'author_admin_id' => fn($q, $v) => $q->where('blog_posts.author_admin_id', $v),
-            'is_published' => fn($q, $v) => $q->when(
+            'status' => fn ($q, $v) => $q->where('blog_posts.status', $v),
+            'category_id' => fn ($q, $v) => $q->where('blog_posts.blog_category_id', $v),
+            'blog_category_id' => fn ($q, $v) => $q->where('blog_posts.blog_category_id', $v),
+            'country_id' => fn ($q, $v) => $q->where('blog_posts.country_id', $v),
+            'author_admin_id' => fn ($q, $v) => $q->where('blog_posts.author_admin_id', $v),
+            'is_published' => fn ($q, $v) => $q->when(
                 (bool) $v,
-                fn($qq) => $qq->whereNotNull('blog_posts.published_at'),
-                fn($qq) => $qq->whereNull('blog_posts.published_at')
+                fn ($qq) => $qq->whereNotNull('blog_posts.published_at'),
+                fn ($qq) => $qq->whereNull('blog_posts.published_at')
             ),
-            'date_from' => fn($q, $v) => $q->whereDate('blog_posts.published_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('blog_posts.published_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('blog_posts.published_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('blog_posts.published_at', '<=', $v),
         ]);
     }
 
-    private function exportPosts(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportPosts(Request $request): StreamedResponse
     {
         $posts = $this->buildPostsQuery($request)->orderByDesc('blog_posts.published_at')->get();
 
         $headers = ['Title', 'Category', 'Published', 'Views', 'Date'];
 
-        $rows = $posts->map(fn($post) => [
+        $rows = $posts->map(fn ($post) => [
             $post->title_en,
             $post->category?->name_en,
             $post->published_at ? 'Yes' : 'No',
@@ -428,7 +430,7 @@ class BlogPostController extends Controller
     private function formData(): array
     {
         $categories = BlogCategory::whereNull('parent_id')
-            ->with(['children' => fn($q) => $q->orderBy('sort_order')])
+            ->with(['children' => fn ($q) => $q->orderBy('sort_order')])
             ->orderBy('sort_order')
             ->get();
 
@@ -456,7 +458,7 @@ class BlogPostController extends Controller
             'author_admin_id' => 'nullable|string|exists:admins,id',
             'title_en' => 'required|string|max:255',
             'title_ar' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:blog_posts,slug,' . ($excludePostId ?? 'NULL'),
+            'slug' => 'nullable|string|max:255|unique:blog_posts,slug,'.($excludePostId ?? 'NULL'),
             'excerpt_en' => 'nullable|string|max:500',
             'excerpt_ar' => 'nullable|string|max:500',
             'body_en' => 'required|string',
@@ -512,7 +514,7 @@ class BlogPostController extends Controller
             $data['published_at'] = now();
             $data['published_by_admin_id'] = auth('admin')->id();
             $data['archived_at'] = null;
-        } elseif ($action === 'schedule' && !empty($data['scheduled_for'])) {
+        } elseif ($action === 'schedule' && ! empty($data['scheduled_for'])) {
             $data['status'] = 'scheduled';
         } elseif ($action === 'archive') {
             $data['status'] = 'archived';
@@ -526,11 +528,12 @@ class BlogPostController extends Controller
 
     private function handleImageUpload(Request $request, string $field): ?string
     {
-        if (!$request->hasFile($field)) {
+        if (! $request->hasFile($field)) {
             return null;
         }
 
         $file = $request->file($field);
+
         return $file->store('blog/images', 'public');
     }
 
@@ -544,6 +547,7 @@ class BlogPostController extends Controller
         if (empty(trim($raw))) {
             return [];
         }
+
         return array_values(array_filter(array_map('trim', explode(',', $raw))));
     }
 
@@ -554,11 +558,12 @@ class BlogPostController extends Controller
         while (
             BlogPost::withTrashed()
                 ->where('slug', $slug)
-                ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+                ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
                 ->exists()
         ) {
-            $slug = $base . '-' . $i++;
+            $slug = $base.'-'.$i++;
         }
+
         return $slug;
     }
 }

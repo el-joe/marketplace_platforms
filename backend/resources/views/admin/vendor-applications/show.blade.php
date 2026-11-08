@@ -275,7 +275,7 @@
                             <button type="button"
                                 class="btn btn-success btn-sm js-verify-bank-btn"
                                 data-url="{{ route('admin.vendors.bank-accounts.verify', [$vendor->id, $primaryBank->id]) }}"
-                                data-name="{{ e($primaryBank->bank_name ?? 'bank account') }}">
+                                data-name="{{ $primaryBank->bank_name ?? 'bank account' }}">
                                 {{ __('admin.vendor_applications.verify_bank_account_btn') }}
                             </button>
                         </div>
@@ -354,21 +354,21 @@
                             data-can-approve="{{ $canApprove ? 'true' : 'false' }}"
                             data-vendor-id="{{ $vendor->id }}"
                             data-approve-url="{{ route('admin.vendor-applications.approve', $vendor->id) }}"
-                            data-vendor-name="{{ e($vendor->store_name) }}">
+                            data-vendor-name="{{ $vendor->store_name }}">
                             {{ __('admin.vendor_applications.approve_application') }}
                         </button>
                         <button
                             type="button"
                             id="open-request-info-modal-btn"
                             class="w-full btn btn-secondary"
-                            data-vendor-name="{{ e($vendor->store_name) }}">
+                            data-vendor-name="{{ $vendor->store_name }}">
                             {{ __('admin.vendor_applications.request_more_information') }}
                         </button>
                         <button
                             type="button"
                             id="open-reject-modal-btn"
                             class="w-full btn btn-danger"
-                            data-vendor-name="{{ e($vendor->store_name) }}"
+                            data-vendor-name="{{ $vendor->store_name }}"
                             data-reject-url="{{ route('admin.vendor-applications.reject', $vendor->id) }}">
                             {{ __('admin.vendor_applications.reject_application') }}
                         </button>

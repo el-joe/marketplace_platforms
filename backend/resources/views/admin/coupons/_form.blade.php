@@ -366,7 +366,7 @@
                             <option value="">{{ __('admin.coupons_section.select_category') }}</option>
                             @foreach($categories as $cat)
                                 <option value="{{ $cat->id }}" {{ $val('category_id') === $cat->id ? 'selected' : '' }}>
-                                    {{ e($cat->name_en) }}
+                                    {{ $cat->name_en }}
                                 </option>
                             @endforeach
                         </select>
@@ -480,7 +480,7 @@
                             placeholder="{{ __('admin.coupons_section.select_customers') }}"
                         >
                             @foreach($selectedCustomers as $customer)
-                                <option value="{{ $customer->id }}" selected>{{ e($customer->name) }} ({{ e($customer->email) }})</option>
+                                <option value="{{ $customer->id }}" selected>{{ $customer->name }} ({{ $customer->email }})</option>
                             @endforeach
                         </select>
                         @error('eligible_customer_ids') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
@@ -513,7 +513,7 @@
                             placeholder="{{ __('admin.coupons_section.select_vendors') }}"
                         >
                             @foreach($selectedVendors as $vendor)
-                                <option value="{{ $vendor->id }}" selected>{{ e($vendor->store_name ?: $vendor->name) }}</option>
+                                <option value="{{ $vendor->id }}" selected>{{ $vendor->store_name ?: $vendor->name }}</option>
                             @endforeach
                         </select>
                         @error('vendor_ids') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
@@ -532,7 +532,7 @@
                             placeholder="{{ __('admin.coupons_section.select_marketers') }}"
                         >
                             @foreach($selectedMarketers as $marketer)
-                                <option value="{{ $marketer->id }}" selected>{{ e($marketer->name) }} ({{ e($marketer->email) }})</option>
+                                <option value="{{ $marketer->id }}" selected>{{ $marketer->name }} ({{ $marketer->email }})</option>
                             @endforeach
                         </select>
                         @error('marketer_ids') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
@@ -551,7 +551,7 @@
                             placeholder="{{ __('admin.coupons_section.select_products') }}"
                         >
                             @foreach($selectedProducts as $product)
-                                <option value="{{ $product->id }}" selected>{{ e($product->name_en ?: $product->name_ar) }}</option>
+                                <option value="{{ $product->id }}" selected>{{ $product->name_en ?: $product->name_ar }}</option>
                             @endforeach
                         </select>
                         <p class="text-xs text-gray-400 mt-1">{{ __('admin.coupons_section.targeted_products_hint') }}</p>
@@ -579,7 +579,7 @@
                         <option value=""></option>
                         @foreach($countries as $country)
                             <option value="{{ $country->id }}" {{ in_array($country->id, $selectedCountryIds, true) ? 'selected' : '' }}>
-                                {{ e($country->name_en) }}
+                                {{ $country->name_en }}
                             </option>
                         @endforeach
                     </select>

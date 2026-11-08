@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Send, CheckCircle } from "lucide-react";
 import CustomerContractModal from "./customer-contract-modal";
 import { useInquiryActions } from "./helpers/use-inquiry-actions";
+import { INQUIRY_INPUT_ID } from "./helpers/use-contact-actions";
 
 interface ClassifiedInquiryProps {
   sellerName?: string;
@@ -71,6 +72,7 @@ export default function ClassifiedInquiry({
       <form onSubmit={handleSend} className="flex items-center gap-2">
         <div className="relative flex-1">
           <input
+            id={INQUIRY_INPUT_ID}
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}

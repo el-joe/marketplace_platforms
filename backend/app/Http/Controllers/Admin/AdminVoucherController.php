@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Models\Country;
 use App\Models\Voucher;
 use App\Models\VoucherRedemption;
@@ -18,11 +19,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminVoucherController extends Controller
 {
-    use HasExport, HasDataTable;
+    use HasDataTable, HasExport;
 
-    public function __construct(private readonly VoucherService $voucherService)
-    {
-    }
+    public function __construct(private readonly VoucherService $voucherService) {}
 
     public function index(): View
     {
@@ -66,8 +65,8 @@ class AdminVoucherController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'is_active' => fn($q, $v) => $q->where('vouchers.is_active', (bool) $v),
-            'currency_code' => fn($q, $v) => $q->where('vouchers.currency_code', $v),
+            'is_active' => fn ($q, $v) => $q->where('vouchers.is_active', (bool) $v),
+            'currency_code' => fn ($q, $v) => $q->where('vouchers.currency_code', $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function (Voucher $row) {
@@ -128,7 +127,7 @@ class AdminVoucherController extends Controller
 
         $validated = $request->validate($rules);
 
-        /** @var \App\Models\Admin $admin */
+        /** @var Admin $admin */
         $admin = Auth::guard('admin')->user();
 
         $result = $this->voucherService->bulkGenerate($validated, $admin);
@@ -159,7 +158,7 @@ class AdminVoucherController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.vouchers_section.title'), 'url' => route('admin.vouchers.index')],
-                ['label' => e($voucher->code)],
+                ['label' => $voucher->code],
             ],
         ]);
     }
@@ -224,7 +223,7 @@ class AdminVoucherController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.vouchers_section.title'), 'url' => route('admin.vouchers.index')],
-                ['label' => e($voucher->code)],
+                ['label' => $voucher->code],
             ],
         ]);
     }

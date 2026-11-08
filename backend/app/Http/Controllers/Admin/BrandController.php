@@ -22,9 +22,7 @@ class BrandController extends Controller
 {
     use HasDataTable;
 
-    public function __construct(private readonly BrandService $service)
-    {
-    }
+    public function __construct(private readonly BrandService $service) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Index
@@ -69,9 +67,9 @@ class BrandController extends Controller
             ->whereNull('brands.deleted_at');
 
         $query = $this->applyFilters($query, $request, [
-            'is_verified' => fn($q, $v) => $q->where('brands.is_verified', (bool) $v),
-            'is_restricted' => fn($q, $v) => $q->where('brands.is_restricted', (bool) $v),
-            'is_active' => fn($q, $v) => $q->where('brands.is_active', (bool) $v),
+            'is_verified' => fn ($q, $v) => $q->where('brands.is_verified', (bool) $v),
+            'is_restricted' => fn ($q, $v) => $q->where('brands.is_restricted', (bool) $v),
+            'is_active' => fn ($q, $v) => $q->where('brands.is_active', (bool) $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
@@ -118,6 +116,7 @@ class BrandController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['message' => __('admin.brands.create_failed')], 500);
             }
+
             return back()->withInput()->withErrors(['error' => __('admin.brands.create_failed')]);
         }
 
@@ -145,7 +144,7 @@ class BrandController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.brands'), 'url' => route('admin.brands.index')],
-                ['label' => e($model->name_en)],
+                ['label' => $model->name_en],
             ],
         ]);
     }
@@ -161,6 +160,7 @@ class BrandController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('BrandController@update failed', ['brand' => $brand, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.brands.update_failed')], 500);
         }
 
@@ -186,17 +186,17 @@ class BrandController extends Controller
         }
 
         $file = $request->file('logo');
-        $ext  = $file->getClientOriginalExtension() ?: $file->guessExtension();
+        $ext = $file->getClientOriginalExtension() ?: $file->guessExtension();
         $path = $file->storeAs(
-            'brands/' . $model->id,
-            'logo_' . Str::random(8) . '.' . $ext,
+            'brands/'.$model->id,
+            'logo_'.Str::random(8).'.'.$ext,
             'public'
         );
 
         $model->update(['logo_media_id' => $path]);
 
         return response()->json([
-            'message'  => 'Logo uploaded successfully.',
+            'message' => 'Logo uploaded successfully.',
             'logo_url' => $model->fresh()->logo_url,
         ]);
     }
@@ -207,7 +207,7 @@ class BrandController extends Controller
 
         $model = Brand::findOrFail($brand);
 
-        if (!$model->logo_media_id) {
+        if (! $model->logo_media_id) {
             return response()->json(['message' => 'No logo to remove.'], 404);
         }
 
@@ -264,9 +264,9 @@ class BrandController extends Controller
             ->get(['id', 'name_en', 'name_ar']);
 
         return response()->json([
-            'results' => $brands->map(fn($b) => [
+            'results' => $brands->map(fn ($b) => [
                 'id' => $b->id,
-                'text' => $b->name_en . ($b->name_ar ? " / {$b->name_ar}" : ''),
+                'text' => $b->name_en.($b->name_ar ? " / {$b->name_ar}" : ''),
             ]),
         ]);
     }

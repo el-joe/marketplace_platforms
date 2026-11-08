@@ -15,7 +15,17 @@ export type ProfileProductItem = IProduct & { section?: ListingSection | null };
 
 export type ProfileListingItem = ProfileProductItem | TravelListingItem;
 
+/** Collaboration contract type an admin flagged as visible on the marketer's public profile (type only, no terms). */
+export interface IMarketerContractType {
+  kind: string | null;
+  kind_label: { ar: string; en: string } | null;
+  name: string;
+  version: number;
+  country: string | null;
+}
+
 export interface IMarketer {
+  contract_types?: IMarketerContractType[];
   marketer: Marketer;
   profile: Profile;
   own_listings: OwnListings;

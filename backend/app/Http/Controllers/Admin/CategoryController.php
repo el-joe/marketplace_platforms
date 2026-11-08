@@ -23,7 +23,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
@@ -210,7 +209,7 @@ class CategoryController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.categories'), 'url' => route('admin.categories.index')],
-                ['label' => e($categoryModel->name_en)],
+                ['label' => $categoryModel->name_en],
             ],
             'category' => $categoryModel,
             'activeCountries' => $activeCountries,

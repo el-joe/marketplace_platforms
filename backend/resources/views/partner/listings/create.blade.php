@@ -24,6 +24,8 @@
                 agreeRequired: @js(__('partner.contracts.agree_required')),
                 signError: @js(__('partner.contracts.sign_failed')),
                 signAndSubmit: @js(__('partner.contracts.sign_and_submit')),
+                signOnly: @js(__('partner.contracts.sign_only')),
+                signedReady: @js(__('partner.contracts.signed_ready')),
             },
         };
     </script>

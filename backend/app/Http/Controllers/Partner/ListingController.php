@@ -9,6 +9,8 @@ use App\Enums\ProductStatus;
 use App\Enums\VendorListingStatus;
 use App\Enums\WarehouseType;
 use App\Events\ListingStockChanged;
+use App\Exceptions\ContractNotConfiguredException;
+use App\Exceptions\ContractRequiredException;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Country;
@@ -34,14 +36,12 @@ use App\Notifications\Admin\ListingResubmittedNotification;
 use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
 use App\Services\ListingCertificationGate;
+use App\Services\ListingContractGate;
 use App\Services\ListingShippingResolver;
 use App\Services\MarketerCampaignService;
 use App\Services\Shared\PageCacheService;
 use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\ShippingWeightService;
-use App\Exceptions\ContractNotConfiguredException;
-use App\Exceptions\ContractRequiredException;
-use App\Services\ListingContractGate;
 use App\Services\Vendor\CategoryContractService;
 use App\Support\Money;
 use App\Traits\HasDataTable;
@@ -754,9 +754,12 @@ class ListingController extends Controller
             'signed' => $signed,
             'not_configured' => false,
             'name' => $resolved->template->name,
+            'category_name' => $resolved->subject->name_en,
             'message' => $signed
                 ? __('contracts.partner.hint_signed', ['name' => $resolved->template->name])
                 : __('contracts.partner.hint_required', ['name' => $resolved->template->name]),
+            // Shown as soon as the product is chosen, so the vendor reads and signs before filling the form.
+            'contract' => $signed ? null : $contracts->payloadFor($vendor, $resolved->template, $resolved->scope, $resolved->subject, 'partner.legal.template-file', 'partner.contracts.accept'),
         ]);
     }
 

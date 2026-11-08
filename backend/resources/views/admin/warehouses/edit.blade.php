@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', __('admin.warehouses_section.edit_warehouse_title', ['name' => e($warehouse->name)]))
+@section('title', __('admin.warehouses_section.edit_warehouse_title', ['name' => $warehouse->name]))
 
 @push('styles')
     @vite(['resources/js/components/select2.js'])

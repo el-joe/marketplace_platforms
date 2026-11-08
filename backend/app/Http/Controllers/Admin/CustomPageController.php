@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use App\Models\CustomPage;
 use App\Models\File;
 use App\Models\Slug;
@@ -13,13 +12,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CustomPageController extends Controller
 {
-    public function __construct(private CustomPageService $service)
-    {
-    }
+    public function __construct(private CustomPageService $service) {}
 
     public function index(): View
     {
@@ -65,7 +64,7 @@ class CustomPageController extends Controller
             'seo_description_en' => 'nullable|string|max:255',
             'seo_description_ar' => 'nullable|string|max:255',
             'listing_types' => 'nullable|array',
-            'listing_types.*' => ['string', \Illuminate\Validation\Rule::in(CustomPage::LISTING_TYPES)],
+            'listing_types.*' => ['string', Rule::in(CustomPage::LISTING_TYPES)],
             'all_categories' => 'nullable|boolean',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'string|exists:categories,id',
@@ -117,7 +116,7 @@ class CustomPageController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.custom_pages'), 'url' => route('admin.custom-pages.index')],
-                ['label' => e($customPageModel->name_en)],
+                ['label' => $customPageModel->name_en],
             ],
             'customPage' => $customPageModel,
             'filterableAttributes' => $this->service->filterableAttributes($customPageModel),
@@ -142,7 +141,7 @@ class CustomPageController extends Controller
             'seo_description_en' => 'nullable|string|max:255',
             'seo_description_ar' => 'nullable|string|max:255',
             'listing_types' => 'nullable|array',
-            'listing_types.*' => ['string', \Illuminate\Validation\Rule::in(CustomPage::LISTING_TYPES)],
+            'listing_types.*' => ['string', Rule::in(CustomPage::LISTING_TYPES)],
             'all_categories' => 'nullable|boolean',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'string|exists:categories,id',
@@ -167,7 +166,7 @@ class CustomPageController extends Controller
             ]);
 
             $currentSlug = $customPageModel->slugRecord?->slug_url;
-            if (!empty($data['slug']) && $data['slug'] !== $currentSlug) {
+            if (! empty($data['slug']) && $data['slug'] !== $currentSlug) {
                 $slug = $this->service->uniqueSlug($data['slug'], $data['name_en'], $customPageModel);
                 Slug::upsertFor($customPageModel, $slug);
             }
@@ -188,8 +187,8 @@ class CustomPageController extends Controller
 
     private function assertCategoryScope(Request $request): void
     {
-        if (!$request->boolean('all_categories') && empty($request->input('category_ids'))) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+        if (! $request->boolean('all_categories') && empty($request->input('category_ids'))) {
+            throw ValidationException::withMessages([
                 'category_ids' => [__('admin.custom_pages.categories_required')],
             ]);
         }
@@ -206,7 +205,7 @@ class CustomPageController extends Controller
     public function toggleActive(string $customPage): JsonResponse
     {
         $customPageModel = CustomPage::withoutTrashed()->findOrFail($customPage);
-        $customPageModel->update(['is_active' => !$customPageModel->is_active]);
+        $customPageModel->update(['is_active' => ! $customPageModel->is_active]);
 
         return response()->json(['success' => true, 'is_active' => (bool) $customPageModel->fresh()->is_active]);
     }
@@ -260,13 +259,13 @@ class CustomPageController extends Controller
         $uploadedFile = $request->file('image');
         $ext = $uploadedFile->getClientOriginalExtension() ?: $uploadedFile->guessExtension();
         $path = $uploadedFile->storeAs(
-            'custom-pages/' . $customPageModel->id,
-            'image_' . Str::random(8) . '.' . $ext,
+            'custom-pages/'.$customPageModel->id,
+            'image_'.Str::random(8).'.'.$ext,
             'public'
         );
 
         $file = File::create([
-            'key' => 'custom-pages/' . $customPageModel->id . '/image',
+            'key' => 'custom-pages/'.$customPageModel->id.'/image',
             'path' => $path,
             'storage_type' => 'public',
             'file_type' => 'custom_page_image',

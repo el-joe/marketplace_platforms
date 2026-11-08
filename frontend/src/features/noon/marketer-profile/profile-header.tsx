@@ -32,6 +32,17 @@ export default async function ProfileHeader({ data }: { data: IMarketer }) {
       : marketer.marketer_type === "affiliate"
         ? t("affiliateBadge")
         : null;
+  const contractTypeLabels = Array.from(
+    new Set(
+      (data.contract_types ?? [])
+        .map((contract) =>
+          isAr
+            ? contract.kind_label?.ar || contract.kind_label?.en
+            : contract.kind_label?.en || contract.kind_label?.ar,
+        )
+        .filter((label): label is string => !!label),
+    ),
+  );
   const avatar = profile.avatar_url
     ? getImageURL(profile.avatar_url)
     : FALLBACK_AVATAR[profile.gender === "male" ? "male" : "female"];
@@ -87,6 +98,21 @@ export default async function ProfileHeader({ data }: { data: IMarketer }) {
               <p className="mt-0.5 text-sm text-gray-500">
                 {t("country")} {country}
               </p>
+            )}
+            {contractTypeLabels.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-gray-500">
+                  {t("contractType")}
+                </span>
+                {contractTypeLabels.map((label) => (
+                  <span
+                    key={label}
+                    className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
             )}
             {bio && (
               <p className="mt-2 line-clamp-2 max-w-2xl text-sm">{bio}</p>

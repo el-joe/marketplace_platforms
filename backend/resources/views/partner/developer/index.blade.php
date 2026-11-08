@@ -91,7 +91,7 @@
                         <td class="px-4 py-3 text-sm text-gray-500">{{ $token->created_at->format('M j, Y') }}</td>
                         @if(auth()->guard('vendor')->user()->is_owner || auth()->guard('vendor')->user()->isManager())
                         <td class="px-4 py-3 text-right">
-                            <button @click="confirmRevoke({{ $token->id }}, '{{ e($token->name) }}')" class="text-sm text-red-600 hover:text-red-800 font-medium transition">Revoke</button>
+                            <button @click="confirmRevoke({{ $token->id }}, @js($token->name))" class="text-sm text-red-600 hover:text-red-800 font-medium transition">Revoke</button>
                         </td>
                         @endif
                     </tr>

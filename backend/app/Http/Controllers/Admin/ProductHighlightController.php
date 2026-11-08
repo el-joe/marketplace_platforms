@@ -56,7 +56,7 @@ class ProductHighlightController extends Controller
             ->with('product:id,name_en');
 
         $query = $this->applyFilters($query, $request, [
-            'product_id' => fn($q, $v) => $q->where('product_highlights.product_id', $v),
+            'product_id' => fn ($q, $v) => $q->where('product_highlights.product_id', $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function (ProductHighlight $highlight) {
@@ -110,7 +110,7 @@ class ProductHighlightController extends Controller
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.products'), 'url' => route('admin.products.index')],
                 ['label' => __('admin.product_highlights.title'), 'url' => route('admin.product-highlights.index')],
-                ['label' => e($highlight->text_en)],
+                ['label' => $highlight->text_en],
             ],
             'highlight' => $highlight,
         ]);
@@ -151,12 +151,12 @@ class ProductHighlightController extends Controller
 
         $rows = Product::query()
             ->whereNull('deleted_at')
-            ->when($q !== '', fn($query) => $query->where('name_en', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%"))
             ->limit(20)
             ->get(['id', 'name_en']);
 
         return response()->json([
-            'results' => $rows->map(fn($p) => ['id' => $p->id, 'text' => $p->name_en])->values(),
+            'results' => $rows->map(fn ($p) => ['id' => $p->id, 'text' => $p->name_en])->values(),
         ]);
     }
 

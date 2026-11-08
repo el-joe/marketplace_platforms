@@ -11,6 +11,7 @@ import ClassifiedSidebar from "./classified-sidebar";
 import ClassifiedRecommended from "./classified-recommended";
 import ClassifiedLocationMap from "./classified-location-map";
 import { ClassifiedDetail } from "./types";
+import { useContactActions } from "./helpers/use-contact-actions";
 
 interface ClassifiedViewProps {
   initialData: ClassifiedDetail;
@@ -18,6 +19,7 @@ interface ClassifiedViewProps {
 
 export default function ClassifiedView({ initialData }: ClassifiedViewProps) {
   const listing = initialData;
+  const { openChat } = useContactActions();
 
   return (
     <main className="min-h-screen bg-gray-50/50 pb-16">
@@ -63,15 +65,7 @@ export default function ClassifiedView({ initialData }: ClassifiedViewProps) {
           <div className="lg:col-span-4 lg:sticky lg:top-20">
             <ClassifiedSidebar
               seller={listing.seller}
-              onOpenChat={() => {
-                const el = document.querySelector(
-                  "input[placeholder='Message...']",
-                );
-                if (el) {
-                  (el as HTMLInputElement).focus();
-                  el.scrollIntoView({ behavior: "smooth", block: "center" });
-                }
-              }}
+              onOpenChat={openChat}
             />
           </div>
         </div>

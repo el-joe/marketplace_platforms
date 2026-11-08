@@ -192,7 +192,7 @@
                     <option value="">{{ __('admin.vouchers_section.all_countries') }}</option>
                     @foreach($countries as $country)
                         <option value="{{ $country->id }}" {{ $val('country_id') === $country->id ? 'selected' : '' }}>
-                            {{ e($country->name_en) }}
+                            {{ $country->name_en }}
                         </option>
                     @endforeach
                 </select>
@@ -229,7 +229,7 @@
                     placeholder="{{ __('admin.vouchers_section.select_customers') }}"
                 >
                     @foreach($selectedCustomers as $customer)
-                        <option value="{{ $customer->id }}" selected>{{ e($customer->name) }} ({{ e($customer->email) }})</option>
+                        <option value="{{ $customer->id }}" selected>{{ $customer->name }} ({{ $customer->email }})</option>
                     @endforeach
                 </select>
                 @error('eligible_customer_ids') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror

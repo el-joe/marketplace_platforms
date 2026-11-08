@@ -23,6 +23,12 @@
             </a>
             <h1 class="mt-5 text-2xl font-black text-white">{{ portal_content('register', 'header', 'title', 'Join Nawy as a Seller', 'انضم إلى منصة ناوي كبائع') }}</h1>
             <p class="mt-2 text-gray-400 text-sm">{{ portal_content('register', 'header', 'subtitle', 'Complete the following steps to create your business account', 'أكمل الخطوات التالية لإنشاء حسابك التجاري') }}</p>
+            @if($isClassifiedAccount ?? false)
+                <p data-testid="classified-account-notice" class="mt-4 inline-block rounded-lg border border-[#0F807E]/40 bg-[#0F807E]/10 px-4 py-2 text-sm text-teal-200">
+                    {{ __('portal.registration.classified_account_notice') }}
+                    <a href="{{ route('portal.register') }}" class="ms-1 underline text-teal-100">{{ __('portal.registration.switch_to_product_account') }}</a>
+                </p>
+            @endif
         </div>
 
         {{-- Wizard card --}}

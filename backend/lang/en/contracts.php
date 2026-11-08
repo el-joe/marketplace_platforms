@@ -169,7 +169,7 @@ return [
     ],
 
     'partner' => [
-        'hint_required' => 'This product requires an individual contract (:name). You will be asked to sign it when you submit.',
+        'hint_required' => 'This product requires an individual contract (:name). Read and sign it below before creating the listing.',
         'hint_signed' => 'This product requires an individual contract (:name). You have already signed the current version.',
         'required_reason' => 'Required for the products you list.',
         'agreement_country' => 'Seller Agreement for your country: :country',

@@ -162,6 +162,8 @@ return [
 
     'registration' => [
         'signature_name_required' => 'اكتب اسمك الكامل للتوقيع على اتفاقية البائع.',
+        'classified_account_notice' => 'أنت تسجّل حساب «السوق المفتوح» لنشر الإعلانات المبوّبة (عقارات، سيارات، خدمات…).',
+        'switch_to_product_account' => 'تريد بيع منتجات بدلًا من ذلك؟',
         'agreement_changed' => 'تم تحديث اتفاقية البائع أثناء التسجيل. أعد تحميل الصفحة وراجعها مرة أخرى.',
         'agreement_download' => 'تحميل الاتفاقية',
         'signature_name_label' => 'وقّع باسمك الكامل',

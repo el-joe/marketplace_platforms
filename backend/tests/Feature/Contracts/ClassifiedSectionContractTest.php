@@ -3,11 +3,14 @@
 namespace Tests\Feature\Contracts;
 
 use App\Enums\ClassifiedListingStatus;
+use App\Enums\VendorType;
 use App\Exceptions\ContractNotConfiguredException;
 use App\Models\Admin;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedContractTemplate;
 use App\Models\ContractCountryAssignment;
+use App\Models\VendorAdmin;
+use App\Models\VendorContract;
 use App\Services\Shared\ClassifiedListingService;
 use App\Services\Vendor\CategoryContractService;
 use App\Services\Vendor\ClassifiedSectionContractService;
@@ -15,8 +18,11 @@ use App\Services\Vendor\ContractResolver;
 use Database\Seeders\ContractTemplateSeeder;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Tests\Support\CountryContractFixtures;
 use Tests\Support\MarketplaceScenario;
@@ -422,6 +428,50 @@ class ClassifiedSectionContractTest extends TestCase
 
         $this->assertSame(ClassifiedListingStatus::PendingReview, $listing->status);
         $this->assertNull($listing->contract_template_id);
+    }
+
+    public function test_a_classified_vendor_publishing_in_a_real_estate_sub_section_is_asked_to_sign_the_inherited_contract(): void
+    {
+        Bus::fake();
+        $publicRoot = sys_get_temp_dir().'/classified-contract-test-'.uniqid();
+        config(['filesystems.disks.public.root' => $publicRoot]);
+        Storage::forgetDisk('public');
+        $this->beforeApplicationDestroyed(fn () => File::deleteDirectory($publicRoot));
+        $uae = $this->scenario->country;
+        $vendor = $this->scenario->vendor;
+        $vendor->update(['vendor_type' => VendorType::ClassifiedVendor]);
+        $owner = VendorAdmin::create([
+            'vendor_id' => $vendor->id, 'name' => 'Souq Owner', 'email' => 'souq-owner@example.test',
+            'password' => bcrypt('password'), 'role' => 'owner', 'is_owner' => true, 'is_active' => true,
+        ]);
+
+        $realEstate = ClassifiedCategory::factory()->create(['slug' => 'real-estate']);
+        $apartments = ClassifiedCategory::factory()->childOf($realEstate)->create(['slug' => 'apartments']);
+        $template = $this->create(['name' => 'Real estate terms', 'country_id' => $uae->id, 'classified_category_ids' => [$realEstate->id]]);
+        $this->publish($template);
+
+        $child = collect($this->actingAs($owner, 'vendor')->getJson(route('partner.classifieds.categories'))->assertOk()->json('data'))
+            ->firstWhere('id', $realEstate->id)['children'][0];
+        $this->assertSame($apartments->id, $child['id']);
+        $this->assertTrue($child['contract_pending']);
+        $this->assertNotEmpty($child['contract_template_content']);
+
+        $payload = [
+            'classified_category_id' => $apartments->id, 'country_id' => $uae->id, 'listing_purpose' => 'rent',
+            'title_en' => 'Flat', 'title_ar' => 'شقة', 'price' => 100, 'currency' => 'AED',
+            'latitude' => 25.08, 'longitude' => 55.14, 'images' => [UploadedFile::fake()->image('flat.jpg')],
+        ];
+
+        $this->actingAs($owner, 'vendor')->post(route('partner.classifieds.store'), $payload, ['Accept' => 'application/json'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['signature_name', 'agreed']);
+
+        $this->actingAs($owner, 'vendor')->post(route('partner.classifieds.store'), $payload + [
+            'images' => [UploadedFile::fake()->image('flat.jpg')], 'signature_name' => 'Souq Owner', 'language' => 'ar', 'agreed' => '1',
+        ], ['Accept' => 'application/json'])->assertCreated();
+
+        $this->assertTrue(VendorContract::where('vendor_id', $vendor->id)->where('contract_template_id', $template->id)->exists());
+        $this->assertNull(app(CategoryContractService::class)->unsignedTemplateFor($vendor->fresh(), 'classified', $apartments->id));
     }
 
     // ── Seeder ───────────────────────────────────────────────────────────────
