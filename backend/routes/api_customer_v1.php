@@ -58,6 +58,7 @@ use App\Http\Controllers\Customer\RefundController;
 use App\Http\Controllers\Customer\ReturnController;
 use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\Customer\SearchController;
+use App\Http\Controllers\Customer\StaticPageController;
 use App\Http\Controllers\Customer\SponsoredAdController;
 use App\Http\Controllers\Customer\SupportTicketController;
 use App\Http\Controllers\Customer\VendorPageController;
@@ -237,6 +238,9 @@ Route::prefix('help-center')->name('customer.help-center.')->group(function (): 
 
 // ── Page Renderer (public) ────────────────────────────────────────────
 Route::get('pages/{type}', [PageController::class, 'show'])->name('customer.pages.show');
+
+// ── Static content pages (public, admin-managed: About Us, Terms, Privacy, ...) ──
+Route::get('static-pages/{slug}', [StaticPageController::class, 'show'])->name('customer.static-pages.show');
 
 // ── Page block click tracking (public — guests can click) ─────────────
 Route::post('blocks/{id}/click', [PageController::class, 'click'])

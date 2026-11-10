@@ -95,7 +95,17 @@
   "footer": {
     "shopONTheGo": "Shop on the go",
     "contactWithUs": "Contact with us",
-    "rights": "© 2026 brand. all rights reserved"
+    "rights": "© 2026 brand. all rights reserved",
+    "staticGroups": {
+      "company": "Company",
+      "policies": "Policies",
+      "help": "Help",
+      "other": "More"
+    }
+  },
+  "staticPage": {
+    "home": "Home",
+    "lastUpdated": "Last updated {date}"
   },
   "home": {
     "moreReasonsToShop": "More reasons to shop",

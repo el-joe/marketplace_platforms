@@ -785,6 +785,13 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
+                        'label' => __('admin.nav.static_pages'),
+                        'route' => 'admin.static-pages.index',
+                        'icon' => 'document-duplicate',
+                        'permission' => 'static_pages.view',
+                        'badge' => null,
+                    ],
+                    [
                         'label' => __('admin.nav.portal_content'),
                         'route' => 'admin.portal-content.index',
                         'icon' => 'document-text',

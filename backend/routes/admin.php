@@ -98,6 +98,7 @@ use App\Http\Controllers\Admin\ShippingSettingController;
 use App\Http\Controllers\Admin\ShippingSubsidyController;
 use App\Http\Controllers\Admin\ShippingWeightSlabController;
 use App\Http\Controllers\Admin\ShippingZoneController;
+use App\Http\Controllers\Admin\StaticPageController;
 use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Admin\SupportTicketController;
 use App\Http\Controllers\Admin\SystemToolsController;
@@ -1282,6 +1283,18 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::put('/{faq}', [FaqController::class, 'update'])->name('update')->middleware('admin.permission:faqs.edit');
         Route::delete('/{faq}', [FaqController::class, 'destroy'])->name('destroy')->middleware('admin.permission:faqs.delete');
         Route::post('/{faq}/toggle', [FaqController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:faqs.edit');
+    });
+
+    // ─── Static Pages (About Us, Terms, Privacy, ... for portal + storefront) ──
+    Route::prefix('static-pages')->name('static-pages.')->middleware('admin.permission:static_pages.view')->group(function () {
+        Route::get('/', [StaticPageController::class, 'index'])->name('index');
+        Route::post('/datatable', [StaticPageController::class, 'datatable'])->name('datatable');
+        Route::get('/create', [StaticPageController::class, 'create'])->name('create')->middleware('admin.permission:static_pages.create');
+        Route::post('/', [StaticPageController::class, 'store'])->name('store')->middleware('admin.permission:static_pages.create');
+        Route::get('/{staticPage:id}/edit', [StaticPageController::class, 'edit'])->name('edit')->middleware('admin.permission:static_pages.edit');
+        Route::put('/{staticPage:id}', [StaticPageController::class, 'update'])->name('update')->middleware('admin.permission:static_pages.edit');
+        Route::delete('/{staticPage:id}', [StaticPageController::class, 'destroy'])->name('destroy')->middleware('admin.permission:static_pages.delete');
+        Route::post('/{staticPage:id}/toggle', [StaticPageController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:static_pages.edit');
     });
 
     // ─── Activity Log ─────────────────────────────────────────────────────────

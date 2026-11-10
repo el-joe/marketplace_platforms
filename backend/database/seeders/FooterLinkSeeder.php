@@ -60,15 +60,11 @@ class FooterLinkSeeder extends Seeder
                 ['platform' => 'x', 'url' => 'https://x.com', 'icon_path' => '/images/Twitter-X-social.svg'],
             ],
 
-            'bottom_nav' => [
-                ['label_en' => 'Consumer Rights', 'label_ar' => 'حقوق المستهلك', 'url' => 'https://example.com/consumer-rights'],
-                ['label_en' => 'Privacy Policy', 'label_ar' => 'سياسة الخصوصية', 'url' => 'https://example.com/privacy-policy'],
-                ['label_en' => 'Terms of Sale', 'label_ar' => 'شروط البيع', 'url' => 'https://example.com/terms-of-sale'],
-                ['label_en' => 'Terms of Use', 'label_ar' => 'شروط الاستخدام', 'url' => 'https://example.com/terms-of-use'],
-                ['label_en' => 'Sell with us', 'label_ar' => 'البيع معنا', 'url' => 'https://example.com/sell-with-us'],
-                ['label_en' => 'Warranty Policy', 'label_ar' => 'سياسة الضمان', 'url' => 'https://example.com/warranty-policy'],
-                ['label_en' => 'Careers', 'label_ar' => 'الوظائف', 'url' => 'https://example.com/careers'],
-            ],
+            // Privacy / Terms (and the other legal/company pages) are admin-managed Static Pages
+            // now (StaticPageSeeder, exposed as `static_pages` in the footer payload), so no
+            // placeholder https://example.com/... links are seeded here any more. Real bottom-bar
+            // links can still be added from Admin > Footer Settings.
+            'bottom_nav' => [],
 
             'app_store' => [
                 [

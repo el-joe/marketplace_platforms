@@ -364,11 +364,9 @@ function selectVariant(data) {
     document.getElementById('listing-form-placeholder')?.classList.add('hidden');
     document.getElementById('listing-form-container')?.classList.remove('hidden');
 
-    // New listings default to global_system_type = merchant_fbp (FBP)
-    document.getElementById('vendor-covers-delivery-field')?.classList.remove('hidden');
-
-    const fulfillmentSelect = document.querySelector('select[name="fulfillment_model"]');
-    loadShippingMethods(data.variantId, fulfillmentSelect?.value);
+    // Fulfillment model is a fixed hidden input (FBN) on the create page; a <select> on older markup.
+    const fulfillmentInput = document.querySelector('#listing-create-form [name="fulfillment_model"]');
+    loadShippingMethods(data.variantId, fulfillmentInput?.value);
 }
 
 let listingContractBlocked = false;
@@ -654,7 +652,8 @@ function initCreateForm() {
     if (!form || !cfg) return;
 
     const countryInput = form.querySelector('input[name="country_id"]');
-    const fulfillmentSelect = form.querySelector('select[name="fulfillment_model"]');
+    // Hidden input (fixed FBN) on the create page; 'change' listeners below are no-ops for it.
+    const fulfillmentSelect = form.querySelector('[name="fulfillment_model"]');
 
     const reloadWarehouses = () => {
         loadWarehousesByCountry(countryInput?.value, fulfillmentSelect?.value);

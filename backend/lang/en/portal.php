@@ -150,6 +150,14 @@ return [
         'description_required' => 'Please enter your request details!',
     ],
 
+    'static_pages' => [
+        'last_updated' => 'Last updated :date',
+        'footer_groups' => [
+            'company' => 'Company',
+            'policies' => 'Policies',
+            'help' => 'Help',
+        ],
+    ],
     'legal' => [
         'intro' => 'The Seller Agreement and its appendices, including the privacy policy and fees, apply to every seller on the platform.',
         'title' => 'Seller Agreement',

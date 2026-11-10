@@ -263,6 +263,7 @@ class RoleController extends Controller
             'admins' => 'System — Admins',
             'roles' => 'System — Roles',
             'activity_log' => 'System — Activity Log',
+            'static_pages' => __('admin.static_pages.permission_group'),
             'portal_content' => __('admin.portal_permissions.group'),
             'portal_analytics' => __('admin.portal_permissions.analytics_group'),
         ];

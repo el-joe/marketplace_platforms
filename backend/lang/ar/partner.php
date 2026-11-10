@@ -203,8 +203,6 @@ return [
     ],
 
     'listings' => [
-        'fbm_payment_method' => 'طريقة دفع العميل (FBM)',
-        'fbm_payment_default' => 'افتراضي المنصة',
         'title' => 'قوائم المنتجات',
         'custom_attributes' => [
             'title' => 'حقول الطلب المخصصة',
@@ -530,7 +528,6 @@ return [
             'enable_campaign_label' => 'تفعيل حملة ماركتر لهذا المنتج',
             'enable_campaign_hint' => 'متاح فقط لقوائم FBN — يتيح لك دعوة ماركترز للترويج مقابل عمولة.',
             'fbn_required_notice' => 'يجب اختيار نموذج التنفيذ FBN لتفعيل حملة الماركتر.',
-            'vendor_covers_delivery' => 'أتحمل تكاليف التوصيل المتبقية',
             'listing_data_title' => 'بيانات القائمة',
             'save_changes_btn' => 'حفظ التعديلات',
             'save_resubmit_btn' => 'حفظ وإعادة الإرسال للمراجعة',
@@ -567,7 +564,6 @@ return [
             'enable_campaign_label' => 'تفعيل حملة ماركتر لهذا المنتج',
             'enable_campaign_hint' => 'متاح فقط لقوائم FBN — يتيح لك دعوة ماركترز للترويج مقابل عمولة.',
             'fbn_required_notice' => 'يجب اختيار نموذج التنفيذ FBN لتفعيل حملة الماركتر.',
-            'vendor_covers_delivery' => 'أتحمل تكاليف التوصيل المتبقية',
             'listing_data_title' => 'بيانات القائمة',
             'vendor_sku_label' => 'SKU الخاص بالبائع',
             'max_order_qty_label' => 'الحد الأقصى للطلب',
@@ -3237,7 +3233,6 @@ return [
             'e_g_production_integration' => 'مثال: تكامل الإنتاج',
         ],
         'partner_listings_create' => [
-            'i_cover_the_remaining_delivery_costs' => 'أتحمل تكاليف التوصيل المتبقية / I cover remaining delivery costs',
             'enable_a_marketer_campaign_for_this' => 'تفعيل حملة ماركتر لهذا المنتج',
             'available_for_fbn_listings_only_lets' => 'متاح فقط لقوائم FBN — يتيح لك دعوة ماركترز للترويج مقابل عمولة.',
             'you_must_choose_the_fbn_fulfillment' => 'يجب اختيار نموذج التنفيذ FBN لتفعيل حملة الماركتر.',

@@ -9,7 +9,10 @@ import {
   AccordionTrigger,
 } from "@/src/components/ui/accordion";
 import LowerFooter from "../shared/lower-footer";
-import { getFooterData } from "@/src/services/footer";
+import {
+  FOOTER_STATIC_PAGE_GROUPS,
+  getFooterData,
+} from "@/src/services/footer";
 import getLocale from "@/src/helpers/getLocale";
 
 const SOCIAL_ICONS: Record<string, string> = {
@@ -26,6 +29,12 @@ const APP_STORE_ICONS: Record<string, string> = {
   huawei: "https://f.nooncdn.com/s/app/com/noon/images/Huawei-icon.png",
 };
 
+type FooterColumn = {
+  id: string;
+  linksType: string;
+  links: { id: string; link: string; label: string }[];
+};
+
 const Footer = async () => {
   const t = await getTranslations("footer");
   const locale = await getLocale();
@@ -35,11 +44,11 @@ const Footer = async () => {
     bottom_nav_links,
     app_store_links,
     payment_methods,
+    static_pages = [],
   } = await getFooterData();
 
-  const footerLinks = categories.map((category) => ({
+  const footerLinks: FooterColumn[] = categories.map((category) => ({
     id: category.id,
-    link: category.link,
     linksType: category.name[locale] ?? category.name.en ?? "",
     links: category.children.map((child) => ({
       id: child.id,
@@ -47,6 +56,24 @@ const Footer = async () => {
       label: child.name[locale] ?? child.name.en ?? "",
     })),
   }));
+
+  // Admin-managed static pages (About Us, Terms, Privacy, ...), one column per
+  // footer group after the category columns; ungrouped pages go last.
+  const staticPageGroups = [...FOOTER_STATIC_PAGE_GROUPS, null]
+    .map((group) => ({
+      id: `static-pages-${group ?? "other"}`,
+      linksType: t(`staticGroups.${group ?? "other"}`),
+      links: static_pages
+        .filter((page) => (page.footer_group ?? null) === group)
+        .map((page) => ({
+          id: page.id,
+          link: page.link,
+          label: page.title[locale] || page.title.en || page.title.ar || "",
+        })),
+    }))
+    .filter((group) => group.links.length > 0);
+
+  footerLinks.push(...staticPageGroups);
 
   return (
     <footer>

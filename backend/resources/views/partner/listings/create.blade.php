@@ -163,34 +163,12 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.fulfillment_model') }} <span
                                         class="text-red-500">*</span></label>
-                                <select name="fulfillment_model" required
-                                    class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
-                                    @foreach($fulfillmentModels as $key => $label)
-                                        <option value="{{ $key }}">{{ $label }}</option>
-                                    @endforeach
-                                </select>
+                                {{-- Fulfillment model is fixed to FBN for new listings (enforced server-side in store()). --}}
+                                <div class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-100 text-gray-500 cursor-not-allowed"
+                                    aria-readonly="true">{{ $fulfillmentModels['fbn'] }}</div>
+                                <input type="hidden" name="fulfillment_model" value="fbn">
                             </div>
                         </div>
-
-                        <div id="fbm-payment-wrap" class="hidden mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.fbm_payment_method') }}</label>
-                            <select name="fbm_payment_gateway_id"
-                                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
-                                <option value="">{{ __('partner.listings.fbm_payment_default') }}</option>
-                                @foreach($fbmGateways as $g)
-                                    <option value="{{ $g->id }}" {{ old('fbm_payment_gateway_id', null) === $g->id ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? ($g->name_ar ?: $g->name) : $g->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <script>
-                            (function () {
-                                const fm = document.querySelector('select[name="fulfillment_model"]');
-                                const w = document.getElementById('fbm-payment-wrap');
-                                if (!fm || !w) return;
-                                const t = () => w.classList.toggle('hidden', fm.value !== 'fbm');
-                                fm.addEventListener('change', t); t();
-                            })();
-                        </script>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
@@ -219,20 +197,6 @@
                             <textarea name="vendor_notes" rows="2" maxlength="1000"
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40 resize-none"
                                 placeholder="{{ __('partner.listings.internal_notes_placeholder') }}"></textarea>
-                        </div>
-
-                        <div id="vendor-covers-delivery-field" class="hidden">
-                            <label class="flex items-start gap-2 cursor-pointer">
-                                <input type="checkbox" name="vendor_covers_delivery" value="1"
-                                    class="mt-1 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400/40">
-                                <span class="text-sm text-gray-700">
-                                    {{ __('partner.static_text.partner_listings_create.i_cover_the_remaining_delivery_costs') }}
-                                    <span class="block text-xs text-gray-400 mt-0.5">
-                                        إذا فعّلت هذا الخيار، سيظهر التوصيل مجانياً للعميل حتى لو كانت هناك فجوة بعد دعم المنصة. /
-                                        If enabled, delivery appears free to customer even if there's a gap after platform subsidy.
-                                    </span>
-                                </span>
-                            </label>
                         </div>
                     </div>
 

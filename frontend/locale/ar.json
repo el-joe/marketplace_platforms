@@ -95,7 +95,17 @@
   "footer": {
     "shopONTheGo": "تسوق أثناء التنقل",
     "contactWithUs": "تواصل معنا",
-    "rights": "© 2026 العلامة التجارية. جميع الحقوق محفوظة"
+    "rights": "© 2026 العلامة التجارية. جميع الحقوق محفوظة",
+    "staticGroups": {
+      "company": "الشركة",
+      "policies": "السياسات",
+      "help": "المساعدة",
+      "other": "المزيد"
+    }
+  },
+  "staticPage": {
+    "home": "الرئيسية",
+    "lastUpdated": "آخر تحديث {date}"
   },
   "home": {
     "moreReasonsToShop": "المزيد من أسباب التسوق",

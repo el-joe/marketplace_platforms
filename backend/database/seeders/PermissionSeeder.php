@@ -184,6 +184,11 @@ class PermissionSeeder extends Seeder
             'faqs.create',
             'faqs.edit',
             'faqs.delete',
+            // Static content pages (About Us, Terms, Privacy, ...) — Admin\StaticPageController
+            'static_pages.view',
+            'static_pages.create',
+            'static_pages.edit',
+            'static_pages.delete',
             'admins.view',
             'admins.create',
             'admins.edit',

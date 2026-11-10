@@ -228,8 +228,6 @@ return [
     ],
 
     'listings' => [
-        'fbm_payment_method' => 'Customer Payment Method (FBM)',
-        'fbm_payment_default' => 'Platform default',
         'title' => 'Listings',
         'custom_attributes' => [
             'title' => 'Custom Order Fields',
@@ -555,7 +553,6 @@ return [
             'enable_campaign_label' => 'Enable marketer campaign for this product',
             'enable_campaign_hint' => 'Only available for FBN listings — lets you invite marketers to promote for a commission.',
             'fbn_required_notice' => 'You must select the FBN fulfillment model to enable a marketer campaign.',
-            'vendor_covers_delivery' => 'I cover remaining delivery costs',
             'listing_data_title' => 'Listing Data',
             'save_changes_btn' => 'Save Changes',
             'save_resubmit_btn' => 'Save & Resubmit for Review',
@@ -592,7 +589,6 @@ return [
             'enable_campaign_label' => 'Enable marketer campaign for this product',
             'enable_campaign_hint' => 'Only available for FBN listings — lets you invite marketers to promote for a commission.',
             'fbn_required_notice' => 'You must select the FBN fulfillment model to enable a marketer campaign.',
-            'vendor_covers_delivery' => 'I cover remaining delivery costs',
             'listing_data_title' => 'Listing Data',
             'vendor_sku_label' => 'Vendor SKU',
             'max_order_qty_label' => 'Max Order Quantity',
@@ -3237,7 +3233,6 @@ return [
             'e_g_production_integration' => 'e.g. Production Integration',
         ],
         'partner_listings_create' => [
-            'i_cover_the_remaining_delivery_costs' => 'I cover the remaining delivery costs',
             'enable_a_marketer_campaign_for_this' => 'Enable a marketer campaign for this product',
             'available_for_fbn_listings_only_lets' => 'Available for FBN listings only — lets you invite marketers to promote it for a commission.',
             'you_must_choose_the_fbn_fulfillment' => 'You must choose the FBN fulfillment model to enable a marketer campaign.',

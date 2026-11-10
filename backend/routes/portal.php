@@ -12,6 +12,7 @@ use App\Http\Controllers\Portal\MarketersController;
 use App\Http\Controllers\Portal\OpenSouqController;
 use App\Http\Controllers\Portal\RegistrationController;
 use App\Http\Controllers\Portal\RegistrationTrackController;
+use App\Http\Controllers\Portal\StaticPageController;
 use App\Http\Controllers\Portal\TravelAgencyController;
 use App\Http\Controllers\Portal\TravelAgencyRegistrationController;
 use App\Models\Country;
@@ -151,6 +152,11 @@ Route::get('/legal/seller-agreement/{template}/{language}', [LegalController::cl
 // Legacy /register URLs keep working after the move to /vendors/register.
 Route::get('/register', fn () => redirect()->route('portal.register', [], 301));
 Route::get('/register/success', fn () => redirect()->route('portal.register.success', [], 301));
+
+// Admin-managed static content pages (About Us, Terms, Privacy, ...) — audience portal|both
+Route::get('/pages/{slug}', [StaticPageController::class, 'show'])
+    ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')
+    ->name('pages.show');
 
 // Blog
 Route::prefix('blog')->name('blog.')->group(function () {

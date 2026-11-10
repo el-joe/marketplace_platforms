@@ -18,7 +18,6 @@ use App\Models\InventoryMovement;
 use App\Models\Marketer;
 use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignConversion;
-use App\Models\PaymentGateway;
 use App\Models\PlatformShippingSubsidy;
 use App\Models\Product;
 use App\Models\ProductCountry;
@@ -711,10 +710,7 @@ class ListingController extends Controller
             'refurbished' => 'مُجدَّد',
         ];
 
-        $fbmGateways = PaymentGateway::where('code', 'bank_transfer')->get(['id', 'code', 'name', 'name_ar']);
-
         return view('partner.listings.create', compact(
-            'fbmGateways',
             'warehouses',
             'countries',
             'fulfillmentModels',
@@ -798,21 +794,24 @@ class ListingController extends Controller
             ], 422);
         }
 
+        // New listings are always FBN; the FBM payment gateway is platform-managed (null = platform
+        // default) and vendor-covered delivery is off. Never trust the submitted values for these.
+        $request->merge(['fulfillment_model' => 'fbn']);
+        $request->request->remove('fbm_payment_gateway_id');
+        $request->request->remove('vendor_covers_delivery');
+
         $request->validate([
             'product_variant_id' => ['nullable', 'required_without:product_id', 'uuid', 'exists:product_variants,id'],
             'product_id' => ['nullable', 'required_without:product_variant_id', 'uuid', 'exists:products,id'],
             'country_id' => ['required', 'exists:countries,id'],
             'price' => ['required', 'numeric', 'decimal:0,2', 'min:1', 'max:999999999'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
-            'fulfillment_model' => ['required', 'in:fbm,fbn,cross_dock'],
-            'fbm_payment_gateway_id' => ['nullable', 'uuid', 'exists:payment_gateways,id'],
             'vendor_sku' => ['nullable', 'string', 'max:100'],
             'vendor_notes' => ['nullable', 'string', 'max:1000'],
             'max_order_quantity' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'low_stock_threshold' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'warehouse_id' => ['required', 'exists:warehouses,id'],
             'initial_quantity' => ['required', 'integer', 'min:0', 'max:99999'],
-            'vendor_covers_delivery' => ['nullable', 'boolean'],
             'influencer_commission_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'affiliate_commission_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'influencer_sample_quota' => ['nullable', 'integer', 'min:0', 'max:9999', 'required_with:influencer_commission_percentage'],
@@ -925,14 +924,14 @@ class ListingController extends Controller
                 'price' => round((float) $request->price, 2),
                 'currency' => $currency,
                 'condition' => $request->condition,
-                'fulfillment_model' => $request->fulfillment_model,
-                'fbm_payment_gateway_id' => $request->fulfillment_model === 'fbm' ? ($request->fbm_payment_gateway_id ?: null) : null,
+                'fulfillment_model' => 'fbn',
+                'fbm_payment_gateway_id' => null,
                 'vendor_sku' => $request->vendor_sku,
                 'vendor_notes' => $request->vendor_notes,
                 'status' => $status,
                 'max_order_quantity' => $request->max_order_quantity,
                 'low_stock_threshold' => $request->low_stock_threshold ?? 5,
-                'vendor_covers_delivery' => $request->boolean('vendor_covers_delivery'),
+                'vendor_covers_delivery' => false,
                 'influencer_commission_percentage' => $request->influencer_commission_percentage,
                 'affiliate_commission_percentage' => $request->affiliate_commission_percentage,
                 'influencer_sample_quota' => $request->influencer_sample_quota,
@@ -1038,9 +1037,7 @@ class ListingController extends Controller
 
         $missingCertification = $requiresLocalCert && ! $hasApprovedCert;
 
-        $fbmGateways = PaymentGateway::where('code', 'bank_transfer')->get(['id', 'code', 'name', 'name_ar']);
-
-        return view('partner.listings.edit', compact('listing', 'fbmGateways', 'fulfillmentModels', 'conditions', 'availableShippingMethods', 'missingCertification'));
+        return view('partner.listings.edit', compact('listing', 'fulfillmentModels', 'conditions', 'availableShippingMethods', 'missingCertification'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1059,12 +1056,10 @@ class ListingController extends Controller
             'price' => ['required', 'numeric', 'decimal:0,2', 'min:1', 'max:999999999'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'fulfillment_model' => ['required', 'in:fbm,fbn,cross_dock'],
-            'fbm_payment_gateway_id' => ['nullable', 'uuid', 'exists:payment_gateways,id'],
             'vendor_sku' => ['nullable', 'string', 'max:100'],
             'vendor_notes' => ['nullable', 'string', 'max:1000'],
             'max_order_quantity' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'low_stock_threshold' => ['nullable', 'integer', 'min:0', 'max:9999'],
-            'vendor_covers_delivery' => ['nullable', 'boolean'],
             'influencer_commission_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'affiliate_commission_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'influencer_sample_quota' => ['nullable', 'integer', 'min:0', 'max:9999', 'required_with:influencer_commission_percentage'],
@@ -1092,17 +1087,17 @@ class ListingController extends Controller
         );
         $weightClass = $this->weightService->classifyWeight($billable);
 
-        DB::transaction(function () use ($listing, $validated, $request, $weightClass) {
+        // fbm_payment_gateway_id (platform-managed) and vendor_covers_delivery are no longer editable
+        // here, so they are deliberately left out of this update to keep the stored values untouched.
+        DB::transaction(function () use ($listing, $validated, $weightClass) {
             $listing->update([
                 'price' => round((float) $validated['price'], 2),
                 'condition' => $validated['condition'],
                 'fulfillment_model' => $validated['fulfillment_model'],
-                'fbm_payment_gateway_id' => $validated['fulfillment_model'] === 'fbm' ? ($validated['fbm_payment_gateway_id'] ?? null) : null,
                 'vendor_sku' => $validated['vendor_sku'] ?? null,
                 'vendor_notes' => $validated['vendor_notes'] ?? null,
                 'max_order_quantity' => $validated['max_order_quantity'] ?? null,
                 'low_stock_threshold' => $validated['low_stock_threshold'] ?? 5,
-                'vendor_covers_delivery' => $request->boolean('vendor_covers_delivery'),
                 'influencer_commission_percentage' => $validated['influencer_commission_percentage'] ?? null,
                 'affiliate_commission_percentage' => $validated['affiliate_commission_percentage'] ?? null,
                 'influencer_sample_quota' => $validated['influencer_sample_quota'] ?? null,
