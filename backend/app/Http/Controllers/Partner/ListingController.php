@@ -682,8 +682,10 @@ class ListingController extends Controller
         $vendor = $this->vendor();
         $countryId = $vendor->country_id;
 
-        // Warehouses in vendor's country (active, either platform or vendor-owned)
+        // Warehouses in vendor's country (active). New listings are always FBN (store() forces it),
+        // so only platform FBN warehouses are valid choices.
         $warehouses = Warehouse::where('is_active', true)
+            ->where('type', WarehouseType::PlatformFbn)
             ->where(function ($q) use ($vendor, $countryId) {
                 $q->where('country_id', $countryId)
                     ->where(function ($sq) use ($vendor) {

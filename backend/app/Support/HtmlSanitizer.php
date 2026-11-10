@@ -59,13 +59,15 @@ class HtmlSanitizer
         $previous = libxml_use_internal_errors(true);
         $document->loadHTML(
             '<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head>'
-            .'<body><div id="__sanitizer_root">'.$html.'</div></body></html>',
+            .'<body>'.$html.'</body></html>',
             LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING
         );
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
-        $root = $document->getElementById('__sanitizer_root');
+        // The <body> itself is the root (not a wrapper <div>), so a stray "</div>" in the input cannot
+        // close the root early and silently drop everything after it.
+        $root = $document->getElementsByTagName('body')->item(0);
         if (! $root) {
             return null;
         }
