@@ -74,7 +74,7 @@
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                     <div>
                         <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.dates') }}</dt>
-                        <dd class="font-medium text-gray-800">{{ $booking->booked_from?->format('d M Y') }} – {{ $booking->booked_until?->format('d M Y') }}</dd>
+                        <dd class="font-medium text-gray-800">{{ vendor_tz($booking->booked_from)?->format('d M Y') }} – {{ vendor_tz($booking->booked_until)?->format('d M Y') }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.subscription_fee') }}</dt>
@@ -100,7 +100,7 @@
                     @if ($booking->payment_due_at)
                         <div>
                             <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.payment_due') }}</dt>
-                            <dd class="font-medium text-gray-800">{{ $booking->payment_due_at->format('d M Y H:i') }}</dd>
+                            <dd class="font-medium text-gray-800">{{ vendor_tz($booking->payment_due_at)?->format('d M Y H:i') }}</dd>
                         </div>
                     @endif
                 </dl>

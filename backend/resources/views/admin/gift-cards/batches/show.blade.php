@@ -43,7 +43,7 @@
     <div class="mb-6 grid grid-cols-2 gap-4 text-sm text-gray-600 bg-white rounded-xl border border-gray-200 p-4 sm:grid-cols-4">
         <div><span class="text-gray-400">{{ __('admin.gift_cards_section.currency_code') }}:</span> {{ $batch->currency_code }}</div>
         <div><span class="text-gray-400">{{ __('admin.gift_cards_section.amount') }}:</span> {{ (int) $batch->amount }} {{ $batch->currency_code }}</div>
-        <div><span class="text-gray-400">{{ __('admin.gift_cards_section.expiry') }}:</span> {{ $batch->expires_at?->format('Y-m-d H:i') ?? '—' }}</div>
+        <div><span class="text-gray-400">{{ __('admin.gift_cards_section.expiry') }}:</span> {{ admin_tz($batch->expires_at)?->format('Y-m-d H:i') ?? '—' }}</div>
         <div><span class="text-gray-400">{{ __('admin.gift_cards_section.created_by') }}:</span> {{ $batch->createdByAdmin?->name ?? '—' }} ({{ admin_tz($batch->created_at)?->format('Y-m-d H:i') }})</div>
     </div>
 

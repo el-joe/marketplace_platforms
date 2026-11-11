@@ -232,7 +232,7 @@
                     @if($transfer->expected_arrival_date)
                         <div>
                             <dt class="text-xs text-gray-500">{{ __('admin.warehouses_section.expected_arrival') }}</dt>
-                            <dd class="mt-0.5">{{ $transfer->expected_arrival_date->format('M d, Y') }}</dd>
+                            <dd class="mt-0.5">{{ admin_tz($transfer->expected_arrival_date)?->format('M d, Y') }}</dd>
                         </div>
                     @endif
                     @if($transfer->carrier || $transfer->tracking_number)

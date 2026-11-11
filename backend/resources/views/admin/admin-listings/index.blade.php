@@ -166,7 +166,7 @@
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     @if($listing->is_daily_deal)
                                         <span class="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-0.5 rounded">
-                                            🔥 Deal {{ $listing->daily_deal_ends_at ? '· ends '.$listing->daily_deal_ends_at->diffForHumans() : '' }}
+                                            🔥 Deal {{ $listing->daily_deal_ends_at ? '· ends '.admin_tz($listing->daily_deal_ends_at)?->diffForHumans() : '' }}
                                         </span>
                                     @endif
                                 </td>

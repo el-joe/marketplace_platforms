@@ -102,8 +102,8 @@ class MarketerContractController extends Controller
         $query = MarketerContractAcceptance::with(['contractVersion', 'customer', 'order'])
             ->whereHas('contractVersion', fn ($q) => $q->where('marketer_contract_id', $contract?->id ?? 0))
             ->when($request->filled('version'), fn ($q) => $q->where('marketer_contract_version_id', $request->input('version')))
-            ->when($request->filled('from'), fn ($q) => $q->whereDate('accepted_at', '>=', $request->input('from')))
-            ->when($request->filled('to'), fn ($q) => $q->whereDate('accepted_at', '<=', $request->input('to')))
+            ->when($request->filled('from'), fn ($q) => $q->where('accepted_at', '>=', admin_day_start($request->input('from'))))
+            ->when($request->filled('to'), fn ($q) => $q->where('accepted_at', '<=', admin_day_end($request->input('to'))))
             ->latest('accepted_at');
 
         if ($request->input('export') === 'csv') {

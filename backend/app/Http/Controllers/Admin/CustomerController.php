@@ -11,14 +11,19 @@ use App\Models\Customer;
 use App\Models\CustomerWallet;
 use App\Models\Notification;
 use App\Models\WalletTransaction;
+use App\Services\CustomerQrCodeService;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
-use App\Support\Money;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CustomerController extends Controller
 {
@@ -27,7 +32,7 @@ class CustomerController extends Controller
 
     // ─── Index ────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('customers.view'), 403);
@@ -51,26 +56,26 @@ class CustomerController extends Controller
 
     // ─── DataTable ────────────────────────────────────────────────────────────
 
-    private function buildCustomersQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildCustomersQuery(Request $request): Builder
     {
         $query = Customer::query()->with('country');
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where(function ($qq) use ($v) {
+            'search' => fn ($q, $v) => $q->where(function ($qq) use ($v) {
                 $qq->where('customers.name', 'like', "%{$v}%")
                     ->orWhere('customers.email', 'like', "%{$v}%")
                     ->orWhere('customers.phone', 'like', "%{$v}%");
             }),
-            'status' => fn($q, $v) => $q->where('status', $v),
-            'country_id' => fn($q, $v) => $q->where('country_id', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('created_at', '<=', $v),
-            'min_orders' => fn($q, $v) => $q->where('total_orders', '>=', (int) $v),
-            'verified_only' => fn($q, $v) => $v ? $q->whereNotNull('email_verified_at') : $q,
+            'status' => fn ($q, $v) => $q->where('status', $v),
+            'country_id' => fn ($q, $v) => $q->where('country_id', $v),
+            'date_from' => fn ($q, $v) => $q->where('created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('created_at', '<=', admin_day_end($v)),
+            'min_orders' => fn ($q, $v) => $q->where('total_orders', '>=', (int) $v),
+            'verified_only' => fn ($q, $v) => $v ? $q->whereNotNull('email_verified_at') : $q,
         ]);
     }
 
-    private function exportCustomers(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportCustomers(Request $request): StreamedResponse
     {
         $customers = $this->buildCustomersQuery($request)->latest('created_at')->get();
 
@@ -82,7 +87,7 @@ class CustomerController extends Controller
             $walletBalance = $customer->wallets()
                 ->get()
                 ->groupBy('currency')
-                ->map(fn($wallets, $currency) => number_format($wallets->sum('balance'), 2) . ' ' . $currency)
+                ->map(fn ($wallets, $currency) => number_format($wallets->sum('balance'), 2).' '.$currency)
                 ->implode(', ') ?: '—';
 
             return [
@@ -92,7 +97,7 @@ class CustomerController extends Controller
                 $customer->country?->name_en ?? '—',
                 $customer->total_orders,
                 $walletBalance,
-                $customer->created_at->format('d M Y'),
+                admin_tz($customer->created_at)?->format('d M Y'),
             ];
         });
 
@@ -140,14 +145,14 @@ class CustomerController extends Controller
                 'email' => e($row->email),
                 'phone' => e($row->phone ?? '—'),
                 'country' => $row->country
-                    ? ($row->country->flag_emoji ? $row->country->flag_emoji . ' ' : '') . e($row->country->name_en)
+                    ? ($row->country->flag_emoji ? $row->country->flag_emoji.' ' : '').e($row->country->name_en)
                     : '—',
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-' . $color . '-100 text-' . $color . '-700">'
-                    . e($row->status->label()) . '</span>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-'.$color.'-100 text-'.$color.'-700">'
+                    .e($row->status->label()).'</span>',
                 'total_orders' => $row->total_orders,
                 'total_spent' => number_format((float) $row->total_spent, 2),
                 'loyalty_points' => number_format((float) $row->loyalty_points, 2),
-                'created_at' => $row->created_at->format('d M Y'),
+                'created_at' => admin_tz($row->created_at)?->format('d M Y'),
                 'actions' => $this->buildRowActions($row, $canEdit, $canSuspend),
                 'DT_RowData' => [
                     'id' => $row->id,
@@ -165,32 +170,33 @@ class CustomerController extends Controller
         $reactivateUrl = route('admin.customers.reactivate', $customer->id);
 
         $actions = '<div class="flex items-center gap-1">';
-        $actions .= '<a href="' . $viewUrl . '" class="btn btn-xs btn-secondary">View</a>';
+        $actions .= '<a href="'.$viewUrl.'" class="btn btn-xs btn-secondary">View</a>';
 
         if ($canSuspend) {
             if ($customer->status === CustomerStatus::Active) {
                 $actions .= '<button type="button" class="btn btn-xs btn-warning js-suspend-btn"'
-                    . ' data-url="' . $suspendUrl . '" data-name="' . e($customer->name) . '">Suspend</button>';
+                    .' data-url="'.$suspendUrl.'" data-name="'.e($customer->name).'">Suspend</button>';
                 $actions .= '<button type="button" class="btn btn-xs btn-danger js-ban-btn"'
-                    . ' data-url="' . $banUrl . '" data-name="' . e($customer->name) . '">Ban</button>';
+                    .' data-url="'.$banUrl.'" data-name="'.e($customer->name).'">Ban</button>';
             } elseif ($customer->status === CustomerStatus::Suspended) {
                 $actions .= '<button type="button" class="btn btn-xs btn-success js-reactivate-btn"'
-                    . ' data-url="' . $reactivateUrl . '" data-name="' . e($customer->name) . '">Reactivate</button>';
+                    .' data-url="'.$reactivateUrl.'" data-name="'.e($customer->name).'">Reactivate</button>';
                 $actions .= '<button type="button" class="btn btn-xs btn-danger js-ban-btn"'
-                    . ' data-url="' . $banUrl . '" data-name="' . e($customer->name) . '">Ban</button>';
+                    .' data-url="'.$banUrl.'" data-name="'.e($customer->name).'">Ban</button>';
             } elseif ($customer->status === CustomerStatus::Banned) {
                 $actions .= '<button type="button" class="btn btn-xs btn-success js-reactivate-btn"'
-                    . ' data-url="' . $reactivateUrl . '" data-name="' . e($customer->name) . '">Reactivate</button>';
+                    .' data-url="'.$reactivateUrl.'" data-name="'.e($customer->name).'">Reactivate</button>';
             }
         }
 
         $actions .= '</div>';
+
         return $actions;
     }
 
     // ─── Show ─────────────────────────────────────────────────────────────────
 
-    public function show(Customer $customer): \Illuminate\View\View
+    public function show(Customer $customer): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('customers.view'), 403);
@@ -334,7 +340,7 @@ class CustomerController extends Controller
             'channel' => 'database',
             'data' => json_encode([
                 'title' => 'Account Suspended',
-                'message' => 'Your account has been suspended. Reason: ' . $request->input('reason'),
+                'message' => 'Your account has been suspended. Reason: '.$request->input('reason'),
             ]),
             'sent_at' => now(),
         ]);
@@ -486,13 +492,14 @@ class CustomerController extends Controller
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) use ($statusColors) {
             $color = $statusColors[$row->status] ?? 'gray';
+
             return [
                 'order_number' => e($row->order_number),
-                'total' => number_format((float) $row->total, 2) . ' ' . strtoupper($row->currency ?? ''),
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-' . $color . '-100 text-' . $color . '-700">'
-                    . ucwords(str_replace('_', ' ', $row->status)) . '</span>',
+                'total' => number_format((float) $row->total, 2).' '.strtoupper($row->currency ?? ''),
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-'.$color.'-100 text-'.$color.'-700">'
+                    .ucwords(str_replace('_', ' ', $row->status)).'</span>',
                 'items' => '—',
-                'placed_at' => $row->placed_at ? \Carbon\Carbon::parse($row->placed_at)->format('d M Y') : '—',
+                'placed_at' => $row->placed_at ? admin_tz(Carbon::parse($row->placed_at))->format('d M Y') : '—',
             ];
         });
     }
@@ -529,16 +536,16 @@ class CustomerController extends Controller
             $color = $typeColors[$row->type] ?? 'gray';
 
             return [
-                'created_at' => $row->created_at->format('d M Y, H:i'),
-                'type' => '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-' . $color . '-100 text-' . $color . '-700">'
-                    . e(ucwords(str_replace('_', ' ', $row->type))) . '</span>',
+                'created_at' => admin_tz($row->created_at)?->format('d M Y, H:i'),
+                'type' => '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-'.$color.'-100 text-'.$color.'-700">'
+                    .e(ucwords(str_replace('_', ' ', $row->type))).'</span>',
                 'direction' => $row->direction === 'credit'
                     ? '<span class="text-success-600">&uarr;</span>'
                     : '<span class="text-danger-600">&darr;</span>',
-                'amount' => number_format($row->amount) . ' ' . strtoupper($row->currency_code ?? ''),
-                'balance_after' => number_format($row->balance_after) . ' ' . strtoupper($row->currency_code ?? ''),
+                'amount' => number_format($row->amount).' '.strtoupper($row->currency_code ?? ''),
+                'balance_after' => number_format($row->balance_after).' '.strtoupper($row->currency_code ?? ''),
                 'reference' => $row->reference_type
-                    ? e(class_basename($row->reference_type)) . ' #' . e((string) $row->reference_id)
+                    ? e(class_basename($row->reference_type)).' #'.e((string) $row->reference_id)
                     : '—',
                 'note' => e($row->note ?? '—'),
             ];
@@ -565,17 +572,17 @@ class CustomerController extends Controller
 
         return $this->dataTableResponse($request, $query, $columns, function (Customer $row) {
             $statusColors = [
-                'active'    => 'success',
+                'active' => 'success',
                 'suspended' => 'warning',
-                'banned'    => 'danger',
+                'banned' => 'danger',
             ];
 
             return [
-                '<a href="' . route('admin.customers.show', $row->id) . '" class="text-primary-600 hover:underline font-medium">' . e($row->name) . '</a>',
+                '<a href="'.route('admin.customers.show', $row->id).'" class="text-primary-600 hover:underline font-medium">'.e($row->name).'</a>',
                 e($row->email),
                 number_format($row->total_orders),
                 number_format((float) $row->loyalty_points, 2),
-                $row->created_at?->format('d M Y'),
+                admin_tz($row->created_at)?->format('d M Y'),
             ];
         });
     }
@@ -604,7 +611,7 @@ class CustomerController extends Controller
                     ->lockForUpdate()
                     ->first();
 
-                if (!$wallet) {
+                if (! $wallet) {
                     $wallet = CustomerWallet::create([
                         'customer_id' => $customer->id,
                         'balance' => 0,
@@ -631,12 +638,12 @@ class CustomerController extends Controller
 
                 Activity::create([
                     'log_name' => 'customers',
-                    'description' => 'Wallet manually ' . ($direction === 'debit' ? 'debited' : 'credited') . ' by admin',
+                    'description' => 'Wallet manually '.($direction === 'debit' ? 'debited' : 'credited').' by admin',
                     'subject_type' => Customer::class,
                     'subject_id' => $customer->id,
                     'causer_type' => get_class($admin),
                     'causer_id' => $admin->id,
-                    'event' => 'wallet_' . $direction,
+                    'event' => 'wallet_'.$direction,
                     'properties' => json_encode([
                         'amount' => $amount,
                         'direction' => $direction,
@@ -685,16 +692,16 @@ class CustomerController extends Controller
                 'referral_code' => $customer->referral_code,
                 'created_at' => $customer->created_at->toIso8601String(),
             ],
-            'orders' => $orders->map(fn($o) => [
+            'orders' => $orders->map(fn ($o) => [
                 'order_number' => $o->order_number,
                 'status' => $o->status->value,
                 'total' => (float) $o->total,
                 'currency' => $o->currency,
                 'payment_method' => $o->payment_method,
                 'payment_status' => $o->payment_status->value,
-                'placed_at' => $o->placed_at ? \Carbon\Carbon::parse($o->placed_at)->toIso8601String() : null,
+                'placed_at' => $o->placed_at ? Carbon::parse($o->placed_at)->toIso8601String() : null,
             ])->values(),
-            'reviews' => $reviews->map(fn($r) => [
+            'reviews' => $reviews->map(fn ($r) => [
                 'product' => $r->product?->name ?? $r->product_id,
                 'rating' => $r->rating,
                 'title' => $r->title,
@@ -703,11 +710,11 @@ class CustomerController extends Controller
             ])->values(),
         ];
 
-        $filename = 'customer_export_' . $customer->id . '_' . now()->format('Ymd_His') . '.json';
+        $filename = 'customer_export_'.$customer->id.'_'.now()->format('Ymd_His').'.json';
 
         return response(json_encode($export, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), 200, [
             'Content-Type' => 'application/json',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 
@@ -741,7 +748,7 @@ class CustomerController extends Controller
 
     // ─── QR Code ──────────────────────────────────────────────────────────────
 
-    public function regenerateQrCode(Customer $customer, \App\Services\CustomerQrCodeService $service): JsonResponse
+    public function regenerateQrCode(Customer $customer, CustomerQrCodeService $service): JsonResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('customers.edit'), 403);

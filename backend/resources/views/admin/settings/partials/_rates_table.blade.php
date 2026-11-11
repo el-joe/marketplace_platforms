@@ -14,7 +14,7 @@
                 <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs bg-green-100 text-green-700">{{ __('admin.settings_section.api') }}</span>
             @endif
             @if($currency->rate_updated_at)
-                <br><span class="text-gray-400">{{ $currency->rate_updated_at->diffForHumans() }}</span>
+                <br><span class="text-gray-400">{{ admin_tz($currency->rate_updated_at)?->diffForHumans() }}</span>
             @endif
         </td>
         <td class="py-2">

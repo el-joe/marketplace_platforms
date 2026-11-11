@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Partner;
 
 use App\Enums\ClassifiedListingStatus;
+use App\Exceptions\ContractNotConfiguredException;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\ClassifiedCategory;
@@ -13,7 +14,6 @@ use App\Models\Vendor;
 use App\Notifications\Admin\NewClassifiedListingPendingReview;
 use App\Services\Marketer\ClassifiedSaleService;
 use App\Services\Shared\ClassifiedListingService;
-use App\Exceptions\ContractNotConfiguredException;
 use App\Services\Vendor\CategoryContractService;
 use App\Support\Money;
 use App\Traits\HasDataTable;
@@ -108,7 +108,7 @@ class ClassifiedListingController extends Controller
             $row->listing_number,
             $row->title_ar ?: $row->title_en,
             $row->status->value,
-            $row->created_at->format('Y-m-d H:i'),
+            vendor_tz($row->created_at)?->format('Y-m-d H:i'),
         ]);
 
         return match ($request->input('export')) {

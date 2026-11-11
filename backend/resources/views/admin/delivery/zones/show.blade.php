@@ -182,7 +182,7 @@
                                             {{ $agent->is_available ? 'bg-emerald-500' : 'bg-gray-300' }}"></span>
                                     </td>
                                     <td class="px-5 py-3 text-gray-500 text-xs">
-                                        {{ $agent->last_login_at?->diffForHumans() ?? '—' }}
+                                        {{ admin_tz($agent->last_login_at)?->diffForHumans() ?? '—' }}
                                     </td>
                                     <td class="px-5 py-3 text-right">
                                         <button type="button"

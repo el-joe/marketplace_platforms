@@ -7,11 +7,18 @@ use App\Http\Controllers\Controller;
 use App\Jobs\RefundProcessingJob;
 use App\Models\PaymentTransaction;
 use App\Models\Refund;
+use App\Services\Checkout\CouponUsageService;
+use App\Services\GiftCardPurchaseService;
+use App\Services\LedgerService;
 use App\Services\Payments\PaymentGatewayFactory;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TransactionController extends Controller
@@ -21,7 +28,7 @@ class TransactionController extends Controller
 
     // ─── Transactions ─────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('transactions.view'), 403);
@@ -30,17 +37,15 @@ class TransactionController extends Controller
             return $this->exportTransactions($request);
         }
 
-        $today = today();
-
         $stats = [
             'volume_today' => PaymentTransaction::where('status', 'succeeded')
-                ->whereDate('processed_at', $today)
+                ->whereBetween('processed_at', admin_day_range())
                 ->sum('amount'),
             'succeeded_today' => PaymentTransaction::where('status', 'succeeded')
-                ->whereDate('processed_at', $today)
+                ->whereBetween('processed_at', admin_day_range())
                 ->count(),
             'failed_today' => PaymentTransaction::where('status', 'failed')
-                ->whereDate('created_at', $today)
+                ->whereBetween('created_at', admin_day_range())
                 ->count(),
             'pending_refunds' => Refund::where('status', 'pending')->count(),
         ];
@@ -58,7 +63,7 @@ class TransactionController extends Controller
      * and serves as the payment method identifier. gateway_transaction_id / idempotency_key
      * are the reference identifiers.
      */
-    private function buildTransactionsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildTransactionsQuery(Request $request): Builder
     {
         $query = PaymentTransaction::query()
             ->leftJoin('orders', 'orders.id', '=', 'payment_transactions.order_id')
@@ -71,18 +76,18 @@ class TransactionController extends Controller
             );
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where(function ($sub) use ($v) {
+            'search' => fn ($q, $v) => $q->where(function ($sub) use ($v) {
                 $sub->where('payment_transactions.gateway_transaction_id', 'like', "%{$v}%")
                     ->orWhere('payment_transactions.idempotency_key', 'like', "%{$v}%");
             }),
-            'type' => fn($q, $v) => $q->where('payment_transactions.type', $v),
-            'payment_method' => fn($q, $v) => $q->where('payment_transactions.gateway', $v),
-            'status' => fn($q, $v) => $q->where('payment_transactions.status', $v),
-            'gateway' => fn($q, $v) => $q->where('payment_transactions.gateway', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('payment_transactions.created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('payment_transactions.created_at', '<=', $v),
-            'amount_min' => fn($q, $v) => $q->where('payment_transactions.amount', '>=', round((float) $v, 2)),
-            'amount_max' => fn($q, $v) => $q->where('payment_transactions.amount', '<=', round((float) $v, 2)),
+            'type' => fn ($q, $v) => $q->where('payment_transactions.type', $v),
+            'payment_method' => fn ($q, $v) => $q->where('payment_transactions.gateway', $v),
+            'status' => fn ($q, $v) => $q->where('payment_transactions.status', $v),
+            'gateway' => fn ($q, $v) => $q->where('payment_transactions.gateway', $v),
+            'date_from' => fn ($q, $v) => $q->where('payment_transactions.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('payment_transactions.created_at', '<=', admin_day_end($v)),
+            'amount_min' => fn ($q, $v) => $q->where('payment_transactions.amount', '>=', round((float) $v, 2)),
+            'amount_max' => fn ($q, $v) => $q->where('payment_transactions.amount', '<=', round((float) $v, 2)),
         ]);
     }
 
@@ -98,14 +103,14 @@ class TransactionController extends Controller
 
         $headers = ['Reference', 'Method', 'Amount', 'Currency', 'Status', 'Gateway', 'Date'];
 
-        $rows = $transactions->map(fn($tx) => [
+        $rows = $transactions->map(fn ($tx) => [
             $tx->gateway_transaction_id,
             $tx->payment_method_type,
             number_format($tx->amount, 2),
             strtoupper($tx->currency),
             $tx->status?->value,
             $tx->gateway,
-            optional($tx->created_at)->format('d M Y H:i'),
+            optional(admin_tz($tx->created_at))->format('d M Y H:i'),
         ]);
 
         return match ($request->input('export')) {
@@ -157,40 +162,40 @@ class TransactionController extends Controller
             };
 
             $gwTxId = $tx->gateway_transaction_id ?? '';
-            $gwShort = strlen($gwTxId) > 22 ? substr($gwTxId, 0, 22) . '…' : $gwTxId;
+            $gwShort = strlen($gwTxId) > 22 ? substr($gwTxId, 0, 22).'…' : $gwTxId;
 
             $orderLink = $tx->order_id
-                ? '<a href="' . route('admin.orders.show', $tx->order_id) . '" class="text-primary-600 hover:underline font-mono text-xs" target="_blank">' . e($tx->order_number ?? $tx->order_id) . '</a>'
+                ? '<a href="'.route('admin.orders.show', $tx->order_id).'" class="text-primary-600 hover:underline font-mono text-xs" target="_blank">'.e($tx->order_number ?? $tx->order_id).'</a>'
                 : '<span class="text-gray-300">—</span>';
 
             $customerLink = $tx->customer_id
-                ? '<a href="' . route('admin.customers.show', $tx->customer_id) . '" class="text-primary-600 hover:underline text-sm">' . e($tx->customer_name ?? '—') . '</a>'
+                ? '<a href="'.route('admin.customers.show', $tx->customer_id).'" class="text-primary-600 hover:underline text-sm">'.e($tx->customer_name ?? '—').'</a>'
                 : '<span class="text-gray-300">—</span>';
 
             $showUrl = route('admin.transactions.show', $tx->id);
 
             return [
-                'DT_RowId' => 'tx-' . $tx->id,
-                'gateway_transaction_id' => '<span class="font-mono text-xs cursor-pointer js-copy" data-value="' . e($gwTxId) . '" title="Click to copy">' . e($gwShort) . '</span>',
+                'DT_RowId' => 'tx-'.$tx->id,
+                'gateway_transaction_id' => '<span class="font-mono text-xs cursor-pointer js-copy" data-value="'.e($gwTxId).'" title="Click to copy">'.e($gwShort).'</span>',
                 'order' => $orderLink,
                 'customer' => $customerLink,
-                'type' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $typeBadge . '">' . e($tx->type->value) . '</span>',
-                'gateway' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">' . e($tx->gateway) . '</span>',
-                'amount' => '<span class="font-semibold tabular-nums text-sm">' . number_format($tx->amount, 2) . ' ' . e($tx->currency) . '</span>',
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e($tx->status->value) . '</span>',
+                'type' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$typeBadge.'">'.e($tx->type->value).'</span>',
+                'gateway' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">'.e($tx->gateway).'</span>',
+                'amount' => '<span class="font-semibold tabular-nums text-sm">'.number_format($tx->amount, 2).' '.e($tx->currency).'</span>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$statusBadge.'">'.e($tx->status->value).'</span>',
                 'failure_code' => $tx->failure_code
-                    ? '<span class="font-mono text-xs text-red-600" title="' . e($tx->failure_message) . '">' . e($tx->failure_code) . '</span>'
+                    ? '<span class="font-mono text-xs text-red-600" title="'.e($tx->failure_message).'">'.e($tx->failure_code).'</span>'
                     : '<span class="text-gray-300">—</span>',
                 'processed_at' => $tx->processed_at
-                    ? $tx->processed_at->format('M d, Y H:i')
+                    ? admin_tz($tx->processed_at)?->format('M d, Y H:i')
                     : '<span class="text-gray-300">—</span>',
-                'created_at' => $tx->created_at->format('M d, Y H:i'),
-                'actions' => '<a href="' . $showUrl . '" class="btn btn-xs btn-secondary">View</a>',
+                'created_at' => admin_tz($tx->created_at)?->format('M d, Y H:i'),
+                'actions' => '<a href="'.$showUrl.'" class="btn btn-xs btn-secondary">View</a>',
             ];
         });
     }
 
-    public function show(PaymentTransaction $transaction): \Illuminate\View\View
+    public function show(PaymentTransaction $transaction): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('transactions.view'), 403);
@@ -218,7 +223,7 @@ class TransactionController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('transactions.view'), 403);
 
-        if (!PaymentGatewayFactory::requiresProofApproval($transaction->gateway)) {
+        if (! PaymentGatewayFactory::requiresProofApproval($transaction->gateway)) {
             return response()->json(['message' => 'Not an offline-payment transaction.'], 422);
         }
 
@@ -228,7 +233,7 @@ class TransactionController extends Controller
 
         $order = $transaction->order;
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($transaction, $order, $admin) {
+        DB::transaction(function () use ($transaction, $order) {
             $transaction->update([
                 'status' => 'succeeded',
                 'processed_at' => now(),
@@ -239,15 +244,15 @@ class TransactionController extends Controller
                 'status' => 'confirmed',
             ]);
 
-            (new \App\Services\LedgerService())->postOrderCapture($order, \App\Support\Money::number($transaction->amount));
-            (new \App\Services\Checkout\CouponUsageService())->consumeForOrder($order);
+            (new LedgerService)->postOrderCapture($order, Money::number($transaction->amount));
+            (new CouponUsageService)->consumeForOrder($order);
         });
 
         // Gift-card purchase orders don't fulfill/ship — instead, approving
         // their offline payment is what releases the (still-undelivered)
         // gift card code(s) to the recipient. Regular orders have no
         // matching GiftCardPurchase rows, so this is a no-op for them.
-        (new \App\Services\GiftCardPurchaseService())->dispatchPendingDeliveries($order->fresh());
+        (new GiftCardPurchaseService)->dispatchPendingDeliveries($order->fresh());
 
         return response()->json(['message' => 'Bank transfer confirmed.', 'order_number' => $order->order_number]);
     }
@@ -265,7 +270,7 @@ class TransactionController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('transactions.view'), 403);
 
-        if (!PaymentGatewayFactory::requiresProofApproval($transaction->gateway)) {
+        if (! PaymentGatewayFactory::requiresProofApproval($transaction->gateway)) {
             return response()->json(['message' => 'Not an offline-payment transaction.'], 422);
         }
 
@@ -279,7 +284,7 @@ class TransactionController extends Controller
 
         $order = $transaction->order;
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($transaction, $order, $validated) {
+        DB::transaction(function () use ($transaction, $order, $validated) {
             $transaction->update([
                 'status' => 'failed',
                 'processed_at' => now(),
@@ -299,7 +304,7 @@ class TransactionController extends Controller
 
     // ─── Refunds ──────────────────────────────────────────────────────────────
 
-    public function refundIndex(): \Illuminate\View\View
+    public function refundIndex(): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('transactions.view'), 403);
@@ -320,9 +325,9 @@ class TransactionController extends Controller
             ->select('refunds.*', 'orders.order_number', 'customers.name as customer_name');
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('refunds.status', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('refunds.created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('refunds.created_at', '<=', $v),
+            'status' => fn ($q, $v) => $q->where('refunds.status', $v),
+            'date_from' => fn ($q, $v) => $q->where('refunds.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('refunds.created_at', '<=', admin_day_end($v)),
         ]);
 
         $columns = [
@@ -352,7 +357,7 @@ class TransactionController extends Controller
                 : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">No</span>';
 
             $orderLink = $refund->order_id
-                ? '<a href="' . route('admin.orders.show', $refund->order_id) . '" class="text-primary-600 hover:underline font-mono text-xs" target="_blank">' . e($refund->order_number ?? $refund->order_id) . '</a>'
+                ? '<a href="'.route('admin.orders.show', $refund->order_id).'" class="text-primary-600 hover:underline font-mono text-xs" target="_blank">'.e($refund->order_number ?? $refund->order_id).'</a>'
                 : '<span class="text-gray-300">—</span>';
 
             $actions = '';
@@ -360,20 +365,20 @@ class TransactionController extends Controller
                 $approveUrl = route('admin.transactions.refunds.approve', $refund->id);
                 $rejectUrl = route('admin.transactions.refunds.reject', $refund->id);
                 $actions = '<div class="flex items-center gap-1">'
-                    . '<button class="btn btn-xs btn-success js-approve-refund" data-url="' . $approveUrl . '">Approve</button>'
-                    . '<button class="btn btn-xs btn-danger js-reject-refund" data-url="' . $rejectUrl . '" data-amount="' . number_format($refund->amount, 2) . ' ' . e($refund->currency) . '">Reject</button>'
-                    . '</div>';
+                    .'<button class="btn btn-xs btn-success js-approve-refund" data-url="'.$approveUrl.'">Approve</button>'
+                    .'<button class="btn btn-xs btn-danger js-reject-refund" data-url="'.$rejectUrl.'" data-amount="'.number_format($refund->amount, 2).' '.e($refund->currency).'">Reject</button>'
+                    .'</div>';
             }
 
             return [
-                'DT_RowId' => 'refund-' . $refund->id,
+                'DT_RowId' => 'refund-'.$refund->id,
                 'order' => $orderLink,
-                'customer' => '<span class="text-sm">' . e($refund->customer_name ?? '—') . '</span>',
-                'amount' => '<span class="font-semibold tabular-nums text-sm">' . number_format($refund->amount, 2) . ' ' . e($refund->currency) . '</span>',
-                'reason' => '<span class="text-sm text-gray-700">' . e($refund->reason->value) . '</span>',
-                'refund_type' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">' . e(str_replace('_', ' ', $refund->refund_type->value)) . '</span>',
+                'customer' => '<span class="text-sm">'.e($refund->customer_name ?? '—').'</span>',
+                'amount' => '<span class="font-semibold tabular-nums text-sm">'.number_format($refund->amount, 2).' '.e($refund->currency).'</span>',
+                'reason' => '<span class="text-sm text-gray-700">'.e($refund->reason->value).'</span>',
+                'refund_type' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">'.e(str_replace('_', ' ', $refund->refund_type->value)).'</span>',
                 'vendor_charged_back' => $chargedBack,
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e($refund->status->value) . '</span>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$statusBadge.'">'.e($refund->status->value).'</span>',
                 'actions' => $actions,
             ];
         });
@@ -413,7 +418,7 @@ class TransactionController extends Controller
 
         $refund->update([
             'status' => 'rejected',
-            'reason_notes' => $notes ? '[Admin rejection] ' . $notes : $refund->reason_notes,
+            'reason_notes' => $notes ? '[Admin rejection] '.$notes : $refund->reason_notes,
         ]);
 
         return response()->json(['message' => 'Refund rejected.']);

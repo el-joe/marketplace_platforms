@@ -8,18 +8,21 @@ use App\Models\Admin;
 use App\Models\PackagingSupply;
 use App\Models\PackagingSupplyCountry;
 use App\Models\PackagingSupplyRequest;
-use App\Models\PackagingSupplyRequestItem;
 use App\Models\Setting;
+use App\Models\Vendor;
 use App\Models\Warehouse;
 use App\Notifications\Admin\NewPackagingOrderReceived;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PackagingSupplyController extends Controller
 {
@@ -78,16 +81,16 @@ class PackagingSupplyController extends Controller
         $countryId = $this->vendorCountryId();
 
         $data = $request->validate([
-            'warehouse_id'          => ['nullable', 'uuid', 'exists:warehouses,id'],
-            'notes'                 => ['nullable', 'string', 'max:1000'],
-            'items'                 => ['required', 'array', 'min:1'],
-            'items.*.supply_id'     => ['required', 'uuid', 'exists:packaging_supplies,id'],
-            'items.*.quantity'      => ['required', 'integer', 'min:1', 'max:1000'],
+            'warehouse_id' => ['nullable', 'uuid', 'exists:warehouses,id'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.supply_id' => ['required', 'uuid', 'exists:packaging_supplies,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1', 'max:1000'],
         ]);
 
         // Load requested supplies and their pricing for the vendor's country
         $supplyIds = collect($data['items'])->pluck('supply_id')->unique();
-        $supplies  = PackagingSupply::whereIn('id', $supplyIds)
+        $supplies = PackagingSupply::whereIn('id', $supplyIds)
             ->where('is_active', true)
             ->get()
             ->keyBy('id');
@@ -106,7 +109,7 @@ class PackagingSupplyController extends Controller
 
         $totalCost = 0;
         $lineItems = [];
-        $currency  = auth('vendor')->user()?->vendor?->country?->currency_code;
+        $currency = auth('vendor')->user()?->vendor?->country?->currency_code;
 
         foreach ($data['items'] as $item) {
             $supply = $supplies[$item['supply_id']];
@@ -121,23 +124,23 @@ class PackagingSupplyController extends Controller
 
             $lineItems[] = [
                 'packaging_supply_id' => $supply->id,
-                'quantity'            => $item['quantity'],
-                'unit_cost'           => $pricing->unit_cost,
-                'line_total'          => $lineTotal,
-                'created_at'          => now(),
+                'quantity' => $item['quantity'],
+                'unit_cost' => $pricing->unit_cost,
+                'line_total' => $lineTotal,
+                'created_at' => now(),
             ];
         }
 
         $supplyRequest = DB::transaction(function () use ($vendor, $data, $lineItems, $totalCost, $currency) {
             $supplyRequest = PackagingSupplyRequest::create([
-                'request_number'     => PackagingSupplyRequest::generateRequestNumber(),
-                'vendor_id'          => $vendor->vendor_id,
-                'warehouse_id'       => $data['warehouse_id'] ?? null,
-                'status'             => PackagingSupplyRequestStatus::Pending,
-                'total_cost'   => $totalCost,
+                'request_number' => PackagingSupplyRequest::generateRequestNumber(),
+                'vendor_id' => $vendor->vendor_id,
+                'warehouse_id' => $data['warehouse_id'] ?? null,
+                'status' => PackagingSupplyRequestStatus::Pending,
+                'total_cost' => $totalCost,
                 'delivery_fee' => $this->resolveDeliveryFeeCents($vendor->vendor),
-                'currency'           => $currency,
-                'notes'              => $data['notes'] ?? null,
+                'currency' => $currency,
+                'notes' => $data['notes'] ?? null,
             ]);
 
             foreach ($lineItems as $line) {
@@ -159,7 +162,7 @@ class PackagingSupplyController extends Controller
             ->with('success', __('partner.packaging_supplies.messages.submitted_with_number', ['number' => $supplyRequest->request_number]));
     }
 
-    public function myRequests(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function myRequests(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportMyRequests($request);
@@ -180,22 +183,22 @@ class PackagingSupplyController extends Controller
     // Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildMyRequestsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildMyRequestsQuery(Request $request): Builder
     {
         $vendor = auth('vendor')->user();
 
         $query = PackagingSupplyRequest::where('vendor_id', $vendor->vendor_id);
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('status', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('created_at', '<=', $v),
+            'status' => fn ($q, $v) => $q->where('status', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('created_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('created_at', '<=', $v),
         ]);
 
         return $query;
     }
 
-    private function exportMyRequests(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportMyRequests(Request $request): StreamedResponse
     {
         $requests = $this->buildMyRequestsQuery($request)
             ->withCount('items')
@@ -204,13 +207,13 @@ class PackagingSupplyController extends Controller
 
         $headers = ['Request #', 'Items', 'Total', 'Currency', 'Status', 'Date'];
 
-        $rows = $requests->map(fn($row) => [
+        $rows = $requests->map(fn ($row) => [
             $row->request_number,
             $row->items_count,
-            \App\Support\Money::format($row->total_cost),
+            Money::format($row->total_cost),
             $row->currency,
             $row->status instanceof PackagingSupplyRequestStatus ? $row->status->value : $row->status,
-            $row->created_at->format('Y-m-d H:i'),
+            vendor_tz($row->created_at)?->format('Y-m-d H:i'),
         ]);
 
         return match ($request->input('export')) {
@@ -239,19 +242,19 @@ class PackagingSupplyController extends Controller
         $currency = $vendor?->vendor?->country?->currency_code ?? config('app.currency', 'SAR');
 
         return response()->json([
-            'fee'      => $feeCents,
+            'fee' => $feeCents,
             'currency' => $currency,
         ]);
     }
 
-    private function resolveDeliveryFeeCents(?\App\Models\Vendor $vendor): int|float
+    private function resolveDeliveryFeeCents(?Vendor $vendor): int|float
     {
         $feesByCountry = Setting::get('packaging_delivery_fee', []);
 
-        if (!is_array($feesByCountry) || !$vendor || !$vendor->country_id) {
+        if (! is_array($feesByCountry) || ! $vendor || ! $vendor->country_id) {
             return 0;
         }
 
-        return \App\Support\Money::number($feesByCountry[$vendor->country_id] ?? 0);
+        return Money::number($feesByCountry[$vendor->country_id] ?? 0);
     }
 }

@@ -8,12 +8,13 @@ use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class LedgerController extends Controller
 {
     use HasDataTable;
 
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ledger.view'), 403);
@@ -51,12 +52,12 @@ class LedgerController extends Controller
         $query = LedgerEntry::query();
 
         $query = $this->applyFilters($query, $request, [
-            'account_type' => fn($q, $v) => $q->where('account_type', $v),
-            'currency' => fn($q, $v) => $q->where('currency', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('created_at', '<=', $v),
-            'reference_type' => fn($q, $v) => $q->where('reference_type', $v),
-            'transaction_group_id' => fn($q, $v) => $q->where('transaction_group_id', $v),
+            'account_type' => fn ($q, $v) => $q->where('account_type', $v),
+            'currency' => fn ($q, $v) => $q->where('currency', $v),
+            'date_from' => fn ($q, $v) => $q->where('created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('created_at', '<=', admin_day_end($v)),
+            'reference_type' => fn ($q, $v) => $q->where('reference_type', $v),
+            'transaction_group_id' => fn ($q, $v) => $q->where('transaction_group_id', $v),
         ]);
 
         $columns = [
@@ -86,45 +87,45 @@ class LedgerController extends Controller
             $badgeClass = $typeBadgeColors[$entry->account_type] ?? 'bg-gray-100 text-gray-700';
 
             $debitHtml = $entry->debit > 0
-                ? '<span class="text-green-600 font-semibold tabular-nums">' . number_format($entry->debit, 2) . '</span>'
+                ? '<span class="text-green-600 font-semibold tabular-nums">'.number_format($entry->debit, 2).'</span>'
                 : '<span class="text-gray-300">—</span>';
 
             $creditHtml = $entry->credit > 0
-                ? '<span class="text-blue-600 font-semibold tabular-nums">' . number_format($entry->credit, 2) . '</span>'
+                ? '<span class="text-blue-600 font-semibold tabular-nums">'.number_format($entry->credit, 2).'</span>'
                 : '<span class="text-gray-300">—</span>';
 
             $holderHtml = '<span class="text-gray-400 text-xs">—</span>';
             if ($entry->account_holder_id) {
                 $holderType = strtolower(class_basename($entry->account_holder_type ?? ''));
-                $holderShort = e(Str::upper($holderType) . ' #' . substr($entry->account_holder_id, 0, 8));
+                $holderShort = e(Str::upper($holderType).' #'.substr($entry->account_holder_id, 0, 8));
                 if ($holderType === 'vendor') {
-                    $holderHtml = '<a href="' . route('admin.vendors.show', $entry->account_holder_id) . '" class="text-primary-600 hover:underline text-xs font-mono">' . $holderShort . '</a>';
+                    $holderHtml = '<a href="'.route('admin.vendors.show', $entry->account_holder_id).'" class="text-primary-600 hover:underline text-xs font-mono">'.$holderShort.'</a>';
                 } elseif ($holderType === 'customer') {
-                    $holderHtml = '<a href="' . route('admin.customers.show', $entry->account_holder_id) . '" class="text-primary-600 hover:underline text-xs font-mono">' . $holderShort . '</a>';
+                    $holderHtml = '<a href="'.route('admin.customers.show', $entry->account_holder_id).'" class="text-primary-600 hover:underline text-xs font-mono">'.$holderShort.'</a>';
                 } else {
-                    $holderHtml = '<span class="font-mono text-xs text-gray-600">' . $holderShort . '</span>';
+                    $holderHtml = '<span class="font-mono text-xs text-gray-600">'.$holderShort.'</span>';
                 }
             }
 
             $groupId = $entry->transaction_group_id;
             $groupShort = substr($groupId, 0, 8);
-            $groupHtml = '<button type="button" class="font-mono text-xs text-primary-600 hover:underline js-view-group" data-group-id="' . e($groupId) . '">' . e($groupShort) . '…</button>';
+            $groupHtml = '<button type="button" class="font-mono text-xs text-primary-600 hover:underline js-view-group" data-group-id="'.e($groupId).'">'.e($groupShort).'…</button>';
 
             $refId = $entry->reference_id ?? '';
-            $refShort = strlen($refId) > 8 ? substr($refId, 0, 8) . '…' : $refId;
-            $referenceHtml = '<span class="font-mono text-xs text-gray-600">' . e($entry->reference_type) . '<br><span class="text-gray-400">' . e($refShort) . '</span></span>';
+            $refShort = strlen($refId) > 8 ? substr($refId, 0, 8).'…' : $refId;
+            $referenceHtml = '<span class="font-mono text-xs text-gray-600">'.e($entry->reference_type).'<br><span class="text-gray-400">'.e($refShort).'</span></span>';
 
             return [
-                'DT_RowId' => 'ledger-' . $entry->id,
-                'created_at' => $entry->created_at->format('M d, Y H:i'),
+                'DT_RowId' => 'ledger-'.$entry->id,
+                'created_at' => admin_tz($entry->created_at)?->format('M d, Y H:i'),
                 'transaction_group_id' => $groupHtml,
-                'account_type' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $badgeClass . '">' . e(str_replace('_', ' ', $entry->account_type)) . '</span>',
+                'account_type' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$badgeClass.'">'.e(str_replace('_', ' ', $entry->account_type)).'</span>',
                 'account_holder' => $holderHtml,
                 'debit' => $debitHtml,
                 'credit' => $creditHtml,
-                'currency' => '<span class="text-xs font-mono text-gray-600">' . e($entry->currency) . '</span>',
+                'currency' => '<span class="text-xs font-mono text-gray-600">'.e($entry->currency).'</span>',
                 'reference' => $referenceHtml,
-                'description' => '<span class="text-sm text-gray-700">' . e(Str::limit($entry->description, 80)) . '</span>',
+                'description' => '<span class="text-sm text-gray-700">'.e(Str::limit($entry->description, 80)).'</span>',
             ];
         });
     }
@@ -134,7 +135,7 @@ class LedgerController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ledger.view'), 403);
 
-        if (!preg_match('/^[0-9a-f-]{36}$/i', $groupId)) {
+        if (! preg_match('/^[0-9a-f-]{36}$/i', $groupId)) {
             return response()->json(['message' => 'Invalid group ID format.'], 422);
         }
 
@@ -159,7 +160,7 @@ class LedgerController extends Controller
             'total_credit_f' => number_format($totalCredit, 2),
             'difference' => abs($totalDebit - $totalCredit),
             'difference_f' => number_format(abs($totalDebit - $totalCredit), 2),
-            'entries' => $entries->map(fn($e) => [
+            'entries' => $entries->map(fn ($e) => [
                 'id' => $e->id,
                 'account_type' => $e->account_type,
                 'account_holder_type' => $e->account_holder_type,
@@ -172,7 +173,7 @@ class LedgerController extends Controller
                 'reference_type' => $e->reference_type,
                 'reference_id' => $e->reference_id,
                 'description' => $e->description,
-                'created_at' => $e->created_at->format('M d, Y H:i:s'),
+                'created_at' => admin_tz($e->created_at)?->format('M d, Y H:i:s'),
             ]),
         ]);
     }

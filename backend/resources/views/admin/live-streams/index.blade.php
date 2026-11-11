@@ -69,7 +69,7 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-gray-600">
-                            {{ $stream->scheduled_at?->format('d M Y, H:i') ?? '—' }}
+                            {{ admin_tz($stream->scheduled_at)?->format('d M Y, H:i') ?? '—' }}
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ number_format($stream->total_viewers) }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ number_format($stream->likes_count) }}</td>

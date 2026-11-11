@@ -157,7 +157,7 @@
                         <div class="space-y-3">
                             <p class="text-xs text-gray-500">
                                 {{ __('admin.transactions.proof_uploaded_at') }}:
-                                {{ $transaction->proof_uploaded_at?->format('M d, Y H:i:s') }}
+                                {{ admin_tz($transaction->proof_uploaded_at)?->format('M d, Y H:i:s') }}
                             </p>
                             @if(str_ends_with($transaction->proof_file_path, '.pdf'))
                                 <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($transaction->proof_file_path) }}"

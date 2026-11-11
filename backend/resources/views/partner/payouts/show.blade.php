@@ -347,7 +347,7 @@
                     @if($payout->processed_at)
                         <div class="flex justify-between">
                             <span class="text-gray-500">{{ __('partner.payouts.transfer_date') }}</span>
-                            <span class="font-medium">{{ $payout->processed_at->format('d M Y') }}</span>
+                            <span class="font-medium">{{ vendor_tz($payout->processed_at)?->format('d M Y') }}</span>
                         </div>
                     @endif
                 </div>

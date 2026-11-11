@@ -190,14 +190,14 @@
                                             'text-orange-500 font-medium' => !now()->gt($subOrder->sla_ship_deadline) && now()->addHours(2)->gt($subOrder->sla_ship_deadline),
                                             'text-gray-500' => !now()->addHours(2)->gt($subOrder->sla_ship_deadline),
                                         ])>
-                                            {{ $subOrder->sla_ship_deadline->diffForHumans() }}
+                                            {{ vendor_tz($subOrder->sla_ship_deadline)?->diffForHumans() }}
                                         </span>
                                     @else
                                         <span class="text-gray-400 text-xs">—</span>
                                     @endif
                                 </td>
                                 <td class="py-3 text-gray-400 text-xs">
-                                    {{ $subOrder->created_at->format('M d, H:i') }}
+                                    {{ vendor_tz($subOrder->created_at)?->format('M d, H:i') }}
                                 </td>
                             </tr>
                         @endforeach

@@ -52,7 +52,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.international_shipping.effective_at') }} <span class="text-danger-500">*</span></label>
-                    <input type="datetime-local" name="effective_at" value="{{ old('effective_at', now()->format('Y-m-d\TH:i')) }}"
+                    <input type="datetime-local" name="effective_at" value="{{ old('effective_at', admin_input_value(now(), 'Y-m-d\TH:i')) }}"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" required>
                     @error('effective_at')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
@@ -81,7 +81,7 @@
                             <tbody>
                                 @foreach($rates as $rate)
                                     <tr>
-                                        <td class="font-medium text-gray-900">{{ $rate->effective_at?->format('Y-m-d H:i') }}</td>
+                                        <td class="font-medium text-gray-900">{{ admin_tz($rate->effective_at)?->format('Y-m-d H:i') }}</td>
                                         <td class="text-end">{{ number_format($rate->rate_numerator) }}</td>
                                         <td class="text-end">{{ number_format($rate->rate_denominator) }}</td>
                                         <td class="text-gray-500">{{ admin_tz($rate->created_at)?->format('Y-m-d H:i') }}</td>

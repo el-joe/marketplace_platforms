@@ -114,13 +114,13 @@ class ProductsController extends Controller
 
         // ── Filter scopes ─────────────────────────────────────────────────
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('products.status', $v),
-            'category_id' => fn($q, $v) => $q->where('products.category_id', $v),
-            'vendor_id' => fn($q, $v) => $q->where('products.vendor_id', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('products.created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('products.created_at', '<=', $v),
-            'price_min' => fn($q, $v) => $q->where('products.price', '>=', round((float) $v, 2)),
-            'price_max' => fn($q, $v) => $q->where('products.price', '<=', round((float) $v, 2)),
+            'status' => fn ($q, $v) => $q->where('products.status', $v),
+            'category_id' => fn ($q, $v) => $q->where('products.category_id', $v),
+            'vendor_id' => fn ($q, $v) => $q->where('products.vendor_id', $v),
+            'date_from' => fn ($q, $v) => $q->where('products.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('products.created_at', '<=', admin_day_end($v)),
+            'price_min' => fn ($q, $v) => $q->where('products.price', '>=', round((float) $v, 2)),
+            'price_max' => fn ($q, $v) => $q->where('products.price', '<=', round((float) $v, 2)),
         ]);
 
         return $this->dataTableResponse(

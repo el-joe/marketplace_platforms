@@ -110,7 +110,7 @@ class VendorListingController extends Controller
                     'text_color' => $effectiveMethod->badge_text_color_hex ?? '#374151',
                     'is_inherited' => $row->primaryShippingMethod === null,
                 ] : null,
-                'created_at' => $row->created_at?->format('Y-m-d H:i'),
+                'created_at' => admin_tz($row->created_at)?->format('Y-m-d H:i'),
                 'show_url' => route('admin.vendor-listings.show', $row->id),
                 'edit_url' => route('admin.vendor-listings.edit', $row->id),
             ];

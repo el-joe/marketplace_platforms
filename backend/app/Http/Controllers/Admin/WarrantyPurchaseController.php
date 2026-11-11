@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
+use App\Models\WarrantyClaim;
+use App\Models\WarrantyPlan;
 use App\Models\WarrantyPurchase;
 use App\Traits\HasDataTable;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class WarrantyPurchaseController extends Controller
 {
@@ -17,7 +22,7 @@ class WarrantyPurchaseController extends Controller
     // Index
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('warranty_plans.view'), 403);
@@ -29,8 +34,8 @@ class WarrantyPurchaseController extends Controller
             'cancelled' => WarrantyPurchase::where('status', 'cancelled')->count(),
         ];
 
-        $plans = \App\Models\WarrantyPlan::orderBy('name_en')->get(['id', 'name_en']);
-        $categories = \App\Models\Category::orderBy('name_en')->get(['id', 'name_en']);
+        $plans = WarrantyPlan::orderBy('name_en')->get(['id', 'name_en']);
+        $categories = Category::orderBy('name_en')->get(['id', 'name_en']);
 
         return view('admin.warranty-purchases.index', compact('stats', 'plans', 'categories'));
     }
@@ -59,11 +64,11 @@ class WarrantyPurchaseController extends Controller
             );
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('warranty_purchases.status', $v),
-            'plan_id' => fn($q, $v) => $q->where('warranty_purchases.warranty_plan_id', $v),
-            'category_id' => fn($q, $v) => $q->where('warranty_plans.category_id', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('warranty_purchases.created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('warranty_purchases.created_at', '<=', $v),
+            'status' => fn ($q, $v) => $q->where('warranty_purchases.status', $v),
+            'plan_id' => fn ($q, $v) => $q->where('warranty_purchases.warranty_plan_id', $v),
+            'category_id' => fn ($q, $v) => $q->where('warranty_plans.category_id', $v),
+            'date_from' => fn ($q, $v) => $q->where('warranty_purchases.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('warranty_purchases.created_at', '<=', admin_day_end($v)),
         ]);
 
         $columns = [
@@ -90,18 +95,18 @@ class WarrantyPurchaseController extends Controller
             $showUrl = route('admin.warranty-purchases.show', $w->id);
 
             return [
-                'DT_RowId' => 'wp-' . $w->id,
-                'purchase_id' => '<a href="' . $showUrl . '" class="font-mono text-xs text-primary-600 hover:underline">' . e(substr($w->id, 0, 8)) . '…</a>',
-                'customer' => '<span class="text-sm text-gray-700">' . e($w->customer_name ?? '—') . '</span>',
-                'product' => '<span class="text-sm text-gray-700">' . e($productName ?? '—') . '</span>',
-                'plan' => '<span class="text-sm text-gray-700">' . e($planName ?? '—') . '</span>',
-                'duration' => '<span class="text-sm text-gray-500">' . e($duration ?? '—') . '</span>',
-                'price' => '<span class="text-sm text-gray-700 whitespace-nowrap">' . number_format($w->price_paid, 2) . ' ' . e($w->currency) . '</span>',
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e(ucfirst($w->status)) . '</span>',
-                'coverage_starts_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">' . ($w->coverage_starts_at ? $w->coverage_starts_at->format('M d, Y') : '—') . '</span>',
-                'coverage_ends_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">' . ($w->coverage_ends_at ? $w->coverage_ends_at->format('M d, Y') : '—') . '</span>',
-                'created_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">' . \Carbon\Carbon::parse($w->created_at)->format('M d, Y H:i') . '</span>',
-                'actions' => '<a href="' . $showUrl . '" class="btn btn-xs btn-secondary">' . e(__('common.view')) . '</a>',
+                'DT_RowId' => 'wp-'.$w->id,
+                'purchase_id' => '<a href="'.$showUrl.'" class="font-mono text-xs text-primary-600 hover:underline">'.e(substr($w->id, 0, 8)).'…</a>',
+                'customer' => '<span class="text-sm text-gray-700">'.e($w->customer_name ?? '—').'</span>',
+                'product' => '<span class="text-sm text-gray-700">'.e($productName ?? '—').'</span>',
+                'plan' => '<span class="text-sm text-gray-700">'.e($planName ?? '—').'</span>',
+                'duration' => '<span class="text-sm text-gray-500">'.e($duration ?? '—').'</span>',
+                'price' => '<span class="text-sm text-gray-700 whitespace-nowrap">'.number_format($w->price_paid, 2).' '.e($w->currency).'</span>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$statusBadge.'">'.e(ucfirst($w->status)).'</span>',
+                'coverage_starts_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">'.($w->coverage_starts_at ? admin_tz($w->coverage_starts_at)?->format('M d, Y') : '—').'</span>',
+                'coverage_ends_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">'.($w->coverage_ends_at ? admin_tz($w->coverage_ends_at)?->format('M d, Y') : '—').'</span>',
+                'created_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">'.admin_tz(Carbon::parse($w->created_at))->format('M d, Y H:i').'</span>',
+                'actions' => '<a href="'.$showUrl.'" class="btn btn-xs btn-secondary">'.e(__('common.view')).'</a>',
             ];
         });
     }
@@ -110,7 +115,7 @@ class WarrantyPurchaseController extends Controller
     // Show
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function show(WarrantyPurchase $warrantyPurchase): \Illuminate\View\View
+    public function show(WarrantyPurchase $warrantyPurchase): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('warranty_plans.view'), 403);
@@ -124,7 +129,7 @@ class WarrantyPurchaseController extends Controller
 
         $relatedClaim = null;
         if ($warrantyPurchase->orderItem) {
-            $relatedClaim = \App\Models\WarrantyClaim::where('order_item_id', $warrantyPurchase->orderItem->id)->first();
+            $relatedClaim = WarrantyClaim::where('order_item_id', $warrantyPurchase->orderItem->id)->first();
         }
 
         return view('admin.warranty-purchases.show', compact('warrantyPurchase', 'relatedClaim'));
@@ -134,7 +139,7 @@ class WarrantyPurchaseController extends Controller
     // Summary
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function summary(): \Illuminate\View\View
+    public function summary(): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('warranty_plans.view'), 403);

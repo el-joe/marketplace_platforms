@@ -228,11 +228,11 @@
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.starts_at') }}</dt>
-                                <dd>{{ $campaign->starts_at ? $campaign->starts_at->format('d M Y H:i') : '—' }}</dd>
+                                <dd>{{ $campaign->starts_at ? admin_tz($campaign->starts_at)?->format('d M Y H:i') : '—' }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.ends_at') }}</dt>
-                                <dd>{{ $campaign->ends_at ? $campaign->ends_at->format('d M Y H:i') : '—' }}</dd>
+                                <dd>{{ $campaign->ends_at ? admin_tz($campaign->ends_at)?->format('d M Y H:i') : '—' }}</dd>
                             </div>
                             @if($campaign->approvedByAdmin)
                                 <div>
@@ -311,7 +311,7 @@
                                         </div>
                                     </div>
                                 @endforeach
-                                <p class="text-xs text-gray-400 mt-2">{{ __('admin.ad_campaigns.last_calculated') }}: {{ $qualityScore->calculated_at ? \Carbon\Carbon::parse($qualityScore->calculated_at)->diffForHumans() : '—' }}</p>
+                                <p class="text-xs text-gray-400 mt-2">{{ __('admin.ad_campaigns.last_calculated') }}: {{ $qualityScore->calculated_at ? admin_tz(\Carbon\Carbon::parse($qualityScore->calculated_at))->diffForHumans() : '—' }}</p>
                             </div>
                         @else
                             <p class="text-sm text-gray-400 py-4 text-center">{{ __('admin.ad_campaigns.no_quality_score') }}</p>
@@ -529,7 +529,7 @@
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">{{ __('admin.ad_campaigns.suspicious') }}</span>
                                             @endif
                                         </td>
-                                        <td class="py-2 pr-4 text-gray-500">{{ $fp->blocked_at ? \Carbon\Carbon::parse($fp->blocked_at)->format('d M Y H:i') : '—' }}</td>
+                                        <td class="py-2 pr-4 text-gray-500">{{ $fp->blocked_at ? admin_tz(\Carbon\Carbon::parse($fp->blocked_at))->format('d M Y H:i') : '—' }}</td>
                                         <td class="py-2 pr-4 text-gray-500">{{ $fp->block_reason ?? '—' }}</td>
                                         <td class="py-2">
                                             @if(!$fp->is_blocked)

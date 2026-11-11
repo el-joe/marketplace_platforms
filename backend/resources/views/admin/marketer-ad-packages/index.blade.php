@@ -68,7 +68,7 @@
         @foreach($recent as $s)
             <tr class="border-t"><td class="p-3">{{ $s->marketer?->name ?? $s->marketer_id }}</td><td class="p-3">{{ $s->package?->name_ar }}</td>
             <td class="p-3">{{ number_format($s->amount_paid) }} {{ $s->currency }}</td><td class="p-3">{{ __('ad_packages.status_'.$s->status) }}</td>
-            <td class="p-3">{{ $s->expires_at?->format('Y-m-d') }}</td></tr>
+            <td class="p-3">{{ admin_tz($s->expires_at)?->format('Y-m-d') }}</td></tr>
         @endforeach
         </tbody></table>
     </div>

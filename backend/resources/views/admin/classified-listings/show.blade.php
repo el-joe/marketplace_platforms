@@ -66,7 +66,7 @@
                     <div><dt class="text-gray-500">{{ __('common.country') }}</dt><dd>{{ $listing->country?->name_en }}</dd></div>
                     <div><dt class="text-gray-500">{{ __('common.city') }}</dt><dd>{{ $listing->city?->name_en ?? '—' }}</dd></div>
                     <div><dt class="text-gray-500">{{ __('admin.classifieds.views') }}</dt><dd>{{ number_format($listing->views_count) }}</dd></div>
-                    <div><dt class="text-gray-500">{{ __('admin.classifieds.expires') }}</dt><dd>{{ $listing->expires_at?->format('Y-m-d') ?? '—' }}</dd></div>
+                    <div><dt class="text-gray-500">{{ __('admin.classifieds.expires') }}</dt><dd>{{ admin_tz($listing->expires_at)?->format('Y-m-d') ?? '—' }}</dd></div>
                 </dl>
 
                 @if(!empty($listing->attributes))
@@ -155,7 +155,7 @@
                 <div class="py-2 border-b border-gray-100 last:border-0 text-sm">
                     <div class="flex items-center justify-between">
                         <span class="font-medium text-gray-900">{{ $inq->customer?->name }}</span>
-                        <span class="text-xs text-gray-400">{{ $inq->created_at->diffForHumans() }}</span>
+                        <span class="text-xs text-gray-400">{{ admin_tz($inq->created_at)?->diffForHumans() }}</span>
                     </div>
                     @if($inq->message)<p class="text-gray-600 mt-0.5">{{ $inq->message }}</p>@endif
                     @if($inq->contact_phone)<p class="text-gray-500 text-xs">📞 {{ $inq->contact_phone }}</p>@endif
@@ -175,7 +175,7 @@
                 @if($listing->contract_accepted_at)
                 <div class="space-y-1.5 text-xs text-gray-600">
                     <p><span class="font-medium">{{ __('admin.classifieds.template_label') }}</span> {{ $listing->contractTemplate?->name }}</p>
-                    <p><span class="font-medium">{{ __('admin.classifieds.signed') }}</span> {{ $listing->contract_accepted_at->format('Y-m-d H:i') }}</p>
+                    <p><span class="font-medium">{{ __('admin.classifieds.signed') }}</span> {{ admin_tz($listing->contract_accepted_at)?->format('Y-m-d H:i') }}</p>
                     @php $sig = json_decode($listing->contract_signature_data, true); @endphp
                     @if($sig)
                     <p><span class="font-medium">{{ __('admin.classifieds.name_label') }}</span> {{ $sig['name'] }}</p>

@@ -190,7 +190,7 @@ class AdminListingController extends Controller
                 'rating_count' => $row->rating_count,
                 'total_sold' => $row->total_sold,
                 'warehouse_name' => $row->warehouse_name ? e($row->warehouse_name) : null,
-                'created_at' => $row->created_at?->format('Y-m-d H:i'),
+                'created_at' => admin_tz($row->created_at)?->format('Y-m-d H:i'),
                 'show_url' => route('admin.admin-listings.show', $row->id),
                 'edit_url' => route('admin.admin-listings.edit', $row->id),
                 'delete_url' => route('admin.admin-listings.destroy', $row->id),

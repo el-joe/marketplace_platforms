@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\InventoryMovementType;
 use App\Enums\InventoryTransferStatus;
 use App\Enums\WarehouseType;
 use App\Http\Controllers\Controller;
@@ -14,17 +15,16 @@ use App\Models\Currency;
 use App\Models\FbnDailyOverageFee;
 use App\Models\InventoryMovement;
 use App\Models\InventoryTransfer;
-use App\Models\InventoryTransferItem;
 use App\Models\PlatformShippingSubsidy;
 use App\Models\ShippingZone;
 use App\Models\Vendor;
-use App\Models\VendorListing;
 use App\Models\Warehouse;
 use App\Models\WarehouseExceptionalZone;
 use App\Models\WarehouseInventory;
 use App\Models\WarehouseVendorLimit;
 use App\Services\WarehouseService;
 use App\Services\WarehouseVendorLimitService;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -39,8 +39,7 @@ class WarehouseController extends Controller
     public function __construct(
         private readonly WarehouseService $warehouseService,
         private readonly WarehouseVendorLimitService $limitService,
-    ) {
-    }
+    ) {}
 
     // ─── Index ───────────────────────────────────────────────────────────────
 
@@ -80,9 +79,9 @@ class WarehouseController extends Controller
             );
 
         $query = $this->applyFilters($query, $request, [
-            'type' => fn($q, $v) => $q->where('warehouses.type', $v),
-            'country_id' => fn($q, $v) => $q->where('warehouses.country_id', $v),
-            'is_active' => fn($q, $v) => $q->where('warehouses.is_active', (bool) $v),
+            'type' => fn ($q, $v) => $q->where('warehouses.type', $v),
+            'country_id' => fn ($q, $v) => $q->where('warehouses.country_id', $v),
+            'is_active' => fn ($q, $v) => $q->where('warehouses.is_active', (bool) $v),
         ]);
 
         $columns = [
@@ -115,22 +114,22 @@ class WarehouseController extends Controller
             $toggleUrl = route('admin.warehouses.toggle-active', $wh->id);
 
             return [
-                'DT_RowId' => 'wh-' . $wh->id,
-                'name' => '<a href="' . $showUrl . '" class="font-medium text-primary-600 hover:underline">' . e($wh->name) . '</a>',
-                'code' => '<span class="font-mono text-xs text-gray-600">' . e($wh->code) . '</span>',
-                'type' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $typeBadge . '">' . e($wh->type->label()) . '</span>',
-                'country' => '<span class="text-sm">' . e($wh->country_name ?? '—') . '</span>',
-                'vendor' => $wh->owner_vendor_id ? '<span class="text-sm text-gray-700">' . e($wh->vendor_name) . '</span>' : '<span class="text-gray-300">—</span>',
-                'manager' => $wh->manager_admin_id ? '<span class="text-sm text-gray-700">' . e($wh->manager_name) . '</span>' : '<span class="text-gray-300">—</span>',
-                'capacity' => '<div class="flex items-center gap-2"><div class="flex-1 bg-gray-100 rounded-full h-2"><div class="h-2 rounded-full ' . $barColor . '" style="width:' . $usedPct . '%"></div></div><span class="text-xs tabular-nums text-gray-500 whitespace-nowrap">' . $usedPct . '%</span></div>',
+                'DT_RowId' => 'wh-'.$wh->id,
+                'name' => '<a href="'.$showUrl.'" class="font-medium text-primary-600 hover:underline">'.e($wh->name).'</a>',
+                'code' => '<span class="font-mono text-xs text-gray-600">'.e($wh->code).'</span>',
+                'type' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$typeBadge.'">'.e($wh->type->label()).'</span>',
+                'country' => '<span class="text-sm">'.e($wh->country_name ?? '—').'</span>',
+                'vendor' => $wh->owner_vendor_id ? '<span class="text-sm text-gray-700">'.e($wh->vendor_name).'</span>' : '<span class="text-gray-300">—</span>',
+                'manager' => $wh->manager_admin_id ? '<span class="text-sm text-gray-700">'.e($wh->manager_name).'</span>' : '<span class="text-gray-300">—</span>',
+                'capacity' => '<div class="flex items-center gap-2"><div class="flex-1 bg-gray-100 rounded-full h-2"><div class="h-2 rounded-full '.$barColor.'" style="width:'.$usedPct.'%"></div></div><span class="text-xs tabular-nums text-gray-500 whitespace-nowrap">'.$usedPct.'%</span></div>',
                 'is_active' => $wh->is_active
                     ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Active</span>'
                     : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Inactive</span>',
                 'actions' => '<div class="flex items-center gap-1">'
-                    . '<a href="' . $showUrl . '" class="btn btn-xs btn-ghost">View</a>'
-                    . '<a href="' . $editUrl . '" class="btn btn-xs btn-secondary">Edit</a>'
-                    . '<button class="btn btn-xs btn-ghost js-toggle-active" data-url="' . $toggleUrl . '" data-active="' . (int) $wh->is_active . '">' . ($wh->is_active ? 'Disable' : 'Enable') . '</button>'
-                    . '</div>',
+                    .'<a href="'.$showUrl.'" class="btn btn-xs btn-ghost">View</a>'
+                    .'<a href="'.$editUrl.'" class="btn btn-xs btn-secondary">Edit</a>'
+                    .'<button class="btn btn-xs btn-ghost js-toggle-active" data-url="'.$toggleUrl.'" data-active="'.(int) $wh->is_active.'">'.($wh->is_active ? 'Disable' : 'Enable').'</button>'
+                    .'</div>',
             ];
         });
     }
@@ -152,7 +151,7 @@ class WarehouseController extends Controller
         ];
 
         $recentMovements = InventoryMovement::query()
-            ->whereHas('warehouseInventory', fn($q) => $q->where('warehouse_id', $warehouse->id))
+            ->whereHas('warehouseInventory', fn ($q) => $q->where('warehouse_id', $warehouse->id))
             ->with('warehouseInventory.vendorListing')
             ->orderByDesc('created_at')
             ->limit(20)
@@ -160,7 +159,7 @@ class WarehouseController extends Controller
 
         $transfers = InventoryTransfer::query()
             ->where(
-                fn($q) => $q
+                fn ($q) => $q
                     ->where('source_warehouse_id', $warehouse->id)
                     ->orWhere('destination_warehouse_id', $warehouse->id)
             )
@@ -193,14 +192,14 @@ class WarehouseController extends Controller
                     ];
                 });
 
-            $vendors = Vendor::/*where('global_status', 'approved')->*/orderBy('store_name')->pluck('store_name', 'id');
+            $vendors = Vendor::/* where('global_status', 'approved')-> */ orderBy('store_name')->pluck('store_name', 'id');
         }
 
         $allZonesInCountry = ShippingZone::where('country_id', $warehouse->country_id)
             ->where('is_active', 1)
             ->orderBy('name')
             ->get()
-            ->filter(fn(ShippingZone $zone) => $zone->hasGapRates())
+            ->filter(fn (ShippingZone $zone) => $zone->hasGapRates())
             ->values();
 
         $exceptionalZones = WarehouseExceptionalZone::where('warehouse_id', $warehouse->id)
@@ -240,8 +239,8 @@ class WarehouseController extends Controller
             ['is_active' => true]
         );
 
-        if (!$exceptionalZone->wasRecentlyCreated) {
-            $exceptionalZone->update(['is_active' => !$exceptionalZone->is_active]);
+        if (! $exceptionalZone->wasRecentlyCreated) {
+            $exceptionalZone->update(['is_active' => ! $exceptionalZone->is_active]);
         }
 
         return redirect()->route('admin.warehouses.show', $warehouse->id)
@@ -287,15 +286,15 @@ class WarehouseController extends Controller
             };
 
             return [
-                'DT_RowId' => 'ovg-' . $fee->id,
-                'fee_date' => $fee->fee_date?->format('Y-m-d'),
+                'DT_RowId' => 'ovg-'.$fee->id,
+                'fee_date' => admin_tz($fee->fee_date)?->format('Y-m-d'),
                 'vendor' => e($fee->vendor_name ?? '—'),
-                'sku' => '<span class="font-mono text-xs">' . e($fee->vendor_sku ?? $fee->sku ?? '—') . '</span>',
+                'sku' => '<span class="font-mono text-xs">'.e($fee->vendor_sku ?? $fee->sku ?? '—').'</span>',
                 'units' => number_format($fee->units),
-                'fee_per_unit' => \App\Support\Money::format($fee->fee_per_unit) . ' ' . $fee->currency,
-                'total_fee' => \App\Support\Money::format($fee->total_fee) . ' ' . $fee->currency,
+                'fee_per_unit' => Money::format($fee->fee_per_unit).' '.$fee->currency,
+                'total_fee' => Money::format($fee->total_fee).' '.$fee->currency,
                 'currency' => $fee->currency,
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e($fee->status->value) . '</span>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$statusBadge.'">'.e($fee->status->value).'</span>',
             ];
         });
     }
@@ -344,11 +343,11 @@ class WarehouseController extends Controller
         abort_unless($admin->hasPermissionTo('warehouses.view'), 403);
         abort_if($warehouse->owner_vendor_id !== null, 422, 'Default limits only apply to platform-owned warehouses.');
 
-        if (!$warehouse->default_limit_type) {
+        if (! $warehouse->default_limit_type) {
             return response()->json(['message' => 'Set and save a default limit for this warehouse first.'], 422);
         }
 
-        $vendorIds = Vendor::/*where('global_status', 'approved')->*/pluck('id');
+        $vendorIds = Vendor::/* where('global_status', 'approved')-> */ pluck('id');
 
         $applied = 0;
         foreach ($vendorIds as $vendorId) {
@@ -430,10 +429,10 @@ class WarehouseController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('warehouses.view'), 403);
 
-        $warehouse->update(['is_active' => !$warehouse->is_active]);
+        $warehouse->update(['is_active' => ! $warehouse->is_active]);
 
         return response()->json([
-            'message' => 'Warehouse ' . ($warehouse->is_active ? 'activated' : 'deactivated') . '.',
+            'message' => 'Warehouse '.($warehouse->is_active ? 'activated' : 'deactivated').'.',
             'is_active' => $warehouse->is_active,
         ]);
     }
@@ -484,26 +483,26 @@ class WarehouseController extends Controller
             $isLow = $inv->reorder_point !== null && $inv->quantity_on_hand <= $inv->reorder_point;
 
             $qtyCell = $isLow
-                ? '<span class="text-orange-600 font-medium">' . $qty . '</span> <span class="text-xs text-orange-400">Low</span>'
-                : '<span>' . $qty . '</span>';
+                ? '<span class="text-orange-600 font-medium">'.$qty.'</span> <span class="text-xs text-orange-400">Low</span>'
+                : '<span>'.$qty.'</span>';
 
             return [
-                'DT_RowId' => 'inv-' . $inv->id,
-                'product' => '<div class="text-sm font-medium text-gray-800">' . e($inv->product_name) . '</div><div class="text-xs text-gray-400 font-mono">' . e($inv->sku ?? '') . '</div>',
+                'DT_RowId' => 'inv-'.$inv->id,
+                'product' => '<div class="text-sm font-medium text-gray-800">'.e($inv->product_name).'</div><div class="text-xs text-gray-400 font-mono">'.e($inv->sku ?? '').'</div>',
                 'vendor' => e($inv->vendor_name ?? '—'),
                 'on_hand' => number_format($inv->quantity_on_hand),
                 'available' => $qtyCell,
                 'reserved' => number_format($inv->quantity_reserved),
                 'damaged' => $inv->quantity_damaged > 0
-                    ? '<span class="text-red-500">' . number_format($inv->quantity_damaged) . '</span>'
+                    ? '<span class="text-red-500">'.number_format($inv->quantity_damaged).'</span>'
                     : '0',
                 'bin' => $inv->bin_location
-                    ? '<span class="font-mono text-xs">' . e($inv->bin_location) . '</span>'
+                    ? '<span class="font-mono text-xs">'.e($inv->bin_location).'</span>'
                     : '<span class="text-gray-300">—</span>',
                 'actions' => '<div class="flex items-center gap-1">'
-                    . '<button class="btn btn-xs btn-secondary js-adjust-inventory" data-url="' . $adjustUrl . '" data-id="' . $inv->id . '">Adjust</button>'
-                    . '<button class="btn btn-xs btn-ghost js-view-movements" data-url="' . $movementsUrl . '">Movements</button>'
-                    . '</div>',
+                    .'<button class="btn btn-xs btn-secondary js-adjust-inventory" data-url="'.$adjustUrl.'" data-id="'.$inv->id.'">Adjust</button>'
+                    .'<button class="btn btn-xs btn-ghost js-view-movements" data-url="'.$movementsUrl.'">Movements</button>'
+                    .'</div>',
             ];
         });
     }
@@ -515,7 +514,7 @@ class WarehouseController extends Controller
 
         $request->validate([
             'delta' => ['required', 'integer', 'not_in:0'],
-            'movement_type' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\InventoryMovementType::class)],
+            'movement_type' => ['required', Rule::enum(InventoryMovementType::class)],
             'reason' => ['required', 'string', 'max:500'],
         ]);
 
@@ -586,9 +585,9 @@ class WarehouseController extends Controller
             );
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('inventory_transfers.status', $v),
-            'source_warehouse_id' => fn($q, $v) => $q->where('inventory_transfers.source_warehouse_id', $v),
-            'dest_warehouse_id' => fn($q, $v) => $q->where('inventory_transfers.destination_warehouse_id', $v),
+            'status' => fn ($q, $v) => $q->where('inventory_transfers.status', $v),
+            'source_warehouse_id' => fn ($q, $v) => $q->where('inventory_transfers.source_warehouse_id', $v),
+            'dest_warehouse_id' => fn ($q, $v) => $q->where('inventory_transfers.destination_warehouse_id', $v),
         ]);
 
         $columns = [
@@ -612,14 +611,14 @@ class WarehouseController extends Controller
             };
 
             return [
-                'DT_RowId' => 'tf-' . $transfer->id,
-                'number' => '<a href="' . $showUrl . '" class="font-mono text-primary-600 hover:underline">' . e($transfer->transfer_number) . '</a>',
+                'DT_RowId' => 'tf-'.$transfer->id,
+                'number' => '<a href="'.$showUrl.'" class="font-mono text-primary-600 hover:underline">'.e($transfer->transfer_number).'</a>',
                 'source' => e($transfer->source_name ?? '—'),
                 'destination' => e($transfer->destination_name ?? '—'),
                 'vendor' => e($transfer->vendor_name ?? '—'),
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e($transfer->status->label()) . '</span>',
-                'created_at' => $transfer->created_at?->format('Y-m-d H:i'),
-                'actions' => '<a href="' . $showUrl . '" class="btn btn-xs btn-ghost">View</a>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$statusBadge.'">'.e($transfer->status->label()).'</span>',
+                'created_at' => admin_tz($transfer->created_at)?->format('Y-m-d H:i'),
+                'actions' => '<a href="'.$showUrl.'" class="btn btn-xs btn-ghost">View</a>',
             ];
         });
     }
@@ -648,7 +647,7 @@ class WarehouseController extends Controller
             );
 
             return redirect()->route('admin.warehouses.transfers.show', $transfer->id)
-                ->with('success', 'Transfer ' . $transfer->transfer_number . ' created.');
+                ->with('success', 'Transfer '.$transfer->transfer_number.' created.');
         } catch (\RuntimeException $e) {
             return back()->withErrors(['error' => $e->getMessage()])->withInput();
         }

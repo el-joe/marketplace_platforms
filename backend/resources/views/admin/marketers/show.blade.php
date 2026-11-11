@@ -614,8 +614,8 @@
                             {{ __('admin.marketers.all_categories') }}
                         @endif
                     </td>
-                    <td class="px-4 py-3 text-center text-gray-500">{{ $contract->starts_at?->format('Y-m-d') }}</td>
-                    <td class="px-4 py-3 text-center text-gray-500">{{ $contract->ends_at?->format('Y-m-d') }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ admin_tz($contract->starts_at)?->format('Y-m-d') }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ admin_tz($contract->ends_at)?->format('Y-m-d') }}</td>
                     <td class="px-4 py-3 text-center text-gray-500 text-xs">
                         @if($totalDays !== null){{ $totalDays }} {{ __('admin.marketers.days') }} @endif
                         @if(in_array($contract->status, ['pending', 'active']) && ! $isLapsed && $contract->ends_at)

@@ -86,9 +86,9 @@
                                 <td class="py-2 pr-4 font-mono text-xs">{{ $booking->booking_reference }}</td>
                                 <td class="py-2 pr-4 font-medium">{{ $booking->vendor?->store_name ?? '—' }}</td>
                                 <td class="py-2 pr-4 text-gray-600">
-                                    {{ $booking->booked_from ? \Carbon\Carbon::parse($booking->booked_from)->format('d M') : '—' }}
+                                    {{ $booking->booked_from ? admin_tz(\Carbon\Carbon::parse($booking->booked_from))->format('d M') : '—' }}
                                     –
-                                    {{ $booking->booked_until ? \Carbon\Carbon::parse($booking->booked_until)->format('d M Y') : '—' }}
+                                    {{ $booking->booked_until ? admin_tz(\Carbon\Carbon::parse($booking->booked_until))->format('d M Y') : '—' }}
                                 </td>
                                 <td class="py-2 pr-4">{{ \App\Support\Money::format($booking->agreed_rate) }} {{ $booking->currency ?? $adSlot->currency }}</td>
                                 <td class="py-2 pr-4">

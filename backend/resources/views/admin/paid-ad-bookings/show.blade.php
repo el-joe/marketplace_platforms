@@ -91,11 +91,11 @@
                     </div>
                     <div>
                         <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.paid_ad_bookings.booked_from_label') }}</dt>
-                        <dd>{{ $paidAdBooking->booked_from ? \Carbon\Carbon::parse($paidAdBooking->booked_from)->format('d M Y') : '—' }}</dd>
+                        <dd>{{ $paidAdBooking->booked_from ? admin_tz(\Carbon\Carbon::parse($paidAdBooking->booked_from))->format('d M Y') : '—' }}</dd>
                     </div>
                     <div>
                         <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.paid_ad_bookings.booked_until_label') }}</dt>
-                        <dd>{{ $paidAdBooking->booked_until ? \Carbon\Carbon::parse($paidAdBooking->booked_until)->format('d M Y') : '—' }}</dd>
+                        <dd>{{ $paidAdBooking->booked_until ? admin_tz(\Carbon\Carbon::parse($paidAdBooking->booked_until))->format('d M Y') : '—' }}</dd>
                     </div>
                     @if($paidAdBooking->approvedByAdmin)
                         <div>
@@ -104,7 +104,7 @@
                         </div>
                         <div>
                             <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.paid_ad_bookings.approved_at') }}</dt>
-                            <dd>{{ $paidAdBooking->approved_at ? \Carbon\Carbon::parse($paidAdBooking->approved_at)->format('d M Y H:i') : '—' }}</dd>
+                            <dd>{{ $paidAdBooking->approved_at ? admin_tz(\Carbon\Carbon::parse($paidAdBooking->approved_at))->format('d M Y H:i') : '—' }}</dd>
                         </div>
                     @endif
                     @if($paidAdBooking->vendor_notes)
@@ -130,7 +130,7 @@
                                 </p>
                             @endif
                             @if($paidAdBooking->offline_proof_uploaded_at)
-                                <p class="text-xs text-gray-400">{{ \Carbon\Carbon::parse($paidAdBooking->offline_proof_uploaded_at)->format('d M Y H:i') }}</p>
+                                <p class="text-xs text-gray-400">{{ admin_tz(\Carbon\Carbon::parse($paidAdBooking->offline_proof_uploaded_at))->format('d M Y H:i') }}</p>
                             @endif
                         </div>
                     @elseif($paidAdBooking->status->value === 'approved')
@@ -232,7 +232,7 @@
                                             @endif
                                             @if($creative->reviewedByAdmin)
                                                 <div class="col-span-2 text-xs text-gray-400 mt-1">
-                                                    {{ __('admin.paid_ad_bookings.reviewed_by', ['name' => $creative->reviewedByAdmin->name, 'date' => \Carbon\Carbon::parse($creative->reviewed_at)->format('d M Y H:i')]) }}
+                                                    {{ __('admin.paid_ad_bookings.reviewed_by', ['name' => $creative->reviewedByAdmin->name, 'date' => admin_tz(\Carbon\Carbon::parse($creative->reviewed_at))->format('d M Y H:i')]) }}
                                                 </div>
                                             @endif
                                         </dl>

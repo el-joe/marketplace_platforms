@@ -133,7 +133,7 @@
         <div class="flex items-center gap-3 text-sm text-gray-600">
             @if ($country->is_launched)
                 <x-badge color="success">{{ __('admin.geography.launched') }}</x-badge>
-                <span class="text-gray-400">{{ __('admin.geography.since') }} {{ $country->launched_at?->format('d M Y') ?? '—' }}</span>
+                <span class="text-gray-400">{{ __('admin.geography.since') }} {{ admin_tz($country->launched_at)?->format('d M Y') ?? '—' }}</span>
             @else
                 <x-badge color="gray">{{ __('admin.geography.draft') }}</x-badge>
             @endif

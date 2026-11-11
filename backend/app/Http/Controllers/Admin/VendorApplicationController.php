@@ -88,8 +88,8 @@ class VendorApplicationController extends Controller
             }),
             'country_id' => fn ($q, $v) => $q->where('country_id', $v),
             'status' => fn ($q, $v) => $q->where('global_status', $v),
-            'date_from' => fn ($q, $v) => $q->whereDate('created_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('created_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('created_at', '<=', admin_day_end($v)),
             'days_min' => fn ($q, $v) => $q->where('onboarding_completed_at', '<=', now()->subDays((int) $v)),
             'days_max' => fn ($q, $v) => $q->where('onboarding_completed_at', '>=', now()->subDays((int) $v)),
         ]);
@@ -107,7 +107,7 @@ class VendorApplicationController extends Controller
             $vendor->store_name,
             $vendor->country?->name_en ?? '—',
             $vendor->global_status?->value,
-            $vendor->created_at->format('d M Y'),
+            admin_tz($vendor->created_at)?->format('d M Y'),
         ]);
 
         return match ($request->input('export')) {
@@ -185,7 +185,7 @@ class VendorApplicationController extends Controller
                 'docs_status' => "<span class=\"text-sm {$docsColor}\">{$docsStatus}</span>",
                 'bank_status' => $bankBadge,
                 'days_waiting' => "<span class=\"{$urgencyClass}\">{$daysWaiting}d</span>",
-                'created_at' => $vendor->created_at->format('d M Y'),
+                'created_at' => admin_tz($vendor->created_at)?->format('d M Y'),
                 'actions' => $actions,
                 'DT_RowData' => ['id' => $vendor->id, 'status' => $vendor->global_status->value],
             ];

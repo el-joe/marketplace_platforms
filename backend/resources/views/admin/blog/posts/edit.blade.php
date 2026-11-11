@@ -32,7 +32,7 @@
                     {{ $statusPostLabels[$post->status->value] ?? $post->status->label() }}
                 </span>
                 @if($post->published_at)
-                    <span class="text-xs text-gray-400">{{ __('admin.blog.published_at') }} {{ $post->published_at->format('d M Y') }}</span>
+                    <span class="text-xs text-gray-400">{{ __('admin.blog.published_at') }} {{ admin_tz($post->published_at)?->format('d M Y') }}</span>
                 @endif
                 <span class="text-xs text-gray-400">{{ number_format($post->views_count) }} {{ __('admin.blog.views') }}</span>
             </div>
@@ -239,7 +239,7 @@
                         <div id="schedule-panel" class="{{ $post->status->value === 'scheduled' ? '' : 'hidden' }} space-y-2 pt-2 border-t border-gray-100">
                             <label class="form-label text-xs">{{ __('admin.blog.scheduled_for') }}</label>
                             <input type="datetime-local" name="scheduled_for" id="scheduled-for"
-                                   value="{{ old('scheduled_for', $post->scheduled_for?->format('Y-m-d\TH:i')) }}"
+                                   value="{{ old('scheduled_for', admin_input_value($post->scheduled_for, 'Y-m-d\TH:i')) }}"
                                    class="form-input w-full text-sm">
                             <button type="button" class="btn btn-primary w-full text-sm" onclick="submitForm('schedule')">
                                 {{ __('admin.blog.update_schedule') }}
@@ -249,7 +249,7 @@
                         <div class="pt-2 border-t border-gray-100 space-y-1">
                             <div class="text-xs text-gray-500">{{ __('admin.blog.reading_time') }}: <span id="reading-time-display" class="font-medium text-gray-700">~{{ $post->reading_time_minutes ?? 1 }} min read</span></div>
                             @if($post->published_at)
-                                <div class="text-xs text-gray-500">{{ __('admin.blog.published_at') }}: <span class="font-medium text-gray-700">{{ $post->published_at->format('d M Y H:i') }}</span></div>
+                                <div class="text-xs text-gray-500">{{ __('admin.blog.published_at') }}: <span class="font-medium text-gray-700">{{ admin_tz($post->published_at)?->format('d M Y H:i') }}</span></div>
                             @endif
                         </div>
                     </div>

@@ -166,7 +166,8 @@ Route::post('/set-locale', function (Request $request) {
 Broadcast::routes(['middleware' => ['web', 'auth.admin'], 'guard' => 'admin']);
 
 // ─── All protected admin routes ───────────────────────────────────────────────────
-Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
+// admin.timezone: admins enter date-times in Oman time; they are converted to UTC for storage.
+Route::middleware(['auth.admin', 'admin.vendor.scope', 'admin.timezone'])->group(function () {
 
     // Redirect legacy/incorrect URL to correct admin travel bookable-units path
     Route::redirect('travel-agencies/bookable-units', 'travel/bookable-units');

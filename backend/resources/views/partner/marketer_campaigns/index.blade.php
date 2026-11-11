@@ -115,7 +115,7 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $campaign->invitations_count }}</td>
-                            <td class="px-4 py-3 text-gray-500">{{ $campaign->created_at->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3 text-gray-500">{{ vendor_tz($campaign->created_at)?->format('Y-m-d') }}</td>
                             <td class="px-4 py-3 text-end">
                                 <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
                                     <a href="{{ route('partner.marketer-campaigns.show', $campaign) }}" class="text-primary-600 hover:underline font-medium">

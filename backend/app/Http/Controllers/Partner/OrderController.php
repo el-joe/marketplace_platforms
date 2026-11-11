@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers\Partner;
 
-use App\Enums\InventoryMovementReferenceType;
-use App\Enums\InventoryMovementType;
+use App\Enums\CancelActor;
+use App\Enums\SubOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryMovement;
+use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\ShippingCarrier;
 use App\Models\SubOrder;
 use App\Models\VendorListing;
 use App\Models\WarehouseInventory;
+use App\Services\Inventory\InventoryService;
+use App\Services\OrderStateMachine;
+use App\Services\Shipping\ShipmentService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrderController extends Controller
 {
@@ -27,9 +33,8 @@ class OrderController extends Controller
     use HasExport;
 
     public function __construct(
-        private readonly \App\Services\OrderStateMachine $stateMachine = new \App\Services\OrderStateMachine(),
-    ) {
-    }
+        private readonly OrderStateMachine $stateMachine = new OrderStateMachine,
+    ) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Helpers
@@ -55,20 +60,23 @@ class OrderController extends Controller
      */
     private function maskCustomerName(?string $name): string
     {
-        if (!$name)
+        if (! $name) {
             return '—';
+        }
         $parts = explode(' ', trim($name));
-        if (count($parts) === 1)
+        if (count($parts) === 1) {
             return $parts[0];
-        $last = mb_substr(end($parts), 0, 1) . '.';
-        return $parts[0] . ' ' . $last;
+        }
+        $last = mb_substr(end($parts), 0, 1).'.';
+
+        return $parts[0].' '.$last;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Index
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportOrders($request);
@@ -94,7 +102,7 @@ class OrderController extends Controller
     // Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildOrdersQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildOrdersQuery(Request $request): Builder
     {
         $vendorId = $this->vendorId();
 
@@ -112,13 +120,13 @@ class OrderController extends Controller
                 'o.customer_id',
             ])
             ->addSelect([
-                'item_count' => \App\Models\OrderItem::selectRaw('COUNT(*)')
+                'item_count' => OrderItem::selectRaw('COUNT(*)')
                     ->whereColumn('sub_order_id', 'sub_orders.id'),
             ]);
 
         // Filters
         if ($request->filled('search.value')) {
-            $query->where('sub_orders.sub_order_number', 'like', '%' . $request->input('search.value') . '%');
+            $query->where('sub_orders.sub_order_number', 'like', '%'.$request->input('search.value').'%');
         }
         if ($request->filled('status') && $request->input('status') !== 'all') {
             if ($request->input('status') === 'sla_urgent') {
@@ -138,19 +146,19 @@ class OrderController extends Controller
         return $query;
     }
 
-    private function exportOrders(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportOrders(Request $request): StreamedResponse
     {
         $orders = $this->buildOrdersQuery($request)->orderByDesc('sub_orders.created_at')->get();
 
         $headers = ['Sub-order Number', 'Status', 'Payout', 'Items', 'SLA Ship Deadline', 'Placed At'];
 
-        $rows = $orders->map(fn($row) => [
+        $rows = $orders->map(fn ($row) => [
             $row->sub_order_number,
             $row->status->value,
             number_format($row->vendor_payout, 2),
             $row->item_count,
-            optional($row->sla_ship_deadline)->format('Y-m-d H:i'),
-            $row->created_at->format('Y-m-d H:i'),
+            optional(vendor_tz($row->sla_ship_deadline))->format('Y-m-d H:i'),
+            vendor_tz($row->created_at)?->format('Y-m-d H:i'),
         ]);
 
         return match ($request->input('export')) {
@@ -186,10 +194,10 @@ class OrderController extends Controller
             $maskedLocation = $area ? "{$city}, {$area}" : $city;
 
             $slaHtml = '—';
-            if ($row->sla_ship_deadline && !in_array($row->status->value, ['shipped', 'delivered', 'completed', 'cancelled'])) {
+            if ($row->sla_ship_deadline && ! in_array($row->status->value, ['shipped', 'delivered', 'completed', 'cancelled'])) {
                 $isUrgent = now()->addHours(2)->gt($row->sla_ship_deadline);
                 $isPast = now()->gt($row->sla_ship_deadline);
-                $diff = $row->sla_ship_deadline->diffForHumans();
+                $diff = vendor_tz($row->sla_ship_deadline)?->diffForHumans();
                 $class = $isPast ? 'text-red-600 font-bold' : ($isUrgent ? 'text-orange-500 font-semibold' : 'text-gray-600');
                 $slaHtml = "<span class=\"{$class} text-xs\">{$diff}</span>";
             }
@@ -204,7 +212,7 @@ class OrderController extends Controller
                 'location' => $maskedLocation,
                 'item_count' => $row->item_count,
                 'sla_countdown' => $slaHtml,
-                'placed_at' => $row->created_at->format('Y-m-d H:i'),
+                'placed_at' => vendor_tz($row->created_at)?->format('Y-m-d H:i'),
             ];
         });
     }
@@ -220,7 +228,7 @@ class OrderController extends Controller
             ->with([
                 'order',
                 'order.customer',
-                'statusHistories' => fn($q) => $q->orderBy('created_at'),
+                'statusHistories' => fn ($q) => $q->orderBy('created_at'),
                 'shipments.trackingEvents',
                 'carrier',
                 'shippingMethod',
@@ -247,7 +255,7 @@ class OrderController extends Controller
     {
         $subOrder = $this->vendorSubOrder($subOrderNumber);
 
-        if ($subOrder->status !== \App\Enums\SubOrderStatus::Placed) {
+        if ($subOrder->status !== SubOrderStatus::Placed) {
             return response()->json(['success' => false, 'message' => 'الطلب لا يمكن تأكيده في حالته الحالية.'], 422);
         }
 
@@ -282,7 +290,7 @@ class OrderController extends Controller
         $subOrder = $this->vendorSubOrder($subOrderNumber);
         $subOrder->loadMissing(['shippingMethod', 'warehouse.country']);
 
-        if (!in_array($subOrder->status->value, ['placed', 'confirmed', 'processing', 'packed'])) {
+        if (! in_array($subOrder->status->value, ['placed', 'confirmed', 'processing', 'packed'])) {
             return response()->json(['success' => false, 'message' => 'لا يمكن شحن هذا الطلب في حالته الحالية.'], 422);
         }
 
@@ -293,69 +301,69 @@ class OrderController extends Controller
         $vendorId = $this->vendorId();
 
         // try {
-            DB::transaction(function () use ($request, $subOrder, $vendorId) {
-                // 1. Update sub_order (tracking/ETA fields not covered by the
-                // state machine's generic status/timestamp update).
-                $method = $subOrder->shippingMethod;
-                $timezone = $subOrder->warehouse?->country?->timezone ?? 'Asia/Dubai';
+        DB::transaction(function () use ($request, $subOrder, $vendorId) {
+            // 1. Update sub_order (tracking/ETA fields not covered by the
+            // state machine's generic status/timestamp update).
+            $method = $subOrder->shippingMethod;
+            $timezone = $subOrder->warehouse?->country?->timezone ?? 'Asia/Dubai';
 
-                $estimatedDelivery = $method
-                    ? $method->computeEstimatedDeliveryDate($timezone)->toDateString()
-                    : now()->addDays(5)->toDateString();
+            $estimatedDelivery = $method
+                ? $method->computeEstimatedDeliveryDate($timezone)->toDateString()
+                : now()->addDays(5)->toDateString();
 
-                $subOrder->update([
-                    'tracking_number' => $request->input('tracking_number'),
-                    'estimated_delivery_date' => $estimatedDelivery,
-                ]);
+            $subOrder->update([
+                'tracking_number' => $request->input('tracking_number'),
+                'estimated_delivery_date' => $estimatedDelivery,
+            ]);
 
-                // enhancement.md P-08: ShipmentService goes through OrderStateMachine
-                // (validated transition, histories, SubOrderShipped), creates the
-                // shipment and notifies supervisors.
-                app(\App\Services\Shipping\ShipmentService::class)->createForSubOrder(
-                    $subOrder,
-                    $request->input('tracking_number'),
-                    \App\Enums\CancelActor::Vendor,
-                    [
-                        'vendor_id' => $vendorId,
-                        'vendor_admin' => Auth::guard('vendor')->user()->id,
-                    ],
-                );
+            // enhancement.md P-08: ShipmentService goes through OrderStateMachine
+            // (validated transition, histories, SubOrderShipped), creates the
+            // shipment and notifies supervisors.
+            app(ShipmentService::class)->createForSubOrder(
+                $subOrder,
+                $request->input('tracking_number'),
+                CancelActor::Vendor,
+                [
+                    'vendor_id' => $vendorId,
+                    'vendor_admin' => Auth::guard('vendor')->user()->id,
+                ],
+            );
 
-                // enhancement.md P-13 task 3: this was a second,
-                // unlocked, clamp-with-max(0) implementation of the same
-                // ship-time inventory decrement as
-                // OrderFulfillmentService::decrementInventory(). Deleted
-                // in favour of the one InventoryService path, committing
-                // the exact order_item_allocations rows this item was
-                // reserved from.
-                $inventoryService = app(\App\Services\Inventory\InventoryService::class);
-                foreach ($subOrder->items as $item) {
-                    $allocations = $item->allocations()->where('status', 'reserved')->get();
+            // enhancement.md P-13 task 3: this was a second,
+            // unlocked, clamp-with-max(0) implementation of the same
+            // ship-time inventory decrement as
+            // OrderFulfillmentService::decrementInventory(). Deleted
+            // in favour of the one InventoryService path, committing
+            // the exact order_item_allocations rows this item was
+            // reserved from.
+            $inventoryService = app(InventoryService::class);
+            foreach ($subOrder->items as $item) {
+                $allocations = $item->allocations()->where('status', 'reserved')->get();
 
-                    if ($allocations->isEmpty()) {
-                        continue;
-                    }
-
-                    $inventoryService->commit(
-                        $allocations,
-                        'sub_order',
-                        $subOrder->id,
-                        actorType: 'vendor',
-                        actorId: Auth::guard('vendor')->user()->id,
-                        reason: 'order_shipped',
-                    );
+                if ($allocations->isEmpty()) {
+                    continue;
                 }
 
-                // 4. Status history is now written by OrderStateMachine::transition()
-                // above. 5. Customer notification is dispatched by the
-                // NotifyCustomerOnShipment listener on the SubOrderShipped
-                // event that transition() fires (no more TODO).
-                Log::info('SubOrder shipped by vendor', [
-                    'sub_order' => $subOrder->sub_order_number,
-                    'vendor_id' => $vendorId,
-                    'tracking' => $request->input('tracking_number'),
-                ]);
-            });
+                $inventoryService->commit(
+                    $allocations,
+                    'sub_order',
+                    $subOrder->id,
+                    actorType: 'vendor',
+                    actorId: Auth::guard('vendor')->user()->id,
+                    reason: 'order_shipped',
+                );
+            }
+
+            // 4. Status history is now written by OrderStateMachine::transition()
+            // above. 5. Customer notification is dispatched by the
+            // NotifyCustomerOnShipment listener on the SubOrderShipped
+            // event that transition() fires (no more TODO).
+            Log::info('SubOrder shipped by vendor', [
+                'sub_order' => $subOrder->sub_order_number,
+                'vendor_id' => $vendorId,
+                'tracking' => $request->input('tracking_number'),
+            ]);
+        });
         // } catch (\Throwable $e) {
         //     Log::error('Ship action failed', ['error' => $e->getMessage(), 'sub_order' => $subOrderNumber]);
         //     return response()->json(['success' => false, 'message' => 'حدث خطأ أثناء تحديث الشحن. يرجى المحاولة مرة أخرى.'], 500);
@@ -372,7 +380,7 @@ class OrderController extends Controller
         $method = $subOrder->shippingMethod;
         $timezone = $subOrder->warehouse?->country?->timezone ?? 'Asia/Dubai';
 
-        if (!$method) {
+        if (! $method) {
             return response()->json([
                 'has_estimate' => false,
                 'label' => null,
@@ -423,15 +431,17 @@ class OrderController extends Controller
                         ->where('vendor_id', $vendorId)
                         ->first();
 
-                    if (!$vendorListing)
+                    if (! $vendorListing) {
                         continue;
+                    }
 
                     $inventory = WarehouseInventory::where('vendor_listing_id', $vendorListing->id)
                         ->where('warehouse_id', $subOrder->warehouse_id)
                         ->first();
 
-                    if (!$inventory)
+                    if (! $inventory) {
                         continue;
+                    }
 
                     $newReserved = max(0, $inventory->quantity_reserved - $item->quantity);
                     $inventory->update(['quantity_reserved' => $newReserved]);
@@ -466,6 +476,7 @@ class OrderController extends Controller
             });
         } catch (\Throwable $e) {
             Log::error('Cancel order failed', ['error' => $e->getMessage(), 'sub_order' => $subOrderNumber]);
+
             return response()->json(['success' => false, 'message' => 'حدث خطأ أثناء إلغاء الطلب.'], 500);
         }
 
@@ -480,7 +491,7 @@ class OrderController extends Controller
     {
         $subOrder = $this->vendorSubOrder($subOrderNumber);
 
-        if ($subOrder->status !== \App\Enums\SubOrderStatus::Shipped) {
+        if ($subOrder->status !== SubOrderStatus::Shipped) {
             return response()->json(['success' => false, 'message' => 'لا يمكن تحديث هذا الطلب في حالته الحالية.'], 422);
         }
 
@@ -504,6 +515,7 @@ class OrderController extends Controller
             });
         } catch (\Throwable $e) {
             Log::error('Mark out-for-delivery failed', ['error' => $e->getMessage(), 'sub_order' => $subOrderNumber]);
+
             return response()->json(['success' => false, 'message' => 'حدث خطأ أثناء التحديث.'], 500);
         }
 
@@ -518,7 +530,7 @@ class OrderController extends Controller
     {
         $subOrder = $this->vendorSubOrder($subOrderNumber);
 
-        if (!in_array($subOrder->status->value, ['shipped', 'out_for_delivery'])) {
+        if (! in_array($subOrder->status->value, ['shipped', 'out_for_delivery'])) {
             return response()->json(['success' => false, 'message' => 'لا يمكن تحديث هذا الطلب في حالته الحالية.'], 422);
         }
 
@@ -531,7 +543,7 @@ class OrderController extends Controller
             $this->stateMachine->transition(
                 $subOrder,
                 'delivered',
-                \App\Enums\CancelActor::Vendor,
+                CancelActor::Vendor,
                 [
                     'vendor_id' => $this->vendorId(),
                     'vendor_admin' => Auth::guard('vendor')->user()->id,
@@ -540,6 +552,7 @@ class OrderController extends Controller
             );
         } catch (\Throwable $e) {
             Log::error('Mark delivered failed', ['error' => $e->getMessage(), 'sub_order' => $subOrderNumber]);
+
             return response()->json(['success' => false, 'message' => 'حدث خطأ أثناء التحديث.'], 500);
         }
 

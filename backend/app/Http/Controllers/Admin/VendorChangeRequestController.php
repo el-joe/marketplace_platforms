@@ -8,6 +8,7 @@ use App\Models\VendorChangeRequest;
 use App\Models\VendorSectionLock;
 use App\Services\VendorChangeRequestService;
 use App\Traits\HasDataTable;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -18,9 +19,7 @@ class VendorChangeRequestController extends Controller
 
     private const MASKED_FIELDS = ['iban', 'account_number', 'account_number_encrypted'];
 
-    public function __construct(private readonly VendorChangeRequestService $changeRequestService)
-    {
-    }
+    public function __construct(private readonly VendorChangeRequestService $changeRequestService) {}
 
     public function index(): View
     {
@@ -38,9 +37,9 @@ class VendorChangeRequestController extends Controller
             ->select('vendor_change_requests.*', 'vendors.store_name as vendor_store_name', 'vendor_admins.name as requested_by_name');
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('vendor_change_requests.status', $v),
-            'section' => fn($q, $v) => $q->where('vendor_change_requests.section', $v),
-            'vendor_id' => fn($q, $v) => $q->where('vendor_change_requests.vendor_id', $v),
+            'status' => fn ($q, $v) => $q->where('vendor_change_requests.status', $v),
+            'section' => fn ($q, $v) => $q->where('vendor_change_requests.section', $v),
+            'vendor_id' => fn ($q, $v) => $q->where('vendor_change_requests.vendor_id', $v),
         ]);
 
         $columns = [
@@ -57,14 +56,14 @@ class VendorChangeRequestController extends Controller
             $showUrl = route('admin.vendor-change-requests.show', $r->id);
 
             return [
-                'DT_RowId' => 'vcr-' . $r->id,
-                'vendor' => '<a href="' . route('admin.vendors.show', $r->vendor_id) . '" class="text-sm font-medium text-primary-600 hover:underline">' . e($r->vendor_store_name ?? '—') . '</a>',
-                'section' => '<span class="text-sm text-gray-700">' . e(__('admin.vendors.section_' . $r->section)) . '</span>',
-                'type' => '<span class="text-xs text-gray-500">' . e(ucfirst($r->request_type)) . '</span>',
-                'requested_by' => '<span class="text-sm text-gray-700">' . e($r->requested_by_name ?? '—') . '</span>',
-                'requested_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">' . \Carbon\Carbon::parse($r->created_at)->format('M d, Y H:i') . '</span>',
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $this->statusBadgeClass($r->status) . '">' . e(__('admin.vendor_change_requests.' . $r->status)) . '</span>',
-                'actions' => '<a href="' . $showUrl . '" class="btn btn-xs btn-secondary">' . e(__('admin.vendor_change_requests.view')) . '</a>',
+                'DT_RowId' => 'vcr-'.$r->id,
+                'vendor' => '<a href="'.route('admin.vendors.show', $r->vendor_id).'" class="text-sm font-medium text-primary-600 hover:underline">'.e($r->vendor_store_name ?? '—').'</a>',
+                'section' => '<span class="text-sm text-gray-700">'.e(__('admin.vendors.section_'.$r->section)).'</span>',
+                'type' => '<span class="text-xs text-gray-500">'.e(ucfirst($r->request_type)).'</span>',
+                'requested_by' => '<span class="text-sm text-gray-700">'.e($r->requested_by_name ?? '—').'</span>',
+                'requested_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">'.admin_tz(Carbon::parse($r->created_at))->format('M d, Y H:i').'</span>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$this->statusBadgeClass($r->status).'">'.e(__('admin.vendor_change_requests.'.$r->status)).'</span>',
+                'actions' => '<a href="'.$showUrl.'" class="btn btn-xs btn-secondary">'.e(__('admin.vendor_change_requests.view')).'</a>',
             ];
         });
     }
@@ -111,9 +110,9 @@ class VendorChangeRequestController extends Controller
     private function maskBankFields(array $data): array
     {
         foreach (self::MASKED_FIELDS as $field) {
-            if (!empty($data[$field]) && is_string($data[$field])) {
+            if (! empty($data[$field]) && is_string($data[$field])) {
                 $value = $data[$field];
-                $data[$field] = str_repeat('•', max(0, strlen($value) - 4)) . substr($value, -4);
+                $data[$field] = str_repeat('•', max(0, strlen($value) - 4)).substr($value, -4);
             }
         }
 

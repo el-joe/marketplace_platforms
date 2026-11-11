@@ -156,7 +156,7 @@
                                 </span>
                             </td>
                             <td class="py-3 px-4 text-right text-xs text-gray-400">
-                                {{ $ret->created_at->format('Y/m/d') }}
+                                {{ vendor_tz($ret->created_at)?->format('Y/m/d') }}
                             </td>
                             <td class="py-3 px-4 text-center">
                                 <a href="{{ route('partner.returns.show', $ret->return_number) }}"

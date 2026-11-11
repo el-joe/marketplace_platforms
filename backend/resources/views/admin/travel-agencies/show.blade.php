@@ -88,7 +88,7 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 font-medium text-gray-900">{{ $pkg->title_en }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $pkg->destination_country }}{{ $pkg->destination_city ? ', '.$pkg->destination_city : '' }}</td>
-                        <td class="px-4 py-3 text-gray-600">{{ $pkg->departure_date->format('d M Y') }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ admin_tz($pkg->departure_date)?->format('d M Y') }}</td>
                         <td class="px-4 py-3 font-medium text-gray-900">{{ $pkg->priceFormatted() }}</td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $pkgColors[$pkg->status->value] ?? '' }}">

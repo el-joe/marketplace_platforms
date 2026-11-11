@@ -164,7 +164,7 @@
                                             @endif
                                         </td>
                                         <td class="py-2 pr-3 text-gray-500 text-xs">
-                                            {{ $doc->expires_at ? $doc->expires_at->format('d M Y') : '—' }}
+                                            {{ $doc->expires_at ? admin_tz($doc->expires_at)?->format('d M Y') : '—' }}
                                             @if($doc->isExpired())
                                                 <span class="text-red-500 ml-1">{{ __('admin.vendor_applications.expired_suffix') }}</span>
                                             @endif

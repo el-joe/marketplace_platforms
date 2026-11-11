@@ -57,6 +57,10 @@ return [
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
             'prefix' => '',
             'prefix_indexes' => true,
+            // MySQL session timezone. Leave unset to keep the server default. Set to '+00:00' only on a
+            // server whose MySQL system timezone is already UTC (SELECT @@system_time_zone): on any other
+            // server it shifts how existing TIMESTAMP values are read. See docs/timezones.md.
+            'timezone' => env('DB_TIMEZONE'),
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([

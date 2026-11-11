@@ -74,7 +74,7 @@
                     @if($certification->status === 'approved' && $certification->expires_at)
                         <div>
                             <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('admin.vendor_product_certifications.expires_at') }}</dt>
-                            <dd class="mt-1 text-gray-700">{{ $certification->expires_at->format('d M Y') }}</dd>
+                            <dd class="mt-1 text-gray-700">{{ admin_tz($certification->expires_at)?->format('d M Y') }}</dd>
                         </div>
                     @endif
                     @if($certification->status === 'rejected' && $certification->rejection_reason)

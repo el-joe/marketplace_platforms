@@ -8,13 +8,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Ads\MarkOfflinePaidRequest;
 use App\Models\PaidAdBooking;
 use App\Models\PaidAdCreative;
+use App\Models\VendorListing;
 use App\Services\Ads\AdBookingService;
 use App\Services\Ads\AdCreativeService;
+use App\Services\Media\ListingImageResolver;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
 use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class PaidAdBookingController extends Controller
 {
@@ -23,12 +26,11 @@ class PaidAdBookingController extends Controller
     public function __construct(
         private readonly AdBookingService $bookingService,
         private readonly AdCreativeService $creativeService,
-    ) {
-    }
+    ) {}
 
     // ─── Index ────────────────────────────────────────────────────────────────
 
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ad_bookings.view'), 403);
@@ -50,14 +52,14 @@ class PaidAdBookingController extends Controller
         abort_unless($admin->hasPermissionTo('ad_bookings.view'), 403);
 
         $query = PaidAdBooking::query()
-            ->with(['slot', 'vendor', 'country', 'creatives' => fn($q) => $q->where('is_current', true)]);
+            ->with(['slot', 'vendor', 'country', 'creatives' => fn ($q) => $q->where('is_current', true)]);
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('status', $v),
-            'payment_status' => fn($q, $v) => $q->where('payment_status', $v),
-            'vendor_id' => fn($q, $v) => $q->where('vendor_id', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('booked_from', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('booked_until', '<=', $v),
+            'status' => fn ($q, $v) => $q->where('status', $v),
+            'payment_status' => fn ($q, $v) => $q->where('payment_status', $v),
+            'vendor_id' => fn ($q, $v) => $q->where('vendor_id', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('booked_from', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('booked_until', '<=', $v),
         ]);
 
         $columns = [
@@ -108,23 +110,23 @@ class PaidAdBookingController extends Controller
             $actions = '<div class="flex items-center gap-1">';
             $actions .= "<a href=\"{$showUrl}\" class=\"btn btn-xs btn-secondary\">View</a>";
             if ($canReview && $row->status === PaidAdBookingStatus::PendingReview) {
-                $actions .= "<button type=\"button\" class=\"btn btn-xs btn-success js-approve-booking-btn\" data-url=\"{$approveUrl}\" data-ref=\"" . e($row->booking_reference) . "\">Approve</button>";
-                $actions .= "<button type=\"button\" class=\"btn btn-xs btn-danger js-reject-booking-btn\" data-url=\"{$rejectUrl}\" data-ref=\"" . e($row->booking_reference) . "\">Reject</button>";
+                $actions .= "<button type=\"button\" class=\"btn btn-xs btn-success js-approve-booking-btn\" data-url=\"{$approveUrl}\" data-ref=\"".e($row->booking_reference).'">Approve</button>';
+                $actions .= "<button type=\"button\" class=\"btn btn-xs btn-danger js-reject-booking-btn\" data-url=\"{$rejectUrl}\" data-ref=\"".e($row->booking_reference).'">Reject</button>';
             }
             $actions .= '</div>';
 
             // Current creative status
             $creative = $row->creatives->first();
             $creativeStatus = $creative
-                ? "<span class=\"text-xs text-gray-500\">Creative: " . $creative->status->label() . "</span>"
+                ? '<span class="text-xs text-gray-500">Creative: '.$creative->status->label().'</span>'
                 : '<span class="text-xs text-gray-400">No creative</span>';
 
             return [
-                'reference' => '<span class="font-mono text-xs">' . e($row->booking_reference) . '</span><br>' . $creativeStatus,
+                'reference' => '<span class="font-mono text-xs">'.e($row->booking_reference).'</span><br>'.$creativeStatus,
                 'vendor' => e($row->vendor?->store_name ?? $row->marketer?->company_name ?? '—'),
                 'slot' => e($row->slot?->name ?? '—'),
-                'dates' => Carbon::parse($row->booked_from)->format('d M') . ' – ' . Carbon::parse($row->booked_until)->format('d M Y'),
-                'rate' => number_format($row->agreed_rate) . ' <span class="text-xs text-gray-400">' . strtoupper($row->currency ?? '') . '</span>',
+                'dates' => admin_tz(Carbon::parse($row->booked_from))->format('d M').' – '.admin_tz(Carbon::parse($row->booked_until))->format('d M Y'),
+                'rate' => number_format($row->agreed_rate).' <span class="text-xs text-gray-400">'.strtoupper($row->currency ?? '').'</span>',
                 'status' => $statusBadge,
                 'payment_status' => $payBadge,
                 'actions' => $actions,
@@ -135,7 +137,7 @@ class PaidAdBookingController extends Controller
 
     // ─── Show ─────────────────────────────────────────────────────────────────
 
-    public function show(PaidAdBooking $paidAdBooking): \Illuminate\View\View
+    public function show(PaidAdBooking $paidAdBooking): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ad_bookings.view'), 403);
@@ -146,11 +148,11 @@ class PaidAdBookingController extends Controller
         if ($paidAdBooking->slot?->derivesCreativeFromProduct()) {
             $ref = $paidAdBooking->creatives->firstWhere('is_current', true)?->destination_reference_id
                 ?? $paidAdBooking->creatives->last()?->destination_reference_id;
-            $listing = $ref ? \App\Models\VendorListing::with('productVariant.product')->find($ref) : null;
+            $listing = $ref ? VendorListing::with('productVariant.product')->find($ref) : null;
             if ($listing?->productVariant) {
                 $derivedProduct = [
                     'name' => $listing->productVariant->product?->name_en,
-                    'image' => app(\App\Services\Media\ListingImageResolver::class)->primary($listing->productVariant->id),
+                    'image' => app(ListingImageResolver::class)->primary($listing->productVariant->id),
                 ];
             }
         }
@@ -270,6 +272,6 @@ class PaidAdBookingController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
-        return response()->json(['message' => 'Creative ' . $action . 'd.']);
+        return response()->json(['message' => 'Creative '.$action.'d.']);
     }
 }

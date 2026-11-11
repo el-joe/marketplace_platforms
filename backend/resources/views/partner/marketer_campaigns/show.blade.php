@@ -307,8 +307,8 @@
                                 <td class="px-4 py-2">{{ $sampleStatusLabel($sample->status) }}</td>
                                 <td class="px-4 py-2">{{ $sample->stock_deducted_at ? __('common.yes') : '—' }}</td>
                                 <td class="px-4 py-2">{{ $sample->stock_deducted_at ? \App\Support\Money::format($sample->commission_amount).' '.$sample->commission_currency : '—' }}</td>
-                                <td class="px-4 py-2 text-gray-500">{{ $sample->dispatched_at?->format('Y-m-d H:i') ?? '—' }}</td>
-                                <td class="px-4 py-2 text-gray-500">{{ $sample->delivered_at?->format('Y-m-d H:i') ?? '—' }}</td>
+                                <td class="px-4 py-2 text-gray-500">{{ vendor_tz($sample->dispatched_at)?->format('Y-m-d H:i') ?? '—' }}</td>
+                                <td class="px-4 py-2 text-gray-500">{{ vendor_tz($sample->delivered_at)?->format('Y-m-d H:i') ?? '—' }}</td>
                             </tr>
                             @if ($needsCustomAttributes)
                                 <tr>

@@ -9,11 +9,13 @@ use App\Notifications\Customer\ReturnApprovedNotification;
 use App\Notifications\Customer\ReturnRejectedNotification;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReturnController extends Controller
 {
@@ -41,7 +43,7 @@ class ReturnController extends Controller
     // Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildReturnsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildReturnsQuery(Request $request): Builder
     {
         $vendor = Auth::guard('vendor')->user();
 
@@ -67,7 +69,7 @@ class ReturnController extends Controller
         return $query;
     }
 
-    private function exportReturns(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportReturns(Request $request): StreamedResponse
     {
         $returns = $this->buildReturnsQuery($request)
             ->with(['order:id,order_number'])
@@ -76,12 +78,12 @@ class ReturnController extends Controller
 
         $headers = ['Return #', 'Order #', 'Reason', 'Status', 'Date'];
 
-        $rows = $returns->map(fn($row) => [
+        $rows = $returns->map(fn ($row) => [
             $row->return_number,
             $row->order?->order_number,
             $row->reason,
             $row->status instanceof \BackedEnum ? $row->status->value : $row->status,
-            $row->created_at->format('Y-m-d H:i'),
+            vendor_tz($row->created_at)?->format('Y-m-d H:i'),
         ]);
 
         return match ($request->input('export')) {

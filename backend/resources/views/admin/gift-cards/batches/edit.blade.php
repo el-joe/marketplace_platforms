@@ -50,7 +50,7 @@
                 <div>
                     <label for="expires_at" class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.gift_cards_section.expires_at') }}</label>
                     <input type="text" id="expires_at" name="expires_at"
-                           value="{{ old('expires_at', $batch->expires_at?->format('Y-m-d H:i')) }}"
+                           value="{{ old('expires_at', admin_input_value($batch->expires_at)) }}"
                            data-flatpickr data-enable-time="true" class="form-input" placeholder="YYYY-MM-DD HH:MM">
                 </div>
             </div>

@@ -7,6 +7,7 @@ use App\Models\VendorAdmin;
 use App\Services\Vendor\TeamService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TeamController extends Controller
 {
@@ -49,7 +51,7 @@ class TeamController extends Controller
     /**
      * Team management page — all vendor admins ordered owner→manager→staff.
      */
-    public function index(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportTeam($request);
@@ -74,7 +76,7 @@ class TeamController extends Controller
     // Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildTeamQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildTeamQuery(Request $request): Builder
     {
         $query = VendorAdmin::where('vendor_id', $this->vendorId());
 
@@ -87,28 +89,28 @@ class TeamController extends Controller
         }
 
         $query = $this->applyFilters($query, $request, [
-            'role' => fn($q, $v) => $q->where('role', $v),
-            'is_active' => fn($q, $v) => $q->where('is_active', (bool) $v),
-            'date_from' => fn($q, $v) => $q->whereDate('created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('created_at', '<=', $v),
+            'role' => fn ($q, $v) => $q->where('role', $v),
+            'is_active' => fn ($q, $v) => $q->where('is_active', (bool) $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('created_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('created_at', '<=', $v),
         ]);
 
         return $query;
     }
 
-    private function exportTeam(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportTeam(Request $request): StreamedResponse
     {
         $members = $this->buildTeamQuery($request)->orderByDesc('is_owner')->orderBy('created_at')->get();
 
         $headers = ['Name', 'Email', 'Role', 'Active', 'Last Login', 'Joined'];
 
-        $rows = $members->map(fn($row) => [
+        $rows = $members->map(fn ($row) => [
             $row->name,
             $row->email,
             $row->role,
             $row->is_active ? 'Yes' : 'No',
-            optional($row->last_login_at)->format('Y-m-d H:i') ?? '—',
-            $row->created_at->format('Y-m-d H:i'),
+            optional(vendor_tz($row->last_login_at))->format('Y-m-d H:i') ?? '—',
+            vendor_tz($row->created_at)?->format('Y-m-d H:i'),
         ]);
 
         return match ($request->input('export')) {
@@ -127,7 +129,7 @@ class TeamController extends Controller
     {
         $admin = $this->vendorAdmin();
 
-        if (!$admin->isOwner()) {
+        if (! $admin->isOwner()) {
             return response()->json(['message' => 'يحق للمالك فقط إضافة أعضاء الفريق'], 403);
         }
 
@@ -163,7 +165,7 @@ class TeamController extends Controller
     {
         $admin = $this->vendorAdmin();
 
-        if (!$admin->isOwner()) {
+        if (! $admin->isOwner()) {
             return response()->json(['message' => 'يحق للمالك فقط تعديل أدوار الأعضاء'], 403);
         }
 
@@ -199,7 +201,7 @@ class TeamController extends Controller
     {
         $admin = $this->vendorAdmin();
 
-        if (!$admin->isOwner()) {
+        if (! $admin->isOwner()) {
             return response()->json(['message' => 'يحق للمالك فقط تعديل حالة الأعضاء'], 403);
         }
 
@@ -210,7 +212,7 @@ class TeamController extends Controller
         }
 
         DB::transaction(function () use ($member) {
-            $member->update(['is_active' => !$member->is_active]);
+            $member->update(['is_active' => ! $member->is_active]);
 
             if ($member->is_active) {
                 $member->syncRoles([$member->role]);
@@ -232,7 +234,7 @@ class TeamController extends Controller
     {
         $admin = $this->vendorAdmin();
 
-        if (!$admin->isOwner()) {
+        if (! $admin->isOwner()) {
             return response()->json(['message' => 'يحق للمالك فقط حذف أعضاء الفريق'], 403);
         }
 

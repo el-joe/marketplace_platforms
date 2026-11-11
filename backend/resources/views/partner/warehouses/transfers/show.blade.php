@@ -60,7 +60,7 @@
                     @if($transfer->expected_arrival_date)
                         <div>
                             <span class="text-gray-500">{{ __('partner.warehouses.expected_arrival_label') }}</span>
-                            <span class="font-medium text-gray-800 ml-1">{{ $transfer->expected_arrival_date->format('d M Y') }}</span>
+                            <span class="font-medium text-gray-800 ml-1">{{ vendor_tz($transfer->expected_arrival_date)?->format('d M Y') }}</span>
                         </div>
                     @endif
                     @if($transfer->carrier)
@@ -78,7 +78,7 @@
                     @if($transfer->shipped_at)
                         <div>
                             <span class="text-gray-500">{{ __('partner.warehouses.shipped_label') }}</span>
-                            <span class="font-medium text-gray-800 ml-1">{{ $transfer->shipped_at->format('d M Y H:i') }}</span>
+                            <span class="font-medium text-gray-800 ml-1">{{ vendor_tz($transfer->shipped_at)?->format('d M Y H:i') }}</span>
                         </div>
                     @endif
                 </div>

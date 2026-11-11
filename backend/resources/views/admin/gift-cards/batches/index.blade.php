@@ -57,7 +57,7 @@
                     <td class="px-6 py-4 text-end text-gray-700">{{ $batch->quantity }}</td>
                     <td class="px-6 py-4 text-end text-gray-700">{{ $batch->active_count }}</td>
                     <td class="px-6 py-4 text-end text-gray-700">{{ $batch->redeemed_count }}</td>
-                    <td class="px-6 py-4 text-gray-600">{{ $batch->expires_at?->format('Y-m-d') ?? '—' }}</td>
+                    <td class="px-6 py-4 text-gray-600">{{ admin_tz($batch->expires_at)?->format('Y-m-d') ?? '—' }}</td>
                     <td class="px-6 py-4 text-gray-600">{{ $batch->createdByAdmin?->name ?? '—' }}</td>
                     <td class="px-6 py-4 text-end">
                         <a href="{{ route('admin.gift-cards.batches.show', $batch->id) }}"

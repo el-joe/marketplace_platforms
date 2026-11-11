@@ -255,7 +255,7 @@
                     @if($isEdit)
                     <div class="pt-1 border-t border-gray-100">
                         <p class="text-xs text-gray-400">
-                            {{ __('admin.brands_section.created_ago', ['time' => $brand->created_at->diffForHumans()]) }}
+                            {{ __('admin.brands_section.created_ago', ['time' => admin_tz($brand->created_at)?->diffForHumans()]) }}
                         </p>
                     </div>
                     @endif

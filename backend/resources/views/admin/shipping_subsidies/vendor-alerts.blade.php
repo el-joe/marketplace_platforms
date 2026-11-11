@@ -51,7 +51,7 @@
                     @if($alert->vendor_note)
                         <p class="mt-2 text-sm text-gray-500 italic">"{{ $alert->vendor_note }}"</p>
                     @endif
-                    <p class="text-xs text-gray-400 mt-1">{{ $alert->created_at->diffForHumans() }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ admin_tz($alert->created_at)?->diffForHumans() }}</p>
                 </div>
 
                 <div class="flex gap-2 flex-shrink-0">

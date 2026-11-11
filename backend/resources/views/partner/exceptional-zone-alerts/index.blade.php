@@ -70,7 +70,7 @@
                                     @endif
                                 </td>
                                 <td class="text-gray-500 text-xs">{{ $alert->admin_note ?? '—' }}</td>
-                                <td class="text-gray-400 text-xs">{{ $alert->created_at->format('M d, Y') }}</td>
+                                <td class="text-gray-400 text-xs">{{ vendor_tz($alert->created_at)?->format('M d, Y') }}</td>
                             </tr>
                         @endforeach
                     </tbody>

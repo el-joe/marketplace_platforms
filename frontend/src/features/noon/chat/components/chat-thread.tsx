@@ -5,6 +5,7 @@ import { ArrowLeftIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/src/lib/utils";
 import { useChatThread } from "../helpers/use-chat-thread";
+import LocalDateTime from "@/src/components/shared/local-date-time";
 
 export default function ChatThread({ id }: { id: string }) {
   const t = useTranslations("chat");
@@ -71,10 +72,10 @@ export default function ChatThread({ id }: { id: string }) {
               >
                 {m.body}
                 <div className="mt-1 text-[10px] opacity-70">
-                  {new Date(m.created_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  <LocalDateTime
+                    value={m.created_at}
+                    format={{ hour: "2-digit", minute: "2-digit", hourCycle: "h23" }}
+                  />
                 </div>
               </div>
             </div>

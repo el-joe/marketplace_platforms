@@ -55,7 +55,7 @@
 
     <x-form.date-picker name="ends_at"
         label="{{ __('admin.page_builder.config_forms.deal_of_day.deal_ends_at') }}"
-        enableTime :value="$config['ends_at'] ?? ''" class="mt-3" />
+        enableTime :value="!empty($config['ends_at']) ? \Illuminate\Support\Carbon::parse($config['ends_at']) : ''" class="mt-3" />
 
     @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])

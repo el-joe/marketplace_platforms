@@ -32,7 +32,7 @@
                 <tr>
                     <td class="px-4 py-2 font-medium">{{ $tc->code }}</td>
                     <td class="px-4 py-2">{{ $tc->type === 'percentage' ? $tc->value . '%' : \App\Support\Money::format($tc->value) . ' ' . $tc->currency }}</td>
-                    <td class="px-4 py-2">{{ $tc->valid_from?->format('Y-m-d') }} — {{ $tc->valid_until?->format('Y-m-d') }}</td>
+                    <td class="px-4 py-2">{{ vendor_tz($tc->valid_from)?->format('Y-m-d') }} — {{ vendor_tz($tc->valid_until)?->format('Y-m-d') }}</td>
                     <td class="px-4 py-2">{{ $tc->is_active ? __('partner.cp_status_active') : __('partner.cp_status_inactive') }}</td>
                 </tr>
                 @empty
@@ -53,7 +53,7 @@
                 <div class="text-sm text-gray-500 mt-2 space-y-0.5">
                     <div>{{ __('partner.cp_min_fee_label') }}: {{ \App\Support\Money::format($invitation->min_fee_amount) }} {{ $invitation->currency }}</div>
                     <div>{{ __('partner.cp_participants') }}: {{ $invitation->approved_requests_count }} / {{ $invitation->max_participants }}</div>
-                    <div>{{ __('partner.cp_deadline_label') }}: {{ $invitation->registration_deadline->format('Y-m-d H:i') }}</div>
+                    <div>{{ __('partner.cp_deadline_label') }}: {{ vendor_tz($invitation->registration_deadline)?->format('Y-m-d H:i') }}</div>
                 </div>
             </div>
             <div class="w-72">

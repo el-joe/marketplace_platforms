@@ -151,7 +151,7 @@
                             {{ $invoice->period_start?->format('d M') }} → {{ $invoice->period_end?->format('d M Y') }}
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-500 text-right">
-                            {{ $invoice->paid_at?->format('d M Y') ?? '—' }}
+                            {{ vendor_tz($invoice->paid_at)?->format('d M Y') ?? '—' }}
                         </td>
                     </tr>
                     @endforeach

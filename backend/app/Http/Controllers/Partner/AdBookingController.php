@@ -10,6 +10,7 @@ use App\Models\Vendor;
 use App\Services\Ads\AdBookingService;
 use App\Services\Ads\AdCreativeService;
 use App\Services\Ads\AdStatsService;
+use App\Services\WalletService;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
 use DomainException;
@@ -26,8 +27,7 @@ class AdBookingController extends Controller
         private readonly AdBookingService $bookingService,
         private readonly AdCreativeService $creativeService,
         private readonly AdStatsService $statsService,
-    ) {
-    }
+    ) {}
 
     private function vendor(): Vendor
     {
@@ -78,7 +78,7 @@ class AdBookingController extends Controller
         return $this->dataTableResponse($request, $query, $columns, fn (PaidAdBooking $b) => [
             'reference' => '<a href="'.route('partner.ad-bookings.show', $b->id).'" class="font-medium text-primary-600 hover:underline">'.e($b->booking_reference).'</a>',
             'slot' => e($b->slot?->name),
-            'dates' => $b->booked_from?->format('d M Y').' - '.$b->booked_until?->format('d M Y'),
+            'dates' => vendor_tz($b->booked_from)?->format('d M Y').' - '.vendor_tz($b->booked_until)?->format('d M Y'),
             'amount' => number_format($b->total_spend).' '.$b->currency,
             'payment' => __('ads.payment_status.'.$b->payment_status->value),
             'status' => __('ads.booking_status.'.$b->status->value),
@@ -182,7 +182,7 @@ class AdBookingController extends Controller
         try {
             $this->bookingService->pay($booking);
         } catch (InsufficientBalanceException $e) {
-            $wallet = app(\App\Services\WalletService::class)->getOrCreateWallet('vendor', $booking->vendor_id, $booking->currency);
+            $wallet = app(WalletService::class)->getOrCreateWallet('vendor', $booking->vendor_id, $booking->currency);
 
             return response()->json([
                 'success' => false,

@@ -101,7 +101,7 @@
                         <td class="px-3 py-2 text-xs">{{ $template->country ? $localName($template->country) : __('contracts.admin.legacy_country') }}</td>
                         <td class="px-3 py-2 text-xs">{{ $template->category ? $localName($template->category) : __('contracts.marketer.category_any') }}</td>
                         <td class="px-3 py-2 text-center">v{{ $template->version }}</td>
-                        <td class="px-3 py-2 text-xs">{{ $template->effective_at?->format('Y-m-d') ?? '—' }}</td>
+                        <td class="px-3 py-2 text-xs">{{ admin_tz($template->effective_at)?->format('Y-m-d') ?? '—' }}</td>
                     </tr>
                 @empty
                     <tr><td colspan="6" class="px-3 py-6 text-center text-gray-400">{{ __('contracts.marketer.no_applicable') }}</td></tr>

@@ -41,7 +41,7 @@
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $req->statusBadgeClass() }}">{{ ucfirst($req->status->value) }}</span>
                         </td>
-                        <td class="px-4 py-3 text-gray-500 text-xs">{{ $req->created_at->format('d M Y') }}</td>
+                        <td class="px-4 py-3 text-gray-500 text-xs">{{ vendor_tz($req->created_at)?->format('d M Y') }}</td>
                         <td class="px-4 py-3 text-right">
                             <a href="{{ route('partner.packaging-supplies.show-request', $req) }}"
                                class="text-primary-600 hover:underline text-xs font-medium">{{ __('common.view') }}</a>

@@ -190,7 +190,7 @@
                             <td class="px-4 py-3 text-center">v{{ $template->version }}</td>
                             <td class="px-4 py-3 text-center">
                                 @if ($template->isScheduled())
-                                    <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{{ __('admin.contracts.status_scheduled', ['date' => $template->effective_at->format('d/m/Y')]) }}</span>
+                                    <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{{ __('admin.contracts.status_scheduled', ['date' => admin_tz($template->effective_at)?->format('d/m/Y')]) }}</span>
                                 @elseif ($template->is_published)
                                     <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">{{ __('admin.contracts.status_published') }}</span>
                                 @elseif ($template->is_active)

@@ -10,10 +10,15 @@ use App\Models\SupportTicket;
 use App\Models\TicketMessage;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SupportTicketController extends Controller
 {
@@ -24,7 +29,7 @@ class SupportTicketController extends Controller
     // Index
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('support.view'), 403);
@@ -100,25 +105,25 @@ class SupportTicketController extends Controller
             // Response time
             $responseTime = '—';
             if ($t->first_response_at) {
-                $mins = \Carbon\Carbon::parse($t->created_at)->diffInMinutes($t->first_response_at);
-                $responseTime = $mins < 60 ? "{$mins}m" : round($mins / 60, 1) . 'h';
+                $mins = Carbon::parse($t->created_at)->diffInMinutes($t->first_response_at);
+                $responseTime = $mins < 60 ? "{$mins}m" : round($mins / 60, 1).'h';
             }
 
             $showUrl = route('admin.support-tickets.show', $t->id);
 
             return [
-                'DT_RowId' => 'st-' . $t->id,
-                'DT_RowClass' => $t->priority === 'urgent' && !in_array($t->status, [SupportTicketStatus::Resolved, SupportTicketStatus::Closed], true) ? 'bg-red-50' : '',
-                'ticket_number' => '<a href="' . $showUrl . '" class="font-mono font-medium text-primary-600 hover:underline text-xs">' . e($t->ticket_number) . '</a>',
-                'requester' => '<div class="flex items-center gap-1.5"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ' . $roleBadge . '">' . $roleLabel . '</span><span class="text-xs font-mono text-gray-500">' . e(substr($t->requester_user_id, 0, 8)) . '</span></div>',
-                'category' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $categoryBadge . '">' . e(__('admin.support_tickets.category_' . $t->category)) . '</span>',
-                'priority' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $priorityBadge . '">' . e(__('admin.support_tickets.' . $t->priority)) . '</span>',
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e(__('admin.support_tickets.' . $statusLabelKey)) . '</span>',
-                'subject' => '<span class="text-sm text-gray-800">' . e(\Illuminate\Support\Str::limit($t->subject, 60)) . '</span>',
-                'assigned_to' => $t->assigned_admin_name ? '<span class="text-xs text-gray-700">' . e($t->assigned_admin_name) . '</span>' : '<span class="text-xs text-gray-300 italic">' . e(__('admin.support_tickets.unassigned')) . '</span>',
-                'response_time' => '<span class="text-xs tabular-nums ' . ($t->first_response_at ? 'text-gray-600' : 'text-orange-500') . '">' . $responseTime . '</span>',
-                'created_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">' . \Carbon\Carbon::parse($t->created_at)->format('M d, Y H:i') . '</span>',
-                'actions' => '<a href="' . $showUrl . '" class="btn btn-xs btn-secondary">' . e(__('admin.view')) . '</a>',
+                'DT_RowId' => 'st-'.$t->id,
+                'DT_RowClass' => $t->priority === 'urgent' && ! in_array($t->status, [SupportTicketStatus::Resolved, SupportTicketStatus::Closed], true) ? 'bg-red-50' : '',
+                'ticket_number' => '<a href="'.$showUrl.'" class="font-mono font-medium text-primary-600 hover:underline text-xs">'.e($t->ticket_number).'</a>',
+                'requester' => '<div class="flex items-center gap-1.5"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium '.$roleBadge.'">'.$roleLabel.'</span><span class="text-xs font-mono text-gray-500">'.e(substr($t->requester_user_id, 0, 8)).'</span></div>',
+                'category' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$categoryBadge.'">'.e(__('admin.support_tickets.category_'.$t->category)).'</span>',
+                'priority' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$priorityBadge.'">'.e(__('admin.support_tickets.'.$t->priority)).'</span>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$statusBadge.'">'.e(__('admin.support_tickets.'.$statusLabelKey)).'</span>',
+                'subject' => '<span class="text-sm text-gray-800">'.e(Str::limit($t->subject, 60)).'</span>',
+                'assigned_to' => $t->assigned_admin_name ? '<span class="text-xs text-gray-700">'.e($t->assigned_admin_name).'</span>' : '<span class="text-xs text-gray-300 italic">'.e(__('admin.support_tickets.unassigned')).'</span>',
+                'response_time' => '<span class="text-xs tabular-nums '.($t->first_response_at ? 'text-gray-600' : 'text-orange-500').'">'.$responseTime.'</span>',
+                'created_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">'.admin_tz(Carbon::parse($t->created_at))->format('M d, Y H:i').'</span>',
+                'actions' => '<a href="'.$showUrl.'" class="btn btn-xs btn-secondary">'.e(__('admin.view')).'</a>',
             ];
         });
     }
@@ -127,7 +132,7 @@ class SupportTicketController extends Controller
     // Query builder (shared by datatable + export)
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildTicketsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildTicketsQuery(Request $request): Builder
     {
         $query = SupportTicket::query()
             ->leftJoin('admins', 'admins.id', '=', 'support_tickets.assigned_to_admin_id')
@@ -136,18 +141,18 @@ class SupportTicketController extends Controller
                 ->whereColumn('ticket_id', 'support_tickets.id')]);
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where(function ($qq) use ($v) {
-                $qq->where('support_tickets.ticket_number', 'like', '%' . $v . '%')
-                    ->orWhere('support_tickets.subject', 'like', '%' . $v . '%');
+            'search' => fn ($q, $v) => $q->where(function ($qq) use ($v) {
+                $qq->where('support_tickets.ticket_number', 'like', '%'.$v.'%')
+                    ->orWhere('support_tickets.subject', 'like', '%'.$v.'%');
             }),
-            'status' => fn($q, $v) => $q->where('support_tickets.status', $v),
-            'category' => fn($q, $v) => $q->where('support_tickets.category', $v),
-            'priority' => fn($q, $v) => $q->where('support_tickets.priority', $v),
-            'assigned_to_admin_id' => fn($q, $v) => $q->where('support_tickets.assigned_to_admin_id', $v),
-            'requester_role' => fn($q, $v) => $q->where('support_tickets.requester_role', $v),
-            'unassigned' => fn($q, $v) => $v ? $q->whereNull('support_tickets.assigned_to_admin_id') : $q,
-            'date_from' => fn($q, $v) => $q->whereDate('support_tickets.created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('support_tickets.created_at', '<=', $v),
+            'status' => fn ($q, $v) => $q->where('support_tickets.status', $v),
+            'category' => fn ($q, $v) => $q->where('support_tickets.category', $v),
+            'priority' => fn ($q, $v) => $q->where('support_tickets.priority', $v),
+            'assigned_to_admin_id' => fn ($q, $v) => $q->where('support_tickets.assigned_to_admin_id', $v),
+            'requester_role' => fn ($q, $v) => $q->where('support_tickets.requester_role', $v),
+            'unassigned' => fn ($q, $v) => $v ? $q->whereNull('support_tickets.assigned_to_admin_id') : $q,
+            'date_from' => fn ($q, $v) => $q->where('support_tickets.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('support_tickets.created_at', '<=', admin_day_end($v)),
         ]);
     }
 
@@ -155,19 +160,19 @@ class SupportTicketController extends Controller
     // Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function exportTickets(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportTickets(Request $request): StreamedResponse
     {
         $tickets = $this->buildTicketsQuery($request)->orderByDesc('support_tickets.created_at')->get();
 
         $headers = ['Ticket #', 'Subject', 'Status', 'Priority', 'Created', 'Last Reply'];
 
-        $rows = $tickets->map(fn($t) => [
+        $rows = $tickets->map(fn ($t) => [
             $t->ticket_number,
             $t->subject,
             $t->status?->value,
             $t->priority,
-            optional($t->created_at)->format('d M Y H:i'),
-            $t->last_reply_at ? \Carbon\Carbon::parse($t->last_reply_at)->format('d M Y H:i') : '',
+            optional(admin_tz($t->created_at))->format('d M Y H:i'),
+            $t->last_reply_at ? admin_tz(Carbon::parse($t->last_reply_at))->format('d M Y H:i') : '',
         ]);
 
         return match ($request->input('export')) {
@@ -182,13 +187,13 @@ class SupportTicketController extends Controller
     // Show
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function show(SupportTicket $ticket): \Illuminate\View\View
+    public function show(SupportTicket $ticket): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('support.view'), 403);
 
         $ticket->load([
-            'messages' => fn($q) => $q->orderBy('created_at', 'asc'),
+            'messages' => fn ($q) => $q->orderBy('created_at', 'asc'),
             'assignedToAdmin:id,name,email',
             'relatedOrder:id,order_number,status',
             'relatedProduct:id,name_en',
@@ -236,22 +241,23 @@ class SupportTicketController extends Controller
             $updates = [];
 
             // Set first_response_at on first non-internal reply
-            if (!$isInternal && !$ticket->first_response_at) {
+            if (! $isInternal && ! $ticket->first_response_at) {
                 $updates['first_response_at'] = now();
             }
 
             // Advance status on non-internal reply
-            if (!$isInternal && $ticket->status === SupportTicketStatus::Open) {
+            if (! $isInternal && $ticket->status === SupportTicketStatus::Open) {
                 $updates['status'] = SupportTicketStatus::InProgress;
             }
 
-            if (!empty($updates)) {
+            if (! empty($updates)) {
                 $ticket->update($updates);
             }
 
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json(['message' => __('admin.support_tickets.failed_send_reply')], 500);
         }
 
@@ -316,7 +322,7 @@ class SupportTicketController extends Controller
 
         $updates = ['status' => $status];
 
-        if ($status === SupportTicketStatus::Resolved && !$ticket->resolved_at) {
+        if ($status === SupportTicketStatus::Resolved && ! $ticket->resolved_at) {
             $updates['resolved_at'] = now();
         } elseif (in_array($status, [SupportTicketStatus::Open, SupportTicketStatus::InProgress, SupportTicketStatus::WaitingCustomer], true)) {
             $updates['resolved_at'] = null;

@@ -170,7 +170,7 @@ class PayoutController extends Controller
             'ytd' => round($ytd, 2),
             'last_payout' => $lastPayout ? [
                 'amount' => round($lastPayout->net_amount, 2),
-                'date' => $lastPayout->processed_at?->format('Y-m-d'),
+                'date' => vendor_tz($lastPayout->processed_at)?->format('Y-m-d'),
                 'number' => $lastPayout->payout_number,
             ] : null,
         ]);

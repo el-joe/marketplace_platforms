@@ -6,16 +6,19 @@ use App\Enums\DeliveryAgentEarningStatus;
 use App\Enums\DeliveryAgentStatus;
 use App\Enums\DeliveryAgentType;
 use App\Enums\DeliveryAgentVehicleType;
+use App\Enums\ShippingCompanyStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreDeliveryAgentRequest;
-use App\Enums\ShippingCompanyStatus;
 use App\Models\Country;
 use App\Models\DeliveryAgent;
 use App\Models\DeliveryAgentDocument;
 use App\Models\DeliveryZone;
 use App\Models\ShippingCompany;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +26,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DeliveryAgentController extends Controller
 {
@@ -31,7 +35,7 @@ class DeliveryAgentController extends Controller
 
     // ── Index ─────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportDeliveryAgents($request);
@@ -65,7 +69,7 @@ class DeliveryAgentController extends Controller
 
     // ── Export ────────────────────────────────────────────────────────────────
 
-    private function buildDeliveryAgentsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildDeliveryAgentsQuery(Request $request): Builder
     {
         $query = DeliveryAgent::query()
             ->leftJoin('countries', 'countries.id', '=', 'delivery_agents.country_id')
@@ -92,20 +96,20 @@ class DeliveryAgentController extends Controller
             ]);
 
         return $this->applyFilters($query, $request, [
-            'country_id' => fn($q, $v) => $q->where('delivery_agents.country_id', $v),
-            'zone_id' => fn($q, $v) => $q->where('delivery_agents.zone_id', $v),
-            'status' => fn($q, $v) => $q->where('delivery_agents.status', $v),
-            'agent_type' => fn($q, $v) => $q->where('delivery_agents.agent_type', $v),
+            'country_id' => fn ($q, $v) => $q->where('delivery_agents.country_id', $v),
+            'zone_id' => fn ($q, $v) => $q->where('delivery_agents.zone_id', $v),
+            'status' => fn ($q, $v) => $q->where('delivery_agents.status', $v),
+            'agent_type' => fn ($q, $v) => $q->where('delivery_agents.agent_type', $v),
         ]);
     }
 
-    private function exportDeliveryAgents(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportDeliveryAgents(Request $request): StreamedResponse
     {
         $agents = $this->buildDeliveryAgentsQuery($request)->get();
 
         $headers = ['Name', 'Email', 'Phone', 'Country', 'Zone', 'Type', 'Status', 'Rating', 'Total Deliveries'];
 
-        $rows = $agents->map(fn(DeliveryAgent $agent) => [
+        $rows = $agents->map(fn (DeliveryAgent $agent) => [
             $agent->name,
             $agent->email,
             $agent->phone,
@@ -159,7 +163,7 @@ class DeliveryAgentController extends Controller
                 'rating_avg' => $agent->rating_avg ? number_format((float) $agent->rating_avg, 1) : '—',
                 'total_deliveries' => (int) $agent->total_deliveries,
                 'is_available' => (bool) $agent->is_available,
-                'last_login_at' => $agent->last_login_at?->format('d M Y H:i') ?? '—',
+                'last_login_at' => admin_tz($agent->last_login_at)?->format('d M Y H:i') ?? '—',
                 'country_id' => $agent->country_id,
                 'zone_id' => $agent->zone_id,
                 'national_id' => $agent->national_id,
@@ -178,7 +182,7 @@ class DeliveryAgentController extends Controller
             'country',
             'zone',
             'documents',
-            'shifts' => fn($q) => $q->latest('shift_date')->limit(30),
+            'shifts' => fn ($q) => $q->latest('shift_date')->limit(30),
         ]);
 
         $assignmentStats = DB::table('delivery_assignments')
@@ -230,7 +234,7 @@ class DeliveryAgentController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:30', 'unique:delivery_agents,phone,' . $agent->id],
+            'phone' => ['required', 'string', 'max:30', 'unique:delivery_agents,phone,'.$agent->id],
             'country_id' => ['required', 'exists:countries,id'],
             'zone_id' => ['nullable', 'exists:delivery_zones,id'],
             'agent_type' => ['required', Rule::enum(DeliveryAgentType::class)],
@@ -243,7 +247,7 @@ class DeliveryAgentController extends Controller
             'per_delivery_fee' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
         ]);
 
-        if (!empty($validated['zone_id'])) {
+        if (! empty($validated['zone_id'])) {
             $zoneCountry = DeliveryZone::where('id', $validated['zone_id'])->value('country_id');
 
             if ($zoneCountry !== $validated['country_id']) {
@@ -328,7 +332,7 @@ class DeliveryAgentController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => "Zone \"{$zone->name}\" is at full capacity ({$zone->max_active_agents} agents). "
-                               . 'Increase the max agents limit or reassign an existing agent first.',
+                               .'Increase the max agents limit or reassign an existing agent first.',
                 ], 422);
             }
         }
@@ -368,14 +372,14 @@ class DeliveryAgentController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('da.status', $v),
+            'status' => fn ($q, $v) => $q->where('da.status', $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
             $duration = null;
             if ($row->assigned_at && $row->delivered_at) {
-                $duration = (int) \Carbon\Carbon::parse($row->assigned_at)
-                    ->diffInMinutes(\Carbon\Carbon::parse($row->delivered_at));
+                $duration = (int) Carbon::parse($row->assigned_at)
+                    ->diffInMinutes(Carbon::parse($row->delivered_at));
             }
 
             return [
@@ -383,9 +387,9 @@ class DeliveryAgentController extends Controller
                 'sub_order_number' => $row->sub_order_number ?? '—',
                 'status' => $row->status,
                 'assigned_at' => $row->assigned_at
-                    ? \Carbon\Carbon::parse($row->assigned_at)->format('d M Y H:i') : '—',
+                    ? admin_tz(Carbon::parse($row->assigned_at))->format('d M Y H:i') : '—',
                 'delivered_at' => $row->delivered_at
-                    ? \Carbon\Carbon::parse($row->delivered_at)->format('d M Y H:i') : '—',
+                    ? admin_tz(Carbon::parse($row->delivered_at))->format('d M Y H:i') : '—',
                 'duration_minutes' => $duration,
                 'customer_rating' => $row->customer_rating,
                 'failure_reason' => $row->failure_reason,
@@ -401,17 +405,17 @@ class DeliveryAgentController extends Controller
         $thisMonth = $now->copy()->startOfMonth();
         $lastMonth = $now->copy()->subMonth()->startOfMonth();
 
-        $base = fn($from, $to) => DB::table('delivery_agent_earnings')
+        $base = fn ($from, $to) => DB::table('delivery_agent_earnings')
             ->where('agent_id', $agent->id)
             ->where('status', '!=', DeliveryAgentEarningStatus::Cancelled->value)
             ->whereBetween('created_at', [$from, $to]);
 
         $summary = [
-            'this_month' => \App\Support\Money::number((clone $base($thisMonth, $now->copy()->endOfMonth()))
+            'this_month' => Money::number((clone $base($thisMonth, $now->copy()->endOfMonth()))
                 ->sum('amount')),
-            'last_month' => \App\Support\Money::number((clone $base($lastMonth, $lastMonth->copy()->endOfMonth()))
+            'last_month' => Money::number((clone $base($lastMonth, $lastMonth->copy()->endOfMonth()))
                 ->sum('amount')),
-            'ytd' => \App\Support\Money::number(DB::table('delivery_agent_earnings')
+            'ytd' => Money::number(DB::table('delivery_agent_earnings')
                 ->where('agent_id', $agent->id)
                 ->where('status', '!=', DeliveryAgentEarningStatus::Cancelled->value)
                 ->whereYear('created_at', $now->year)

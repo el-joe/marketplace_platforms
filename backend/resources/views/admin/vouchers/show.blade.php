@@ -78,11 +78,11 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-500">{{ __('admin.vouchers_section.valid_from') }}</p>
-                    <p class="font-medium text-gray-900">{{ optional($voucher->valid_from)->format('Y-m-d H:i') }}</p>
+                    <p class="font-medium text-gray-900">{{ optional(admin_tz($voucher->valid_from))->format('Y-m-d H:i') }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-500">{{ __('admin.vouchers_section.valid_until') }}</p>
-                    <p class="font-medium text-gray-900">{{ optional($voucher->valid_until)->format('Y-m-d H:i') }}</p>
+                    <p class="font-medium text-gray-900">{{ optional(admin_tz($voucher->valid_until))->format('Y-m-d H:i') }}</p>
                 </div>
                 @if($voucher->description)
                     <div class="sm:col-span-2 lg:col-span-3">
@@ -106,7 +106,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-500">{{ __('admin.vouchers_section.created_at') }}</p>
-                    <p class="font-medium text-gray-900">{{ optional($voucher->created_at)->format('Y-m-d H:i') }}</p>
+                    <p class="font-medium text-gray-900">{{ optional(admin_tz($voucher->created_at))->format('Y-m-d H:i') }}</p>
                 </div>
             </div>
         </div>

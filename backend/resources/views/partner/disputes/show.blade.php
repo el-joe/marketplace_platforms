@@ -65,10 +65,10 @@
                             <span>{{ __('partner.disputes.order_label', ['number' => $dispute->order->order_number]) }}</span>
                         @endif
                         <span>·</span>
-                        <span>{{ $dispute->created_at->format('d/m/Y H:i') }}</span>
+                        <span>{{ vendor_tz($dispute->created_at)?->format('d/m/Y H:i') }}</span>
                         @if ($dispute->resolved_at)
                             <span>·</span>
-                            <span>{{ __('partner.disputes.resolved_on', ['date' => $dispute->resolved_at->format('d/m/Y')]) }}</span>
+                            <span>{{ __('partner.disputes.resolved_on', ['date' => vendor_tz($dispute->resolved_at)?->format('d/m/Y')]) }}</span>
                         @endif
                     </div>
 
@@ -119,7 +119,7 @@
                                     <div class="max-w-[80%] sm:max-w-[75%]">
                                         <p class="mb-1 text-xs {{ $isMine ? 'text-end' : 'text-start' }} text-gray-400">
                                             {{ $isMine ? __('partner.disputes.you') : ($msg->sender_role === \App\Enums\DisputeMessageSenderRole::Admin ? __('partner.disputes.platform') : __('partner.disputes.buyer')) }}
-                                            · {{ $msg->created_at->format('d/m H:i') }}
+                                            · {{ vendor_tz($msg->created_at)?->format('d/m H:i') }}
                                         </p>
                                         <div class="rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm
                                                 {{ $isMine
@@ -201,7 +201,7 @@
                                         </a>
                                     @endif
                                     <p class="text-xs text-gray-400 mt-0.5">
-                                        {{ \Carbon\Carbon::parse($ev->created_at)->format('d/m/Y') }}</p>
+                                        {{ vendor_tz(\Carbon\Carbon::parse($ev->created_at))->format('d/m/Y') }}</p>
                                 </div>
                             </div>
                         @empty

@@ -217,7 +217,7 @@
                                         <td class="py-3 pr-4">
                                             <x-badge :color="$docStatusColors[$doc->status->value] ?? 'gray'">{{ __('admin.vendor_applications.doc_status_' . $doc->status->value) }}</x-badge>
                                         </td>
-                                        <td class="py-3 pr-4 text-gray-600">{{ $doc->expires_at?->format('d M Y') ?? '—' }}</td>
+                                        <td class="py-3 pr-4 text-gray-600">{{ admin_tz($doc->expires_at)?->format('d M Y') ?? '—' }}</td>
                                         <td class="py-3 pr-4 text-gray-600">{{ $doc->verifiedByAdmin?->name ?? '—' }}</td>
                                         <td class="py-3 text-end">
                                             <div class="flex items-center justify-end gap-2">
@@ -350,7 +350,7 @@
                                             <x-badge :color="$strikeColors[$strike->severity->value] ?? 'gray'">{{ __('admin.vendors.severity_' . $strike->severity->value) }}</x-badge>
                                         </td>
                                         <td class="py-3 pr-4 text-gray-600">{{ $strike->issuedByAdmin?->name ?? '—' }}</td>
-                                        <td class="py-3 pr-4 text-gray-600">{{ $strike->expires_at?->format('d M Y') ?? __('admin.vendors.never') }}</td>
+                                        <td class="py-3 pr-4 text-gray-600">{{ admin_tz($strike->expires_at)?->format('d M Y') ?? __('admin.vendors.never') }}</td>
                                         <td class="py-3">
                                             @if($strike->is_active)
                                                 <x-badge color="danger">{{ __('admin.vendors.active_badge') }}</x-badge>
@@ -426,7 +426,7 @@
                                         <td class="py-3 pr-4">
                                             <x-badge color="gray">{{ ucwords(str_replace('_', ' ', $so->status->value)) }}</x-badge>
                                         </td>
-                                        <td class="py-3 text-xs text-gray-500 whitespace-nowrap">{{ \Carbon\Carbon::parse($so->created_at)->format('d M Y') }}</td>
+                                        <td class="py-3 text-xs text-gray-500 whitespace-nowrap">{{ admin_tz(\Carbon\Carbon::parse($so->created_at))->format('d M Y') }}</td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="5" class="py-8 text-center text-sm text-gray-400">{{ __('admin.vendors.no_orders_yet') }}</td></tr>
@@ -471,7 +471,7 @@
                                         <td class="py-3 pr-4 tabular-nums">{{ number_format($payout->gross_sales, 2) }} {{ $payout->currency }}</td>
                                         <td class="py-3 pr-4 tabular-nums font-medium">{{ number_format($payout->net_amount, 2) }} {{ $payout->currency }}</td>
                                         <td class="py-3 pr-4"><x-badge :color="$pc">{{ __('admin.payouts.' . $payout->status->value) }}</x-badge></td>
-                                        <td class="py-3 text-xs text-gray-500">{{ $payout->processed_at ? \Carbon\Carbon::parse($payout->processed_at)->format('d M Y') : '—' }}</td>
+                                        <td class="py-3 text-xs text-gray-500">{{ $payout->processed_at ? admin_tz(\Carbon\Carbon::parse($payout->processed_at))->format('d M Y') : '—' }}</td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="6" class="py-8 text-center text-sm text-gray-400">{{ __('admin.vendors.no_payouts_yet') }}</td></tr>
@@ -634,7 +634,7 @@
                                         </td>
                                         <td class="py-3 pr-4 text-gray-600">{{ $lock?->is_locked ? $lock->locked_reason : '—' }}</td>
                                         <td class="py-3 pr-4 text-gray-600">{{ $lock?->is_locked ? ($lock->lockedByAdmin?->name ?? '—') : '—' }}</td>
-                                        <td class="py-3 pr-4 text-xs text-gray-500 whitespace-nowrap">{{ $lock?->is_locked ? $lock->locked_at?->format('d M Y H:i') : '—' }}</td>
+                                        <td class="py-3 pr-4 text-xs text-gray-500 whitespace-nowrap">{{ $lock?->is_locked ? admin_tz($lock->locked_at)?->format('d M Y H:i') : '—' }}</td>
                                         <td class="py-3 text-end">
                                             @if(!$isBankAccounts)
                                                 @if($isLocked)
@@ -681,7 +681,7 @@
                                         <div class="flex items-center gap-2 flex-wrap">
                                             <span class="font-medium text-gray-900">{{ $entry->causer_id ? __('admin.vendors.admin_label') : __('admin.vendors.system_label') }}</span>
                                             <span class="text-gray-500">{{ ucwords(str_replace('_', ' ', $entry->description)) }}</span>
-                                            <span class="text-xs text-gray-400">{{ \Carbon\Carbon::parse($entry->created_at)->diffForHumans() }}</span>
+                                            <span class="text-xs text-gray-400">{{ admin_tz(\Carbon\Carbon::parse($entry->created_at))->diffForHumans() }}</span>
                                         </div>
                                         @foreach($attrs as $field => $newVal)
                                             @if(isset($old[$field]))
@@ -832,7 +832,7 @@
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">{{ __('admin.vendors.expires_on') }}</dt>
-                        <dd class="font-medium text-gray-900">{{ $acquisitionCommission->valid_until->format('d M Y') }}</dd>
+                        <dd class="font-medium text-gray-900">{{ admin_tz($acquisitionCommission->valid_until)?->format('d M Y') }}</dd>
                     </div>
                 </dl>
                 <div class="mt-4 pt-4 border-t border-gray-100 flex gap-2">

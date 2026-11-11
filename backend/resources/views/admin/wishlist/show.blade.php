@@ -78,7 +78,7 @@
                             </td>
                             <td class="py-2 pr-4">{{ $listing->price ?? '—' }}</td>
                             <td class="py-2 pr-4">{{ $listing->currency ?? '—' }}</td>
-                            <td class="py-2">{{ $item->added_at?->format('d M Y H:i') ?? '—' }}</td>
+                            <td class="py-2">{{ admin_tz($item->added_at)?->format('d M Y H:i') ?? '—' }}</td>
                         </tr>
                     @empty
                         <tr>

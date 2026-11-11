@@ -63,9 +63,9 @@ class BestsellerController extends Controller
             ->with(['product:id,name_en', 'category:id,name_en', 'country:id,name_en']);
 
         $query = $this->applyFilters($query, $request, [
-            'category_id' => fn($q, $v) => $q->where('product_bestseller_rankings.category_id', $v),
-            'country_id' => fn($q, $v) => $q->where('product_bestseller_rankings.country_id', $v),
-            'period' => fn($q, $v) => $q->where('product_bestseller_rankings.period', $v),
+            'category_id' => fn ($q, $v) => $q->where('product_bestseller_rankings.category_id', $v),
+            'country_id' => fn ($q, $v) => $q->where('product_bestseller_rankings.country_id', $v),
+            'period' => fn ($q, $v) => $q->where('product_bestseller_rankings.period', $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function (ProductBestsellerRanking $ranking) {
@@ -76,7 +76,7 @@ class BestsellerController extends Controller
                 'category_name' => e(optional($ranking->category)->name_en),
                 'country_name' => e(optional($ranking->country)->name_en),
                 'units_sold' => (int) $ranking->units_sold,
-                'calculated_at' => optional($ranking->calculated_at)->format('Y-m-d H:i'),
+                'calculated_at' => optional(admin_tz($ranking->calculated_at))->format('Y-m-d H:i'),
             ];
         });
     }

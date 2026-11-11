@@ -17,9 +17,12 @@ use App\Services\Shipping\ShippingRateService;
 use App\Services\Shipping\ShippingZoneService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ShippingZoneController extends Controller
 {
@@ -29,14 +32,13 @@ class ShippingZoneController extends Controller
     public function __construct(
         private readonly ShippingZoneService $zoneService,
         private readonly ShippingRateService $rateService
-    ) {
-    }
+    ) {}
 
     // ═══════════════════════════════════════════════════════════════════════
     // Pages
     // ═══════════════════════════════════════════════════════════════════════
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportZones($request);
@@ -52,7 +54,7 @@ class ShippingZoneController extends Controller
             ->get();
 
         // Append active_rate_count manually (uses accessor that queries DB)
-        $zones->each(fn($z) => $z->append(['active_rate_count']));
+        $zones->each(fn ($z) => $z->append(['active_rate_count']));
 
         $methods = ShippingMethod::where('is_active', 1)->get();
         $carriers = ShippingCarrier::where('is_active', 1)->get();
@@ -137,7 +139,7 @@ class ShippingZoneController extends Controller
 
     public function toggleActive(ShippingZone $zone): JsonResponse
     {
-        $zone->update(['is_active' => !$zone->is_active]);
+        $zone->update(['is_active' => ! $zone->is_active]);
 
         return response()->json([
             'success' => true,
@@ -158,7 +160,7 @@ class ShippingZoneController extends Controller
         return response()->json([
             'success' => true,
             'data' => ['zone' => $new],
-            'message' => 'Zone duplicated with ' . $new->destinationRates()->count() . ' rates.',
+            'message' => 'Zone duplicated with '.$new->destinationRates()->count().' rates.',
         ]);
     }
 
@@ -173,7 +175,7 @@ class ShippingZoneController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'cities' => $zone->cities->map(fn($c) => [
+                'cities' => $zone->cities->map(fn ($c) => [
                     'id' => $c->id,
                     'name_en' => $c->name_en,
                     'name_ar' => $c->name_ar,
@@ -196,7 +198,7 @@ class ShippingZoneController extends Controller
         return response()->json([
             'success' => true,
             'data' => $result,
-            'message' => $result['assigned'] . ' cities assigned to zone.',
+            'message' => $result['assigned'].' cities assigned to zone.',
         ]);
     }
 
@@ -208,7 +210,7 @@ class ShippingZoneController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $city->name_en . ' removed from zone.',
+            'message' => $city->name_en.' removed from zone.',
         ]);
     }
 
@@ -217,7 +219,7 @@ class ShippingZoneController extends Controller
         $countryId = $request->country_id;
 
         $cities = City::unassigned()
-            ->when($countryId, fn($q) => $q->forCountry($countryId))
+            ->when($countryId, fn ($q) => $q->forCountry($countryId))
             ->orderBy('name_en')
             ->get(['id', 'name_en', 'name_ar', 'country_id', 'cod_available']);
 
@@ -235,21 +237,22 @@ class ShippingZoneController extends Controller
     {
         $query = ShippingRate::query()
             ->with(['destinationZone', 'shippingMethod', 'carrier'])
-            ->when($request->destination_zone_id, fn($q, $v) => $q->where('destination_zone_id', $v))
-            ->when($request->shipping_method_id, fn($q, $v) => $q->where('shipping_method_id', $v))
-            ->when($request->carrier_id, fn($q, $v) => $q->where('carrier_id', $v))
-            ->when($request->has('is_active') && !in_array($request->is_active, ['', null]), fn($q) => $q->where('is_active', (bool) $request->is_active))
+            ->when($request->destination_zone_id, fn ($q, $v) => $q->where('destination_zone_id', $v))
+            ->when($request->shipping_method_id, fn ($q, $v) => $q->where('shipping_method_id', $v))
+            ->when($request->carrier_id, fn ($q, $v) => $q->where('carrier_id', $v))
+            ->when($request->has('is_active') && ! in_array($request->is_active, ['', null]), fn ($q) => $q->where('is_active', (bool) $request->is_active))
             ->orderByDesc('created_at');
 
         if ($request->country_id) {
-            $query->whereHas('destinationZone', fn($q) => $q->where('country_id', $request->country_id));
+            $query->whereHas('destinationZone', fn ($q) => $q->where('country_id', $request->country_id));
         }
 
         $rates = $query->get();
+
         // dd($query->toRawSql(), $request->is_active);
         return response()->json([
             'success' => true,
-            'data' => $rates->map(fn($r) => $this->formatRate($r)),
+            'data' => $rates->map(fn ($r) => $this->formatRate($r)),
         ]);
     }
 
@@ -294,7 +297,7 @@ class ShippingZoneController extends Controller
 
     public function toggleRate(ShippingRate $rate): JsonResponse
     {
-        $rate->update(['is_active' => !$rate->is_active]);
+        $rate->update(['is_active' => ! $rate->is_active]);
 
         return response()->json([
             'success' => true,
@@ -318,7 +321,7 @@ class ShippingZoneController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $count . ' rates ' . $request->action . 'd.',
+            'message' => $count.' rates '.$request->action.'d.',
         ]);
     }
 
@@ -336,7 +339,7 @@ class ShippingZoneController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $count . ' rates copied.',
+            'message' => $count.' rates copied.',
         ]);
     }
 
@@ -364,29 +367,29 @@ class ShippingZoneController extends Controller
         ]);
     }
 
-    private function buildZonesQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildZonesQuery(Request $request): Builder
     {
         $query = ShippingZone::withCount(['cities'])->with('country');
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where('shipping_zones.name', 'like', '%' . $v . '%'),
-            'country_id' => fn($q, $v) => $q->where('shipping_zones.country_id', $v),
+            'search' => fn ($q, $v) => $q->where('shipping_zones.name', 'like', '%'.$v.'%'),
+            'country_id' => fn ($q, $v) => $q->where('shipping_zones.country_id', $v),
         ]);
     }
 
-    private function exportZones(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportZones(Request $request): StreamedResponse
     {
         $zones = $this->buildZonesQuery($request)->orderBy('name')->get();
-        $zones->each(fn($z) => $z->append(['active_rate_count']));
+        $zones->each(fn ($z) => $z->append(['active_rate_count']));
 
         $headers = ['Zone Name', 'Country', 'Cities Count', 'Active', 'Created'];
 
-        $rows = $zones->map(fn($zone) => [
+        $rows = $zones->map(fn ($zone) => [
             $zone->name,
             $zone->country?->name_en,
             (int) $zone->cities_count,
             $zone->is_active ? 'Yes' : 'No',
-            optional($zone->created_at)->format('d M Y H:i'),
+            optional(admin_tz($zone->created_at))->format('d M Y H:i'),
         ]);
 
         return match ($request->input('export')) {

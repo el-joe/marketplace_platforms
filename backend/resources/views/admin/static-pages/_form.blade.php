@@ -152,7 +152,7 @@
                         <a href="{{ route('portal.pages.show', $page->slug) }}" target="_blank" rel="noopener" class="btn btn-secondary w-full text-sm">{{ __('admin.static_pages.view_portal') }}</a>
                     @endif
                     @if($isEdit && $page->updated_at)
-                        <p class="text-xs text-gray-400 text-center pt-1">{{ __('admin.static_pages.last_updated', ['date' => $page->updated_at->format('d M Y H:i')]) }}{{ $page->updatedByAdmin ? ' · '.$page->updatedByAdmin->name : '' }}</p>
+                        <p class="text-xs text-gray-400 text-center pt-1">{{ __('admin.static_pages.last_updated', ['date' => admin_tz($page->updated_at)?->format('d M Y H:i')]) }}{{ $page->updatedByAdmin ? ' · '.$page->updatedByAdmin->name : '' }}</p>
                     @endif
                 </div>
             </x-card>

@@ -47,7 +47,8 @@ class BankAccountController extends Controller
         if ($len <= 4) {
             return $clean;
         }
-        return str_repeat('*', $len - 4) . substr($clean, -4);
+
+        return str_repeat('*', $len - 4).substr($clean, -4);
     }
 
     private function formatAccount(VendorBankAccount $account): array
@@ -62,7 +63,7 @@ class BankAccountController extends Controller
             'currency' => $account->currency,
             'is_primary' => $account->is_primary,
             'verification_status' => $account->verification_status->value,
-            'created_at' => $account->created_at?->format('Y-m-d'),
+            'created_at' => vendor_tz($account->created_at)?->format('Y-m-d'),
         ];
     }
 
@@ -100,7 +101,7 @@ class BankAccountController extends Controller
             'currency' => ['required', 'string', 'size:3'],
         ]);
 
-        $admin  = $this->vendorAdmin();
+        $admin = $this->vendorAdmin();
         $vendor = $admin->vendor;
 
         try {
@@ -144,7 +145,7 @@ class BankAccountController extends Controller
             ], 422);
         }
 
-        $admin  = $this->vendorAdmin();
+        $admin = $this->vendorAdmin();
         $vendor = $admin->vendor;
 
         try {
@@ -190,7 +191,7 @@ class BankAccountController extends Controller
             }
         }
 
-        $admin  = $this->vendorAdmin();
+        $admin = $this->vendorAdmin();
         $vendor = $admin->vendor;
 
         try {

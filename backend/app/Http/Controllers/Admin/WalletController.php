@@ -16,9 +16,9 @@ use App\Models\Wallet;
 use App\Models\WalletWithdrawalRequest;
 use App\Notifications\Marketer\PayoutProcessedNotification;
 use App\Services\LedgerService;
+use App\Services\Marketer\MarketerEarningsService;
 use App\Services\Marketer\MarketerSaleSettlementService;
 use App\Services\MarketerCampaignService;
-use App\Services\Marketer\MarketerEarningsService;
 use App\Services\WalletService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
@@ -85,8 +85,8 @@ class WalletController extends Controller
             'status' => fn ($q, $v) => $v === 'frozen'
                 ? $q->where('wallets.is_frozen', true)
                 : $q->where('wallets.is_frozen', false),
-            'date_from' => fn ($q, $v) => $q->whereDate('wallets.created_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('wallets.created_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('wallets.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('wallets.created_at', '<=', admin_day_end($v)),
         ]);
     }
 

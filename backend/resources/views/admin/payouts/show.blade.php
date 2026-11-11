@@ -221,7 +221,7 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-xs text-gray-400">
-                                            {{ \Carbon\Carbon::parse($entry->created_at)->format('M j, Y H:i') }}
+                                            {{ admin_tz(\Carbon\Carbon::parse($entry->created_at))->format('M j, Y H:i') }}
                                         </td>
                                     </tr>
                                 @endforeach
@@ -266,7 +266,7 @@
                     @if($payout->processed_at)
                         <div class="flex justify-between">
                             <span class="text-gray-500">{{ __('admin.payouts.processed') }}</span>
-                            <span class="text-gray-700">{{ \Carbon\Carbon::parse($payout->processed_at)->format('M j, Y') }}</span>
+                            <span class="text-gray-700">{{ admin_tz(\Carbon\Carbon::parse($payout->processed_at))->format('M j, Y') }}</span>
                         </div>
                     @endif
                     @if($payout->gateway_reference)

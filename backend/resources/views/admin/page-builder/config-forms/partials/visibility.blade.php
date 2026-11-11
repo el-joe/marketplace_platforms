@@ -3,8 +3,8 @@
     /** @var \App\Models\PageBlock|null $block */
     $vis = [
         'is_visible'    => $block?->is_visible ?? true,
-        'visible_from'  => optional($block?->visible_from)->format('Y-m-d H:i'),
-        'visible_until' => optional($block?->visible_until)->format('Y-m-d H:i'),
+        'visible_from'  => admin_input_value($block?->visible_from),
+        'visible_until' => admin_input_value($block?->visible_until),
         'device_target' => $block?->device_target ?? 'all',
         'audience'      => $block?->audience ?? 'all',
     ];

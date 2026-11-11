@@ -171,7 +171,7 @@ class ProductController extends Controller
             $row->category_name,
             $row->brand_name,
             $row->status?->value === 'active' ? 'Yes' : 'No',
-            optional($row->created_at)->format('d M Y H:i'),
+            optional(admin_tz($row->created_at))->format('d M Y H:i'),
         ]);
 
         return match ($request->input('export')) {

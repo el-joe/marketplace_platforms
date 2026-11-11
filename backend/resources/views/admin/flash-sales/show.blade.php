@@ -394,23 +394,23 @@
                             @endif
                             <div>
                                 <p class="text-gray-500 text-xs mb-0.5">{{ __('admin.flash_sales.submission_opens') }}</p>
-                                <p class="text-gray-700">{{ $flashSale->submission_opens_at?->format('M j, Y H:i') ?? '—' }}</p>
+                                <p class="text-gray-700">{{ admin_tz($flashSale->submission_opens_at)?->format('M j, Y H:i') ?? '—' }}</p>
                             </div>
                             <div>
                                 <p class="text-gray-500 text-xs mb-0.5">{{ __('admin.flash_sales.submission_closes') }}</p>
-                                <p class="text-gray-700">{{ $flashSale->submission_closes_at?->format('M j, Y H:i') ?? '—' }}</p>
+                                <p class="text-gray-700">{{ admin_tz($flashSale->submission_closes_at)?->format('M j, Y H:i') ?? '—' }}</p>
                             </div>
                             <div>
                                 <p class="text-gray-500 text-xs mb-0.5">{{ __('admin.flash_sales.review_deadline') }}</p>
-                                <p class="text-gray-700">{{ $flashSale->review_deadline_at?->format('M j, Y H:i') ?? '—' }}</p>
+                                <p class="text-gray-700">{{ admin_tz($flashSale->review_deadline_at)?->format('M j, Y H:i') ?? '—' }}</p>
                             </div>
                             <div>
                                 <p class="text-gray-500 text-xs mb-0.5">{{ __('admin.flash_sales.sale_starts') }}</p>
-                                <p class="text-gray-700">{{ $flashSale->sale_starts_at?->format('M j, Y H:i') ?? '—' }}</p>
+                                <p class="text-gray-700">{{ admin_tz($flashSale->sale_starts_at)?->format('M j, Y H:i') ?? '—' }}</p>
                             </div>
                             <div>
                                 <p class="text-gray-500 text-xs mb-0.5">{{ __('admin.flash_sales.sale_ends') }}</p>
-                                <p class="text-gray-700">{{ $flashSale->sale_ends_at?->format('M j, Y H:i') ?? '—' }}</p>
+                                <p class="text-gray-700">{{ admin_tz($flashSale->sale_ends_at)?->format('M j, Y H:i') ?? '—' }}</p>
                             </div>
                             <div>
                                 <p class="text-gray-500 text-xs mb-0.5">{{ __('admin.flash_sales.min_discount') }}</p>

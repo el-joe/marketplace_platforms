@@ -33,7 +33,7 @@
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">{{ __('admin.subscriptions.started') }}</dt>
-                        <dd class="font-medium text-gray-800">{{ $subscription->started_at?->format('d M Y') }}</dd>
+                        <dd class="font-medium text-gray-800">{{ admin_tz($subscription->started_at)?->format('d M Y') }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">{{ __('admin.subscriptions.period') }}</dt>

@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Support\Money;
+use App\Enums\CancelActor;
+use App\Enums\DisputeReason;
+use App\Enums\RefundReason;
+use App\Enums\RefundType;
 use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Country;
@@ -10,40 +13,37 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\ShippingCarrier;
-use App\Models\ShippingMethod;
 use App\Models\ShippingRate;
 use App\Models\ShippingZone;
 use App\Models\SubOrder;
-use App\Enums\CancelActor;
-use App\Enums\DisputeReason;
-use App\Services\Shipping\ShipmentService;
-use Illuminate\Support\Str;
-use App\Enums\RefundReason;
-use App\Enums\RefundType;
 use App\Services\OrderInterventionService;
-use Illuminate\Validation\Rule;
+use App\Services\Shipping\ShipmentService;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrderController extends Controller
 {
     use HasDataTable;
     use HasExport;
 
-    public function __construct(private readonly OrderInterventionService $interventionService)
-    {
-    }
+    public function __construct(private readonly OrderInterventionService $interventionService) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Index / Listing
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportOrders($request);
@@ -63,7 +63,7 @@ class OrderController extends Controller
         ]);
     }
 
-    private function buildOrdersQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildOrdersQuery(Request $request): Builder
     {
         $query = Order::query()
             ->leftJoin('customers as c', 'c.id', '=', 'orders.customer_id')
@@ -88,26 +88,26 @@ class OrderController extends Controller
             ]);
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where(function ($sub) use ($v) {
+            'search' => fn ($q, $v) => $q->where(function ($sub) use ($v) {
                 $sub->where('orders.order_number', 'like', "%{$v}%")
                     ->orWhere('c.name', 'like', "%{$v}%")
                     ->orWhere('c.email', 'like', "%{$v}%");
             }),
-            'status' => fn($q, $v) => $q->where('orders.status', $v),
-            'payment_method' => fn($q, $v) => $q->where('orders.payment_method', $v),
-            'payment_status' => fn($q, $v) => $q->where('orders.payment_status', $v),
-            'country_id' => fn($q, $v) => $q->where('c.country_id', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('orders.placed_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('orders.placed_at', '<=', $v),
-            'min_total' => fn($q, $v) => $q->where('orders.total', '>=', round((float) $v, 2)),
-            'max_total' => fn($q, $v) => $q->where('orders.total', '<=', round((float) $v, 2)),
-            'risk_score_min' => fn($q, $v) => $q->where('orders.risk_score', '>=', (float) $v),
-            'listing_type' => fn($q, $v) => match ($v) {
-                'admin' => $q->whereExists(fn($sub) => $sub->selectRaw(1)
+            'status' => fn ($q, $v) => $q->where('orders.status', $v),
+            'payment_method' => fn ($q, $v) => $q->where('orders.payment_method', $v),
+            'payment_status' => fn ($q, $v) => $q->where('orders.payment_status', $v),
+            'country_id' => fn ($q, $v) => $q->where('c.country_id', $v),
+            'date_from' => fn ($q, $v) => $q->where('orders.placed_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('orders.placed_at', '<=', admin_day_end($v)),
+            'min_total' => fn ($q, $v) => $q->where('orders.total', '>=', round((float) $v, 2)),
+            'max_total' => fn ($q, $v) => $q->where('orders.total', '<=', round((float) $v, 2)),
+            'risk_score_min' => fn ($q, $v) => $q->where('orders.risk_score', '>=', (float) $v),
+            'listing_type' => fn ($q, $v) => match ($v) {
+                'admin' => $q->whereExists(fn ($sub) => $sub->selectRaw(1)
                     ->from('order_items')
                     ->whereColumn('order_items.order_id', 'orders.id')
                     ->whereNotNull('order_items.admin_listing_id')),
-                'vendor' => $q->whereExists(fn($sub) => $sub->selectRaw(1)
+                'vendor' => $q->whereExists(fn ($sub) => $sub->selectRaw(1)
                     ->from('order_items')
                     ->whereColumn('order_items.order_id', 'orders.id')
                     ->whereNotNull('order_items.vendor_listing_id')),
@@ -116,13 +116,13 @@ class OrderController extends Controller
         ]);
     }
 
-    private function exportOrders(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportOrders(Request $request): StreamedResponse
     {
         $orders = $this->buildOrdersQuery($request)->orderByDesc('orders.placed_at')->get();
 
         $headers = ['Order #', 'Customer', 'Status', 'Payment', 'Items', 'Total', 'Currency', 'Date'];
 
-        $rows = $orders->map(fn($row) => [
+        $rows = $orders->map(fn ($row) => [
             $row->order_number,
             $row->customer_name,
             $row->status?->value,
@@ -130,7 +130,7 @@ class OrderController extends Controller
             (int) $row->items_count,
             number_format($row->total, 2),
             strtoupper($row->currency),
-            optional($row->placed_at)->format('d M Y H:i'),
+            optional(admin_tz($row->placed_at))->format('d M Y H:i'),
         ]);
 
         return match ($request->input('export')) {
@@ -155,15 +155,15 @@ class OrderController extends Controller
             $cityVal = $addr['city'] ?? $addr['city_en'] ?? '';
             $city = is_array($cityVal) ? ($cityVal['en'] ?? $cityVal['ar'] ?? '') : $cityVal;
             $parts = explode(' ', trim($row->customer_name ?? ''), 2);
-            $masked = $parts[0] . (isset($parts[1]) ? ' ' . strtoupper($parts[1][0]) . '.' : '');
-            $customer = trim($masked . ($city ? ', ' . $city : ''));
+            $masked = $parts[0].(isset($parts[1]) ? ' '.strtoupper($parts[1][0]).'.' : '');
+            $customer = trim($masked.($city ? ', '.$city : ''));
 
             return [
                 'id' => $row->id,
                 'order_number' => $row->order_number,
                 'customer' => e($customer),
                 'items_count' => (int) $row->items_count,
-                'total_formatted' => strtoupper($row->currency) . ' ' . number_format($row->total, 2),
+                'total_formatted' => strtoupper($row->currency).' '.number_format($row->total, 2),
                 'payment_method' => $row->payment_method,
                 'payment_status' => $row->payment_status?->value,
                 'status' => $row->status?->value,
@@ -207,7 +207,7 @@ class OrderController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.orders.title'), 'url' => route('admin.orders.index')],
-                ['label' => '#' . $order->order_number],
+                ['label' => '#'.$order->order_number],
             ],
         ]);
     }
@@ -237,10 +237,11 @@ class OrderController extends Controller
                 'success' => true,
                 'message' => __('admin.orders.order_status_updated_to', ['status' => $this->statusLabel($request->new_status)]),
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json(['message' => collect($e->errors())->flatten()->first()], 422);
         } catch (\Throwable $e) {
             Log::error('Order status update failed', ['order' => $id, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.orders.update_failed')], 500);
         }
     }
@@ -257,7 +258,7 @@ class OrderController extends Controller
 
         $request->validate([
             'sub_order_id' => 'required|string',
-            'new_status' => ['required', 'in:' . implode(',', $validTransitions ?: ['__none__'])],
+            'new_status' => ['required', 'in:'.implode(',', $validTransitions ?: ['__none__'])],
             'reason' => 'required|string|max:500',
         ]);
 
@@ -276,6 +277,7 @@ class OrderController extends Controller
             ]);
         } catch (\Throwable $e) {
             Log::error('SubOrder status update failed', ['error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.orders.update_failed')], 500);
         }
     }
@@ -320,9 +322,11 @@ class OrderController extends Controller
                 ], 422);
             }
             Log::error('Force cancel failed', ['order' => $id, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.orders.cancel_failed')], 500);
         } catch (\Throwable $e) {
             Log::error('Force cancel failed', ['order' => $id, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.orders.cancel_failed')], 500);
         }
     }
@@ -359,10 +363,11 @@ class OrderController extends Controller
             );
 
             return response()->json(['success' => true, 'message' => __('admin.orders.items_cancelled_successfully')]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json(['message' => collect($e->errors())->flatten()->first()], 422);
         } catch (\Throwable $e) {
             Log::error('Partial item cancel failed', ['order' => $id, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.orders.cancel_failed')], 500);
         }
     }
@@ -397,10 +402,11 @@ class OrderController extends Controller
             );
 
             return response()->json(['success' => true, 'message' => __('admin.orders.refund_queued')]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json(['message' => $e->errors()], 422);
         } catch (\Throwable $e) {
             Log::error('Refund creation failed', ['order' => $id, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.orders.refund_creation_failed')], 500);
         }
     }
@@ -434,6 +440,7 @@ class OrderController extends Controller
             ]);
         } catch (\Throwable $e) {
             Log::error('Dispute creation failed', ['order' => $id, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.orders.dispute_creation_failed')], 500);
         }
     }
@@ -454,6 +461,7 @@ class OrderController extends Controller
             return response()->json(['success' => true, 'message' => __('admin.orders.fraud_flagged_successfully')]);
         } catch (\Throwable $e) {
             Log::error('Fraud flag failed', ['order' => $id, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.orders.flag_failed')], 500);
         }
     }
@@ -467,7 +475,7 @@ class OrderController extends Controller
         // Shipping method is already selected from checkout — we only need to pick a carrier
         $method = $subOrder->shippingMethod;
 
-        if (!$method) {
+        if (! $method) {
             return response()->json([
                 'method_assigned' => false,
                 'message' => __('admin.orders.shipping_method_not_assigned_yet'),
@@ -478,7 +486,7 @@ class OrderController extends Controller
         $snapshot = $subOrder->order->shipping_address_snapshot ?? [];
         $cityId = $snapshot['city_id'] ?? null;
 
-        if (!$cityId) {
+        if (! $cityId) {
             $cityName = $snapshot['city'] ?? $snapshot['city_en'] ?? null;
             if ($cityName) {
                 $city = City::where('name_en', $cityName)->first();
@@ -490,10 +498,10 @@ class OrderController extends Controller
 
         $carriers = ShippingRate::where('shipping_method_id', $method->id)
             ->where('is_active', true)
-            ->when($destinationZoneId, fn($q) => $q->where('destination_zone_id', $destinationZoneId))
+            ->when($destinationZoneId, fn ($q) => $q->where('destination_zone_id', $destinationZoneId))
             ->with('carrier')
             ->get()
-            ->map(fn($rate) => [
+            ->map(fn ($rate) => [
                 'carrier_id' => $rate->carrier_id,
                 'carrier_name' => $rate->carrier?->name ?? __('admin.orders.any_carrier'),
                 'carrier_code' => $rate->carrier?->code,
@@ -527,7 +535,7 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => __('admin.orders.cannot_change_shipping_after_shipped')], 422);
         }
 
-        if (!$subOrder->shipping_method_id) {
+        if (! $subOrder->shipping_method_id) {
             return response()->json(['success' => false, 'message' => __('admin.orders.shipping_method_not_assigned_yet')], 422);
         }
 
@@ -580,13 +588,13 @@ class OrderController extends Controller
             'tracking_number' => 'nullable|string|max:100',
         ]);
 
-        if (!in_array($subOrder->status->value, ['confirmed', 'processing', 'packed'])) {
+        if (! in_array($subOrder->status->value, ['confirmed', 'processing', 'packed'])) {
             return response()->json(['success' => false, 'message' => 'Sub-order cannot be shipped in its current status.'], 422);
         }
 
         $subOrder->loadMissing('items');
         $subOrder->update(['carrier_id' => $request->carrier_id]);
-        $trackingNumber = $request->input('tracking_number') ?: 'TRK-' . strtoupper(Str::random(10));
+        $trackingNumber = $request->input('tracking_number') ?: 'TRK-'.strtoupper(Str::random(10));
 
         $shipment = DB::transaction(fn () => $shipmentService->createForSubOrder(
             $subOrder,

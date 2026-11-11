@@ -997,12 +997,12 @@
                 <div class="pt-2 border-t border-gray-100 space-y-1.5 text-xs text-gray-500">
                     <div class="flex justify-between">
                         <span>{{ __('admin.products.created_label') }}</span>
-                        <span>{{ \Carbon\Carbon::parse($product->created_at)->format('M j, Y') }}</span>
+                        <span>{{ admin_tz(\Carbon\Carbon::parse($product->created_at))->format('M j, Y') }}</span>
                     </div>
                     @if($product->updated_at && $product->updated_at !== $product->created_at)
                     <div class="flex justify-between">
                         <span>{{ __('admin.products.updated_label') }}</span>
-                        <span>{{ \Carbon\Carbon::parse($product->updated_at)->format('M j, Y') }}</span>
+                        <span>{{ admin_tz(\Carbon\Carbon::parse($product->updated_at))->format('M j, Y') }}</span>
                     </div>
                     @endif
                 </div>

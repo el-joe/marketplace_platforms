@@ -47,10 +47,10 @@
                         <span>·</span>
                         <span>{{ str_replace('_', ' ', $ticket->category) }}</span>
                         <span>·</span>
-                        <span>{{ $ticket->created_at->format('d/m/Y H:i') }}</span>
+                        <span>{{ vendor_tz($ticket->created_at)?->format('d/m/Y H:i') }}</span>
                         @if ($ticket->resolved_at)
                             <span>·</span>
-                            <span>{{ __('partner.support.resolved_on', ['date' => $ticket->resolved_at->format('d/m/Y')]) }}</span>
+                            <span>{{ __('partner.support.resolved_on', ['date' => vendor_tz($ticket->resolved_at)?->format('d/m/Y')]) }}</span>
                         @endif
                     </div>
                 </div>
@@ -70,7 +70,7 @@
                         {{-- Sender label --}}
                         <p class="mb-1 text-xs {{ $isMine ? 'text-end' : 'text-start' }} text-gray-400">
                             {{ $isMine ? __('partner.support.you') : __('partner.support.support_team') }}
-                            · {{ $msg->created_at->format('d/m H:i') }}
+                            · {{ vendor_tz($msg->created_at)?->format('d/m H:i') }}
                         </p>
                         {{-- Bubble --}}
                         <div class="rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm

@@ -2,35 +2,41 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Support\Money;
 use App\Enums\PageStatus;
+use App\Enums\VendorListingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AdImageItem;
+use App\Models\AdminListing;
+use App\Models\Banner;
 use App\Models\BlockAnalytic;
 use App\Models\BlockClickEvent;
-use App\Models\Banner;
 use App\Models\BlockType;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Country;
+use App\Models\CustomPage;
+use App\Models\File;
 use App\Models\FlashSale;
 use App\Models\Page;
 use App\Models\PageBlock;
 use App\Models\PageBlockBrand;
+use App\Models\PageBlockCategory;
 use App\Models\PageBlockProduct;
 use App\Models\PageBlockRevision;
+use App\Models\PageBlockSeller;
 use App\Models\PageRevision;
 use App\Models\PageSection;
 use App\Models\ProductVariant;
 use App\Models\SliderSlide;
-use Illuminate\Validation\Rule;
 use App\Models\Vendor;
-use App\Models\File;
+use App\Models\VendorListing;
 use App\Services\Ads\AdBookingService;
 use App\Services\Ads\AdSlotBlockGuard;
 use App\Services\Ads\PaidAdResolver;
 use App\Services\PageBuilderService;
 use App\Services\Shared\PageCacheService;
+use App\Support\Money;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -38,6 +44,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class PageBuilderController extends Controller
 {
@@ -47,8 +54,7 @@ class PageBuilderController extends Controller
         private AdSlotBlockGuard $adSlotGuard,
         private AdBookingService $adBookingService,
         private PaidAdResolver $adResolver,
-    ) {
-    }
+    ) {}
 
     // ─────────────────────────────────────────────────────────────────────
     // UI
@@ -80,6 +86,7 @@ class PageBuilderController extends Controller
     public function loadPage(Request $request)
     {
         $request->validate(['page_id' => 'required|uuid']);
+
         return response()->json($this->service->getPageWithBlocks($request->string('page_id')));
     }
 
@@ -157,7 +164,7 @@ class PageBuilderController extends Controller
     {
         $this->authorizeManage();
         abort_if(
-            $page->status === PageStatus::Published && !$this->admin()->hasPermissionTo('pages.delete_published'),
+            $page->status === PageStatus::Published && ! $this->admin()->hasPermissionTo('pages.delete_published'),
             403,
             'Cannot delete a published page without the pages.delete_published permission.'
         );
@@ -173,7 +180,7 @@ class PageBuilderController extends Controller
                     'reference' => $b->booking_reference,
                     'advertiser' => $b->vendor->store_name ?? $b->marketer->name ?? null,
                     'status' => $b->status->label(),
-                    'booked_until' => optional($b->booked_until)->format('Y-m-d'),
+                    'booked_until' => optional(admin_tz($b->booked_until))->format('Y-m-d'),
                 ])->values(),
             ], 409);
         }
@@ -197,6 +204,7 @@ class PageBuilderController extends Controller
     {
         $this->authorizeManage();
         $newPage = $this->service->duplicatePage($page, $this->admin());
+
         return response()->json(['success' => true, 'data' => ['page' => $newPage], 'message' => 'Page duplicated.']);
     }
 
@@ -216,16 +224,17 @@ class PageBuilderController extends Controller
             'success' => true,
             'data' => [
                 'version' => $page->version,
-                'published_at' => $page->published_at?->format('M d, Y H:i'),
+                'published_at' => admin_tz($page->published_at)?->format('M d, Y H:i'),
             ],
             'message' => 'Page published successfully.',
         ]);
     }
 
-    public function clearPageCache(Page $page): \Illuminate\Http\JsonResponse
+    public function clearPageCache(Page $page): JsonResponse
     {
         $this->authorizeManage();
         $this->pageCache->bustPage($page);
+
         return response()->json(['success' => true, 'message' => 'Page cache cleared.']);
     }
 
@@ -239,13 +248,13 @@ class PageBuilderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $revisions->map(fn($r) => [
+            'data' => $revisions->map(fn ($r) => [
                 'id' => $r->id,
                 'version' => $r->version,
                 'published_by' => $r->publishedByAdmin?->name,
                 'reason' => $r->publish_reason,
-                'created_at' => $r->created_at?->format('M d, Y H:i'),
-            ])
+                'created_at' => admin_tz($r->created_at)?->format('M d, Y H:i'),
+            ]),
         ]);
     }
 
@@ -253,72 +262,73 @@ class PageBuilderController extends Controller
     {
         $this->authorizeManage();
         $this->service->restoreRevision($revision, $this->admin());
-        return response()->json(['success' => true, 'message' => 'Page restored to version ' . $revision->version . '.']);
+
+        return response()->json(['success' => true, 'message' => 'Page restored to version '.$revision->version.'.']);
     }
 
     // ─────────────────────────────────────────────────────────────────────
     // Sections
     // ─────────────────────────────────────────────────────────────────────
 
-    public function addSection(Request $request): \Illuminate\Http\JsonResponse
+    public function addSection(Request $request): JsonResponse
     {
         $this->authorizeManage();
 
         $data = $request->validate([
-            'page_id'         => ['required', 'uuid', 'exists:pages,id'],
-            'name_en'         => ['sometimes', 'nullable', 'string', 'max:150'],
-            'name_ar'         => ['sometimes', 'nullable', 'string', 'max:150'],
-            'position'        => ['required', 'integer', 'min:0'],
-            'layout'          => ['nullable', 'in:stack,columns'],
-            'columns_config'  => ['nullable', 'string', 'max:100'],
+            'page_id' => ['required', 'uuid', 'exists:pages,id'],
+            'name_en' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'name_ar' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'position' => ['required', 'integer', 'min:0'],
+            'layout' => ['nullable', 'in:stack,columns'],
+            'columns_config' => ['nullable', 'string', 'max:100'],
             'background_image_url_en' => ['nullable', 'string', 'max:500'],
             'background_image_url_ar' => ['nullable', 'string', 'max:500'],
             'background_image_type' => ['nullable', 'in:section,header'],
             'background_color' => ['nullable', 'string', 'max:20'],
-            'max_width'       => ['nullable', 'string', 'max:20'],
-            'padding_top'     => ['nullable', 'integer', 'min:0', 'max:200'],
-            'padding_bottom'  => ['nullable', 'integer', 'min:0', 'max:200'],
-            'is_visible'      => ['sometimes', 'boolean'],
+            'max_width' => ['nullable', 'string', 'max:20'],
+            'padding_top' => ['nullable', 'integer', 'min:0', 'max:200'],
+            'padding_bottom' => ['nullable', 'integer', 'min:0', 'max:200'],
+            'is_visible' => ['sometimes', 'boolean'],
         ]);
 
-        if (!empty($data['columns_config']) && is_string($data['columns_config'])) {
+        if (! empty($data['columns_config']) && is_string($data['columns_config'])) {
             $decoded = json_decode($data['columns_config'], true);
             if (json_last_error() === JSON_ERROR_NONE) {
                 $data['columns_config'] = $decoded;
             }
         }
 
-        $data['name_en']        = $data['name_en']        ?? 'New Section';
-        $data['name_ar']        = $data['name_ar']        ?? $data['name_en'];
-        $data['name']           = $data['name_en'];
+        $data['name_en'] = $data['name_en'] ?? 'New Section';
+        $data['name_ar'] = $data['name_ar'] ?? $data['name_en'];
+        $data['name'] = $data['name_en'];
         $data['background_image_url'] = $data['background_image_url_en'] ?? null;
-        $data['padding_top']    = $data['padding_top']    ?? 0;
+        $data['padding_top'] = $data['padding_top'] ?? 0;
         $data['padding_bottom'] = $data['padding_bottom'] ?? 0;
-        $data['layout']         = $data['layout']         ?? 'stack';
-        $data['is_visible']     = $data['is_visible']     ?? true;
+        $data['layout'] = $data['layout'] ?? 'stack';
+        $data['is_visible'] = $data['is_visible'] ?? true;
 
         $section = PageSection::create($data);
 
         return response()->json(['success' => true, 'data' => ['section' => $section]]);
     }
 
-    public function updateSection(Request $request, PageSection $section): \Illuminate\Http\JsonResponse
+    public function updateSection(Request $request, PageSection $section): JsonResponse
     {
         $this->authorizeManage();
 
         $data = $request->validate([
-            'name_en'           => ['sometimes', 'string', 'max:150'],
-            'name_ar'           => ['sometimes', 'nullable', 'string', 'max:150'],
-            'is_visible'        => ['sometimes', 'boolean'],
-            'background_color'  => ['nullable', 'string', 'max:20'],
+            'name_en' => ['sometimes', 'string', 'max:150'],
+            'name_ar' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'is_visible' => ['sometimes', 'boolean'],
+            'background_color' => ['nullable', 'string', 'max:20'],
             'background_image_url_en' => ['nullable', 'string', 'max:500'],
             'background_image_url_ar' => ['nullable', 'string', 'max:500'],
             'background_image_type' => ['nullable', 'in:section,header'],
-            'padding_top'       => ['nullable', 'integer', 'min:0'],
-            'padding_bottom'    => ['nullable', 'integer', 'min:0'],
-            'max_width'         => ['nullable', 'string', 'max:20'],
-            'layout'            => ['nullable', 'in:stack,columns'],
-            'columns_config'    => ['nullable', 'string', 'max:100'],
+            'padding_top' => ['nullable', 'integer', 'min:0'],
+            'padding_bottom' => ['nullable', 'integer', 'min:0'],
+            'max_width' => ['nullable', 'string', 'max:20'],
+            'layout' => ['nullable', 'in:stack,columns'],
+            'columns_config' => ['nullable', 'string', 'max:100'],
         ]);
 
         if (array_key_exists('columns_config', $data) && is_string($data['columns_config'])) {
@@ -345,7 +355,7 @@ class PageBuilderController extends Controller
         return response()->json(['success' => true, 'data' => ['section' => $section]]);
     }
 
-    public function deleteSection(PageSection $section): \Illuminate\Http\JsonResponse
+    public function deleteSection(PageSection $section): JsonResponse
     {
         $this->authorizeManage();
 
@@ -364,7 +374,7 @@ class PageBuilderController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function reorderSections(Request $request): \Illuminate\Http\JsonResponse
+    public function reorderSections(Request $request): JsonResponse
     {
         $this->authorizeManage();
 
@@ -389,7 +399,7 @@ class PageBuilderController extends Controller
     // Blocks
     // ─────────────────────────────────────────────────────────────────────
 
-    public function assignBlockColumn(Request $request, PageBlock $block): \Illuminate\Http\JsonResponse
+    public function assignBlockColumn(Request $request, PageBlock $block): JsonResponse
     {
         $this->authorizeManage();
 
@@ -444,8 +454,8 @@ class PageBuilderController extends Controller
             'block_type' => $block->block_type,
             'config' => $block->config ?? [],
             'is_visible' => (bool) $block->is_visible,
-            'visible_from' => optional($block->visible_from)->format('Y-m-d H:i'),
-            'visible_until' => optional($block->visible_until)->format('Y-m-d H:i'),
+            'visible_from' => admin_input_value($block->visible_from) ?: null,
+            'visible_until' => admin_input_value($block->visible_until) ?: null,
             'device_target' => $block->device_target,
             'audience' => $block->audience,
         ]);
@@ -482,7 +492,7 @@ class PageBuilderController extends Controller
                 ? round($totals['clicks'] / $totals['impressions'], 4)
                 : 0.0;
 
-            $byDate = $rows->keyBy(fn($row) => $row->date->toDateString());
+            $byDate = $rows->keyBy(fn ($row) => $row->date->toDateString());
             $chart = [];
             for ($day = $dateFrom->copy(); $day->lte($dateTo); $day->addDay()) {
                 $key = $day->toDateString();
@@ -505,7 +515,7 @@ class PageBuilderController extends Controller
                 ->orderByDesc('count')
                 ->limit(5)
                 ->get()
-                ->map(fn($row) => [
+                ->map(fn ($row) => [
                     'click_target' => $row->click_target,
                     'click_target_type' => $row->click_target_type,
                     'count' => (int) $row->count,
@@ -584,7 +594,7 @@ class PageBuilderController extends Controller
                         'reference' => $b->booking_reference,
                         'advertiser' => $b->vendor->store_name ?? $b->marketer->name ?? null,
                         'status' => $b->status->label(),
-                        'booked_until' => optional($b->booked_until)->format('Y-m-d'),
+                        'booked_until' => optional(admin_tz($b->booked_until))->format('Y-m-d'),
                     ])->values(),
                 ], 409);
             }
@@ -615,7 +625,7 @@ class PageBuilderController extends Controller
                     'reference' => $b->booking_reference,
                     'advertiser' => $b->vendor->store_name ?? $b->marketer->name ?? null,
                     'status' => $b->status->label(),
-                    'booked_until' => optional($b->booked_until)->format('Y-m-d'),
+                    'booked_until' => optional(admin_tz($b->booked_until))->format('Y-m-d'),
                 ])->values(),
             ], 409);
         }
@@ -633,6 +643,7 @@ class PageBuilderController extends Controller
         if ($page) {
             $this->pageCache->bustPage($page);
         }
+
         return response()->json(['success' => true]);
     }
 
@@ -673,6 +684,7 @@ class PageBuilderController extends Controller
         $this->authorizeManage();
         $revision = PageBlockRevision::findOrFail($revisionId);
         $this->service->restoreBlockRevision($revision, $this->admin());
+
         return response()->json(['success' => true]);
     }
 
@@ -698,9 +710,9 @@ class PageBuilderController extends Controller
             }
         }
 
-        $view = 'admin.page-builder.config-forms.' . str_replace('_', '-', $blockType->code);
+        $view = 'admin.page-builder.config-forms.'.str_replace('_', '-', $blockType->code);
 
-        if (!View::exists($view)) {
+        if (! View::exists($view)) {
             $view = 'admin.page-builder.config-forms.generic';
         }
 
@@ -713,11 +725,11 @@ class PageBuilderController extends Controller
 
             // Resolve human-readable labels so the async-select pre-populates
             // with the name instead of the raw UUID.
-            if (!empty($config['category_id']) && empty($config['category_label'])) {
+            if (! empty($config['category_id']) && empty($config['category_label'])) {
                 $config['category_label'] = Category::where('id', $config['category_id'])
                     ->value('name_en');
             }
-            if (!empty($config['flash_sale_id']) && empty($config['flash_sale_label'])) {
+            if (! empty($config['flash_sale_id']) && empty($config['flash_sale_label'])) {
                 $config['flash_sale_label'] = FlashSale::where('id', $config['flash_sale_id'])
                     ->value('name_en');
             }
@@ -728,33 +740,34 @@ class PageBuilderController extends Controller
                 ->orderBy('name_en')->get(['id', 'name_en']);
         }
         if ($blockType->code === 'deal_of_day') {
-            if (!empty($config['vendor_listing_id']) && empty($config['vendor_listing_label'])) {
-                $vl = \App\Models\VendorListing::with(['productVariant.product:id,name_en', 'vendor:id,store_name'])
+            if (! empty($config['vendor_listing_id']) && empty($config['vendor_listing_label'])) {
+                $vl = VendorListing::with(['productVariant.product:id,name_en', 'vendor:id,store_name'])
                     ->find($config['vendor_listing_id']);
                 if ($vl) {
                     $config['vendor_listing_label'] = trim(
                         optional(optional($vl->productVariant)->product)->name_en
-                        . ' — ' . optional($vl->vendor)->store_name
-                        . ' — ' . number_format((float) $vl->price, 2) . ' ' . $vl->currency,
+                        .' — '.optional($vl->vendor)->store_name
+                        .' — '.number_format((float) $vl->price, 2).' '.$vl->currency,
                         ' —'
                     );
                 }
             }
-            if (!empty($config['admin_listing_id']) && empty($config['admin_listing_label'])) {
-                $al = \App\Models\AdminListing::query()
+            if (! empty($config['admin_listing_id']) && empty($config['admin_listing_label'])) {
+                $al = AdminListing::query()
                     ->join('product_variants as pv', 'pv.id', '=', 'admin_listings.product_variant_id')
                     ->join('products as p', 'p.id', '=', 'pv.product_id')
                     ->where('admin_listings.id', $config['admin_listing_id'])
                     ->first(['admin_listings.id', 'admin_listings.price', 'admin_listings.currency', 'p.name_en']);
                 if ($al) {
                     $config['admin_listing_label'] = $al->name_en
-                        . ' (Platform) — ' . number_format((float) $al->price, 2) . ' ' . $al->currency;
+                        .' (Platform) — '.number_format((float) $al->price, 2).' '.$al->currency;
                 }
             }
         }
         if ($blockType->code === 'full_banner') {
             $extra['banners'] = Banner::orderBy('name')->get(['id', 'name']);
         }
+
         return response()->view($view, array_merge([
             'blockType' => $blockType,
             'block' => $block,
@@ -780,8 +793,9 @@ class PageBuilderController extends Controller
                 $arr['desktop_url_ar'] = $slide->desktop_url_ar;
                 $arr['mobile_url_en'] = $slide->mobile_url_en;
                 $arr['mobile_url_ar'] = $slide->mobile_url_ar;
-                $arr['visible_from'] = $slide->visible_from?->format('Y-m-d H:i');
-                $arr['visible_until'] = $slide->visible_until?->format('Y-m-d H:i');
+                $arr['visible_from'] = admin_input_value($slide->visible_from) ?: null;
+                $arr['visible_until'] = admin_input_value($slide->visible_until) ?: null;
+
                 return $arr;
             });
 
@@ -820,6 +834,7 @@ class PageBuilderController extends Controller
 
         $slide = $this->service->saveSlide($block, $data['id'] ?? null, $data);
         $this->pageCache->bustBlock($block);
+
         return response()->json(['slide' => $slide]);
     }
 
@@ -841,7 +856,7 @@ class PageBuilderController extends Controller
                     'reference' => $b->booking_reference,
                     'advertiser' => $b->vendor->store_name ?? $b->marketer->name ?? null,
                     'status' => $b->status->label(),
-                    'booked_until' => optional($b->booked_until)->format('Y-m-d'),
+                    'booked_until' => optional(admin_tz($b->booked_until))->format('Y-m-d'),
                 ])->values(),
             ], 409);
         }
@@ -858,6 +873,7 @@ class PageBuilderController extends Controller
         if ($block) {
             $this->pageCache->bustBlock($block);
         }
+
         return response()->json(['success' => true]);
     }
 
@@ -897,6 +913,7 @@ class PageBuilderController extends Controller
     public function getAdImages(PageBlock $block)
     {
         $items = $block->adImageItems()->orderBy('position')->get();
+
         return response()->json(['items' => $items]);
     }
 
@@ -922,6 +939,7 @@ class PageBuilderController extends Controller
         ]);
 
         $item = $this->service->saveAdImage($block, $data['id'] ?? null, $data);
+
         return response()->json(['item' => $item]);
     }
 
@@ -943,7 +961,7 @@ class PageBuilderController extends Controller
                     'reference' => $b->booking_reference,
                     'advertiser' => $b->vendor->store_name ?? $b->marketer->name ?? null,
                     'status' => $b->status->label(),
-                    'booked_until' => optional($b->booked_until)->format('Y-m-d'),
+                    'booked_until' => optional(admin_tz($b->booked_until))->format('Y-m-d'),
                 ])->values(),
             ], 409);
         }
@@ -960,6 +978,7 @@ class PageBuilderController extends Controller
         if ($block) {
             $this->pageCache->bustBlock($block);
         }
+
         return response()->json(['success' => true]);
     }
 
@@ -974,16 +993,16 @@ class PageBuilderController extends Controller
         $rows = ProductVariant::query()
             ->with('product:id,name_en')
             ->when($q !== '', function ($query) use ($q) {
-                $query->whereHas('product', fn($p) => $p->where('name_en', 'like', "%{$q}%"))
+                $query->whereHas('product', fn ($p) => $p->where('name_en', 'like', "%{$q}%"))
                     ->orWhere('sku', 'like', "%{$q}%");
             })
             ->limit(20)
             ->get(['id', 'product_id', 'sku']);
 
         return response()->json([
-            'results' => $rows->map(fn($v) => [
+            'results' => $rows->map(fn ($v) => [
                 'id' => $v->id,
-                'text' => trim(optional($v->product)->name_en . ' — ' . $v->sku, ' —'),
+                'text' => trim(optional($v->product)->name_en.' — '.$v->sku, ' —'),
             ])->values(),
         ]);
     }
@@ -993,20 +1012,20 @@ class PageBuilderController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         $rows = Category::query()
-            ->when($q !== '', fn($query) => $query->where('name_en', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%"))
             ->limit(20)
             ->get(['id', 'name_en']);
 
         return response()->json([
-            'results' => $rows->map(fn($c) => ['id' => $c->id, 'text' => $c->name_en])->values(),
+            'results' => $rows->map(fn ($c) => ['id' => $c->id, 'text' => $c->name_en])->values(),
         ]);
     }
 
-    public function searchCustomPages(Request $request): \Illuminate\Http\JsonResponse
+    public function searchCustomPages(Request $request): JsonResponse
     {
         $q = trim((string) $request->query('q', ''));
 
-        $rows = \App\Models\CustomPage::query()
+        $rows = CustomPage::query()
             ->where('is_active', true)
             ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%"))
             ->limit(20)
@@ -1017,15 +1036,14 @@ class PageBuilderController extends Controller
         ]);
     }
 
-    public function searchBrands(Request $request): \Illuminate\Http\JsonResponse
+    public function searchBrands(Request $request): JsonResponse
     {
         $q = trim((string) $request->query('q', ''));
 
         $brands = Brand::where('is_active', true)
             ->whereNull('deleted_at')
-            ->when($q !== '', fn ($query) =>
-                $query->where('name_en', 'like', "%{$q}%")
-                      ->orWhere('name_ar', 'like', "%{$q}%")
+            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%")
+                ->orWhere('name_ar', 'like', "%{$q}%")
             )
             ->orderBy('name_en')
             ->limit(20)
@@ -1033,8 +1051,8 @@ class PageBuilderController extends Controller
 
         return response()->json([
             'results' => $brands->map(fn ($b) => [
-                'id'   => $b->id,
-                'text' => $b->name_en . ($b->name_ar ? ' — ' . $b->name_ar : ''),
+                'id' => $b->id,
+                'text' => $b->name_en.($b->name_ar ? ' — '.$b->name_ar : ''),
             ]),
         ]);
     }
@@ -1044,12 +1062,12 @@ class PageBuilderController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         $rows = Vendor::query()
-            ->when($q !== '', fn($query) => $query->where('store_name', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => $query->where('store_name', 'like', "%{$q}%"))
             ->limit(20)
             ->get(['id', 'store_name', 'store_slug']);
 
         return response()->json([
-            'results' => $rows->map(fn($v) => [
+            'results' => $rows->map(fn ($v) => [
                 'id' => $v->id,
                 'text' => $v->store_name,
                 'store_slug' => $v->store_slug,
@@ -1063,16 +1081,16 @@ class PageBuilderController extends Controller
 
         $rows = FlashSale::query()
             ->whereIn('status', ['submission_open', 'approved', 'live'])
-            ->when($q !== '', fn($query) => $query->where('name_en', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%"))
             ->limit(20)
             ->get(['id', 'name_en', 'name_ar', 'sale_starts_at', 'status']);
 
         return response()->json([
-            'results' => $rows->map(fn($fs) => [
+            'results' => $rows->map(fn ($fs) => [
                 'id' => $fs->id,
                 'text' => $fs->name_en,
                 'name_ar' => $fs->name_ar,
-                'sale_starts_at' => optional($fs->sale_starts_at)->format('M d, Y'),
+                'sale_starts_at' => optional(admin_tz($fs->sale_starts_at))->format('M d, Y'),
                 'status' => $fs->status?->value,
             ])->values(),
         ]);
@@ -1082,26 +1100,26 @@ class PageBuilderController extends Controller
     {
         $q = trim((string) $request->query('q', ''));
 
-        $rows = \App\Models\VendorListing::query()
+        $rows = VendorListing::query()
             ->with(['vendor:id,store_name', 'productVariant:id,product_id,sku', 'productVariant.product:id,name_en'])
-            ->where('status', \App\Enums\VendorListingStatus::Active)
+            ->where('status', VendorListingStatus::Active)
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($inner) use ($q) {
-                    $inner->whereHas('productVariant.product', fn($p) => $p->where('name_en', 'like', "%{$q}%"))
-                        ->orWhereHas('vendor', fn($v) => $v->where('store_name', 'like', "%{$q}%"))
-                        ->orWhereHas('productVariant', fn($pv) => $pv->where('sku', 'like', "%{$q}%"));
+                    $inner->whereHas('productVariant.product', fn ($p) => $p->where('name_en', 'like', "%{$q}%"))
+                        ->orWhereHas('vendor', fn ($v) => $v->where('store_name', 'like', "%{$q}%"))
+                        ->orWhereHas('productVariant', fn ($pv) => $pv->where('sku', 'like', "%{$q}%"));
                 });
             })
             ->limit(20)
             ->get();
 
         return response()->json([
-            'results' => $rows->map(fn($vl) => [
+            'results' => $rows->map(fn ($vl) => [
                 'id' => $vl->id,
                 'text' => trim(
                     optional(optional($vl->productVariant)->product)->name_en
-                    . ' — ' . optional($vl->vendor)->store_name
-                    . ' — ' . number_format((float) $vl->price, 2) . ' ' . $vl->currency,
+                    .' — '.optional($vl->vendor)->store_name
+                    .' — '.number_format((float) $vl->price, 2).' '.$vl->currency,
                     ' —'
                 ),
             ])->values(),
@@ -1112,14 +1130,14 @@ class PageBuilderController extends Controller
     {
         $q = trim((string) $request->query('q', ''));
 
-        $rows = \App\Models\AdminListing::query()
+        $rows = AdminListing::query()
             ->join('product_variants as pv', 'pv.id', '=', 'admin_listings.product_variant_id')
             ->join('products as p', 'p.id', '=', 'pv.product_id')
             ->where('admin_listings.status', 'active')
             ->whereNull('admin_listings.deleted_at')
-            ->when($q !== '', fn($query) => $query->where(function ($inner) use ($q) {
+            ->when($q !== '', fn ($query) => $query->where(function ($inner) use ($q) {
                 $inner->where('p.name_en', 'like', "%{$q}%")
-                      ->orWhere('pv.sku', 'like', "%{$q}%");
+                    ->orWhere('pv.sku', 'like', "%{$q}%");
             }))
             ->limit(20)
             ->get([
@@ -1130,9 +1148,9 @@ class PageBuilderController extends Controller
             ]);
 
         return response()->json([
-            'results' => $rows->map(fn($al) => [
-                'id'   => $al->id,
-                'text' => $al->name_en . ' (Platform) — ' . number_format((float) $al->price, 2) . ' ' . $al->currency,
+            'results' => $rows->map(fn ($al) => [
+                'id' => $al->id,
+                'text' => $al->name_en.' (Platform) — '.number_format((float) $al->price, 2).' '.$al->currency,
             ])->values(),
         ]);
     }
@@ -1176,11 +1194,11 @@ class PageBuilderController extends Controller
             ->get();
 
         return response()->json([
-            'results' => $items->map(fn($item) => [
+            'results' => $items->map(fn ($item) => [
                 'id' => $item->id,
                 'product_variant_id' => $item->product_variant_id,
                 'position' => $item->position,
-                'text' => trim(optional(optional($item->productVariant)->product)->name_en . ' — ' . optional($item->productVariant)->sku, ' —'),
+                'text' => trim(optional(optional($item->productVariant)->product)->name_en.' — '.optional($item->productVariant)->sku, ' —'),
             ])->values(),
         ]);
     }
@@ -1195,6 +1213,7 @@ class PageBuilderController extends Controller
         ]);
 
         $item = $this->service->addBlockProduct($block, $data['product_variant_id'], $this->admin(), (int) ($data['tab_index'] ?? 0));
+
         return response()->json(['item' => $item]);
     }
 
@@ -1202,6 +1221,7 @@ class PageBuilderController extends Controller
     {
         $this->authorizeManage();
         $blockProduct->delete();
+
         return response()->json(['success' => true]);
     }
 
@@ -1216,6 +1236,7 @@ class PageBuilderController extends Controller
         ]);
 
         $this->service->reorderBlockProducts($data['products']);
+
         return response()->json(['success' => true]);
     }
 
@@ -1228,7 +1249,7 @@ class PageBuilderController extends Controller
         $items = $block->blockCategories()->with('category:id,name_en')->get();
 
         return response()->json([
-            'results' => $items->map(fn($item) => [
+            'results' => $items->map(fn ($item) => [
                 'id' => $item->id,
                 'category_id' => $item->category_id,
                 'position' => $item->position,
@@ -1246,13 +1267,15 @@ class PageBuilderController extends Controller
         ]);
 
         $item = $this->service->addBlockCategory($block, $data['category_id']);
+
         return response()->json(['item' => $item]);
     }
 
-    public function removeBlockCategory(\App\Models\PageBlockCategory $blockCategory)
+    public function removeBlockCategory(PageBlockCategory $blockCategory)
     {
         $this->authorizeManage();
         $blockCategory->delete();
+
         return response()->json(['success' => true]);
     }
 
@@ -1267,6 +1290,7 @@ class PageBuilderController extends Controller
         ]);
 
         $this->service->reorderBlockCategories($data['categories']);
+
         return response()->json(['success' => true]);
     }
 
@@ -1279,7 +1303,7 @@ class PageBuilderController extends Controller
         $items = $block->blockSellers()->with('seller:id,store_name')->get();
 
         return response()->json([
-            'results' => $items->map(fn($item) => [
+            'results' => $items->map(fn ($item) => [
                 'id' => $item->id,
                 'seller_id' => $item->seller_id,
                 'position' => $item->position,
@@ -1297,13 +1321,15 @@ class PageBuilderController extends Controller
         ]);
 
         $item = $this->service->addBlockSeller($block, $data['seller_id']);
+
         return response()->json(['item' => $item]);
     }
 
-    public function removeBlockSeller(\App\Models\PageBlockSeller $blockSeller)
+    public function removeBlockSeller(PageBlockSeller $blockSeller)
     {
         $this->authorizeManage();
         $blockSeller->delete();
+
         return response()->json(['success' => true]);
     }
 
@@ -1318,6 +1344,7 @@ class PageBuilderController extends Controller
         ]);
 
         $this->service->reorderBlockSellers($data['sellers']);
+
         return response()->json(['success' => true]);
     }
 
@@ -1325,7 +1352,7 @@ class PageBuilderController extends Controller
     // Brand Strip — Brands
     // ─────────────────────────────────────────────────────────────────────
 
-    public function loadBlockBrands(PageBlock $block): \Illuminate\Http\JsonResponse
+    public function loadBlockBrands(PageBlock $block): JsonResponse
     {
         $this->authorizeManage();
 
@@ -1334,14 +1361,14 @@ class PageBuilderController extends Controller
             ->with('brand')
             ->get()
             ->map(fn ($pb) => [
-                'id'   => $pb->id,
-                'text' => $pb->brand?->name_en . ($pb->brand?->name_ar ? ' — ' . $pb->brand?->name_ar : ''),
+                'id' => $pb->id,
+                'text' => $pb->brand?->name_en.($pb->brand?->name_ar ? ' — '.$pb->brand?->name_ar : ''),
             ]);
 
         return response()->json(['results' => $items]);
     }
 
-    public function addBlockBrand(Request $request, PageBlock $block): \Illuminate\Http\JsonResponse
+    public function addBlockBrand(Request $request, PageBlock $block): JsonResponse
     {
         $this->authorizeManage();
 
@@ -1361,38 +1388,39 @@ class PageBuilderController extends Controller
 
         $item = PageBlockBrand::create([
             'page_block_id' => $block->id,
-            'brand_id'      => $data['brand_id'],
-            'position'      => $maxPos + 1,
+            'brand_id' => $data['brand_id'],
+            'position' => $maxPos + 1,
         ]);
 
         $brand = Brand::find($data['brand_id']);
 
         return response()->json([
             'item' => [
-                'id'       => $item->id,
+                'id' => $item->id,
                 'brand_id' => $brand->id,
-                'name'     => $brand->name_en,
-                'name_ar'  => $brand->name_ar,
+                'name' => $brand->name_en,
+                'name_ar' => $brand->name_ar,
                 'logo_url' => $brand->logo_url,
                 'position' => $item->position,
             ],
         ]);
     }
 
-    public function removeBlockBrand(PageBlockBrand $blockBrand): \Illuminate\Http\JsonResponse
+    public function removeBlockBrand(PageBlockBrand $blockBrand): JsonResponse
     {
         $this->authorizeManage();
         $blockBrand->delete();
+
         return response()->json(['success' => true]);
     }
 
-    public function reorderBlockBrands(Request $request, PageBlock $block): \Illuminate\Http\JsonResponse
+    public function reorderBlockBrands(Request $request, PageBlock $block): JsonResponse
     {
         $this->authorizeManage();
 
         $data = $request->validate([
-            'brands'            => ['required', 'array'],
-            'brands.*.id'       => ['required', 'uuid'],
+            'brands' => ['required', 'array'],
+            'brands.*.id' => ['required', 'uuid'],
             'brands.*.position' => ['required', 'integer', 'min:0'],
         ]);
 
@@ -1421,15 +1449,15 @@ class PageBuilderController extends Controller
         $ext = $uploaded->getClientOriginalExtension() ?: $uploaded->guessExtension();
         $path = $uploaded->storeAs(
             'page-builder/slides',
-            Str::random(16) . '_' . $slot . '.' . $ext,
+            Str::random(16).'_'.$slot.'.'.$ext,
             'public'
         );
 
         $file = File::create([
-            'key' => 'page-builder/slides/' . basename($path),
+            'key' => 'page-builder/slides/'.basename($path),
             'path' => $path,
             'storage_type' => 'public',
-            'file_type' => 'slide_' . $slot,
+            'file_type' => 'slide_'.$slot,
             'mime_type' => $uploaded->getMimeType(),
             'extension' => $ext,
             'size' => $uploaded->getSize(),
@@ -1454,12 +1482,12 @@ class PageBuilderController extends Controller
         $ext = $uploaded->getClientOriginalExtension() ?: $uploaded->guessExtension();
         $path = $uploaded->storeAs(
             'page-builder/section-backgrounds',
-            Str::random(16) . '.' . $ext,
+            Str::random(16).'.'.$ext,
             'public'
         );
 
         $file = File::create([
-            'key' => 'page-builder/section-backgrounds/' . basename($path),
+            'key' => 'page-builder/section-backgrounds/'.basename($path),
             'path' => $path,
             'storage_type' => 'public',
             'file_type' => 'section_background',
@@ -1486,12 +1514,12 @@ class PageBuilderController extends Controller
         $ext = $uploaded->getClientOriginalExtension() ?: $uploaded->guessExtension();
         $path = $uploaded->storeAs(
             'page-builder/promo-tiles',
-            Str::random(16) . '.' . $ext,
+            Str::random(16).'.'.$ext,
             'public'
         );
 
         $file = File::create([
-            'key' => 'page-builder/promo-tiles/' . basename($path),
+            'key' => 'page-builder/promo-tiles/'.basename($path),
             'path' => $path,
             'storage_type' => 'public',
             'file_type' => 'promo_tile',
@@ -1519,12 +1547,12 @@ class PageBuilderController extends Controller
         $ext = $uploaded->getClientOriginalExtension() ?: $uploaded->guessExtension();
         $path = $uploaded->storeAs(
             'page-builder/ad-images',
-            Str::random(16) . '.' . $ext,
+            Str::random(16).'.'.$ext,
             'public'
         );
 
         $file = File::create([
-            'key' => 'page-builder/ad-images/' . basename($path),
+            'key' => 'page-builder/ad-images/'.basename($path),
             'path' => $path,
             'storage_type' => 'public',
             'file_type' => 'ad_image',

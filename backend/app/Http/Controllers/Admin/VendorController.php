@@ -40,8 +40,7 @@ class VendorController extends Controller
         private VendorApprovalService $approvalService,
         private ActivityLoggerService $activityLogger,
         private VendorOwnerService $owners,
-    ) {
-    }
+    ) {}
 
     // ── Index ─────────────────────────────────────────────────────────────────
 
@@ -68,7 +67,7 @@ class VendorController extends Controller
 
     // ── Export ────────────────────────────────────────────────────────────────
 
-    private function buildVendorsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildVendorsQuery(Request $request): Builder
     {
         $isScopedAdmin = (bool) $request->attributes->get('is_scoped_admin');
         $scopedVendorIds = $request->attributes->get('scoped_vendor_ids');
@@ -84,16 +83,16 @@ class VendorController extends Controller
         }
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where(function ($qq) use ($v) {
+            'search' => fn ($q, $v) => $q->where(function ($qq) use ($v) {
                 $qq->where('vendors.name', 'like', "%{$v}%")
                     ->orWhere('vendors.store_name', 'like', "%{$v}%")
                     ->orWhere('vendors.email', 'like', "%{$v}%");
             }),
-            'global_status' => fn($q, $v) => $q->where('global_status', $v),
-            'country_id' => fn($q, $v) => $q->where('country_id', $v),
-            'account_manager_admin_id' => fn($q, $v) => $q->where('account_manager_admin_id', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('created_at', '<=', $v),
+            'global_status' => fn ($q, $v) => $q->where('global_status', $v),
+            'country_id' => fn ($q, $v) => $q->where('country_id', $v),
+            'account_manager_admin_id' => fn ($q, $v) => $q->where('account_manager_admin_id', $v),
+            'date_from' => fn ($q, $v) => $q->where('created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('created_at', '<=', admin_day_end($v)),
         ]);
     }
 
@@ -106,7 +105,7 @@ class VendorController extends Controller
         // Financial / payout columns are omitted for account managers scoped to
         // their assigned vendor(s), matching the same gating used in datatable().
         $headers = ['ID', 'Store Name', 'Email', 'Country', 'Status', 'Orders', 'Joined'];
-        if (!$isScopedAdmin) {
+        if (! $isScopedAdmin) {
             $headers[] = 'GMV';
         }
 
@@ -118,10 +117,10 @@ class VendorController extends Controller
                 $vendor->country?->name_en ?? '—',
                 $vendor->global_status?->value,
                 $vendor->total_orders,
-                $vendor->created_at->format('d M Y'),
+                admin_tz($vendor->created_at)?->format('d M Y'),
             ];
 
-            if (!$isScopedAdmin) {
+            if (! $isScopedAdmin) {
                 $row[] = number_format($vendor->total_sales, 2);
             }
 
@@ -171,19 +170,19 @@ class VendorController extends Controller
                 'rating' => number_format($vendor->store_rating_avg, 1),
                 'global_status' => $vendor->global_status?->value,
                 'manager' => $vendor->accountManagerAdmin?->name ?? '—',
-                'created_at' => $vendor->created_at->format('d M Y'),
+                'created_at' => admin_tz($vendor->created_at)?->format('d M Y'),
                 'actions' => [
-                    'id'            => $vendor->id,
-                    'store_name'    => $vendor->store_name,
+                    'id' => $vendor->id,
+                    'store_name' => $vendor->store_name,
                     'global_status' => $vendor->global_status?->value,
                 ],
             ];
 
             // Financial / payout columns are omitted entirely for account managers
             // scoped to their assigned vendor(s) — they must not see revenue data.
-            if (!$isScopedAdmin) {
+            if (! $isScopedAdmin) {
                 $row['store']['payout_hold'] = $vendor->payout_hold_active;
-                $row['gmv'] = '$' . number_format($vendor->total_sales, 2);
+                $row['gmv'] = '$'.number_format($vendor->total_sales, 2);
                 $row['commission_rate'] = $vendor->commission_rate;
                 $row['bank_account_count'] = $vendor->bank_accounts_count;
             }
@@ -200,7 +199,7 @@ class VendorController extends Controller
         $scopedVendorIds = $request->attributes->get('scoped_vendor_ids');
 
         if ($isScopedAdmin) {
-            abort_if(!in_array($vendor->id, $scopedVendorIds ?? [], true), 403);
+            abort_if(! in_array($vendor->id, $scopedVendorIds ?? [], true), 403);
 
             $completedOrdersCount = SubOrder::query()
                 ->join('orders as o', 'o.id', '=', 'sub_orders.order_id')
@@ -263,7 +262,7 @@ class VendorController extends Controller
     {
         $blockers = $this->approvalService->getApprovalBlockers($vendor);
 
-        if (!empty($blockers)) {
+        if (! empty($blockers)) {
             return response()->json([
                 'message' => 'Vendor cannot be approved yet.',
                 'blockers' => $blockers,
@@ -469,7 +468,7 @@ class VendorController extends Controller
     public function documents(Vendor $vendor): JsonResponse
     {
         return response()->json([
-            'data' => $vendor->documents->map(fn($d) => [
+            'data' => $vendor->documents->map(fn ($d) => [
                 'id' => $d->id,
                 'document_type' => $d->document_type,
                 'status' => $d->status?->value,
@@ -543,7 +542,7 @@ class VendorController extends Controller
             ->orderBy('date')
             ->get()
             ->groupBy('date')
-            ->map(fn($rows) => $rows->sum('gmv'));
+            ->map(fn ($rows) => $rows->sum('gmv'));
 
         $labels = [];
         $gmvArr = [];
@@ -617,7 +616,7 @@ class VendorController extends Controller
         ]);
 
         Notification::query()->insert([
-            'id' => \Illuminate\Support\Str::uuid(),
+            'id' => Str::uuid(),
             'type' => 'App\\Notifications\\Vendor\\AdminMessage',
             'notifiable_type' => Vendor::class,
             'notifiable_id' => $vendor->id,

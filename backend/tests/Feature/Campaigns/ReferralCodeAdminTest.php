@@ -138,7 +138,7 @@ class ReferralCodeAdminTest extends TestCase
                 ->get(route('admin.marketer-campaigns.show', $campaign))
                 ->assertOk()
                 ->assertSee('data-replaced-at', false)
-                ->assertSee(__('admin.marketer_campaigns.replaced_at', ['date' => $replaced->replaced_at->format('d M Y H:i')]));
+                ->assertSee(__('admin.marketer_campaigns.replaced_at', ['date' => admin_tz($replaced->replaced_at)->format('d M Y H:i')]));
         }
     }
 

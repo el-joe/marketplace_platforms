@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\ReturnRequestStatus;
 use App\Http\Controllers\Controller;
+use App\Models\CarrierClaim;
 use App\Models\ReturnRequest;
+use App\Models\Shipment;
 use App\Models\Vendor;
-use Illuminate\Support\Facades\Notification;
 use App\Notifications\Customer\ReturnApprovedNotification;
 use App\Notifications\Customer\ReturnRejectedNotification;
 use App\Notifications\Customer\ReturnStatusChangedNotification;
@@ -16,10 +17,14 @@ use App\Services\OrderInterventionService;
 use App\Services\ReturnRequestService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReturnController extends Controller
 {
@@ -29,14 +34,13 @@ class ReturnController extends Controller
     public function __construct(
         private readonly OrderInterventionService $interventionService,
         private readonly ReturnRequestService $returnRequestService,
-    ) {
-    }
+    ) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Index
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('returns.view'), 403);
@@ -84,26 +88,26 @@ class ReturnController extends Controller
 
         return $this->dataTableResponse($request, $query, $columns, function ($r) {
             $statusBadge = $this->statusBadgeClass($r->status->value);
-            $statusLabel = __('admin.returns_section.' . $r->status->value);
-            $reasonLabel = __('admin.returns_section.reason_' . $r->reason->value);
+            $statusLabel = __('admin.returns_section.'.$r->status->value);
+            $reasonLabel = __('admin.returns_section.reason_'.$r->reason->value);
 
             $showUrl = route('admin.returns.show', $r->id);
 
             $orderCell = $r->order_number
-                ? '<a href="' . route('admin.orders.show', $r->order_id) . '" class="text-xs font-mono text-primary-600 hover:underline">' . e($r->order_number) . '</a>'
+                ? '<a href="'.route('admin.orders.show', $r->order_id).'" class="text-xs font-mono text-primary-600 hover:underline">'.e($r->order_number).'</a>'
                 : '<span class="text-xs text-gray-300">—</span>';
 
             return [
-                'DT_RowId' => 'ret-' . $r->id,
-                'return_number' => '<a href="' . $showUrl . '" class="font-mono font-medium text-primary-600 hover:underline text-xs">' . e($r->return_number) . '</a>',
+                'DT_RowId' => 'ret-'.$r->id,
+                'return_number' => '<a href="'.$showUrl.'" class="font-mono font-medium text-primary-600 hover:underline text-xs">'.e($r->return_number).'</a>',
                 'order' => $orderCell,
-                'customer' => '<span class="text-sm text-gray-700">' . e($r->customer_name ?? '—') . '</span>',
-                'vendor' => '<span class="text-sm text-gray-700">' . e($r->vendor_store_name ?? '—') . '</span>',
-                'reason' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">' . e($reasonLabel) . '</span>',
-                'items_count' => '<span class="text-sm text-gray-700">' . (int) $r->items_count . '</span>',
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e($statusLabel) . '</span>',
-                'created_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">' . \Carbon\Carbon::parse($r->created_at)->format('M d, Y H:i') . '</span>',
-                'actions' => '<a href="' . $showUrl . '" class="btn btn-xs btn-secondary">' . e(__('common.view')) . '</a>',
+                'customer' => '<span class="text-sm text-gray-700">'.e($r->customer_name ?? '—').'</span>',
+                'vendor' => '<span class="text-sm text-gray-700">'.e($r->vendor_store_name ?? '—').'</span>',
+                'reason' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">'.e($reasonLabel).'</span>',
+                'items_count' => '<span class="text-sm text-gray-700">'.(int) $r->items_count.'</span>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$statusBadge.'">'.e($statusLabel).'</span>',
+                'created_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">'.admin_tz(Carbon::parse($r->created_at))->format('M d, Y H:i').'</span>',
+                'actions' => '<a href="'.$showUrl.'" class="btn btn-xs btn-secondary">'.e(__('common.view')).'</a>',
             ];
         });
     }
@@ -112,7 +116,7 @@ class ReturnController extends Controller
     // Query builder (shared by datatable + export)
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildReturnsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildReturnsQuery(Request $request): Builder
     {
         $query = ReturnRequest::query()
             ->leftJoin('orders', 'orders.id', '=', 'return_requests.order_id')
@@ -127,11 +131,11 @@ class ReturnController extends Controller
             );
 
         return $this->applyFilters($query, $request, [
-            'search' => fn ($q, $v) => $q->where('return_requests.return_number', 'like', '%' . $v . '%'),
+            'search' => fn ($q, $v) => $q->where('return_requests.return_number', 'like', '%'.$v.'%'),
             'status' => fn ($q, $v) => $q->where('return_requests.status', $v),
             'vendor_id' => fn ($q, $v) => $q->where('return_requests.vendor_id', $v),
-            'date_from' => fn ($q, $v) => $q->whereDate('return_requests.created_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('return_requests.created_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('return_requests.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('return_requests.created_at', '<=', admin_day_end($v)),
         ]);
     }
 
@@ -139,18 +143,18 @@ class ReturnController extends Controller
     // Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function exportReturns(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportReturns(Request $request): StreamedResponse
     {
         $returns = $this->buildReturnsQuery($request)->orderByDesc('return_requests.created_at')->get();
 
         $headers = ['Return #', 'Order #', 'Reason', 'Status', 'Date'];
 
-        $rows = $returns->map(fn($r) => [
+        $rows = $returns->map(fn ($r) => [
             $r->return_number,
             $r->order_number,
             $r->reason?->value,
             $r->status?->value,
-            optional($r->created_at)->format('d M Y H:i'),
+            optional(admin_tz($r->created_at))->format('d M Y H:i'),
         ]);
 
         return match ($request->input('export')) {
@@ -250,7 +254,7 @@ class ReturnController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('returns.manage'), 403);
 
-        if (!in_array($returnRequest->status, [ReturnRequestStatus::AwaitingPickup, ReturnRequestStatus::InTransit], true)) {
+        if (! in_array($returnRequest->status, [ReturnRequestStatus::AwaitingPickup, ReturnRequestStatus::InTransit], true)) {
             return response()->json(['message' => __('admin.returns_section.mark_received_invalid_state')], 422);
         }
 
@@ -292,14 +296,14 @@ class ReturnController extends Controller
             );
 
             if ($data['inspection_outcome'] === 'damaged_in_transit' && $returnRequest->sub_order_id) {
-                $shipment = \App\Models\Shipment::where('sub_order_id', $returnRequest->sub_order_id)->first();
+                $shipment = Shipment::where('sub_order_id', $returnRequest->sub_order_id)->first();
 
                 if ($shipment) {
-                    \App\Models\CarrierClaim::create([
-                        'claim_number' => 'CLM-' . strtoupper(uniqid()),
+                    CarrierClaim::create([
+                        'claim_number' => 'CLM-'.strtoupper(uniqid()),
                         'shipment_id' => $shipment->id,
                         'claim_type' => 'damaged',
-                        'description' => 'Item found damaged in transit during return inspection for ' . $returnRequest->return_number,
+                        'description' => 'Item found damaged in transit during return inspection for '.$returnRequest->return_number,
                         'claimed_amount' => $returnRequest->refresh()->refund_amount ?? 0,
                         'status' => 'submitted',
                     ]);

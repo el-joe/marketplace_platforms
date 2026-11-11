@@ -17,6 +17,7 @@ use App\Models\ReturnRequest;
 use App\Models\Vendor;
 use App\Models\WarehouseInventory;
 use App\Models\WithdrawalRequest;
+use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class DashboardController extends Controller
 {
     public function index(Request $request): View
     {
-        if (!auth()->guard('admin')->user()?->can('dashboard.view')) {
+        if (! auth()->guard('admin')->user()?->can('dashboard.view')) {
             return view('admin.dashboard.welcome', [
                 'breadcrumbs' => [['label' => __('admin.nav.dashboard')]],
             ]);
@@ -106,7 +107,7 @@ class DashboardController extends Controller
             ->selectRaw('DATE(orders.placed_at) as date, orders.currency, SUM(orders.total) as gmv')
             ->whereBetween('orders.placed_at', [$start, $end])
             ->whereNotIn('orders.status', [OrderStatus::Cancelled->value])
-            ->when($countryId, fn($q) => $q->where('c.country_id', $countryId))
+            ->when($countryId, fn ($q) => $q->where('c.country_id', $countryId))
             ->groupBy('date', 'orders.currency')
             ->get()
             ->groupBy('date');
@@ -120,7 +121,7 @@ class DashboardController extends Controller
                 ->selectRaw('DATE(o.placed_at) as date, o.currency, SUM(oi.commission_amount) as commission')
                 ->whereBetween('o.placed_at', [$start, $end])
                 ->whereNotIn('o.status', [OrderStatus::Cancelled->value])
-                ->when($countryId, fn($q) => $q->where('c.country_id', $countryId))
+                ->when($countryId, fn ($q) => $q->where('c.country_id', $countryId))
                 ->groupBy('date', 'o.currency')
                 ->get()
                 ->groupBy('date');
@@ -129,7 +130,7 @@ class DashboardController extends Controller
         $labelFmt = $days > 30 ? 'M d' : 'd M';
 
         // Determine currencies present in this result set.
-        $allCurrencies = $orderRows->flatMap(fn($rows) => $rows->pluck('currency'))
+        $allCurrencies = $orderRows->flatMap(fn ($rows) => $rows->pluck('currency'))
             ->unique()->sort()->values()->all();
 
         // Single-currency path (country filter applied, or all data happens to be one currency).
@@ -138,16 +139,17 @@ class DashboardController extends Controller
             $labels = $gmvData = $commData = [];
             for ($i = $days - 1; $i >= 0; $i--) {
                 $date = now()->subDays($i)->format('Y-m-d');
-                $labels[]   = now()->subDays($i)->format($labelFmt);
-                $gmvData[]  = \App\Support\Money::number($orderRows->get($date)?->first()?->gmv ?? 0);
-                $commData[] = \App\Support\Money::number($commRows->get($date)?->first()?->commission ?? 0);
+                $labels[] = now()->subDays($i)->format($labelFmt);
+                $gmvData[] = Money::number($orderRows->get($date)?->first()?->gmv ?? 0);
+                $commData[] = Money::number($commRows->get($date)?->first()?->commission ?? 0);
             }
+
             return response()->json([
                 'data' => [
-                    'labels'     => $labels,
-                    'gmv'        => $gmvData,
+                    'labels' => $labels,
+                    'gmv' => $gmvData,
                     'commission' => $commData,
-                    'currency'   => $currency,
+                    'currency' => $currency,
                 ],
             ]);
         }
@@ -157,21 +159,22 @@ class DashboardController extends Controller
         for ($i = $days - 1; $i >= 0; $i--) {
             $allDates[] = now()->subDays($i)->format('Y-m-d');
         }
-        $labels = array_map(fn($d) => Carbon::parse($d)->format($labelFmt), $allDates);
+        $labels = array_map(fn ($d) => Carbon::parse($d)->format($labelFmt), $allDates);
         $datasets = [];
         foreach ($allCurrencies as $currency) {
             $gmvData = $commData = [];
             foreach ($allDates as $date) {
-                $gmvRow  = collect($orderRows[$date] ?? [])->firstWhere('currency', $currency);
+                $gmvRow = collect($orderRows[$date] ?? [])->firstWhere('currency', $currency);
                 $commRow = collect($commRows[$date] ?? [])->firstWhere('currency', $currency);
-                $gmvData[]  = \App\Support\Money::number($gmvRow->gmv ?? 0);
-                $commData[] = \App\Support\Money::number($commRow->commission ?? 0);
+                $gmvData[] = Money::number($gmvRow->gmv ?? 0);
+                $commData[] = Money::number($commRow->commission ?? 0);
             }
             $datasets[$currency] = ['gmv' => $gmvData, 'commission' => $commData];
         }
+
         return response()->json([
             'data' => [
-                'labels'   => $labels,
+                'labels' => $labels,
                 'datasets' => $datasets,
             ],
         ]);
@@ -189,27 +192,27 @@ class DashboardController extends Controller
 
         // Maps the 6 UI labels to the actual orders.status enum values
         $statusGroups = [
-            'pending'    => ['placed'],
+            'pending' => ['placed'],
             'processing' => ['confirmed', 'partially_shipped'],
-            'shipped'    => ['shipped', 'partially_delivered'],
-            'delivered'  => ['delivered', 'completed'],
-            'cancelled'  => ['cancelled'],
-            'refunded'   => ['refunded'],
+            'shipped' => ['shipped', 'partially_delivered'],
+            'delivered' => ['delivered', 'completed'],
+            'cancelled' => ['cancelled'],
+            'refunded' => ['refunded'],
         ];
 
         $colors = [
-            'pending'    => '#f59e0b',
+            'pending' => '#f59e0b',
             'processing' => '#3b82f6',
-            'shipped'    => '#8b5cf6',
-            'delivered'  => '#22c55e',
-            'cancelled'  => '#ef4444',
-            'refunded'   => '#6b7280',
+            'shipped' => '#8b5cf6',
+            'delivered' => '#22c55e',
+            'cancelled' => '#ef4444',
+            'refunded' => '#6b7280',
         ];
 
         $base = Order::query()
             ->whereBetween('placed_at', [$start, $end])
-            ->when($countryId, fn($q) => $q->whereHas(
-                'customer', fn($cq) => $cq->where('country_id', $countryId)
+            ->when($countryId, fn ($q) => $q->whereHas(
+                'customer', fn ($cq) => $cq->where('country_id', $countryId)
             ));
 
         $labels = $values = $colorList = [];
@@ -237,20 +240,20 @@ class DashboardController extends Controller
 
         // Use the Eloquent relationship so SoftDeletes scope is applied correctly.
         $orders = Order::with('customer')
-            ->when($countryId, fn($q) => $q->whereHas(
-                'customer', fn($cq) => $cq->where('country_id', $countryId)
+            ->when($countryId, fn ($q) => $q->whereHas(
+                'customer', fn ($cq) => $cq->where('country_id', $countryId)
             ))
             ->orderByDesc('placed_at')
             ->limit(10)
             ->get()
-            ->map(fn($order) => [
+            ->map(fn ($order) => [
                 'id' => $order->id,
                 'order_number' => $order->order_number ?? '#—',
                 'customer_name' => $order->customer?->name ?? __('admin.dashboard.guest'),
-                'total' => number_format($order->total, 2) . ' ' . ($order->currency ?? ''),
+                'total' => number_format($order->total, 2).' '.($order->currency ?? ''),
                 'status' => $order->status->value,
                 'status_label' => __("common.order_status.{$order->status->value}"),
-                'created_at' => Carbon::parse($order->placed_at)->diffForHumans(),
+                'created_at' => admin_tz(Carbon::parse($order->placed_at))->diffForHumans(),
             ]);
 
         return response()->json(['data' => $orders]);
@@ -281,12 +284,12 @@ class DashboardController extends Controller
             ->join('customers as c', 'c.id', '=', 'o.customer_id')
             ->where('o.created_at', '>=', now()->subDays(30))
             ->whereNotIn('o.status', [OrderStatus::Cancelled->value, OrderStatus::Refunded->value])
-            ->when($countryId, fn($q) => $q->where('c.country_id', $countryId))
+            ->when($countryId, fn ($q) => $q->where('c.country_id', $countryId))
             ->groupBy('v.id', 'v.business_name', 'v.store_rating_avg', 'o.currency')
             ->orderByDesc('gmv')
             ->limit(10)
             ->get()
-            ->map(fn($row) => [
+            ->map(fn ($row) => [
                 'id' => $row->id,
                 'business_name' => $row->business_name,
                 'currency' => $row->currency,
@@ -339,7 +342,7 @@ class DashboardController extends Controller
             ->orderBy('wi.quantity_available')
             ->limit(20)
             ->get()
-            ->map(fn($row) => [
+            ->map(fn ($row) => [
                 'id' => $row->product_id,
                 'name' => $row->name,
                 'stock' => (int) $row->stock,
@@ -376,25 +379,25 @@ class DashboardController extends Controller
     /** Fetch raw numeric stats for a time window. */
     private function fetchStats(Carbon $start, Carbon $end, ?string $countryId): array
     {
-        $gmv = \App\Support\Money::number(Order::query()
+        $gmv = Money::number(Order::query()
             ->whereBetween('placed_at', [$start, $end])
             ->whereNotIn('status', [OrderStatus::Cancelled->value])
-            ->when($countryId, fn($q) => $q->whereHas(
-                'customer', fn($cq) => $cq->where('country_id', $countryId)
+            ->when($countryId, fn ($q) => $q->whereHas(
+                'customer', fn ($cq) => $cq->where('country_id', $countryId)
             ))
             ->sum('total'));
 
         $orders = (int) Order::query()
             ->whereBetween('placed_at', [$start, $end])
             ->whereNotIn('status', [OrderStatus::Cancelled->value])
-            ->when($countryId, fn($q) => $q->whereHas(
-                'customer', fn($cq) => $cq->where('country_id', $countryId)
+            ->when($countryId, fn ($q) => $q->whereHas(
+                'customer', fn ($cq) => $cq->where('country_id', $countryId)
             ))
             ->count();
 
         $revenue = 0;
         if (Schema::hasTable('order_items') && Schema::hasColumn('order_items', 'commission_amount')) {
-            $revenue = \App\Support\Money::number(OrderItem::query()->from('order_items as oi')
+            $revenue = Money::number(OrderItem::query()->from('order_items as oi')
                 ->join('orders as o', 'o.id', '=', 'oi.order_id')
                 ->whereBetween('o.placed_at', [$start, $end])
                 ->whereNotIn('o.status', [OrderStatus::Cancelled->value])
@@ -410,7 +413,7 @@ class DashboardController extends Controller
 
         $sellers = (int) Vendor::query()
             ->where('global_status', VendorGlobalStatus::Active->value)
-            ->when($countryId, fn($q) => $q->where('country_id', $countryId))
+            ->when($countryId, fn ($q) => $q->where('country_id', $countryId))
             ->count();
 
         return compact('gmv', 'orders', 'revenue', 'sellers');
@@ -420,6 +423,7 @@ class DashboardController extends Controller
     private function formatMoney(int|float|null $cents, ?string $currency = null): string
     {
         $amount = number_format((float) $cents, 2);
+
         return $currency ? "{$amount} {$currency}" : $amount;
     }
 }

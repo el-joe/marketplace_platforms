@@ -54,7 +54,7 @@ class CouponController extends Controller
                 'total' => Coupon::count(),
                 'active' => Coupon::active()->count(),
                 'expired' => Coupon::where('valid_until', '<', now())->count(),
-                'used_today' => CouponUsage::whereDate('used_at', today())->count(),
+                'used_today' => CouponUsage::whereBetween('used_at', admin_day_range())->count(),
             ],
         ]);
     }

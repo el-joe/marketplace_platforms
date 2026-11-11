@@ -142,7 +142,7 @@
                             <span>{{ __('partner.returns.sub_order_label') }} <span class="font-mono">{{ $return->subOrder->sub_order_number }}</span></span>
                             <span>·</span>
                         @endif
-                        <span>{{ $return->created_at->format('d/m/Y H:i') }}</span>
+                        <span>{{ vendor_tz($return->created_at)?->format('d/m/Y H:i') }}</span>
                     </div>
                 </div>
                 <span class="flex-shrink-0 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $statusCls }}">
@@ -170,13 +170,13 @@
                 @if($return->pickup_scheduled_at)
                     <div>
                         <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.returns.pickup_date') }}</dt>
-                        <dd class="font-medium text-gray-800">{{ \Carbon\Carbon::parse($return->pickup_scheduled_at)->format('d/m/Y') }}</dd>
+                        <dd class="font-medium text-gray-800">{{ vendor_tz(\Carbon\Carbon::parse($return->pickup_scheduled_at))->format('d/m/Y') }}</dd>
                     </div>
                 @endif
                 @if($return->received_at_warehouse_at)
                     <div>
                         <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.returns.received_at_warehouse_date') }}</dt>
-                        <dd class="font-medium text-gray-800">{{ \Carbon\Carbon::parse($return->received_at_warehouse_at)->format('d/m/Y') }}</dd>
+                        <dd class="font-medium text-gray-800">{{ vendor_tz(\Carbon\Carbon::parse($return->received_at_warehouse_at))->format('d/m/Y') }}</dd>
                     </div>
                 @endif
                 @if($return->rejection_reason)
@@ -285,7 +285,7 @@
                         <div class="max-w-[85%]">
                             <p class="text-xs mb-1 {{ $isMine ? 'text-end' : 'text-start' }} text-gray-400">
                                 {{ $isMine ? __('partner.returns.you') : ($msg->sender_role === \App\Enums\DisputeMessageSenderRole::Customer ? __('partner.returns.customer_role') : __('partner.returns.admin_role')) }}
-                                · {{ \Carbon\Carbon::parse($msg->created_at)->format('d/m H:i') }}
+                                · {{ vendor_tz(\Carbon\Carbon::parse($msg->created_at))->format('d/m H:i') }}
                             </p>
                             <div @class([
                                 'rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm',

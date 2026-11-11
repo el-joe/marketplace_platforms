@@ -124,7 +124,7 @@
                                             <x-badge :color="$oColor">{{ ucwords(str_replace('_', ' ', $order->status->value)) }}</x-badge>
                                         </td>
                                         <td class="py-2 pr-4 text-gray-500">
-                                            {{ $order->placed_at ? \Carbon\Carbon::parse($order->placed_at)->format('d M Y') : '—' }}
+                                            {{ $order->placed_at ? admin_tz(\Carbon\Carbon::parse($order->placed_at))->format('d M Y') : '—' }}
                                         </td>
                                     </tr>
                                     @endforeach
@@ -604,7 +604,7 @@
                                         <td class="py-2 pr-4">
                                             <x-badge :color="$giftCardStatusColors[$giftCard->status] ?? 'gray'">{{ ucfirst(str_replace('_', ' ', $giftCard->status)) }}</x-badge>
                                         </td>
-                                        <td class="py-2 pr-4 text-gray-500">{{ $giftCard->expires_at?->format('d M Y') ?? '—' }}</td>
+                                        <td class="py-2 pr-4 text-gray-500">{{ admin_tz($giftCard->expires_at)?->format('d M Y') ?? '—' }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>

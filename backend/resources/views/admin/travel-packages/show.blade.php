@@ -75,8 +75,8 @@
                         @endif
                     </dd>
                 </div>
-                <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.departure') }}</dt><dd class="text-gray-900">{{ $travelPackage->departure_date->format('d M Y') }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.return') }}</dt><dd class="text-gray-900">{{ $travelPackage->return_date->format('d M Y') }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.departure') }}</dt><dd class="text-gray-900">{{ admin_tz($travelPackage->departure_date)?->format('d M Y') }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.return') }}</dt><dd class="text-gray-900">{{ admin_tz($travelPackage->return_date)?->format('d M Y') }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.duration') }}</dt><dd class="text-gray-900">{{ $travelPackage->duration_days }}d / {{ $travelPackage->duration_nights }}n</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">{{ __('common.price') }}</dt><dd class="text-gray-900 font-semibold">{{ $travelPackage->priceFormatted() }}</dd></div>
                 <div class="flex justify-between">
@@ -262,7 +262,7 @@
                 <div class="min-w-0">
                     <p class="text-sm font-medium text-gray-900 truncate">{{ $travelPackage->contract_file_original_name }}</p>
                     @if($travelPackage->contract_uploaded_at)
-                    <p class="text-xs text-gray-400 mt-0.5">{{ __('admin.travel.uploaded_at', ['date' => $travelPackage->contract_uploaded_at->format('d M Y H:i')]) }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ __('admin.travel.uploaded_at', ['date' => admin_tz($travelPackage->contract_uploaded_at)?->format('d M Y H:i')]) }}</p>
                     @endif
                 </div>
             </div>

@@ -91,7 +91,7 @@
                 <span class="text-red-500" x-show="source === 'recorded'">*</span>
             </label>
             <input type="datetime-local" name="scheduled_at" id="scheduled-at"
-                   value="{{ old('scheduled_at', isset($liveStream) ? $liveStream->scheduled_at?->format('Y-m-d\TH:i') : '') }}"
+                   value="{{ old('scheduled_at', isset($liveStream) ? admin_input_value($liveStream->scheduled_at, 'Y-m-d\TH:i') : '') }}"
                    @disabled($lockSchedule)
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100">
             @error('scheduled_at') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror

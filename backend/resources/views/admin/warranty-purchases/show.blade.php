@@ -34,11 +34,11 @@
                 </div>
                 <div class="flex justify-between py-2">
                     <dt class="text-gray-500">{{ __('admin.warranty_purchases_section.coverage_starts_col') }}</dt>
-                    <dd class="font-medium">{{ $warrantyPurchase->coverage_starts_at?->format('M d, Y') ?? '—' }}</dd>
+                    <dd class="font-medium">{{ admin_tz($warrantyPurchase->coverage_starts_at)?->format('M d, Y') ?? '—' }}</dd>
                 </div>
                 <div class="flex justify-between py-2">
                     <dt class="text-gray-500">{{ __('admin.warranty_purchases_section.coverage_ends_col') }}</dt>
-                    <dd class="font-medium">{{ $warrantyPurchase->coverage_ends_at?->format('M d, Y') ?? '—' }}</dd>
+                    <dd class="font-medium">{{ admin_tz($warrantyPurchase->coverage_ends_at)?->format('M d, Y') ?? '—' }}</dd>
                 </div>
                 <div class="flex justify-between py-2">
                     <dt class="text-gray-500">{{ __('admin.warranty_purchases_section.date_col') }}</dt>

@@ -11,7 +11,6 @@ use App\Models\DeliveryZone;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DeliveryZoneController extends Controller
@@ -23,12 +22,12 @@ class DeliveryZoneController extends Controller
     public function index(): View
     {
         $zones = DeliveryZone::with('country')
-            ->withCount(['agents' => fn($q) => $q->whereIn('status', [DeliveryAgentStatus::Active, DeliveryAgentStatus::OnShift])])
+            ->withCount(['agents' => fn ($q) => $q->whereIn('status', [DeliveryAgentStatus::Active, DeliveryAgentStatus::OnShift])])
             ->orderBy('name')
             ->get();
 
         $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en']);
-        $cities    = City::where('is_active', true)
+        $cities = City::where('is_active', true)
             ->orderBy('name_en')
             ->get(['id', 'country_id', 'name_en', 'name_ar']);
 
@@ -89,11 +88,12 @@ class DeliveryZoneController extends Controller
         // AJAX: return JSON (used by edit modal population)
         if ($request->expectsJson()) {
             $cityDetails = [];
-            if (!empty($zone->city_ids)) {
+            if (! empty($zone->city_ids)) {
                 $cityDetails = City::whereIn('id', $zone->city_ids)
                     ->get(['id', 'name_en', 'name_ar'])
                     ->toArray();
             }
+
             return response()->json(['zone' => $zone, 'city_details' => $cityDetails]);
         }
 
@@ -104,13 +104,13 @@ class DeliveryZoneController extends Controller
             ->orderBy('name')
             ->get();
 
-        $cities = !empty($zone->city_ids)
+        $cities = ! empty($zone->city_ids)
             ? City::whereIn('id', $zone->city_ids)->orderBy('name_en')->get(['id', 'name_en', 'name_ar'])
             : collect();
 
         // Agents from the same country NOT in this zone (for add-to-zone UI)
         $availableAgents = DeliveryAgent::where('country_id', $zone->country_id)
-            ->where(fn($q) => $q->whereNull('zone_id')->orWhere('zone_id', '!=', $zone->id))
+            ->where(fn ($q) => $q->whereNull('zone_id')->orWhere('zone_id', '!=', $zone->id))
             ->whereNull('deleted_at')
             ->orderBy('name')
             ->get(['id', 'name', 'status', 'zone_id']);
@@ -122,9 +122,9 @@ class DeliveryZoneController extends Controller
                 ['label' => 'Zones', 'url' => route('admin.delivery.zones.index')],
                 ['label' => $zone->name],
             ],
-            'zone'            => $zone,
-            'agents'          => $agents,
-            'cities'          => $cities,
+            'zone' => $zone,
+            'agents' => $agents,
+            'cities' => $cities,
             'availableAgents' => $availableAgents,
         ]);
     }
@@ -136,7 +136,7 @@ class DeliveryZoneController extends Controller
         $validated = $request->validate([
             'country_id' => ['required', 'exists:countries,id'],
             'name' => ['required', 'string', 'max:150'],
-            'code' => ['required', 'string', 'max:20', 'unique:delivery_zones,code,' . $zone->id, 'regex:/^[A-Z0-9_-]+$/'],
+            'code' => ['required', 'string', 'max:20', 'unique:delivery_zones,code,'.$zone->id, 'regex:/^[A-Z0-9_-]+$/'],
             'city_ids' => ['nullable', 'array'],
             'city_ids.*' => ['exists:cities,id'],
             'base_delivery_fee' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
@@ -213,14 +213,14 @@ class DeliveryZoneController extends Controller
             ->whereNotNull('current_longitude')
             ->select(['id', 'name', 'status', 'is_available', 'current_latitude', 'current_longitude', 'last_location_at'])
             ->get()
-            ->map(fn($a) => [
+            ->map(fn ($a) => [
                 'id' => $a->id,
                 'name' => $a->name,
                 'status' => $a->status?->value,
                 'is_available' => (bool) $a->is_available,
                 'lat' => (float) $a->current_latitude,
                 'lng' => (float) $a->current_longitude,
-                'updated' => $a->last_location_at?->diffForHumans() ?? 'Unknown',
+                'updated' => admin_tz($a->last_location_at)?->diffForHumans() ?? 'Unknown',
             ]);
 
         return response()->json(['agents' => $agents]);

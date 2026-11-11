@@ -39,7 +39,7 @@
                                 {{ Str::title(str_replace('_',' ',$claim->status->value)) }}
                             </span>
                         </td>
-                        <td class="td text-gray-500 text-xs">{{ $claim->created_at->format('d M Y') }}</td>
+                        <td class="td text-gray-500 text-xs">{{ vendor_tz($claim->created_at)?->format('d M Y') }}</td>
                         <td class="td text-right">
                             <a href="{{ route('partner.claims.show', $claim) }}"
                                class="text-primary-600 hover:underline text-xs font-medium">{{ __('partner.claims.view') }}</a>

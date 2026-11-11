@@ -11,6 +11,7 @@ import type { LiveStreamDetail, StreamComment } from './types';
 import { getImageURL } from '@/src/helpers/get-image-url';
 import RecordedPlayer from './RecordedPlayer';
 import { useRadioPlayer } from './radio-player-context';
+import LocalDateTime from "@/src/components/shared/local-date-time";
 
 function getGuestToken(): string {
   if (typeof window === 'undefined') return '';
@@ -326,7 +327,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
         )}
         {stream.status === 'scheduled' && (
           <span className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full">
-            {t('statusScheduled')} {stream.scheduled_at ? new Date(stream.scheduled_at).toLocaleString() : ''}
+            {t('statusScheduled')} {stream.scheduled_at ? <LocalDateTime value={stream.scheduled_at} /> : ''}
           </span>
         )}
         {(stream.status === 'ended' || viewerEnded) && (

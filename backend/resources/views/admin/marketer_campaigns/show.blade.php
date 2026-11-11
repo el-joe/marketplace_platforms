@@ -127,11 +127,11 @@
                     __('admin.marketer_campaigns.country')                    => $marketerCampaign->country?->name_en ?? '—',
                     __('admin.marketer_campaigns.currency')                   => $marketerCampaign->currency ?? '—',
                     __('admin.marketer_campaigns.max_commission_budget')      => $marketerCampaign->budgetLabel(false),
-                    __('marketer_campaigns.cost.ends_at')                     => $marketerCampaign->ends_at?->format('d M Y') ?? __('marketer_campaigns.cost.no_end_date'),
+                    __('marketer_campaigns.cost.ends_at')                     => admin_tz($marketerCampaign->ends_at)?->format('d M Y') ?? __('marketer_campaigns.cost.no_end_date'),
                     __('marketer_campaigns.wizard.audience')                  => $marketerCampaign->open_to_affiliates ? __('marketer_campaigns.wizard.audience_open') : __('marketer_campaigns.wizard.audience_picked'),
                     __('admin.marketer_campaigns.platform_sample_qty')        => $marketerCampaign->platform_sample_qty_snapshot ?? 0,
                     __('admin.marketer_campaigns.per_marketer_sample_qty')    => $marketerCampaign->per_marketer_sample_qty_snapshot ?? 0,
-                    __('admin.marketer_campaigns.auto_approve_at')            => $marketerCampaign->auto_approve_at?->format('d M Y H:i') ?? '—',
+                    __('admin.marketer_campaigns.auto_approve_at')            => admin_tz($marketerCampaign->auto_approve_at)?->format('d M Y H:i') ?? '—',
                     __('admin.marketer_campaigns.reviewed_by')                => $marketerCampaign->reviewedBy?->name ?? '—',
                     __('admin.marketer_campaigns.reviewed_at')                => admin_tz($marketerCampaign->reviewed_at)?->format('d M Y H:i') ?? '—',
                 ] as $label => $value)
@@ -201,7 +201,7 @@
                             {{ $inv->status }}
                         </span>
                         @if($inv->expires_at && $inv->status === 'pending')
-                            <span class="text-xs text-gray-400">{{ $inv->expires_at->diffForHumans() }}</span>
+                            <span class="text-xs text-gray-400">{{ admin_tz($inv->expires_at)?->diffForHumans() }}</span>
                         @endif
                     </div>
                 </div>
@@ -275,7 +275,7 @@
                                 <tr class="border-b border-gray-50">
                                     <td class="py-2 pr-4 font-medium text-gray-900">{{ $invitation->marketer?->name ?? '—' }}</td>
                                     <td class="py-2 pr-4"><x-badge color="gray">{{ $invitation->status }}</x-badge>
-                                        @if($invitation->replaced_at)<span class="block text-[11px] text-gray-500" data-replaced-at>{{ __('admin.marketer_campaigns.replaced_at', ['date' => $invitation->replaced_at->format('d M Y H:i')]) }}</span>@endif</td>
+                                        @if($invitation->replaced_at)<span class="block text-[11px] text-gray-500" data-replaced-at>{{ __('admin.marketer_campaigns.replaced_at', ['date' => admin_tz($invitation->replaced_at)?->format('d M Y H:i')]) }}</span>@endif</td>
                                     <td class="py-2 pr-4 font-mono text-xs">{{ $invitation->referral_code ?? '—' }}</td>
                                     <td class="py-2 pr-4">
                                         @if($invitation->referral_link)
@@ -493,7 +493,7 @@
                                 <tr class="border-b border-gray-50">
                                     <td class="py-2 pr-4">{{ $conversion->order?->order_number ?? $conversion->order_id }}</td>
                                     <td class="py-2 pr-4">{{ \App\Support\Money::format($conversion->commission_amount) }} {{ $conversion->currency }}</td>
-                                    <td class="py-2 pr-4">{{ $conversion->referral_clicked_at?->format('d M Y H:i') ?? '—' }}</td>
+                                    <td class="py-2 pr-4">{{ admin_tz($conversion->referral_clicked_at)?->format('d M Y H:i') ?? '—' }}</td>
                                     <td class="py-2 pr-4">
                                         @if($conversion->paid_at)
                                             {{ admin_tz($conversion->paid_at)?->format('d M Y H:i') }}
@@ -556,7 +556,7 @@
                                             } }}
                                         </x-badge>
                                     </td>
-                                    <td class="py-2 pr-4 text-xs">{{ $sample->stock_deducted_at?->format('d M Y H:i') ?? '—' }}</td>
+                                    <td class="py-2 pr-4 text-xs">{{ admin_tz($sample->stock_deducted_at)?->format('d M Y H:i') ?? '—' }}</td>
                                     <td class="py-2 pr-4 text-xs" dir="ltr">{{ $sample->stock_deducted_at ? \App\Support\Money::format($sample->commission_amount).' '.$sample->commission_currency : '—' }}</td>
                                     <td class="py-2 pr-4 text-xs text-gray-600 max-w-xs">
                                         @if($sample->sample_owner === 'marketer' && $sample->delivery_address_snapshot)
@@ -577,7 +577,7 @@
                                             <span class="text-gray-300">—</span>
                                         @endif
                                     </td>
-                                    <td class="py-2 pr-4">{{ $sample->dispatched_at?->format('d M Y H:i') ?? '—' }}</td>
+                                    <td class="py-2 pr-4">{{ admin_tz($sample->dispatched_at)?->format('d M Y H:i') ?? '—' }}</td>
                                     <td class="py-2 pr-4">{{ admin_tz($sample->delivered_at)?->format('d M Y H:i') ?? '—' }}</td>
                                     <td class="py-2 pr-4">
                                         @if($sample->status === 'pending' && $sample->invitation && $sample->invitation->status !== 'accepted')

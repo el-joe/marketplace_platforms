@@ -32,7 +32,7 @@
                     <div><span class="text-gray-400">{{ __('admin.gift_cards_section.amount') }}:</span> {{ (int) $card->amount }} {{ $card->currency_code }}</div>
                     <div><span class="text-gray-400">{{ __('admin.gift_cards_section.remaining_balance') }}:</span> {{ (int) $card->remaining_balance }} {{ $card->currency_code }}</div>
                     <div><span class="text-gray-400">{{ __('admin.gift_cards_section.source') }}:</span> {{ $card->source }}</div>
-                    <div><span class="text-gray-400">{{ __('admin.gift_cards_section.expiry') }}:</span> {{ $card->expires_at?->format('Y-m-d H:i') ?? '—' }}</div>
+                    <div><span class="text-gray-400">{{ __('admin.gift_cards_section.expiry') }}:</span> {{ admin_tz($card->expires_at)?->format('Y-m-d H:i') ?? '—' }}</div>
                     <div><span class="text-gray-400">{{ __('admin.gift_cards_section.issued_to') }}:</span> {{ $card->issuedTo?->name ?? '—' }}</div>
                     <div>
                         <span class="text-gray-400">{{ __('admin.gift_cards_section.redeemed_by') }}:</span>

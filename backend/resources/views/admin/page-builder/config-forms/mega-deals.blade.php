@@ -11,7 +11,7 @@
     </div>
 
     <div class="grid grid-cols-2 gap-3 mt-3">
-        <x-form.date-picker name="ends_at" label="Countdown ends at" enableTime :value="$config['ends_at'] ?? ''" />
+        <x-form.date-picker name="ends_at" label="Countdown ends at" enableTime :value="!empty($config['ends_at']) ? \Illuminate\Support\Carbon::parse($config['ends_at']) : ''" />
         <x-form.select name="columns" label="Products per row"
             :value="$config['columns'] ?? 2"
             :options="['2' => '2 columns (2×2 grid)', '3' => '3 columns', '4' => '4 columns']" />

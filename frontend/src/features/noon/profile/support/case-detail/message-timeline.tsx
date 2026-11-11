@@ -1,8 +1,8 @@
-import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import { PaperclipIcon, HeadsetIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import type { CaseMessage } from "../types";
+import LocalDateTime from "@/src/components/shared/local-date-time";
 
 type Props = {
   messages: CaseMessage[];
@@ -30,7 +30,10 @@ export default function MessageTimeline({ messages }: Props) {
                 {t(isCustomer ? "you" : "supportTeam")}
               </span>
               <span>·</span>
-              <span>{format(new Date(message.created_at), "MMM d, h:mm a")}</span>
+              <LocalDateTime
+                value={message.created_at}
+                format={{ month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }}
+              />
             </div>
 
             <div

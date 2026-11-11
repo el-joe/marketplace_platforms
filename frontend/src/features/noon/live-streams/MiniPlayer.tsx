@@ -6,6 +6,7 @@ import useLocale from '@/src/hooks/use-locale';
 import { Link } from '@/i18n/navigation';
 import { getStream } from './api';
 import type { LiveStreamDetail } from './types';
+import LocalDateTime from "@/src/components/shared/local-date-time";
 
 const fmt = (sec: number) => {
   const s = Math.max(0, Math.floor(sec));
@@ -157,7 +158,7 @@ export default function MiniPlayer({ streamId, onClose }: Props) {
         {ended && <p className="px-3 pb-3 text-xs text-gray-300">{t('radioMiniEnded')}</p>}
         {stream && !playback && !ended && (
           <p className="px-3 pb-3 text-xs text-gray-300">
-            {t('statusScheduled')} {stream.scheduled_at ? new Date(stream.scheduled_at).toLocaleString() : ''}
+            {t('statusScheduled')} {stream.scheduled_at ? <LocalDateTime value={stream.scheduled_at} /> : ''}
           </p>
         )}
 

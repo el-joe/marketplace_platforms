@@ -63,15 +63,14 @@ class ActivityLogController extends Controller
             return $this->exportActivityLog($request);
         }
 
-        $today = Carbon::today();
         $lastAt = Activity::max('created_at');
 
         $stats = [
-            'total_today' => Activity::whereDate('created_at', $today)->count(),
+            'total_today' => Activity::whereBetween('created_at', admin_day_range())->count(),
             'admin_actions' => Activity::where('causer_type', Admin::class)
-                ->whereDate('created_at', $today)->count(),
+                ->whereBetween('created_at', admin_day_range())->count(),
             'deletions' => Activity::where('event', 'deleted')
-                ->whereDate('created_at', $today)->count(),
+                ->whereBetween('created_at', admin_day_range())->count(),
             'last_activity' => $lastAt ? Carbon::parse($lastAt)->diffForHumans() : '—',
         ];
 
@@ -118,8 +117,8 @@ class ActivityLogController extends Controller
                 'DT_RowId' => 'al-'.$row->id,
                 'id' => $row->id,
                 'created_at' => $row->created_at,
-                'created_at_formatted' => Carbon::parse($row->created_at)->format('M d, Y H:i'),
-                'time_ago' => Carbon::parse($row->created_at)->diffForHumans(),
+                'created_at_formatted' => admin_tz(Carbon::parse($row->created_at))->format('M d, Y H:i'),
+                'time_ago' => admin_tz(Carbon::parse($row->created_at))->diffForHumans(),
                 'causer_name' => $row->causer_name,
                 'causer_type_label' => $causerLabel,
                 'event' => $row->event,
@@ -166,8 +165,8 @@ class ActivityLogController extends Controller
                 : $q->where('al.causer_type', $v),
             'subject_type' => fn ($q, $v) => $q->where('al.subject_type', $v),
             'causer_id' => fn ($q, $v) => $q->where('al.causer_id', $v),
-            'date_from' => fn ($q, $v) => $q->whereDate('al.created_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('al.created_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('al.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('al.created_at', '<=', admin_day_end($v)),
             'ip_address' => fn ($q, $v) => $q->where('al.ip_address', 'like', "%{$v}%"),
         ]);
     }
@@ -191,7 +190,7 @@ class ActivityLogController extends Controller
                 $row->description,
                 $causerLabel,
                 $subjectLabel,
-                Carbon::parse($row->created_at)->format('d M Y H:i'),
+                admin_tz(Carbon::parse($row->created_at))->format('d M Y H:i'),
             ];
         });
 
@@ -273,8 +272,8 @@ class ActivityLogController extends Controller
             'batch_uuid' => $entry->batch_uuid,
             'ip_address' => $entry->ip_address,
             'user_agent' => $entry->user_agent,
-            'created_at_formatted' => $entry->created_at?->format('M d, Y H:i:s T'),
-            'time_ago' => $entry->created_at?->diffForHumans(),
+            'created_at_formatted' => admin_tz($entry->created_at)?->format('M d, Y H:i:s T'),
+            'time_ago' => admin_tz($entry->created_at)?->diffForHumans(),
             'causer_name' => $causerName,
             'causer_email' => $causerEmail,
             'causer_type_label' => $causerLabel,

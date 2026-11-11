@@ -92,7 +92,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{{ __('partner.packaging_supplies.submitted') }}</p>
-                    <p class="text-gray-700">{{ $req->created_at->format('d M Y, H:i') }}</p>
+                    <p class="text-gray-700">{{ vendor_tz($req->created_at)?->format('d M Y, H:i') }}</p>
                 </div>
                 @if($req->warehouse)
                     <div>

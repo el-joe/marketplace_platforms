@@ -7,6 +7,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\ShippingMethod;
+use App\Support\Timezones;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -29,6 +30,8 @@ class MiscController extends Controller
                 'currency_code' => $country->currency_code,
                 'site_code' => $country->site_code,
                 'cod_available' => $country->cod_available,
+                // IANA zone the storefront shows this country's times in (e.g. "Asia/Dubai").
+                'timezone' => Timezones::forCountry($country),
             ]);
 
         return ApiResponse::success($countries);
@@ -84,16 +87,16 @@ class MiscController extends Controller
             ->orderBy('display_priority')
             ->get()
             ->map(fn (ShippingMethod $method) => [
-                'id'                   => $method->id,
-                'code'                 => $method->code,
-                'name'                 => $method->name,
-                'badge_label_en'       => $method->badge_label_en,
-                'badge_label_ar'       => $method->badge_label_ar,
-                'badge_color_hex'      => $method->badge_color_hex,
+                'id' => $method->id,
+                'code' => $method->code,
+                'name' => $method->name,
+                'badge_label_en' => $method->badge_label_en,
+                'badge_label_ar' => $method->badge_label_ar,
+                'badge_color_hex' => $method->badge_color_hex,
                 'badge_text_color_hex' => $method->badge_text_color_hex,
                 'badge_icon_color_hex' => $method->badge_icon_color_hex,
-                'delivery_days_min'    => $method->min_delivery_days,
-                'delivery_days_max'    => $method->max_delivery_days,
+                'delivery_days_min' => $method->min_delivery_days,
+                'delivery_days_max' => $method->max_delivery_days,
             ]);
 
         return ApiResponse::success($methods, __('common.exceptions.checkout.shipping_methods_retrieved'));

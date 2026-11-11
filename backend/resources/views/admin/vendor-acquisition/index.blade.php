@@ -33,7 +33,7 @@
                         <td class="py-2 pr-4">{{ number_format($commission->commission_rate / 100, 2) }}%</td>
                         <td class="py-2 pr-4">{{ \App\Support\Money::format($commission->total_earned) }} {{ $commission->currency }}</td>
                         <td class="py-2 pr-4"><x-badge :color="$commission->status === 'active' ? 'success' : ($commission->status === 'expired' ? 'gray' : 'danger')">{{ ucfirst($commission->status) }}</x-badge></td>
-                        <td class="py-2 pr-4">{{ $commission->valid_until->format('d M Y') }}</td>
+                        <td class="py-2 pr-4">{{ admin_tz($commission->valid_until)?->format('d M Y') }}</td>
                     </tr>
                 @empty
                     <tr><td colspan="6" class="py-4 text-center text-gray-400">{{ __('common.no_results') ?? 'No records' }}</td></tr>

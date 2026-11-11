@@ -22,14 +22,13 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class WarehouseController extends Controller
 {
-    public function __construct(private readonly VendorWarehouseService $service)
-    {
-    }
+    public function __construct(private readonly VendorWarehouseService $service) {}
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -54,7 +53,7 @@ class WarehouseController extends Controller
             ->get();
 
         $platformWarehouses = Warehouse::where('type', WarehouseType::PlatformFbn->value)
-            ->whereHas('warehouseInventories.vendorListing', fn($q) => $q->where('vendor_id', $vendor->id))
+            ->whereHas('warehouseInventories.vendorListing', fn ($q) => $q->where('vendor_id', $vendor->id))
             ->with('country')
             ->get();
 
@@ -75,8 +74,8 @@ class WarehouseController extends Controller
             ->where('warehouses.type', WarehouseType::SellerOwned->value)
             ->groupBy('warehouses.id')
             ->selectRaw('warehouses.*, '
-                . 'COALESCE(SUM(warehouse_inventories.quantity_on_hand), 0) as total_units, '
-                . 'COUNT(DISTINCT warehouse_inventories.vendor_listing_id) as sku_count');
+                .'COALESCE(SUM(warehouse_inventories.quantity_on_hand), 0) as total_units, '
+                .'COUNT(DISTINCT warehouse_inventories.vendor_listing_id) as sku_count');
 
         if ($search = $request->input('search.value')) {
             $base->where(function ($q) use ($search) {
@@ -97,18 +96,18 @@ class WarehouseController extends Controller
             ->take($request->input('length', 15))
             ->get();
 
-        $rows = $warehouses->map(fn(Warehouse $w) => [
-            'DT_RowId' => 'wh-' . $w->id,
-            'code' => '<span class="text-xs font-bold font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded">' . e($w->code) . '</span>',
+        $rows = $warehouses->map(fn (Warehouse $w) => [
+            'DT_RowId' => 'wh-'.$w->id,
+            'code' => '<span class="text-xs font-bold font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded">'.e($w->code).'</span>',
             'name' => e($w->name),
             'country' => e($w->country?->name_en ?? '—'),
             'total_units' => number_format((int) $w->total_units),
             'sku_count' => (int) $w->sku_count,
             'status' => $w->is_active
-                ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">' . __('partner.warehouses.active') . '</span>'
-                : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">' . __('partner.warehouses.inactive') . '</span>',
-            'actions' => '<a href="' . route('partner.warehouses.show', $w->id) . '" class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors">'
-                . __('partner.warehouses.manage') . '</a>',
+                ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">'.__('partner.warehouses.active').'</span>'
+                : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">'.__('partner.warehouses.inactive').'</span>',
+            'actions' => '<a href="'.route('partner.warehouses.show', $w->id).'" class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors">'
+                .__('partner.warehouses.manage').'</a>',
         ]);
 
         return response()->json([
@@ -132,8 +131,8 @@ class WarehouseController extends Controller
             ->where('vendor_listings.vendor_id', $vendorId)
             ->groupBy('warehouses.id')
             ->selectRaw('warehouses.*, '
-                . 'COALESCE(SUM(warehouse_inventories.quantity_on_hand), 0) as my_units, '
-                . 'COUNT(DISTINCT warehouse_inventories.vendor_listing_id) as my_sku_count');
+                .'COALESCE(SUM(warehouse_inventories.quantity_on_hand), 0) as my_units, '
+                .'COUNT(DISTINCT warehouse_inventories.vendor_listing_id) as my_sku_count');
 
         if ($search = $request->input('search.value')) {
             $base->where('warehouses.name', 'like', "%{$search}%");
@@ -148,14 +147,14 @@ class WarehouseController extends Controller
             ->take($request->input('length', 15))
             ->get();
 
-        $rows = $warehouses->map(fn(Warehouse $w) => [
-            'DT_RowId' => 'wh-' . $w->id,
+        $rows = $warehouses->map(fn (Warehouse $w) => [
+            'DT_RowId' => 'wh-'.$w->id,
             'name' => e($w->name),
             'country' => e($w->country?->name_en ?? '—'),
             'my_units' => number_format((int) $w->my_units),
             'my_sku_count' => (int) $w->my_sku_count,
-            'actions' => '<a href="' . route('partner.warehouses.show', $w->id) . '" class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">'
-                . __('partner.warehouses.view_inventory_here') . '</a>',
+            'actions' => '<a href="'.route('partner.warehouses.show', $w->id).'" class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">'
+                .__('partner.warehouses.view_inventory_here').'</a>',
         ]);
 
         return response()->json([
@@ -214,14 +213,14 @@ class WarehouseController extends Controller
         $vendorId = $this->vendorAdmin()->vendor_id;
         $isOwned = $warehouse->owner_vendor_id === $vendorId;
 
-        if (!$isOwned) {
+        if (! $isOwned) {
             // Allow read-only view of platform FBN if they have stock there
             $hasFbnInventory = $warehouse->type === WarehouseType::PlatformFbn
                 && $warehouse->warehouseInventories()
-                    ->whereHas('vendorListing', fn($q) => $q->where('vendor_id', $vendorId))
+                    ->whereHas('vendorListing', fn ($q) => $q->where('vendor_id', $vendorId))
                     ->exists();
 
-            if (!$hasFbnInventory) {
+            if (! $hasFbnInventory) {
                 abort(403);
             }
         }
@@ -249,7 +248,7 @@ class WarehouseController extends Controller
             ->where('is_active', 1)
             ->orderBy('name')
             ->get()
-            ->filter(fn(ShippingZone $zone) => $zone->hasGapRates())
+            ->filter(fn (ShippingZone $zone) => $zone->hasGapRates())
             ->values();
 
         $optedIn = WarehouseExceptionalZone::where('warehouse_id', $warehouse->id)
@@ -265,7 +264,7 @@ class WarehouseController extends Controller
             ->get()
             ->groupBy('shipping_zone_id');
 
-        return $zones->map(fn(ShippingZone $zone) => [
+        return $zones->map(fn (ShippingZone $zone) => [
             'zone' => $zone,
             'is_opted_in' => (bool) ($optedIn[$zone->id] ?? false),
             'subsidy_rules' => $subsidyRules->get($zone->id, collect()),
@@ -287,8 +286,8 @@ class WarehouseController extends Controller
             ['is_active' => true]
         );
 
-        if (!$exceptionalZone->wasRecentlyCreated) {
-            $exceptionalZone->update(['is_active' => !$exceptionalZone->is_active]);
+        if (! $exceptionalZone->wasRecentlyCreated) {
+            $exceptionalZone->update(['is_active' => ! $exceptionalZone->is_active]);
         }
 
         return response()->json(['success' => true, 'is_active' => $exceptionalZone->is_active]);
@@ -336,29 +335,29 @@ class WarehouseController extends Controller
         $vendorId = $this->vendorAdmin()->vendor_id;
         $isOwned = $warehouse->owner_vendor_id === $vendorId;
 
-        if (!$isOwned) {
+        if (! $isOwned) {
             // Platform FBN warehouses aren't owned by the vendor, but the vendor
             // may still view (read-only) the slice of inventory that is theirs.
             $hasFbnInventory = $warehouse->type === WarehouseType::PlatformFbn
                 && $warehouse->warehouseInventories()
-                    ->whereHas('vendorListing', fn($q) => $q->where('vendor_id', $vendorId))
+                    ->whereHas('vendorListing', fn ($q) => $q->where('vendor_id', $vendorId))
                     ->exists();
 
-            if (!$hasFbnInventory) {
+            if (! $hasFbnInventory) {
                 abort(403);
             }
         }
 
         $query = WarehouseInventory::where('warehouse_id', $warehouse->id)
-            ->whereHas('vendorListing', fn($q) => $q->where('vendor_id', $vendorId))
+            ->whereHas('vendorListing', fn ($q) => $q->where('vendor_id', $vendorId))
             ->with(['vendorListing.productVariant.product.images']);
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
-                $q->whereHas('vendorListing.productVariant.product', fn($p) => $p
+                $q->whereHas('vendorListing.productVariant.product', fn ($p) => $p
                     ->where('name_en', 'like', "%{$search}%")
                     ->orWhere('name_ar', 'like', "%{$search}%"))
-                    ->orWhereHas('vendorListing', fn($vl) => $vl->where('vendor_sku', 'like', "%{$search}%"))
+                    ->orWhereHas('vendorListing', fn ($vl) => $vl->where('vendor_sku', 'like', "%{$search}%"))
                     ->orWhere('bin_location', 'like', "%{$search}%");
             });
         }
@@ -397,7 +396,7 @@ class WarehouseController extends Controller
                 'reorder_point' => $inv->reorder_point,
                 'is_low_stock' => $isLowStock,
                 'is_out_of_stock' => $isOutOfStock,
-                'last_counted_at_human' => $inv->last_counted_at?->diffForHumans(),
+                'last_counted_at_human' => vendor_tz($inv->last_counted_at)?->diffForHumans(),
                 'is_owned_warehouse' => (bool) $warehouse->owner_vendor_id,
             ];
         });
@@ -417,7 +416,7 @@ class WarehouseController extends Controller
         $request->validate([
             'adjustment' => ['required', 'integer'],
             'reason' => ['required', 'string', 'max:255'],
-            'movement_type' => ['required', \Illuminate\Validation\Rule::enum(InventoryMovementType::class)],
+            'movement_type' => ['required', Rule::enum(InventoryMovementType::class)],
         ]);
 
         try {
@@ -531,14 +530,14 @@ class WarehouseController extends Controller
             ->take($request->input('length', 15))
             ->get();
 
-        $rows = $transfers->map(fn(InventoryTransfer $t) => [
-            'DT_RowId' => 'tr-' . $t->id,
-            'number' => '<a href="' . route('partner.warehouses.transfers.show', $t->id) . '" class="font-mono text-sm text-primary-600 hover:underline">' . e($t->transfer_number) . '</a>',
+        $rows = $transfers->map(fn (InventoryTransfer $t) => [
+            'DT_RowId' => 'tr-'.$t->id,
+            'number' => '<a href="'.route('partner.warehouses.transfers.show', $t->id).'" class="font-mono text-sm text-primary-600 hover:underline">'.e($t->transfer_number).'</a>',
             'source' => e($t->sourceWarehouse?->name ?? '—'),
             'destination' => e($t->destinationWarehouse?->name ?? '—'),
             'status' => $this->transferStatusBadge($t->status->value),
-            'date' => $t->created_at->format('d M Y'),
-            'actions' => '<a href="' . route('partner.warehouses.transfers.show', $t->id) . '" class="inline-flex items-center px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">View</a>',
+            'date' => vendor_tz($t->created_at)?->format('d M Y'),
+            'actions' => '<a href="'.route('partner.warehouses.transfers.show', $t->id).'" class="inline-flex items-center px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">View</a>',
         ]);
 
         return response()->json([
@@ -558,7 +557,7 @@ class WarehouseController extends Controller
         $myWarehouses = Warehouse::where('owner_vendor_id', $vendor->id)->get();
 
         $destinationOptions = Warehouse::where('is_active', 1)
-            ->where(fn($q) => $q
+            ->where(fn ($q) => $q
                 ->where('owner_vendor_id', $vendor->id)
                 ->orWhere('type', WarehouseType::PlatformFbn->value))
             ->get();
@@ -578,7 +577,7 @@ class WarehouseController extends Controller
     {
         $request->validate([
             'source_warehouse_id' => ['required', 'exists:warehouses,id'],
-            'search'              => ['nullable', 'string', 'max:100'],
+            'search' => ['nullable', 'string', 'max:100'],
         ]);
 
         $vendor = $this->vendor();
@@ -594,13 +593,13 @@ class WarehouseController extends Controller
             ->where('warehouse_inventories.warehouse_id', $warehouseId)
             ->selectRaw(
                 'vendor_listings.id, '
-                . 'vendor_listings.vendor_sku, '
-                . 'p.name_en, '
-                . 'p.name_ar, '
-                . 'pv.sku, '
-                . 'warehouse_inventories.quantity_on_hand, '
-                . 'warehouse_inventories.quantity_reserved, '
-                . '(warehouse_inventories.quantity_on_hand - warehouse_inventories.quantity_reserved) as available_stock'
+                .'vendor_listings.vendor_sku, '
+                .'p.name_en, '
+                .'p.name_ar, '
+                .'pv.sku, '
+                .'warehouse_inventories.quantity_on_hand, '
+                .'warehouse_inventories.quantity_reserved, '
+                .'(warehouse_inventories.quantity_on_hand - warehouse_inventories.quantity_reserved) as available_stock'
             );
 
         if ($search !== '') {
@@ -612,7 +611,7 @@ class WarehouseController extends Controller
             });
         }
 
-        $items = $query->limit(20)->get()->map(fn($row) => [
+        $items = $query->limit(20)->get()->map(fn ($row) => [
             'id' => $row->id,
             'name_en' => $row->name_en,
             'name_ar' => $row->name_ar,
@@ -709,7 +708,7 @@ class WarehouseController extends Controller
             default => 'bg-gray-100 text-gray-600',
         };
 
-        return '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $classes . '">'
-            . ucfirst(str_replace('_', ' ', $status)) . '</span>';
+        return '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$classes.'">'
+            .ucfirst(str_replace('_', ' ', $status)).'</span>';
     }
 }

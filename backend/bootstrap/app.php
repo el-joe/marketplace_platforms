@@ -5,6 +5,7 @@ use App\Http\Middleware\CarrierApiActive;
 use App\Http\Middleware\CarrierApiAuth;
 use App\Http\Middleware\CarrierPermission;
 use App\Http\Middleware\CheckAdminPermission;
+use App\Http\Middleware\ConvertAdminDateTimeInputs;
 use App\Http\Middleware\DeliveryApiActive;
 use App\Http\Middleware\DeliveryApiAuth;
 use App\Http\Middleware\DeliveryAuth;
@@ -113,6 +114,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.admin' => AdminAuth::class,
             'auth.optional' => OptionalCustomerAuth::class,
             'admin.permission' => CheckAdminPermission::class,
+            'admin.timezone' => ConvertAdminDateTimeInputs::class,
             'admin.vendor.scope' => ScopeAdminToAssignedVendor::class,
             'vendor.auth' => VendorAuth::class,
             'vendor.active' => VendorActive::class,

@@ -12084,4 +12084,8 @@ return [
         'approval_email_sent' => 'Vendor approved. The approval email with the login link was sent to :email.',
         'approval_owner_conflict' => 'The store owner email :email already belongs to another seller account. Resolve the duplicate before approving.',
     ],
+
+    'timezone' => [
+        'input_hint' => 'Oman time (:zone)',
+    ],
 ];

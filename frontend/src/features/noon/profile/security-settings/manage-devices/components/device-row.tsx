@@ -1,9 +1,9 @@
-import { format } from "date-fns";
 import { Laptop2Icon, SmartphoneIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { getDevicePlatformLabelKey } from "../../helpers/to-device-display";
 import type { ActiveSession } from "../../helpers/types";
+import LocalDateTime from "@/src/components/shared/local-date-time";
 
 type Props = {
   device: ActiveSession;
@@ -27,7 +27,7 @@ export default async function DeviceRow({ device, action }: Props) {
         <div>
           <p className="font-bold">{t(getDevicePlatformLabelKey(device.platform))}</p>
           <p className="mt-0.5 text-sm text-gray">
-            {t("signedInOn")} {format(new Date(device.last_used_at), "dd MMM yyyy")}
+            {t("signedInOn")} <LocalDateTime value={device.last_used_at} withTime={false} />
           </p>
         </div>
       </div>

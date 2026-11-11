@@ -15,6 +15,9 @@
         if ($current instanceof \BackedEnum) {
             $current = $current->value;
         }
+        if ($current instanceof \Carbon\CarbonInterface) {
+            $current = admin_input_value($current);
+        }
         return old($field, $current);
     };
 

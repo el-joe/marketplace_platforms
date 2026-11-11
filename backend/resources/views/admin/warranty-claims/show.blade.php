@@ -104,7 +104,7 @@
                                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-200 text-yellow-800">{{ __('admin.warranty_claims_section.internal_note_badge') }}</span>
                                 @endif
                                 <span class="text-xs text-gray-400 ml-auto">
-                                    {{ $msg->created_at ? \Carbon\Carbon::parse($msg->created_at)->format('M d, Y H:i') : '' }}
+                                    {{ $msg->created_at ? admin_tz(\Carbon\Carbon::parse($msg->created_at))->format('M d, Y H:i') : '' }}
                                 </span>
                             </div>
                             <div class="text-sm text-gray-800 whitespace-pre-wrap">{{ $msg->message }}</div>
@@ -262,12 +262,12 @@
 
                     <div>
                         <dt class="text-xs text-gray-500 mb-0.5">{{ __('admin.warranty_claims_section.purchase_date') }}</dt>
-                        <dd class="text-sm text-gray-700">{{ $claim->purchase_date?->format('M d, Y') }}</dd>
+                        <dd class="text-sm text-gray-700">{{ admin_tz($claim->purchase_date)?->format('M d, Y') }}</dd>
                     </div>
 
                     <div>
                         <dt class="text-xs text-gray-500 mb-0.5">{{ __('admin.warranty_claims_section.warranty_expires_at') }}</dt>
-                        <dd class="text-sm text-gray-700">{{ $claim->warranty_expires_at?->format('M d, Y') }}</dd>
+                        <dd class="text-sm text-gray-700">{{ admin_tz($claim->warranty_expires_at)?->format('M d, Y') }}</dd>
                     </div>
 
                     <div>
@@ -279,7 +279,7 @@
                         <div>
                             <dt class="text-xs text-gray-500 mb-0.5">{{ __('admin.warranty_claims_section.resolved_at') }}</dt>
                             <dd class="text-sm text-green-700">
-                                {{ \Carbon\Carbon::parse($claim->resolved_at)->format('M d, Y H:i') }}
+                                {{ admin_tz(\Carbon\Carbon::parse($claim->resolved_at))->format('M d, Y H:i') }}
                             </dd>
                         </div>
                     @endif

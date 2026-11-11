@@ -19,7 +19,7 @@
 
     @if ($upcoming)
         <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-            <p class="font-semibold">{{ __('partner.legal.upcoming_title', ['version' => $upcoming->version, 'date' => $upcoming->effective_at->format('d/m/Y')]) }}</p>
+            <p class="font-semibold">{{ __('partner.legal.upcoming_title', ['version' => $upcoming->version, 'date' => vendor_tz($upcoming->effective_at)?->format('d/m/Y')]) }}</p>
             <p class="mt-1">{{ __('partner.legal.upcoming_body') }}</p>
             @if ($upcoming->change_summary)
                 <p class="mt-2 whitespace-pre-line text-xs">{{ $upcoming->change_summary }}</p>

@@ -11,10 +11,14 @@ use App\Models\DisputeMessage;
 use App\Notifications\Customer\DisputeStatusChanged;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DisputeController extends Controller
 {
@@ -25,7 +29,7 @@ class DisputeController extends Controller
     // Index
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('disputes.view'), 403);
@@ -77,32 +81,32 @@ class DisputeController extends Controller
 
         return $this->dataTableResponse($request, $query, $columns, function ($d) {
             $statusBadge = $this->statusBadgeClass($d->status->value);
-            $reasonLabel = __('admin.disputes_section.reason_' . $d->reason->value);
-            $statusLabel = __('admin.disputes_section.' . $d->status->value);
+            $reasonLabel = __('admin.disputes_section.reason_'.$d->reason->value);
+            $statusLabel = __('admin.disputes_section.'.$d->status->value);
 
             $isHot = in_array($d->status->value, ['open', 'escalated'], true)
-                && \Carbon\Carbon::parse($d->created_at)->diffInHours(now()) > 48;
+                && Carbon::parse($d->created_at)->diffInHours(now()) > 48;
 
             $showUrl = route('admin.disputes.show', $d->id);
 
             $orderCell = $d->order_number
-                ? '<a href="' . route('admin.orders.show', $d->order_id) . '" class="text-xs font-mono text-primary-600 hover:underline">' . e($d->order_number) . '</a>'
+                ? '<a href="'.route('admin.orders.show', $d->order_id).'" class="text-xs font-mono text-primary-600 hover:underline">'.e($d->order_number).'</a>'
                 : '<span class="text-xs text-gray-300">—</span>';
 
             return [
-                'DT_RowId' => 'dsp-' . $d->id,
+                'DT_RowId' => 'dsp-'.$d->id,
                 'DT_RowClass' => $isHot ? 'bg-red-50' : '',
-                'dispute_number' => '<a href="' . $showUrl . '" class="font-mono font-medium text-primary-600 hover:underline text-xs">' . e($d->dispute_number) . '</a>',
+                'dispute_number' => '<a href="'.$showUrl.'" class="font-mono font-medium text-primary-600 hover:underline text-xs">'.e($d->dispute_number).'</a>',
                 'order' => $orderCell,
-                'customer' => '<span class="text-sm text-gray-700">' . e($d->customer_name ?? '—') . '</span>',
-                'vendor' => '<span class="text-sm text-gray-700">' . e($d->vendor_store_name ?? '—') . '</span>',
-                'reason' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">' . e($reasonLabel) . '</span>',
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e($statusLabel) . '</span>',
+                'customer' => '<span class="text-sm text-gray-700">'.e($d->customer_name ?? '—').'</span>',
+                'vendor' => '<span class="text-sm text-gray-700">'.e($d->vendor_store_name ?? '—').'</span>',
+                'reason' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">'.e($reasonLabel).'</span>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$statusBadge.'">'.e($statusLabel).'</span>',
                 'assigned_to' => $d->assigned_admin_name
-                    ? '<span class="text-xs text-gray-700">' . e($d->assigned_admin_name) . '</span>'
-                    : '<span class="text-xs text-gray-300 italic">' . e(__('admin.disputes_section.unassigned')) . '</span>',
-                'created_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">' . \Carbon\Carbon::parse($d->created_at)->format('M d, Y H:i') . '</span>',
-                'actions' => '<a href="' . $showUrl . '" class="btn btn-xs btn-secondary">' . e(__('common.view')) . '</a>',
+                    ? '<span class="text-xs text-gray-700">'.e($d->assigned_admin_name).'</span>'
+                    : '<span class="text-xs text-gray-300 italic">'.e(__('admin.disputes_section.unassigned')).'</span>',
+                'created_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">'.admin_tz(Carbon::parse($d->created_at))->format('M d, Y H:i').'</span>',
+                'actions' => '<a href="'.$showUrl.'" class="btn btn-xs btn-secondary">'.e(__('common.view')).'</a>',
             ];
         });
     }
@@ -111,7 +115,7 @@ class DisputeController extends Controller
     // Query builder (shared by datatable + export)
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildDisputesQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildDisputesQuery(Request $request): Builder
     {
         $query = Dispute::query()
             ->leftJoin('admins', 'admins.id', '=', 'disputes.assigned_to_admin_id')
@@ -127,14 +131,14 @@ class DisputeController extends Controller
             );
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where('disputes.dispute_number', 'like', '%' . $v . '%'),
-            'status' => fn($q, $v) => $q->where('disputes.status', $v),
-            'reason' => fn($q, $v) => $q->where('disputes.reason', $v),
-            'resolution' => fn($q, $v) => $q->where('disputes.resolution', $v),
-            'assigned_to_admin_id' => fn($q, $v) => $q->where('disputes.assigned_to_admin_id', $v),
-            'unassigned' => fn($q, $v) => $v ? $q->whereNull('disputes.assigned_to_admin_id') : $q,
-            'date_from' => fn($q, $v) => $q->whereDate('disputes.created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('disputes.created_at', '<=', $v),
+            'search' => fn ($q, $v) => $q->where('disputes.dispute_number', 'like', '%'.$v.'%'),
+            'status' => fn ($q, $v) => $q->where('disputes.status', $v),
+            'reason' => fn ($q, $v) => $q->where('disputes.reason', $v),
+            'resolution' => fn ($q, $v) => $q->where('disputes.resolution', $v),
+            'assigned_to_admin_id' => fn ($q, $v) => $q->where('disputes.assigned_to_admin_id', $v),
+            'unassigned' => fn ($q, $v) => $v ? $q->whereNull('disputes.assigned_to_admin_id') : $q,
+            'date_from' => fn ($q, $v) => $q->where('disputes.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('disputes.created_at', '<=', admin_day_end($v)),
         ]);
     }
 
@@ -142,18 +146,18 @@ class DisputeController extends Controller
     // Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function exportDisputes(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportDisputes(Request $request): StreamedResponse
     {
         $disputes = $this->buildDisputesQuery($request)->orderByDesc('disputes.created_at')->get();
 
         $headers = ['Dispute #', 'Order #', 'Status', 'Reason', 'Date'];
 
-        $rows = $disputes->map(fn($d) => [
+        $rows = $disputes->map(fn ($d) => [
             $d->dispute_number,
             $d->order_number,
             $d->status?->value,
             $d->reason?->value,
-            optional($d->created_at)->format('d M Y H:i'),
+            optional(admin_tz($d->created_at))->format('d M Y H:i'),
         ]);
 
         return match ($request->input('export')) {
@@ -168,13 +172,13 @@ class DisputeController extends Controller
     // Show
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function show(Dispute $dispute): \Illuminate\View\View
+    public function show(Dispute $dispute): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('disputes.view'), 403);
 
         $dispute->load([
-            'messages' => fn($q) => $q->orderBy('created_at', 'asc'),
+            'messages' => fn ($q) => $q->orderBy('created_at', 'asc'),
             'assignedToAdmin:id,name,email',
             'order:id,order_number,status,payment_status,total,currency',
             'subOrder:id,sub_order_number,status,subtotal,vendor_payout',
@@ -218,13 +222,14 @@ class DisputeController extends Controller
 
             // Advance status from open → under_review on first admin (non-internal) reply
             $previousStatus = $dispute->status->value;
-            if (!$isInternal && $dispute->status === DisputeStatus::Open) {
+            if (! $isInternal && $dispute->status === DisputeStatus::Open) {
                 $dispute->update(['status' => 'under_review']);
             }
 
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json(['message' => __('admin.disputes_section.reply_failed')], 500);
         }
 
@@ -305,9 +310,9 @@ class DisputeController extends Controller
 
         $updates = ['status' => $data['status']];
 
-        if (in_array($data['status'], ['resolved', 'closed'], true) && !$dispute->resolved_at) {
+        if (in_array($data['status'], ['resolved', 'closed'], true) && ! $dispute->resolved_at) {
             $updates['resolved_at'] = now();
-        } elseif (!in_array($data['status'], ['resolved', 'closed'], true)) {
+        } elseif (! in_array($data['status'], ['resolved', 'closed'], true)) {
             $updates['resolved_at'] = null;
         }
 
@@ -350,7 +355,7 @@ class DisputeController extends Controller
                 'compensation' => isset($data['compensation'])
                     ? round((float) $data['compensation'], 2)
                     : null,
-                'status' => !empty($data['close']) ? 'closed' : 'resolved',
+                'status' => ! empty($data['close']) ? 'closed' : 'resolved',
                 'resolved_at' => $dispute->resolved_at ?? now(),
                 'assigned_to_admin_id' => $dispute->assigned_to_admin_id ?? $admin->id,
             ]);
@@ -361,13 +366,13 @@ class DisputeController extends Controller
                 'sender_user_id' => $admin->id,
                 'sender_role' => 'admin',
                 'message' => sprintf(
-                    "[%s] %s%s%s",
+                    '[%s] %s%s%s',
                     __('admin.disputes_section.resolution'),
-                    __('admin.disputes_section.' . $data['resolution']),
+                    __('admin.disputes_section.'.$data['resolution']),
                     isset($data['compensation']) && (float) $data['compensation'] > 0
-                    ? ' — ' . __('admin.disputes_section.compensation_col') . ': ' . number_format((float) $data['compensation'], 2)
+                    ? ' — '.__('admin.disputes_section.compensation_col').': '.number_format((float) $data['compensation'], 2)
                     : '',
-                    !empty($data['resolution_notes']) ? "\n" . $data['resolution_notes'] : ''
+                    ! empty($data['resolution_notes']) ? "\n".$data['resolution_notes'] : ''
                 ),
                 'is_internal_note' => false,
                 'created_at' => now(),
@@ -376,6 +381,7 @@ class DisputeController extends Controller
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json(['message' => __('admin.disputes_section.resolve_failed')], 500);
         }
 

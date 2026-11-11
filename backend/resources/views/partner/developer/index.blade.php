@@ -87,8 +87,8 @@
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $token->name }}</td>
                         <td class="px-4 py-3"><code class="text-xs bg-gray-100 rounded px-2 py-0.5 font-mono text-gray-700">{{ $token->token_prefix }}…</code></td>
-                        <td class="px-4 py-3 text-sm text-gray-500">{{ $token->last_used_at?->diffForHumans() ?? 'Never' }}</td>
-                        <td class="px-4 py-3 text-sm text-gray-500">{{ $token->created_at->format('M j, Y') }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-500">{{ vendor_tz($token->last_used_at)?->diffForHumans() ?? 'Never' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-500">{{ vendor_tz($token->created_at)?->format('M j, Y') }}</td>
                         @if(auth()->guard('vendor')->user()->is_owner || auth()->guard('vendor')->user()->isManager())
                         <td class="px-4 py-3 text-right">
                             <button @click="confirmRevoke({{ $token->id }}, @js($token->name))" class="text-sm text-red-600 hover:text-red-800 font-medium transition">Revoke</button>

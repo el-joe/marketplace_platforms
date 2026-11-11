@@ -42,7 +42,7 @@ class RecordedStreamTest extends TestCase
 
         $this->actingAs($this->admin(), 'admin')->post(route('admin.live-streams.store'), [
             'source' => 'recorded', 'title_en' => 'R', 'title_ar' => 'ر',
-            'scheduled_at' => $start->format('Y-m-d\TH:i'),
+            'scheduled_at' => admin_input_value($start, 'Y-m-d\TH:i'),
             'media' => UploadedFile::fake()->create('show.mp3', 100, 'audio/mpeg'),
             'duration_seconds' => 125,
         ])->assertRedirect(route('admin.live-streams.index'));
@@ -128,7 +128,7 @@ class RecordedStreamTest extends TestCase
         $start = now()->addDay()->startOfMinute();
 
         $this->actingAs($admin, 'admin')->put(route('admin.live-streams.update', $channel), [
-            'title_en' => 'Radio', 'title_ar' => 'راديو', 'scheduled_at' => $start->format('Y-m-d\TH:i'),
+            'title_en' => 'Radio', 'title_ar' => 'راديو', 'scheduled_at' => admin_input_value($start, 'Y-m-d\TH:i'),
         ])->assertRedirect();
 
         $fresh = $channel->fresh();

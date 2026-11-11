@@ -105,10 +105,10 @@
                                 </span>
                             </td>
                             <td class="py-3 px-4 text-right text-xs text-gray-400">
-                                {{ $cr->created_at->format('Y/m/d H:i') }}
+                                {{ vendor_tz($cr->created_at)?->format('Y/m/d H:i') }}
                             </td>
                             <td class="py-3 px-4 text-right text-xs text-gray-400">
-                                {{ $cr->reviewed_at?->format('Y/m/d H:i') ?? '—' }}
+                                {{ vendor_tz($cr->reviewed_at)?->format('Y/m/d H:i') ?? '—' }}
                             </td>
                             <td class="py-3 px-4 text-xs text-gray-600">
                                 {{ $cr->admin_note ?? '—' }}

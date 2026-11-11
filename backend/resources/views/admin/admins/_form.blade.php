@@ -53,7 +53,7 @@
                 <p class="text-sm text-gray-500 mt-1">
                     {{ __('admin.admins_section.member_since') }} {{ admin_tz($model->created_at)?->format('M d, Y') }}
                     @if($model->last_login_at)
-                        · {{ __('admin.admins_section.last_login') }} {{ $model->last_login_at->diffForHumans() }}
+                        · {{ __('admin.admins_section.last_login') }} {{ admin_tz($model->last_login_at)?->diffForHumans() }}
                     @endif
                 </p>
             @endif

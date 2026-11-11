@@ -1,10 +1,10 @@
-import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import Card from "@/src/components/shared/Card";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import type { CaseDetails } from "../types";
 import { priorityVariant, statusVariant } from "../case-status";
+import LocalDateTime from "@/src/components/shared/local-date-time";
 
 type Props = {
   data: CaseDetails;
@@ -89,12 +89,12 @@ export default function CaseInfo({ data }: Props) {
 
       <InfoRow
         label={t("createdAt")}
-        value={format(new Date(data.created_at), "MMM d, yyyy 'at' h:mm a")}
+        value={<LocalDateTime value={data.created_at} />}
       />
       {data.resolved_at && (
         <InfoRow
           label={t("resolvedAt")}
-          value={format(new Date(data.resolved_at), "MMM d, yyyy 'at' h:mm a")}
+          value={<LocalDateTime value={data.resolved_at} />}
         />
       )}
     </Card>

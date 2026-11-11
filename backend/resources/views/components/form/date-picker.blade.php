@@ -12,6 +12,13 @@
 ])
 
 @php
+    // Admin panel works in Oman time: a Carbon value (stored UTC) is shown in the admin timezone.
+    if ($value instanceof \Carbon\CarbonInterface) {
+        $value = $enableTime ? admin_input_value($value) : $value->format('Y-m-d');
+    }
+    if ($enableTime && !$helpText) {
+        $helpText = __('admin.timezone.input_hint', ['zone' => tz_label(admin_tz(now()))]);
+    }
     $hasError    = $errors->has($name);
     $placeholder = $placeholder ?? ($enableTime ? 'YYYY-MM-DD HH:MM' : 'YYYY-MM-DD');
     $inputClass  = 'block w-full rounded-lg border px-3 py-2 text-sm text-gray-900 '

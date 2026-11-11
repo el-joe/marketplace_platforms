@@ -248,14 +248,14 @@
                     @if($returnRequest->pickup_scheduled_at)
                         <div>
                             <dt class="text-xs text-gray-500 mb-0.5">{{ __('admin.returns_section.pickup_scheduled_at') }}</dt>
-                            <dd class="text-sm text-gray-700">{{ \Carbon\Carbon::parse($returnRequest->pickup_scheduled_at)->format('M d, Y') }}</dd>
+                            <dd class="text-sm text-gray-700">{{ admin_tz(\Carbon\Carbon::parse($returnRequest->pickup_scheduled_at))->format('M d, Y') }}</dd>
                         </div>
                     @endif
 
                     @if($returnRequest->received_at_warehouse_at)
                         <div>
                             <dt class="text-xs text-gray-500 mb-0.5">{{ __('admin.returns_section.received_at') }}</dt>
-                            <dd class="text-sm text-gray-700">{{ \Carbon\Carbon::parse($returnRequest->received_at_warehouse_at)->format('M d, Y H:i') }}</dd>
+                            <dd class="text-sm text-gray-700">{{ admin_tz(\Carbon\Carbon::parse($returnRequest->received_at_warehouse_at))->format('M d, Y H:i') }}</dd>
                         </div>
                     @endif
 

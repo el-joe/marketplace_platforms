@@ -99,7 +99,7 @@ class DeliveryPayoutController extends Controller
                 'currency' => $payout->currency,
                 'status' => $payout->status->value,
                 'status_label' => $payout->status->label(),
-                'processed_at' => $payout->processed_at?->format('d M Y H:i') ?? '—',
+                'processed_at' => admin_tz($payout->processed_at)?->format('d M Y H:i') ?? '—',
             ];
         });
     }

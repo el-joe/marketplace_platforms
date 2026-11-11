@@ -16,7 +16,7 @@ class TravelAgencyController extends Controller
     public function index()
     {
         $pendingCount = TravelAgency::where('status', TravelAgencyStatus::Pending)->count();
-        $countries    = Country::orderBy('name_en')->get(['id', 'name_en']);
+        $countries = Country::orderBy('name_en')->get(['id', 'name_en']);
 
         return view('admin.travel-agencies.index', compact('pendingCount', 'countries'));
     }
@@ -38,27 +38,27 @@ class TravelAgencyController extends Controller
         if ($q = $request->input('search')) {
             $query->where(function ($qb) use ($q) {
                 $qb->where('name', 'like', "%{$q}%")
-                   ->orWhere('email', 'like', "%{$q}%");
+                    ->orWhere('email', 'like', "%{$q}%");
             });
         }
 
         $agencies = $query->latest()->paginate(25);
 
         return response()->json([
-            'data' => $agencies->map(fn(TravelAgency $a) => [
-                'id'           => $a->id,
-                'name'         => $a->name,
-                'email'        => $a->email,
-                'country'      => $a->country?->name_en,
-                'status'       => $a->status?->value,
-                'packages'     => $a->packages()->count(),
-                'approved_at'  => $a->approved_at?->format('d M Y'),
-                'created_at'   => $a->created_at->format('d M Y'),
+            'data' => $agencies->map(fn (TravelAgency $a) => [
+                'id' => $a->id,
+                'name' => $a->name,
+                'email' => $a->email,
+                'country' => $a->country?->name_en,
+                'status' => $a->status?->value,
+                'packages' => $a->packages()->count(),
+                'approved_at' => admin_tz($a->approved_at)?->format('d M Y'),
+                'created_at' => admin_tz($a->created_at)?->format('d M Y'),
             ]),
             'meta' => [
-                'total'        => $agencies->total(),
+                'total' => $agencies->total(),
                 'current_page' => $agencies->currentPage(),
-                'last_page'    => $agencies->lastPage(),
+                'last_page' => $agencies->lastPage(),
             ],
         ]);
     }
@@ -77,9 +77,9 @@ class TravelAgencyController extends Controller
     public function approve(TravelAgency $travelAgency): JsonResponse
     {
         $travelAgency->update([
-            'status'               => TravelAgencyStatus::Active,
+            'status' => TravelAgencyStatus::Active,
             'approved_by_admin_id' => auth('admin')->id(),
-            'approved_at'          => now(),
+            'approved_at' => now(),
         ]);
 
         return response()->json(['message' => 'Travel agency approved.']);

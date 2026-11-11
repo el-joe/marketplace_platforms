@@ -130,7 +130,7 @@
             </div>
             <div>
                 <dt class="text-gray-400 text-xs uppercase tracking-wide">{{ __('admin.price_history_section.first_price_locked_at') }}</dt>
-                <dd class="mt-1 text-gray-800">{{ $listing->first_price_locked_at?->format('Y-m-d H:i') ?? '—' }}</dd>
+                <dd class="mt-1 text-gray-800">{{ admin_tz($listing->first_price_locked_at)?->format('Y-m-d H:i') ?? '—' }}</dd>
             </div>
         </dl>
 
@@ -147,7 +147,7 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse($priceHistory as $entry)
                         <tr>
-                            <td class="px-3 py-2 text-gray-800">{{ $entry->recorded_at?->format('Y-m-d H:i') }}</td>
+                            <td class="px-3 py-2 text-gray-800">{{ admin_tz($entry->recorded_at)?->format('Y-m-d H:i') }}</td>
                             <td class="px-3 py-2 text-gray-800">{{ number_format($entry->price, 2) }} {{ $listing->currency }}</td>
                             <td class="px-3 py-2">
                                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium

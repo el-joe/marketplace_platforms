@@ -9,11 +9,13 @@ use App\Models\WarrantyClaimMessage;
 use App\Notifications\Admin\WarrantyClaimVendorRepliedNotification;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WarrantyClaimController extends Controller
 {
@@ -25,7 +27,7 @@ class WarrantyClaimController extends Controller
         return Auth::guard('vendor')->user()->vendor_id;
     }
 
-    public function index(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportClaims($request);
@@ -44,7 +46,7 @@ class WarrantyClaimController extends Controller
     // Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildClaimsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildClaimsQuery(Request $request): Builder
     {
         $query = WarrantyClaim::where('vendor_id', $this->vendorId())
             ->where('listing_type', WarrantyClaim::LISTING_TYPE_VENDOR);
@@ -55,15 +57,15 @@ class WarrantyClaimController extends Controller
         }
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('status', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('created_at', '<=', $v),
+            'status' => fn ($q, $v) => $q->where('status', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('created_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('created_at', '<=', $v),
         ]);
 
         return $query;
     }
 
-    private function exportClaims(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportClaims(Request $request): StreamedResponse
     {
         $claims = $this->buildClaimsQuery($request)
             ->with('orderItem.subOrder:id,sub_order_number')
@@ -72,11 +74,11 @@ class WarrantyClaimController extends Controller
 
         $headers = ['Claim #', 'Order #', 'Status', 'Date'];
 
-        $rows = $claims->map(fn($row) => [
+        $rows = $claims->map(fn ($row) => [
             $row->claim_number,
             $row->orderItem?->subOrder?->sub_order_number ?? '—',
             is_object($row->status) ? $row->status->value ?? (string) $row->status : $row->status,
-            $row->created_at->format('Y-m-d H:i'),
+            vendor_tz($row->created_at)?->format('Y-m-d H:i'),
         ]);
 
         return match ($request->input('export')) {

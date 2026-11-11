@@ -52,7 +52,7 @@ class BannerController extends Controller
             'active' => Banner::where('status', 'active')->count(),
             'scheduled' => Banner::where('status', 'scheduled')->count(),
             'expired' => Banner::where('status', 'expired')->count(),
-            'impressions_today' => (int) Banner::whereDate('updated_at', today())->sum('impressions_count'),
+            'impressions_today' => (int) Banner::whereBetween('updated_at', admin_day_range())->sum('impressions_count'),
         ];
 
         $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']);
@@ -80,8 +80,8 @@ class BannerController extends Controller
             'placement_code' => fn ($q, $v) => $q->where('placement_code', $v),
             'country_id' => fn ($q, $v) => $q->where('country_id', $v),
             'device_target' => fn ($q, $v) => $q->where('device_target', $v),
-            'date_from' => fn ($q, $v) => $q->whereDate('starts_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('ends_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('starts_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('ends_at', '<=', admin_day_end($v)),
             // Substitution: no banners.is_active column exists; "active" maps to status = active.
             'is_active' => fn ($q, $v) => $v
                 ? $q->where('banners.status', 'active')
@@ -101,8 +101,8 @@ class BannerController extends Controller
             $row->name,
             $row->placement_code,
             $row->status?->value === 'active' ? 'Yes' : 'No',
-            optional($row->starts_at)->format('d M Y H:i'),
-            optional($row->ends_at)->format('d M Y H:i'),
+            optional(admin_tz($row->starts_at))->format('d M Y H:i'),
+            optional(admin_tz($row->ends_at))->format('d M Y H:i'),
         ]);
 
         return match ($request->input('export')) {
@@ -182,7 +182,7 @@ class BannerController extends Controller
                 'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-'.$statusColor.'-100 text-'.$statusColor.'-700">'.$statusLabel.'</span>',
                 'device_target' => $this->badgeHtml($deviceColors[$row->device_target->value] ?? 'gray', $row->device_target->label()),
                 'audience' => $this->badgeHtml($audienceColors[$row->audience->value] ?? 'gray', $row->audience->label()),
-                'date_range' => Carbon::parse($row->starts_at)->format('d M').' – '.Carbon::parse($row->ends_at)->format('d M Y'),
+                'date_range' => admin_tz(Carbon::parse($row->starts_at))->format('d M').' – '.admin_tz(Carbon::parse($row->ends_at))->format('d M Y'),
                 'impressions' => number_format($row->impressions_count),
                 'clicks' => number_format($row->clicks_count),
                 'ctr' => $ctr.'%',

@@ -45,6 +45,15 @@
             <kbd class="ml-2 px-1.5 py-0.5 text-[10px] bg-gray-100 rounded border border-gray-200">⌘K</kbd>
         </button>--}}
 
+        {{-- Admin timezone: every time in the panel is shown and entered in Oman time --}}
+        @php($adminNow = admin_tz(now()))
+        <span class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-200 text-xs text-gray-600"
+            title="{{ __('admin.timezone.input_hint', ['zone' => tz_label($adminNow)]) }}">
+            <x-heroicon name="clock" class="w-4 h-4" />
+            <span dir="ltr">{{ $adminNow->format('H:i') }}</span>
+            <span>{{ __('admin.timezone.input_hint', ['zone' => tz_label($adminNow)]) }}</span>
+        </span>
+
         {{-- Notifications --}}
         <x-notification-bell guard="admin" />
 

@@ -108,7 +108,7 @@
                             {{-- Last login --}}
                             <td class="px-6 py-4 hidden sm:table-cell">
                                 <span class="text-sm text-gray-500">
-                                    {{ $member->last_login_at ? $member->last_login_at->diffForHumans() : '—' }}
+                                    {{ $member->last_login_at ? vendor_tz($member->last_login_at)?->diffForHumans() : '—' }}
                                 </span>
                             </td>
 

@@ -95,7 +95,7 @@ class AdSupportArticleController extends Controller
             $statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium '.$sc['bg'].' '.$sc['text'].'">'.$sc['label'].'</span>';
 
             $dateHtml = $row->published_at
-                ? '<div class="text-xs text-gray-700">'.$row->published_at->format('d M Y').'</div>'
+                ? '<div class="text-xs text-gray-700">'.admin_tz($row->published_at)?->format('d M Y').'</div>'
                 : '<span class="text-gray-300 text-xs">—</span>';
 
             $editUrl = route('admin.adsupport.articles.edit', $row->id);

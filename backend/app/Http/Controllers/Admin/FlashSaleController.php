@@ -103,8 +103,8 @@ class FlashSaleController extends Controller
         return $this->applyFilters($query, $request, [
             'status' => fn ($q, $v) => $q->where('flash_sales.status', $v),
             'country_id' => fn ($q, $v) => $q->where('flash_sales.country_id', $v),
-            'date_from' => fn ($q, $v) => $q->whereDate('flash_sales.sale_starts_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('flash_sales.sale_ends_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('flash_sales.sale_starts_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('flash_sales.sale_ends_at', '<=', admin_day_end($v)),
             'search' => fn ($q, $v) => $q->where(function ($sub) use ($v) {
                 $sub->where('flash_sales.name_en', 'like', "%{$v}%")
                     ->orWhere('flash_sales.name_ar', 'like', "%{$v}%");
@@ -127,8 +127,8 @@ class FlashSaleController extends Controller
         $rows = $sales->map(fn ($row) => [
             $row->name_en,
             $row->status?->value,
-            optional($row->sale_starts_at)->format('d M Y H:i'),
-            optional($row->sale_ends_at)->format('d M Y H:i'),
+            optional(admin_tz($row->sale_starts_at))->format('d M Y H:i'),
+            optional(admin_tz($row->sale_ends_at))->format('d M Y H:i'),
             (int) ($submissionCounts[$row->id] ?? 0),
             (int) $row->approved_slots_count,
         ]);
@@ -147,10 +147,10 @@ class FlashSaleController extends Controller
 
         return $this->dataTableResponse($request, $query, $this->indexColumns(), function ($row) {
             $submissionPeriod = $row->submission_opens_at && $row->submission_closes_at
-                ? Carbon::parse($row->submission_opens_at)->format('M j').'–'.Carbon::parse($row->submission_closes_at)->format('j')
+                ? admin_tz(Carbon::parse($row->submission_opens_at))->format('M j').'–'.admin_tz(Carbon::parse($row->submission_closes_at))->format('j')
                 : '—';
             $salePeriod = $row->sale_starts_at && $row->sale_ends_at
-                ? Carbon::parse($row->sale_starts_at)->format('M j H:i').' – '.Carbon::parse($row->sale_ends_at)->format('H:i')
+                ? admin_tz(Carbon::parse($row->sale_starts_at))->format('M j H:i').' – '.admin_tz(Carbon::parse($row->sale_ends_at))->format('H:i')
                 : '—';
 
             return [
@@ -500,7 +500,7 @@ class FlashSaleController extends Controller
                 'max_quantity_total' => $row->max_quantity_total,
                 'quantity_remaining' => $row->quantity_remaining,  // READ virtual column
                 'status' => $row->status?->value,
-                'submitted_at_human' => $row->submitted_at?->diffForHumans(),
+                'submitted_at_human' => admin_tz($row->submitted_at)?->diffForHumans(),
                 'admin_notes' => $row->admin_notes,
             ];
         });

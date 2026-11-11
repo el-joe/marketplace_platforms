@@ -100,7 +100,7 @@
                                     {{ $mov->created_by_type ? class_basename($mov->created_by_type) . ' #' . $mov->created_by_id : __('partner.inventory.system') }}
                                 </td>
                                 <td class="py-3 px-4 text-gray-400 text-xs whitespace-nowrap">
-                                    {{ $mov->created_at?->format('Y/m/d H:i') }}
+                                    {{ vendor_tz($mov->created_at)?->format('Y/m/d H:i') }}
                                 </td>
                             </tr>
                         @endforeach

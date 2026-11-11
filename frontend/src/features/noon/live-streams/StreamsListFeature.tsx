@@ -9,6 +9,8 @@ import { getStreams } from './api';
 import { useRadioPlayer } from './radio-player-context';
 import type { LiveStreamCard, StreamStatus } from './types';
 import { getImageURL } from '@/src/helpers/get-image-url';
+import LocalDateTime from "@/src/components/shared/local-date-time";
+import useCountryDateFormatter from "@/src/hooks/use-country-date-formatter";
 
 function StreamCard({
   stream,
@@ -20,6 +22,7 @@ function StreamCard({
   t: ReturnType<typeof useTranslations>;
 }) {
   const title = stream.title[locale as 'en' | 'ar'] || stream.title.en;
+  const formatDate = useCountryDateFormatter();
   const STATUS_CONFIG: Record<StreamStatus, { label: string; badge: string }> = {
     live:      { label: t('statusLive'),      badge: 'bg-red-600 text-white' },
     scheduled: { label: t('statusScheduled'), badge: 'bg-yellow-100 text-yellow-800' },
@@ -78,13 +81,13 @@ function StreamCard({
         <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
           <span>❤️ {stream.likes_count.toLocaleString()}</span>
           {stream.scheduled_at && stream.status === 'scheduled' && (
-            <span>🗓 {new Date(stream.scheduled_at).toLocaleString()}</span>
+            <span>🗓 <LocalDateTime value={stream.scheduled_at} /></span>
           )}
           {stream.source === 'recorded' && stream.scheduled_end_at && stream.status === 'live' && (
-            <span>{t('radioEndsAt', { time: new Date(stream.scheduled_end_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}</span>
+            <span>{t('radioEndsAt', { time: formatDate(stream.scheduled_end_at, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) })}</span>
           )}
           {stream.ended_at && stream.status === 'ended' && (
-            <span>{t('endedOn', { date: new Date(stream.ended_at).toLocaleDateString() })}</span>
+            <span>{t('endedOn', { date: formatDate(stream.ended_at, { year: 'numeric', month: 'short', day: 'numeric' }) })}</span>
           )}
         </div>
         {canMini && (

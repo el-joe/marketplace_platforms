@@ -41,7 +41,7 @@
             </div>
             <div>
                 <dt class="text-gray-500">{{ __('admin.vendors.expires_on') }}</dt>
-                <dd class="font-medium text-gray-900">{{ $commission->valid_until->format('d M Y') }}</dd>
+                <dd class="font-medium text-gray-900">{{ admin_tz($commission->valid_until)?->format('d M Y') }}</dd>
             </div>
         </dl>
 

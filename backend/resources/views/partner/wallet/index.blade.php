@@ -69,7 +69,7 @@
                 <div class="px-5 py-3 flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-900">{{ number_format($wr->amount, 2) }} {{ $wr->currency }}</p>
-                        <p class="text-xs text-gray-500">{{ $wr->bank_name }} · {{ $wr->created_at->format('d M Y') }}</p>
+                        <p class="text-xs text-gray-500">{{ $wr->bank_name }} · {{ vendor_tz($wr->created_at)?->format('d M Y') }}</p>
                     </div>
                     @php
                         $colors = ['pending'=>'bg-yellow-100 text-yellow-700','approved'=>'bg-blue-100 text-blue-700','processed'=>'bg-green-100 text-green-700','rejected'=>'bg-red-100 text-red-700'];
@@ -96,7 +96,7 @@
             <div class="px-5 py-3 flex items-center justify-between border-b border-gray-50 last:border-0">
                 <div>
                     <p class="text-sm font-medium text-gray-900">{{ $tx->description }}</p>
-                    <p class="text-xs text-gray-400">{{ str_replace('_',' ', $tx->source_type) }} · {{ $tx->created_at->format('d M Y H:i') }}</p>
+                    <p class="text-xs text-gray-400">{{ str_replace('_',' ', $tx->source_type) }} · {{ vendor_tz($tx->created_at)?->format('d M Y H:i') }}</p>
                 </div>
                 <p class="text-sm font-bold {{ $tx->type === \App\Enums\WalletTransactionType::Credit ? 'text-green-600' : 'text-red-500' }}">
                     {{ $tx->type === \App\Enums\WalletTransactionType::Credit ? '+' : '−' }}{{ number_format($tx->amount, 2) }}

@@ -20,8 +20,7 @@ class VendorAcquisitionController extends Controller
 
     public function __construct(
         private ActivityLoggerService $activityLogger,
-    ) {
-    }
+    ) {}
 
     public function show(Vendor $vendor)
     {
@@ -203,7 +202,7 @@ class VendorAcquisitionController extends Controller
                 'vendor' => $commission->vendor?->store_name,
                 'rate' => $commission->commission_rate,
                 'total_earned' => $commission->total_earned,
-                'expires_on' => $commission->valid_until->format('d M Y'),
+                'expires_on' => admin_tz($commission->valid_until)?->format('d M Y'),
             ];
         });
     }

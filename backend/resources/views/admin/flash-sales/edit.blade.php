@@ -95,12 +95,12 @@
 
                 <x-card title="{{ __('admin.flash_sales.timeline') }}" id="timeline-card">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-form-date-picker name="submission_opens_at"  label="{{ __('admin.flash_sales.submissions_open') }}"  :value="$sale->submission_opens_at?->format('Y-m-d H:i')"  :enableTime="true" required :disabled="!$isEditable" />
-                        <x-form-date-picker name="submission_closes_at" label="{{ __('admin.flash_sales.submissions_close') }}" :value="$sale->submission_closes_at?->format('Y-m-d H:i')" :enableTime="true" required :disabled="!$isEditable" />
-                        <x-form-date-picker name="review_deadline_at"   label="{{ __('admin.flash_sales.review_deadline') }}"   :value="$sale->review_deadline_at?->format('Y-m-d H:i')"   :enableTime="true" required :disabled="!$isEditable" />
+                        <x-form-date-picker name="submission_opens_at"  label="{{ __('admin.flash_sales.submissions_open') }}"  :value="$sale->submission_opens_at"  :enableTime="true" required :disabled="!$isEditable" />
+                        <x-form-date-picker name="submission_closes_at" label="{{ __('admin.flash_sales.submissions_close') }}" :value="$sale->submission_closes_at" :enableTime="true" required :disabled="!$isEditable" />
+                        <x-form-date-picker name="review_deadline_at"   label="{{ __('admin.flash_sales.review_deadline') }}"   :value="$sale->review_deadline_at"   :enableTime="true" required :disabled="!$isEditable" />
                         <div></div>
-                        <x-form-date-picker name="sale_starts_at" label="{{ __('admin.flash_sales.sale_starts') }}" :value="$sale->sale_starts_at?->format('Y-m-d H:i')" :enableTime="true" required :disabled="!$isEditable" />
-                        <x-form-date-picker name="sale_ends_at"   label="{{ __('admin.flash_sales.sale_ends') }}"   :value="$sale->sale_ends_at?->format('Y-m-d H:i')"   :enableTime="true" required :disabled="!$isEditable" />
+                        <x-form-date-picker name="sale_starts_at" label="{{ __('admin.flash_sales.sale_starts') }}" :value="$sale->sale_starts_at" :enableTime="true" required :disabled="!$isEditable" />
+                        <x-form-date-picker name="sale_ends_at"   label="{{ __('admin.flash_sales.sale_ends') }}"   :value="$sale->sale_ends_at"   :enableTime="true" required :disabled="!$isEditable" />
                     </div>
                     <div id="timeline-visual" class="mt-4"></div>
                 </x-card>
@@ -379,7 +379,7 @@
 
             @if($sale->cancelled_at)
                 <div class="text-xs text-danger-600 mb-3">
-                    {{ __('admin.flash_sales.status_cancelled') }} {{ $sale->cancelled_at->diffForHumans() }}<br>
+                    {{ __('admin.flash_sales.status_cancelled') }} {{ admin_tz($sale->cancelled_at)?->diffForHumans() }}<br>
                     @if($sale->cancellation_reason)
                         <em>{{ $sale->cancellation_reason }}</em>
                     @endif

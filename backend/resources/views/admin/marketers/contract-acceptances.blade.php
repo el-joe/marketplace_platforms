@@ -51,7 +51,7 @@
                     <td class="py-2 px-3">
                         <span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">v{{ ($acc->contractVersion->version_number ?? '?') }}</span>
                     </td>
-                    <td class="py-2 px-3">{{ optional($acc->accepted_at)->format('d M Y H:i:s') }}</td>
+                    <td class="py-2 px-3">{{ optional(admin_tz($acc->accepted_at))->format('d M Y H:i:s') }}</td>
                     <td class="py-2 px-3 text-xs text-gray-500" title="{{ $acc->user_agent }}">{{ $acc->ip_address }}</td>
                     <td class="py-2 px-3">
                         @if($acc->order)

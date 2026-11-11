@@ -102,7 +102,7 @@ class TravelPackageController extends Controller
 
             $price = e($row->currency).' '.number_format($row->price, 2);
 
-            $departure = Carbon::parse($row->departure_date)->format('d M Y');
+            $departure = admin_tz(Carbon::parse($row->departure_date))->format('d M Y');
 
             $seatsAvail = $row->available_seats;
             $seatsBooked = $row->seats_booked;
@@ -170,7 +170,7 @@ class TravelPackageController extends Controller
             number_format($pkg->price, 2),
             $pkg->currency,
             $pkg->status?->value,
-            optional($pkg->departure_date)->format('d M Y'),
+            optional(admin_tz($pkg->departure_date))->format('d M Y'),
         ]);
 
         return match ($request->input('export')) {

@@ -231,7 +231,7 @@
                             @endif
                         </td>
                         <td class="px-4 py-2.5 text-gray-500 text-xs">
-                            {{ $currency->rate_updated_at ? $currency->rate_updated_at->diffForHumans() : '—' }}
+                            {{ $currency->rate_updated_at ? admin_tz($currency->rate_updated_at)?->diffForHumans() : '—' }}
                             @if ($currency->rate_updated_at)
                                 <span class="ml-1 text-gray-400">({{ admin_tz($currency->rate_updated_at)?->format('Y-m-d H:i') }})</span>
                             @endif

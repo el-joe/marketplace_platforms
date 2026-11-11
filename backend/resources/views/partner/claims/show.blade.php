@@ -33,7 +33,7 @@
                 </div>
                 <div>
                     <dt class="text-gray-500">{{ __('partner.claims.submitted') }}</dt>
-                    <dd>{{ $claim->created_at->format('d M Y H:i') }}</dd>
+                    <dd>{{ vendor_tz($claim->created_at)?->format('d M Y H:i') }}</dd>
                 </div>
             </dl>
             <div>

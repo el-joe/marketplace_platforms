@@ -47,8 +47,8 @@ class NotificationController extends Controller
         $query = $this->applyFilters($query, $request, [
             'channel' => fn ($q, $v) => $q->where('channel', $v),
             'type' => fn ($q, $v) => $q->where('type', $v),
-            'date_from' => fn ($q, $v) => $q->whereDate('created_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('created_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('created_at', '<=', admin_day_end($v)),
         ]);
 
         $columns = [
@@ -76,13 +76,13 @@ class NotificationController extends Controller
             return [
                 'type' => e($typeLabel),
                 'channel' => '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700">'
-                    . e($row->channel?->label() ?? '—') . '</span>',
-                'recipient' => e($recipientLabel) . ' · ' . e(Str::limit($row->notifiable_id ?? '', 8, '')),
+                    .e($row->channel?->label() ?? '—').'</span>',
+                'recipient' => e($recipientLabel).' · '.e(Str::limit($row->notifiable_id ?? '', 8, '')),
                 'title' => e($row->data['title'] ?? '—'),
                 'read' => $row->read_at
-                    ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700">' . e(__('admin.notifications_section.read_label')) . '</span>'
-                    : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">' . e(__('admin.notifications_section.unread_label')) . '</span>',
-                'sent_at' => $row->sent_at ? $row->sent_at->format('d/m/Y H:i') : '—',
+                    ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700">'.e(__('admin.notifications_section.read_label')).'</span>'
+                    : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">'.e(__('admin.notifications_section.unread_label')).'</span>',
+                'sent_at' => $row->sent_at ? admin_tz($row->sent_at)?->format('d/m/Y H:i') : '—',
             ];
         });
     }

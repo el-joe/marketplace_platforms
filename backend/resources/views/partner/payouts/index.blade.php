@@ -123,7 +123,7 @@
                                     </span>
                                 </td>
                                 <td class="py-3 px-4 text-right text-xs text-gray-400">
-                                    {{ $payout->processed_at?->format('Y/m/d') ?? '—' }}
+                                    {{ vendor_tz($payout->processed_at)?->format('Y/m/d') ?? '—' }}
                                 </td>
                                 <td class="py-3 px-4">
                                     <a href="{{ route('partner.payouts.show', $payout->payout_number) }}"

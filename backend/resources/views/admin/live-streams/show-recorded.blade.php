@@ -30,8 +30,8 @@
     <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
         <p class="text-sm text-gray-600">{{ __('admin.live_streams.radio_auto') }}</p>
         <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div><dt class="text-gray-500">{{ __('admin.live_streams.scheduled_at') }}</dt><dd class="font-semibold">{{ $liveStream->scheduled_at?->format('d M Y, H:i') ?? '—' }}</dd></div>
-            <div><dt class="text-gray-500">{{ __('admin.live_streams.ends_at') }}</dt><dd class="font-semibold">{{ $liveStream->scheduled_end_at?->format('d M Y, H:i') ?? '—' }}</dd></div>
+            <div><dt class="text-gray-500">{{ __('admin.live_streams.scheduled_at') }}</dt><dd class="font-semibold">{{ admin_tz($liveStream->scheduled_at)?->format('d M Y, H:i') ?? '—' }}</dd></div>
+            <div><dt class="text-gray-500">{{ __('admin.live_streams.ends_at') }}</dt><dd class="font-semibold">{{ admin_tz($liveStream->scheduled_end_at)?->format('d M Y, H:i') ?? '—' }}</dd></div>
             <div><dt class="text-gray-500">{{ __('admin.live_streams.duration') }}</dt><dd class="font-semibold">{{ gmdate(($liveStream->duration_seconds ?? 0) >= 3600 ? 'H:i:s' : 'i:s', $liveStream->duration_seconds ?? 0) }}</dd></div>
             <div><dt class="text-gray-500">{{ __('admin.live_streams.viewers') }}</dt><dd class="font-semibold">{{ number_format($liveStream->total_viewers) }}</dd></div>
         </dl>

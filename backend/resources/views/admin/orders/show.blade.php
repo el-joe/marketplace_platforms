@@ -361,13 +361,13 @@
                                     <div>
                                         <span class="font-medium text-gray-700">{{ __('admin.orders.est_delivery') }}:</span>
                                         {{ $subOrder->estimated_delivery_date
-                    ? \Carbon\Carbon::parse($subOrder->estimated_delivery_date)->format('M j, Y')
+                    ? admin_tz(\Carbon\Carbon::parse($subOrder->estimated_delivery_date))->format('M j, Y')
                     : '—' }}
                                     </div>
                                     @if($subOrder->sla_ship_deadline)
                                         <div class="col-span-3 {{ $subOrder->sla_breached ? 'text-red-600 font-medium' : '' }}">
                                             <span class="font-medium">{{ __('admin.orders.sla_ship_deadline') }}:</span>
-                                            {{ \Carbon\Carbon::parse($subOrder->sla_ship_deadline)->format('M j, Y H:i') }}
+                                            {{ admin_tz(\Carbon\Carbon::parse($subOrder->sla_ship_deadline))->format('M j, Y H:i') }}
                                             @if($subOrder->sla_breached)
                                                 <x-badge color="danger" class="ml-1">{{ __('admin.orders.breached') }}</x-badge>
                                             @endif
@@ -467,7 +467,7 @@
                                             </div>
                                             <div class="flex items-center justify-between">
                                                 <span class="text-gray-500">{{ __('admin.orders.fx_rate_captured_at') }}</span>
-                                                <span>{{ $subOrder->fx_rate_captured_at ? \Carbon\Carbon::parse($subOrder->fx_rate_captured_at)->format('M j, Y H:i') : '—' }}</span>
+                                                <span>{{ $subOrder->fx_rate_captured_at ? admin_tz(\Carbon\Carbon::parse($subOrder->fx_rate_captured_at))->format('M j, Y H:i') : '—' }}</span>
                                             </div>
                                         @endif
                                     </div>
@@ -582,7 +582,7 @@
             @if($contractAccs->isNotEmpty())
             <x-card title="{{ __('admin.static_text.admin_orders_show.accepted_marketer_contract') }}">
                 @foreach($contractAccs as $ca)
-                    <div class="text-sm py-1">Version v{{ $ca->contractVersion->version_number ?? '?' }} &mdash; {{ optional($ca->accepted_at)->format('d M Y H:i:s') }}</div>
+                    <div class="text-sm py-1">Version v{{ $ca->contractVersion->version_number ?? '?' }} &mdash; {{ optional(admin_tz($ca->accepted_at))->format('d M Y H:i:s') }}</div>
                 @endforeach
             </x-card>
             @endif
@@ -615,7 +615,7 @@
                             @endif
                         </div>
                         <div class="text-xs text-gray-400 flex-shrink-0">
-                            {{ $tx->processed_at ? \Carbon\Carbon::parse($tx->processed_at)->format('M j, Y H:i') : '—' }}
+                            {{ $tx->processed_at ? admin_tz(\Carbon\Carbon::parse($tx->processed_at))->format('M j, Y H:i') : '—' }}
                         </div>
                     </div>
                 @empty
@@ -666,7 +666,7 @@
                                 @endif
                             </div>
                             <span class="text-xs text-gray-400 flex-shrink-0">
-                                {{ \Carbon\Carbon::parse($history->created_at)->format('M j, Y H:i') }}
+                                {{ admin_tz(\Carbon\Carbon::parse($history->created_at))->format('M j, Y H:i') }}
                             </span>
                         </div>
                     </div>
@@ -691,7 +691,7 @@
                                     </x-badge>
                                 </div>
                                 <span class="text-xs text-gray-400">
-                                    {{ \Carbon\Carbon::parse($dispute->created_at)->format('M j, Y') }}
+                                    {{ admin_tz(\Carbon\Carbon::parse($dispute->created_at))->format('M j, Y') }}
                                 </span>
                             </div>
                             <p class="text-xs font-medium text-gray-500 mb-1">
@@ -725,7 +725,7 @@
                     <div class="flex items-center justify-between">
                         <span class="text-gray-500">{{ __('admin.orders.placed') }}</span>
                         <span class="text-gray-700">
-                            {{ \Carbon\Carbon::parse($order->placed_at)->format('M j, Y H:i') }}
+                            {{ admin_tz(\Carbon\Carbon::parse($order->placed_at))->format('M j, Y H:i') }}
                         </span>
                     </div>
                     @if(!empty($addr['city']))
@@ -924,7 +924,7 @@
                         @foreach($fraudFlags as $flag)
                             <div class="text-xs text-gray-600 py-1">
                                 <p class="text-red-600">{{ $flag->reason }}</p>
-                                <p class="text-gray-400">{{ \Carbon\Carbon::parse($flag->created_at)->format('M j, Y H:i') }}</p>
+                                <p class="text-gray-400">{{ admin_tz(\Carbon\Carbon::parse($flag->created_at))->format('M j, Y H:i') }}</p>
                             </div>
                         @endforeach
                     </div>

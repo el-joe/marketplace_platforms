@@ -12,8 +12,8 @@
 
     $val = function (string $field, $default = '') use ($isEdit, $voucher) {
         $current = $isEdit ? ($voucher->{$field} ?? $default) : $default;
-        if ($current instanceof \Illuminate\Support\Carbon) {
-            $current = $current->format('Y-m-d H:i');
+        if ($current instanceof \Carbon\CarbonInterface) {
+            $current = admin_input_value($current);
         }
         return old($field, $current);
     };

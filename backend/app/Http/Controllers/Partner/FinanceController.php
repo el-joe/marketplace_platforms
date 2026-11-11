@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Partner;
 
+use App\Enums\MarketerType;
 use App\Http\Controllers\Controller;
 use App\Models\MarketerCampaign;
-use App\Enums\MarketerType;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
@@ -357,7 +357,7 @@ class FinanceController extends Controller
         ];
 
         $rows = $shipments->map(fn ($shipment) => [
-            $shipment->created_at->format('Y-m-d'),
+            vendor_tz($shipment->created_at)?->format('Y-m-d'),
             $shipment->sub_order_number,
             $shipment->order?->order_number,
             number_format($shipment->shipping, 2, '.', ''),

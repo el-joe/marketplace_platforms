@@ -14,6 +14,7 @@ use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Notifications\Vendor\AdCampaignApproved;
 use App\Notifications\Vendor\AdCampaignRejected;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Carbon\Carbon;
@@ -46,7 +47,7 @@ class AdCampaignController extends Controller
             'pending' => AdCampaign::where('status', AdCampaignStatus::PendingReview->value)->count(),
             'active' => AdCampaign::where('status', AdCampaignStatus::Active->value)->count(),
             'paused' => AdCampaign::where('status', AdCampaignStatus::Paused->value)->count(),
-            'spend_today' => \App\Support\Money::number(AdDailyStat::whereDate('date', $today)->sum('spend')),
+            'spend_today' => Money::number(AdDailyStat::whereDate('date', $today)->sum('spend')),
         ];
 
         $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']);
@@ -72,8 +73,8 @@ class AdCampaignController extends Controller
             'type' => fn ($q, $v) => $q->where('ad_campaigns.type', $v),
             'vendor_id' => fn ($q, $v) => $q->where('ad_campaigns.vendor_id', $v),
             'country_id' => fn ($q, $v) => $q->where('ad_campaigns.country_id', $v),
-            'date_from' => fn ($q, $v) => $q->whereDate('ad_campaigns.starts_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('ad_campaigns.ends_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('ad_campaigns.starts_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('ad_campaigns.ends_at', '<=', admin_day_end($v)),
             'search' => fn ($q, $v) => $q->where(function ($sub) use ($v) {
                 $sub->where('ad_campaigns.name', 'like', "%{$v}%")
                     ->orWhere('vendors.store_name', 'like', "%{$v}%");
@@ -98,8 +99,8 @@ class AdCampaignController extends Controller
             $row->status?->value,
             number_format($row->budget_total, 2),
             $row->country?->currency_code,
-            optional($row->starts_at)->format('d M Y H:i'),
-            $row->ends_at ? Carbon::parse($row->ends_at)->format('d M Y H:i') : null,
+            optional(admin_tz($row->starts_at))->format('d M Y H:i'),
+            $row->ends_at ? admin_tz(Carbon::parse($row->ends_at))->format('d M Y H:i') : null,
         ]);
 
         return match ($request->input('export')) {
@@ -175,7 +176,7 @@ class AdCampaignController extends Controller
             $typeLabel = strtoupper($row->type->value);
             $typeBadge = "<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-{$typeColor}-100 text-{$typeColor}-700\">{$typeLabel}</span>";
 
-            $dateRange = Carbon::parse($row->starts_at)->format('d M').' – '.($row->ends_at ? Carbon::parse($row->ends_at)->format('d M Y') : '∞');
+            $dateRange = admin_tz(Carbon::parse($row->starts_at))->format('d M').' – '.($row->ends_at ? admin_tz(Carbon::parse($row->ends_at))->format('d M Y') : '∞');
 
             return [
                 'vendor' => e($row->vendor?->store_name ?? '—'),
@@ -187,7 +188,7 @@ class AdCampaignController extends Controller
                 'utilization' => $progressBar,
                 'quality' => $qualityBadge,
                 'date_range' => $dateRange,
-                'created_at' => $row->created_at?->format('d M Y'),
+                'created_at' => admin_tz($row->created_at)?->format('d M Y'),
                 'actions' => $this->buildCampaignRowActions($row, $canEdit),
                 'DT_RowData' => ['id' => $row->id, 'status' => $row->status?->value],
             ];
@@ -559,7 +560,7 @@ class AdCampaignController extends Controller
                 'clicks_last_hour' => $row->clicks_last_hour,
                 'clicks_last_24h' => $row->clicks_last_24h,
                 'is_blocked' => $blockedBadge,
-                'blocked_at' => $row->blocked_at ? Carbon::parse($row->blocked_at)->format('d M Y H:i') : '—',
+                'blocked_at' => $row->blocked_at ? admin_tz(Carbon::parse($row->blocked_at))->format('d M Y H:i') : '—',
                 'block_reason' => $row->block_reason ? e($row->block_reason) : '—',
                 'actions' => $actions,
                 'DT_RowData' => ['id' => $row->id],

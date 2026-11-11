@@ -155,7 +155,7 @@
                                     </span>
                                 </td>
                                 <td class="px-5 py-4 hidden lg:table-cell">
-                                    <span class="text-xs text-gray-400">{{ $ticket->created_at->format('d/m/Y') }}</span>
+                                    <span class="text-xs text-gray-400">{{ vendor_tz($ticket->created_at)?->format('d/m/Y') }}</span>
                                 </td>
                                 <td class="px-5 py-4 text-left">
                                     <a href="{{ route('partner.support.tickets.show', $ticket->ticket_number) }}"
@@ -230,7 +230,7 @@
                                     </span>
                                 </td>
                                 <td class="px-5 py-4 hidden sm:table-cell">
-                                    <span class="text-xs text-gray-400">{{ $dispute->created_at->format('d/m/Y') }}</span>
+                                    <span class="text-xs text-gray-400">{{ vendor_tz($dispute->created_at)?->format('d/m/Y') }}</span>
                                 </td>
                                 <td class="px-5 py-4 text-left">
                                     <a href="{{ route('partner.disputes.show', $dispute->dispute_number) }}"

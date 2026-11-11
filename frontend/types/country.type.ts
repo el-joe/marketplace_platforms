@@ -8,4 +8,6 @@ export interface Country {
   currency_code: string;
   site_code: string;
   cod_available: boolean;
+  /** IANA timezone of the country (e.g. "Asia/Dubai"); storefront times are shown in it. */
+  timezone: string;
 }

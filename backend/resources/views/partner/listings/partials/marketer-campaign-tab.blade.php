@@ -117,7 +117,7 @@
                                 {{ \App\Support\Money::format($campaign->commission_budget_spent) }} /
                                 {{ $campaign->max_commission_budget !== null && $campaign->max_commission_budget > 0 ? \App\Support\Money::format($campaign->max_commission_budget) : __($mcT.'unlimited') }}
                             </td>
-                            <td class="px-4 py-3 text-gray-500 whitespace-nowrap">{{ $campaign->created_at->format('Y-m-d') }}</td>
+                            <td class="px-4 py-3 text-gray-500 whitespace-nowrap">{{ vendor_tz($campaign->created_at)?->format('Y-m-d') }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium">
                                     <a href="{{ route('partner.marketer-campaigns.show', $campaign) }}" class="text-blue-600 hover:underline">{{ __($mcT.'view') }}</a>

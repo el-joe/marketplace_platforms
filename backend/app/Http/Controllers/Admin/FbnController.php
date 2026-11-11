@@ -113,7 +113,7 @@ class FbnController extends Controller
                 'status' => $statusBadge,
                 'expected' => $row->expected_arrival?->format('d M Y') ?? '—',
                 'tracking' => $row->tracking_number ? '<span class="font-mono text-xs">'.e($row->tracking_number).'</span>' : '—',
-                'created_at' => $row->created_at->format('d M Y'),
+                'created_at' => admin_tz($row->created_at)?->format('d M Y'),
                 'actions' => $actions,
             ];
         });

@@ -87,8 +87,8 @@
                 <p class="font-semibold text-gray-900">{{ $package->title_en }}</p>
                 <p class="text-sm text-gray-500 mt-0.5">{{ $package->agency?->name }}</p>
                 <dl class="mt-2 grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
-                    <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.departure') }}</dt><dd class="text-gray-900">{{ $package->departure_date->format('d M Y') }}</dd></div>
-                    <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.return') }}</dt><dd class="text-gray-900">{{ $package->return_date->format('d M Y') }}</dd></div>
+                    <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.departure') }}</dt><dd class="text-gray-900">{{ admin_tz($package->departure_date)?->format('d M Y') }}</dd></div>
+                    <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.return') }}</dt><dd class="text-gray-900">{{ admin_tz($package->return_date)?->format('d M Y') }}</dd></div>
                     <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.duration') }}</dt><dd class="text-gray-900">{{ $package->duration_days }}d / {{ $package->duration_nights }}n</dd></div>
                     <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.price_per_seat') }}</dt><dd class="text-gray-900">{{ $package->priceFormatted() }}</dd></div>
                 </dl>

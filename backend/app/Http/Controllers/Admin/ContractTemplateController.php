@@ -255,7 +255,7 @@ class ContractTemplateController extends Controller
             $this->audit('contract_template.published', $contractTemplate, ['mode' => $contractTemplate->acceptance_mode]);
 
             return $this->backToIndex($contractTemplate, $contractTemplate->isScheduled()
-                ? __('admin.contracts.published_scheduled', ['version' => $contractTemplate->version, 'date' => $contractTemplate->effective_at->format('d/m/Y')])
+                ? __('admin.contracts.published_scheduled', ['version' => $contractTemplate->version, 'date' => admin_tz($contractTemplate->effective_at)?->format('d/m/Y')])
                 : __('admin.contracts.published_platform', ['version' => $contractTemplate->version]));
         }
 

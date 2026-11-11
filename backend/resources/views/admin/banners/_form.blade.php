@@ -94,7 +94,7 @@
             </h1>
             @if($isEdit)
                 <p class="text-sm text-gray-500 mt-1">
-                    {{ __('admin.banners.last_updated', ['time' => $banner->updated_at ? $banner->updated_at->diffForHumans() : __('admin.banners.never')]) }}
+                    {{ __('admin.banners.last_updated', ['time' => $banner->updated_at ? admin_tz($banner->updated_at)?->diffForHumans() : __('admin.banners.never')]) }}
                 </p>
             @endif
         </div>
@@ -379,7 +379,7 @@
                             name="starts_at"
                             label="{{ __('admin.banners.starts_at') }} *"
                             type="datetime-local"
-                            :value="$val('starts_at', $isEdit ? optional($banner->starts_at)->format('Y-m-d\TH:i') : '')"
+                            :value="$val('starts_at', $isEdit ? admin_input_value($banner->starts_at, 'Y-m-d\TH:i') : '')"
                             required />
                     </div>
 
@@ -388,7 +388,7 @@
                             name="ends_at"
                             label="{{ __('admin.banners.ends_at') }} *"
                             type="datetime-local"
-                            :value="$val('ends_at', $isEdit ? optional($banner->ends_at)->format('Y-m-d\TH:i') : '')"
+                            :value="$val('ends_at', $isEdit ? admin_input_value($banner->ends_at, 'Y-m-d\TH:i') : '')"
                             required />
                         <p class="text-xs text-red-500 mt-1 hidden" id="date-error">{{ __('admin.banners.end_after_start_error') }}</p>
                     </div>

@@ -114,7 +114,7 @@ class FulfillmentController extends Controller
                     'expected_arrival' => $r->expected_arrival?->format('d M Y'),
                     'tracking_number' => $r->tracking_number,
                     'can_cancel' => $r->canBeCancelled(),
-                    'created_at' => $r->created_at->format('d M Y'),
+                    'created_at' => vendor_tz($r->created_at)?->format('d M Y'),
                 ];
             });
 

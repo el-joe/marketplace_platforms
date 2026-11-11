@@ -10,10 +10,10 @@ use App\Models\DeliveryZone;
 use App\Models\Shipment;
 use App\Models\SubOrder;
 use App\Traits\HasDataTable;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class DeliveryAssignmentController extends Controller
@@ -75,18 +75,18 @@ class DeliveryAssignmentController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('delivery_assignments.status', $v),
-            'agent_id' => fn($q, $v) => $q->where('delivery_assignments.agent_id', $v),
-            'zone_id' => fn($q, $v) => $q->where('delivery_agents.zone_id', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('delivery_assignments.assigned_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('delivery_assignments.assigned_at', '<=', $v),
+            'status' => fn ($q, $v) => $q->where('delivery_assignments.status', $v),
+            'agent_id' => fn ($q, $v) => $q->where('delivery_assignments.agent_id', $v),
+            'zone_id' => fn ($q, $v) => $q->where('delivery_agents.zone_id', $v),
+            'date_from' => fn ($q, $v) => $q->where('delivery_assignments.assigned_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('delivery_assignments.assigned_at', '<=', admin_day_end($v)),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
             $duration = null;
             if ($row->assigned_at && $row->delivered_at) {
-                $duration = (int) \Carbon\Carbon::parse($row->assigned_at)
-                    ->diffInMinutes(\Carbon\Carbon::parse($row->delivered_at));
+                $duration = (int) Carbon::parse($row->assigned_at)
+                    ->diffInMinutes(Carbon::parse($row->delivered_at));
             }
 
             return [
@@ -97,9 +97,9 @@ class DeliveryAssignmentController extends Controller
                 'zone_name' => e($row->zone_name ?? '—'),
                 'status' => $row->status,
                 'assigned_at' => $row->assigned_at
-                    ? \Carbon\Carbon::parse($row->assigned_at)->format('d M Y H:i') : '—',
+                    ? admin_tz(Carbon::parse($row->assigned_at))->format('d M Y H:i') : '—',
                 'delivered_at' => $row->delivered_at
-                    ? \Carbon\Carbon::parse($row->delivered_at)->format('d M Y H:i') : '—',
+                    ? admin_tz(Carbon::parse($row->delivered_at))->format('d M Y H:i') : '—',
                 'duration_minutes' => $duration,
                 'customer_rating' => $row->customer_rating,
                 'failure_reason' => $row->failure_reason,
@@ -131,7 +131,7 @@ class DeliveryAssignmentController extends Controller
         }
 
         $subOrder = SubOrder::with('order')->findOrFail($request->sub_order_id);
-        $order    = $subOrder->order;
+        $order = $subOrder->order;
 
         $lat = (float) $request->pickup_latitude;
         $lng = (float) $request->pickup_longitude;
@@ -155,11 +155,11 @@ class DeliveryAssignmentController extends Controller
                     ->whereIn('zone_id', $zoneIds)
                     ->whereNotNull('current_latitude')
                     ->whereNotNull('current_longitude')
-                    ->selectRaw("*, (6371 * ACOS(
+                    ->selectRaw('*, (6371 * ACOS(
                         COS(RADIANS(?)) * COS(RADIANS(current_latitude)) *
                         COS(RADIANS(current_longitude) - RADIANS(?)) +
                         SIN(RADIANS(?)) * SIN(RADIANS(current_latitude))
-                    )) AS distance_km", [$lat, $lng, $lat])
+                    )) AS distance_km', [$lat, $lng, $lat])
                     ->orderBy('distance_km')
                     ->first();
             }
@@ -167,23 +167,23 @@ class DeliveryAssignmentController extends Controller
 
         // ── Pass 2: Country-wide fallback (existing behavior) ──────────────────
         $usedFallback = false;
-        if (!$agent) {
+        if (! $agent) {
             $usedFallback = true;
             $agent = DeliveryAgent::where('status', DeliveryAgentStatus::Active)
                 ->where('is_available', true)
                 ->where('country_id', $order->country_id)
                 ->whereNotNull('current_latitude')
                 ->whereNotNull('current_longitude')
-                ->selectRaw("*, (6371 * ACOS(
+                ->selectRaw('*, (6371 * ACOS(
                     COS(RADIANS(?)) * COS(RADIANS(current_latitude)) *
                     COS(RADIANS(current_longitude) - RADIANS(?)) +
                     SIN(RADIANS(?)) * SIN(RADIANS(current_latitude))
-                )) AS distance_km", [$lat, $lng, $lat])
+                )) AS distance_km', [$lat, $lng, $lat])
                 ->orderBy('distance_km')
                 ->first();
         }
 
-        if (!$agent) {
+        if (! $agent) {
             return response()->json(['success' => false, 'message' => 'No available agents found for this order\'s country.'], 422);
         }
 
@@ -198,13 +198,13 @@ class DeliveryAssignmentController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => ($usedFallback ? '[Fallback] ' : '') . "Assigned to {$agent->name} ({$agent->distance_km} km away).",
+            'message' => ($usedFallback ? '[Fallback] ' : '')."Assigned to {$agent->name} ({$agent->distance_km} km away).",
             'assignment' => [
                 'id' => $assignment->id,
                 'agent_name' => $agent->name,
                 'agent_id' => $agent->id,
                 'distance_km' => round($agent->distance_km, 2),
-                'zone_matched' => !$usedFallback,
+                'zone_matched' => ! $usedFallback,
             ],
         ]);
     }
@@ -252,7 +252,7 @@ class DeliveryAssignmentController extends Controller
             ->select(['id', 'name', 'status', 'is_available', 'current_latitude', 'current_longitude', 'last_location_at', 'zone_id'])
             ->with('zone:id,name')
             ->get()
-            ->map(fn($a) => [
+            ->map(fn ($a) => [
                 'type' => 'agent',
                 'id' => $a->id,
                 'name' => $a->name,
@@ -262,7 +262,7 @@ class DeliveryAssignmentController extends Controller
                 'lng' => (float) $a->current_longitude,
                 'zone_id' => $a->zone_id,
                 'zone_name' => $a->zone?->name ?? null,
-                'updated' => $a->last_location_at?->diffForHumans() ?? 'Unknown',
+                'updated' => admin_tz($a->last_location_at)?->diffForHumans() ?? 'Unknown',
             ]);
 
         // Active assignments (in_transit = picked_up, not yet delivered)
@@ -280,7 +280,7 @@ class DeliveryAssignmentController extends Controller
                 'da.assigned_at',
             ])
             ->get()
-            ->map(fn($r) => [
+            ->map(fn ($r) => [
                 'type' => 'assignment',
                 'id' => $r->id,
                 'sub_order_number' => $r->sub_order_number,
@@ -312,8 +312,8 @@ class DeliveryAssignmentController extends Controller
             ->through(fn ($so) => [
                 'id' => $so->id,
                 'text' => $so->sub_order_number
-                    . ' (Order: ' . ($so->order->order_number ?? '—') . ')'
-                    . ' [' . $so->status->value . ']',
+                    .' (Order: '.($so->order->order_number ?? '—').')'
+                    .' ['.$so->status->value.']',
             ]);
 
         return response()->json($subOrders);
@@ -324,7 +324,7 @@ class DeliveryAssignmentController extends Controller
         $subOrderId = $request->input('sub_order_id');
         $term = $request->input('q', '');
 
-        if (!$subOrderId) {
+        if (! $subOrderId) {
             return response()->json(['data' => [], 'meta' => ['current_page' => 1, 'last_page' => 1]]);
         }
 
@@ -335,7 +335,7 @@ class DeliveryAssignmentController extends Controller
             ->paginate(20)
             ->through(fn ($s) => [
                 'id' => $s->id,
-                'text' => $s->tracking_number . ' [' . $s->status->value . ']',
+                'text' => $s->tracking_number.' ['.$s->status->value.']',
             ]);
 
         return response()->json($shipments);

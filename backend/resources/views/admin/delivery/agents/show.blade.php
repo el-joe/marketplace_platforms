@@ -188,7 +188,7 @@
 
                 @if($agent->current_latitude && $agent->current_longitude)
                     <x-card title="{{ __('admin.delivery_section.last_known_location') }}">
-                        <p class="text-xs text-gray-500 mb-2">{{ __('admin.delivery_section.updated_at_label', ['time' => $agent->last_location_at?->diffForHumans() ?? '—']) }}</p>
+                        <p class="text-xs text-gray-500 mb-2">{{ __('admin.delivery_section.updated_at_label', ['time' => admin_tz($agent->last_location_at)?->diffForHumans() ?? '—']) }}</p>
                         <div id="agent-mini-map" class="h-48 rounded-lg bg-gray-100 flex items-center justify-center">
                             <span class="text-gray-400 text-sm">
                                 {{ $agent->current_latitude }}, {{ $agent->current_longitude }}
@@ -262,7 +262,7 @@
                             <p class="font-medium text-gray-800 text-sm">{{ $doc->label }}</p>
                             @if($doc->expires_at)
                                 <p class="text-xs text-gray-400 mt-0.5">
-                                    {{ __('admin.delivery_section.expires_label', ['date' => $doc->expires_at->format('d M Y')]) }}
+                                    {{ __('admin.delivery_section.expires_label', ['date' => admin_tz($doc->expires_at)?->format('d M Y')]) }}
                                     @if($doc->isExpired())
                                         <span class="text-red-500">{{ __('admin.delivery_section.expired_badge') }}</span>
                                     @endif
@@ -328,7 +328,7 @@
                             $shiftColors = ['scheduled'=>'gray','active'=>'primary','completed'=>'success','no_show'=>'warning','cancelled'=>'danger'];
                         @endphp
                         <tr>
-                            <td class="py-2">{{ $shift->shift_date->format('d M Y') }}</td>
+                            <td class="py-2">{{ admin_tz($shift->shift_date)?->format('d M Y') }}</td>
                             <td class="py-2">{{ $shift->zone?->name ?? '—' }}</td>
                             <td class="py-2 text-xs">{{ $shift->scheduled_start }} – {{ $shift->scheduled_end }}</td>
                             <td class="py-2 text-xs">

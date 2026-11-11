@@ -90,8 +90,8 @@ class TravelBookingController extends Controller
             $currency = $row->package?->currency ?? '';
             $amount = $currency.' '.number_format($row->total_price, 2);
 
-            $departure = $row->package?->departure_date ? Carbon::parse($row->package->departure_date)->format('d M Y') : '—';
-            $returnDate = $row->package?->return_date ? Carbon::parse($row->package->return_date)->format('d M Y') : '—';
+            $departure = $row->package?->departure_date ? admin_tz(Carbon::parse($row->package->departure_date))->format('d M Y') : '—';
+            $returnDate = $row->package?->return_date ? admin_tz(Carbon::parse($row->package->return_date))->format('d M Y') : '—';
             $dateRange = $departure.' – '.$returnDate;
 
             $showUrl = route('admin.travel.bookings.show', $row->id);
@@ -123,8 +123,8 @@ class TravelBookingController extends Controller
             'search' => fn ($q, $v) => $q->where('travel_bookings.booking_number', 'like', '%'.$v.'%'),
             'status' => fn ($q, $v) => $q->where('travel_bookings.status', $v),
             'package_id' => fn ($q, $v) => $q->where('travel_bookings.travel_package_id', $v),
-            'date_from' => fn ($q, $v) => $q->whereDate('travel_bookings.created_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('travel_bookings.created_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('travel_bookings.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('travel_bookings.created_at', '<=', admin_day_end($v)),
         ]);
     }
 
@@ -141,7 +141,7 @@ class TravelBookingController extends Controller
             $booking->status?->value,
             number_format($booking->total_price, 2),
             $booking->package?->currency,
-            optional($booking->created_at)->format('d M Y H:i'),
+            optional(admin_tz($booking->created_at))->format('d M Y H:i'),
         ]);
 
         return match ($request->input('export')) {

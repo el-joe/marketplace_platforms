@@ -71,7 +71,7 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 text-gray-500 text-xs">
-                                    {{ $currency->rate_updated_at?->diffForHumans() ?? '—' }}
+                                    {{ admin_tz($currency->rate_updated_at)?->diffForHumans() ?? '—' }}
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     @if ($currency->is_active)

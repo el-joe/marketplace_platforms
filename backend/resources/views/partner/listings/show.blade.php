@@ -427,7 +427,7 @@
                                         </td>
                                         <td class="py-2 text-center text-gray-600">{{ $mov->quantity_after }}</td>
                                         <td class="py-2 text-gray-600">{{ $mov->reason ?? '—' }}</td>
-                                        <td class="py-2 text-gray-400">{{ $mov->created_at?->format('M d, H:i') }}</td>
+                                        <td class="py-2 text-gray-400">{{ vendor_tz($mov->created_at)?->format('M d, H:i') }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

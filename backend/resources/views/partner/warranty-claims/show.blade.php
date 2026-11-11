@@ -39,7 +39,7 @@
                     <span>·</span>
                     <span>{{ __('partner.warranty_claims.customer') }}: {{ $initials }}</span>
                     <span>·</span>
-                    <span>{{ $claim->created_at->format('d/m/Y H:i') }}</span>
+                    <span>{{ vendor_tz($claim->created_at)?->format('d/m/Y H:i') }}</span>
                 </div>
 
                 <dl class="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-xs">
@@ -49,11 +49,11 @@
                     </div>
                     <div>
                         <dt class="text-gray-400">{{ __('partner.warranty_claims.purchase_date') }}</dt>
-                        <dd class="text-gray-700 font-medium">{{ $claim->purchase_date?->format('Y/m/d') ?? '—' }}</dd>
+                        <dd class="text-gray-700 font-medium">{{ vendor_tz($claim->purchase_date)?->format('Y/m/d') ?? '—' }}</dd>
                     </div>
                     <div>
                         <dt class="text-gray-400">{{ __('partner.warranty_claims.warranty_expires_at') }}</dt>
-                        <dd class="text-gray-700 font-medium">{{ $claim->warranty_expires_at?->format('Y/m/d') ?? '—' }}</dd>
+                        <dd class="text-gray-700 font-medium">{{ vendor_tz($claim->warranty_expires_at)?->format('Y/m/d') ?? '—' }}</dd>
                     </div>
                 </dl>
 
@@ -81,7 +81,7 @@
                                 : ($msg->sender_role === \App\Models\WarrantyClaimMessage::SENDER_ROLE_ADMIN
                                     ? __('partner.warranty_claims.admin_label')
                                     : __('partner.warranty_claims.customer_label')) }}
-                            · {{ $msg->created_at->format('d/m H:i') }}
+                            · {{ vendor_tz($msg->created_at)?->format('d/m H:i') }}
                         </p>
                         <div class="rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm
                             {{ $isMine

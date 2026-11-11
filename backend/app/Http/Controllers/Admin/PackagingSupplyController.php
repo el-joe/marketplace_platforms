@@ -12,8 +12,10 @@ use App\Notifications\Vendor\PackagingOrderApproved;
 use App\Notifications\Vendor\PackagingOrderDelivered;
 use App\Notifications\Vendor\PackagingOrderRejected;
 use App\Notifications\Vendor\PackagingOrderShipped;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +23,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PackagingSupplyController extends Controller
 {
@@ -28,6 +31,7 @@ class PackagingSupplyController extends Controller
     use HasExport;
 
     private const CURRENCIES = ['AED', 'SAR', 'EGP', 'KWD', 'OMR', 'QAR', 'BHD', 'JOD'];
+
     private const TYPES = ['box', 'bag', 'tape', 'label', 'bubble_wrap', 'other'];
 
     // ── Catalog ────────────────────────────────────────────────────────────
@@ -61,36 +65,36 @@ class PackagingSupplyController extends Controller
             ['searchable_columns' => [], 'orderable_column' => null], // actions
         ];
 
-        if (!$query->getQuery()->orders) {
+        if (! $query->getQuery()->orders) {
             $query->orderBy('sort_order')->orderBy('name_en');
         }
 
         return $this->dataTableResponse($request, $query, $columns, function (PackagingSupply $row) {
             $imgHtml = $row->image_path
-                ? '<img src="' . e(Storage::disk('public')->url($row->image_path)) . '" class="w-10 h-10 object-cover rounded-lg">'
+                ? '<img src="'.e(Storage::disk('public')->url($row->image_path)).'" class="w-10 h-10 object-cover rounded-lg">'
                 : '<div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-300 text-xs">—</div>';
 
             $nameHtml = '<div class="min-w-0">'
-                . '<div class="font-medium text-gray-900 truncate max-w-xs">' . e($row->name_en) . '</div>'
-                . '<div class="text-xs text-gray-400 truncate max-w-xs" dir="rtl">' . e($row->name_ar) . '</div>'
-                . '</div>';
+                .'<div class="font-medium text-gray-900 truncate max-w-xs">'.e($row->name_en).'</div>'
+                .'<div class="text-xs text-gray-400 truncate max-w-xs" dir="rtl">'.e($row->name_ar).'</div>'
+                .'</div>';
 
-            $typeBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' . $row->typeBadgeClass() . '">' . e($row->type->label()) . '</span>';
+            $typeBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium '.$row->typeBadgeClass().'">'.e($row->type->label()).'</span>';
 
             $stockHtml = $row->stock_available !== null ? number_format($row->stock_available) : '&infin;';
 
             $statusToggle = '<button type="button" class="js-toggle-active relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none '
-                . ($row->is_active ? 'bg-emerald-500' : 'bg-gray-200') . '" data-id="' . $row->id . '" data-active="' . ($row->is_active ? '1' : '0') . '">'
-                . '<span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform '
-                . ($row->is_active ? 'translate-x-4' : 'translate-x-0.5') . '"></span></button>';
+                .($row->is_active ? 'bg-emerald-500' : 'bg-gray-200').'" data-id="'.$row->id.'" data-active="'.($row->is_active ? '1' : '0').'">'
+                .'<span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform '
+                .($row->is_active ? 'translate-x-4' : 'translate-x-0.5').'"></span></button>';
 
             $actionsHtml = '<div class="flex justify-end gap-3">'
-                . '<button type="button" class="js-edit-item text-primary-600 hover:underline text-xs font-medium" data-item="' . e(json_encode($row)) . '">Edit</button>'
-                . '<button type="button" class="js-delete-item text-red-500 hover:underline text-xs font-medium" data-id="' . $row->id . '" data-name="' . e($row->name_en) . '">Delete</button>'
-                . '</div>';
+                .'<button type="button" class="js-edit-item text-primary-600 hover:underline text-xs font-medium" data-item="'.e(json_encode($row)).'">Edit</button>'
+                .'<button type="button" class="js-delete-item text-red-500 hover:underline text-xs font-medium" data-id="'.$row->id.'" data-name="'.e($row->name_en).'">Delete</button>'
+                .'</div>';
 
             $countriesHtml = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">'
-                . (int) $row->country_count . '</span>';
+                .(int) $row->country_count.'</span>';
 
             return [
                 'image' => $imgHtml,
@@ -126,7 +130,7 @@ class PackagingSupplyController extends Controller
         return $request->validate([
             'name_en' => ['required', 'string', 'max:255'],
             'name_ar' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:' . implode(',', self::TYPES)],
+            'type' => ['required', 'in:'.implode(',', self::TYPES)],
             'size' => ['nullable', 'string', 'max:100'],
             'description_en' => ['nullable', 'string'],
             'description_ar' => ['nullable', 'string'],
@@ -227,10 +231,10 @@ class PackagingSupplyController extends Controller
 
     private function storeImage($file): string
     {
-        $filename = (string) Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $filename = (string) Str::uuid().'.'.$file->getClientOriginalExtension();
         $file->storeAs('packaging', $filename, 'public');
 
-        return 'packaging/' . $filename;
+        return 'packaging/'.$filename;
     }
 
     public function destroyCatalogItem(PackagingSupply $supply): JsonResponse
@@ -253,14 +257,14 @@ class PackagingSupplyController extends Controller
 
     public function toggleActive(PackagingSupply $supply): JsonResponse
     {
-        $supply->update(['is_active' => !$supply->is_active]);
+        $supply->update(['is_active' => ! $supply->is_active]);
 
         return response()->json(['success' => true, 'is_active' => $supply->is_active]);
     }
 
     // ── Requests queue ─────────────────────────────────────────────────────
 
-    public function requests(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function requests(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportRequests($request);
@@ -278,7 +282,7 @@ class PackagingSupplyController extends Controller
             ->selectRaw('currency, SUM(total_cost + delivery_fee) as total')
             ->groupBy('currency')
             ->get()
-            ->map(fn ($row) => ['currency' => $row->currency, 'total' => \App\Support\Money::number($row->total)])
+            ->map(fn ($row) => ['currency' => $row->currency, 'total' => Money::number($row->total)])
             ->values();
 
         $stats = [
@@ -311,56 +315,56 @@ class PackagingSupplyController extends Controller
         ];
 
         $searchValue = $request->input('search.value');
-        if (!empty($searchValue)) {
+        if (! empty($searchValue)) {
             $query->orWhereHas('vendor', function ($q) use ($searchValue) {
-                $q->where('store_name', 'like', '%' . $searchValue . '%');
+                $q->where('store_name', 'like', '%'.$searchValue.'%');
             });
         }
 
-        if (!$query->getQuery()->orders) {
+        if (! $query->getQuery()->orders) {
             $query->orderByRaw("status = 'pending' desc")->orderByDesc('created_at');
         }
 
         return $this->dataTableResponse($request, $query, $columns, function (PackagingSupplyRequest $row) {
-            $statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' . $row->statusBadgeClass() . '">' . e($row->status->label()) . '</span>';
+            $statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium '.$row->statusBadgeClass().'">'.e($row->status->label()).'</span>';
 
             $viewUrl = route('admin.packaging.requests.show', $row->id);
-            $actionsHtml = '<a href="' . $viewUrl . '" class="text-primary-600 hover:underline text-xs font-medium">View</a>';
+            $actionsHtml = '<a href="'.$viewUrl.'" class="text-primary-600 hover:underline text-xs font-medium">View</a>';
 
             return [
                 'request_number' => e($row->request_number),
                 'vendor' => e($row->vendor->store_name ?? '—'),
                 'status' => $statusBadge,
                 'items_count' => $row->items()->count(),
-                'total_cost' => \App\Support\Money::format($row->total_cost),
-                'delivery_fee' => \App\Support\Money::format($row->delivery_fee),
-                'grand_total' => \App\Support\Money::format($row->grand_total),
+                'total_cost' => Money::format($row->total_cost),
+                'delivery_fee' => Money::format($row->delivery_fee),
+                'grand_total' => Money::format($row->grand_total),
                 'currency' => $row->currency,
-                'created_at' => $row->created_at->format('d M Y'),
+                'created_at' => admin_tz($row->created_at)?->format('d M Y'),
                 'actions' => $actionsHtml,
             ];
         });
     }
 
-    private function buildRequestsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildRequestsQuery(Request $request): Builder
     {
         $query = PackagingSupplyRequest::with('vendor');
 
         $query = $this->applyFilters($query, $request, [
             'search' => fn ($q, $v) => $q->where(function ($qq) use ($v) {
-                $qq->where('request_number', 'like', '%' . $v . '%')
-                    ->orWhereHas('vendor', fn ($vq) => $vq->where('store_name', 'like', '%' . $v . '%'));
+                $qq->where('request_number', 'like', '%'.$v.'%')
+                    ->orWhereHas('vendor', fn ($vq) => $vq->where('store_name', 'like', '%'.$v.'%'));
             }),
             'status' => fn ($q, $v) => $q->where('status', $v),
             'vendor_id' => fn ($q, $v) => $q->where('vendor_id', $v),
-            'date_from' => fn ($q, $v) => $q->whereDate('created_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('created_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('created_at', '<=', admin_day_end($v)),
         ]);
 
         return $query;
     }
 
-    private function exportRequests(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportRequests(Request $request): StreamedResponse
     {
         $requests = $this->buildRequestsQuery($request)->with('items')->orderByDesc('created_at')->get();
 
@@ -370,10 +374,10 @@ class PackagingSupplyController extends Controller
             $req->request_number,
             $req->vendor?->store_name,
             $req->items->count(),
-            \App\Support\Money::format($req->grand_total),
+            Money::format($req->grand_total),
             $req->currency,
             $req->status?->value,
-            optional($req->created_at)->format('d M Y H:i'),
+            optional(admin_tz($req->created_at))->format('d M Y H:i'),
         ]);
 
         return match ($request->input('export')) {

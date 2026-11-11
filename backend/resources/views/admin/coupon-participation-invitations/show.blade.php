@@ -11,7 +11,7 @@
             <div><span class="text-gray-400">{{ __('admin.coupon_participation_section.cps_status') }}</span><div class="font-medium">{{ $invitation->status }}</div></div>
             <div><span class="text-gray-400">{{ __('admin.coupon_participation_section.cps_max') }}</span><div class="font-medium">{{ $invitation->max_participants }}</div></div>
             <div><span class="text-gray-400">{{ __('admin.coupon_participation_section.cps_min_fee') }}</span><div class="font-medium">{{ \App\Support\Money::format($invitation->min_fee_amount) }} {{ $invitation->currency }}</div></div>
-            <div><span class="text-gray-400">{{ __('admin.coupon_participation_section.cps_deadline') }}</span><div class="font-medium">{{ $invitation->registration_deadline->format('Y-m-d H:i') }}</div></div>
+            <div><span class="text-gray-400">{{ __('admin.coupon_participation_section.cps_deadline') }}</span><div class="font-medium">{{ admin_tz($invitation->registration_deadline)?->format('Y-m-d H:i') }}</div></div>
         </div>
         @if($invitation->status === \App\Models\CouponParticipationInvitation::STATUS_OPEN)
         <form method="POST" action="{{ route('admin.coupon-participation-invitations.cancel', $invitation->id) }}" class="mt-4">

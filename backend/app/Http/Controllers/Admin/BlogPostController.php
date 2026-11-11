@@ -122,7 +122,7 @@ class BlogPostController extends Controller
             $dateHtml = $row->status === BlogPostStatus::Scheduled && $row->scheduled_for
                 ? '<div class="text-xs text-blue-600">'.$row->scheduled_for->format('d M Y H:i').'</div><div class="text-xs text-gray-400">Scheduled</div>'
                 : ($row->published_at
-                    ? '<div class="text-xs text-gray-700">'.$row->published_at->format('d M Y').'</div>'
+                    ? '<div class="text-xs text-gray-700">'.admin_tz($row->published_at)?->format('d M Y').'</div>'
                     : '<span class="text-gray-300 text-xs">—</span>');
 
             $featuredStar = $row->is_featured
@@ -396,8 +396,8 @@ class BlogPostController extends Controller
                 fn ($qq) => $qq->whereNotNull('blog_posts.published_at'),
                 fn ($qq) => $qq->whereNull('blog_posts.published_at')
             ),
-            'date_from' => fn ($q, $v) => $q->whereDate('blog_posts.published_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('blog_posts.published_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('blog_posts.published_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('blog_posts.published_at', '<=', admin_day_end($v)),
         ]);
     }
 

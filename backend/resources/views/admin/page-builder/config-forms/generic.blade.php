@@ -9,7 +9,7 @@
     <x-form.textarea name="__raw_json"
                      label="{{ __('admin.page_builder.config_forms.generic.raw_config_json') }}"
                      rows="10"
-                     :value="json_encode($config, JSON_PRETTY_PRINT)" />
+                     :value="json_encode(\App\Support\Timezones::utcValuesToAdminInput((array) $config), JSON_PRETTY_PRINT)" />
 
     @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])

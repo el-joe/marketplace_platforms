@@ -487,13 +487,13 @@ $businessTypeLabels = [
                             <div class="text-xs text-gray-500 space-y-1">
                                 <div class="flex justify-between">
                                     <span>{{ __('partner.profile.upload_date') }}</span>
-                                    <span class="font-medium text-gray-700">{{ $doc->created_at->format('d/m/Y') }}</span>
+                                    <span class="font-medium text-gray-700">{{ vendor_tz($doc->created_at)?->format('d/m/Y') }}</span>
                                 </div>
                                 @if ($doc->expires_at)
                                     <div class="flex justify-between">
                                         <span>{{ __('partner.profile.expiry_date') }}</span>
                                         <span class="font-medium {{ $doc->isExpired() ? 'text-red-600' : 'text-gray-700' }}">
-                                            {{ $doc->expires_at->format('d/m/Y') }}
+                                            {{ vendor_tz($doc->expires_at)?->format('d/m/Y') }}
                                         </span>
                                     </div>
                                 @endif

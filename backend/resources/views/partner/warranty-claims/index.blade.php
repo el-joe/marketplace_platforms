@@ -78,7 +78,7 @@
                 </div>
 
                 <div class="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <span class="text-xs text-gray-400">{{ $claim->created_at->format('Y/m/d') }}</span>
+                    <span class="text-xs text-gray-400">{{ vendor_tz($claim->created_at)?->format('Y/m/d') }}</span>
                     <a href="{{ route('partner.warranty-claims.show', $claim->id) }}"
                         class="text-xs font-medium text-primary-600 hover:text-primary-800">
                         {{ __('partner.warranty_claims.view') }}

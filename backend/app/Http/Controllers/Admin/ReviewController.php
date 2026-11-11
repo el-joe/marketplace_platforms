@@ -11,22 +11,22 @@ use App\Models\ReviewVendorReply;
 use App\Services\ReviewModerationService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReviewController extends Controller
 {
     use HasDataTable;
     use HasExport;
 
-    public function __construct(private readonly ReviewModerationService $moderationService)
-    {
-    }
+    public function __construct(private readonly ReviewModerationService $moderationService) {}
 
     // ─── Index ────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('reviews.view'), 403);
@@ -39,7 +39,7 @@ class ReviewController extends Controller
             'pending' => Review::where('status', ReviewStatus::Pending)->count(),
             'auto_flagged' => Review::where('status', ReviewStatus::AutoFlagged)->count(),
             'published_today' => Review::where('status', ReviewStatus::Published)
-                ->whereDate('updated_at', today())
+                ->whereBetween('updated_at', admin_day_range())
                 ->count(),
             'avg_rating' => (float) Review::where('status', ReviewStatus::Published)->avg('rating'),
         ];
@@ -60,7 +60,7 @@ class ReviewController extends Controller
      * Shared base query for the datatable and export, with request-driven filters applied.
      * Search matches the joined product's name (no dedicated search column on `reviews`).
      */
-    private function buildReviewsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildReviewsQuery(Request $request): Builder
     {
         $query = Review::query()
             ->with(['product.primaryImage', 'customer', 'country', 'vendorListing', 'adminListing'])
@@ -69,22 +69,22 @@ class ReviewController extends Controller
             ->select('reviews.*');
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('reviews.status', $v),
-            'country_id' => fn($q, $v) => $q->where('reviews.country_id', $v),
-            'verified_only' => fn($q, $v) => $v ? $q->where('reviews.is_verified_purchase', 1) : $q,
-            'ai_flagged' => fn($q, $v) => $v ? $q->whereIn('reviews.status', [ReviewStatus::Flagged, ReviewStatus::AutoFlagged])->orWhereNotNull('reviews.ai_flag_reason') : $q,
-            'listing_type' => fn($q, $v) => match ($v) {
+            'status' => fn ($q, $v) => $q->where('reviews.status', $v),
+            'country_id' => fn ($q, $v) => $q->where('reviews.country_id', $v),
+            'verified_only' => fn ($q, $v) => $v ? $q->where('reviews.is_verified_purchase', 1) : $q,
+            'ai_flagged' => fn ($q, $v) => $v ? $q->whereIn('reviews.status', [ReviewStatus::Flagged, ReviewStatus::AutoFlagged])->orWhereNotNull('reviews.ai_flag_reason') : $q,
+            'listing_type' => fn ($q, $v) => match ($v) {
                 'admin' => $q->whereNotNull('reviews.admin_listing_id'),
                 'vendor' => $q->whereNotNull('reviews.vendor_listing_id'),
                 default => $q,
             },
-            'date_from' => fn($q, $v) => $q->whereDate('reviews.created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('reviews.created_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->where('reviews.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('reviews.created_at', '<=', admin_day_end($v)),
             // Scalar single-rating filter (1-5). The pre-existing multi-select checkbox filter
             // below sends `rating` as an array and is handled separately since applyFilters()
             // ignores array values.
-            'rating' => fn($q, $v) => $q->where('reviews.rating', (int) $v),
-            'search' => fn($q, $v) => $q->where('products.name_en', 'like', "%{$v}%"),
+            'rating' => fn ($q, $v) => $q->where('reviews.rating', (int) $v),
+            'search' => fn ($q, $v) => $q->where('products.name_en', 'like', "%{$v}%"),
         ]);
 
         // Multi-select rating filter
@@ -95,7 +95,7 @@ class ReviewController extends Controller
         return $query;
     }
 
-    private function exportReviews(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportReviews(Request $request): StreamedResponse
     {
         $reviews = $this->buildReviewsQuery($request)
             ->with('customer')
@@ -104,12 +104,12 @@ class ReviewController extends Controller
 
         $headers = ['Product', 'Customer', 'Rating', 'Status', 'Date'];
 
-        $rows = $reviews->map(fn(Review $review) => [
+        $rows = $reviews->map(fn (Review $review) => [
             $review->product?->name_en,
             $review->customer?->name ?? 'Guest',
             (int) $review->rating,
             $review->status?->value,
-            optional($review->created_at)->format('d M Y H:i'),
+            optional(admin_tz($review->created_at))->format('d M Y H:i'),
         ]);
 
         return match ($request->input('export')) {
@@ -136,7 +136,7 @@ class ReviewController extends Controller
             ['searchable_columns' => [], 'orderable_column' => null],                      // 5: ai_flag
             ['searchable_columns' => [], 'orderable_column' => null],                      // 6: verified
             ['searchable_columns' => [], 'orderable_column' => 'reviews.helpful_count'],    // 7: helpful
-            ['searchable_columns' => [], 'orderable_column' => 'reviews.not_helpful_count'],// 8: not_helpful
+            ['searchable_columns' => [], 'orderable_column' => 'reviews.not_helpful_count'], // 8: not_helpful
             ['searchable_columns' => [], 'orderable_column' => 'reviews.created_at'],       // 9: created_at
             ['searchable_columns' => [], 'orderable_column' => null],                      // 10: actions
         ];
@@ -152,7 +152,7 @@ class ReviewController extends Controller
             $imgUrl = $product?->primaryImage->first()?->url ?? null;
             $imgTag = $imgUrl
                 ? "<img src=\"{$imgUrl}\" class=\"w-8 h-8 object-cover rounded flex-shrink-0\" alt=\"\">"
-                : "<span class=\"w-8 h-8 bg-gray-100 rounded flex items-center justify-center text-gray-300 flex-shrink-0\">?</span>";
+                : '<span class="w-8 h-8 bg-gray-100 rounded flex items-center justify-center text-gray-300 flex-shrink-0">?</span>';
             $productCell = "<div class=\"flex items-center gap-2\">{$imgTag}<a href=\"{$productUrl}\" class=\"text-primary-600 hover:underline text-sm font-medium\" target=\"_blank\">{$productName}</a></div>";
 
             // Customer cell (masked name)
@@ -182,13 +182,13 @@ class ReviewController extends Controller
 
             // AI flag
             $aiFlag = $review->ai_flag_reason
-                ? "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800\" title=\"" . e($review->ai_flag_reason) . "\">⚠ AI</span>"
+                ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800" title="'.e($review->ai_flag_reason).'">⚠ AI</span>'
                 : '—';
 
             // Verified purchase
             $verified = $review->is_verified_purchase
-                ? "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700\">✓ Verified</span>"
-                : "<span class=\"text-gray-400 text-xs\">—</span>";
+                ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">✓ Verified</span>'
+                : '<span class="text-gray-400 text-xs">—</span>';
 
             // Actions
             $showUrl = route('admin.reviews.show', $review->id);
@@ -196,8 +196,8 @@ class ReviewController extends Controller
             $rejectUrl = route('admin.reviews.reject', $review->id);
             $deleteUrl = route('admin.reviews.delete', $review->id);
 
-            $actions = "<div class=\"flex items-center gap-1\">"
-                . "<a href=\"{$showUrl}\" class=\"btn btn-xs btn-secondary\">View</a>";
+            $actions = '<div class="flex items-center gap-1">'
+                ."<a href=\"{$showUrl}\" class=\"btn btn-xs btn-secondary\">View</a>";
             if ($canModerate && $review->status !== ReviewStatus::Published) {
                 $actions .= "<button type=\"button\" class=\"btn btn-xs btn-success js-approve-btn\" data-url=\"{$approveUrl}\" data-id=\"{$review->id}\">Approve</button>";
             }
@@ -207,7 +207,7 @@ class ReviewController extends Controller
             if ($canDelete) {
                 $actions .= "<button type=\"button\" class=\"btn btn-xs btn-ghost js-delete-btn\" data-url=\"{$deleteUrl}\" data-id=\"{$review->id}\" title=\"Delete\">🗑</button>";
             }
-            $actions .= "</div>";
+            $actions .= '</div>';
 
             return [
                 'checkbox' => "<input type=\"checkbox\" class=\"row-checkbox form-checkbox\" value=\"{$review->id}\">",
@@ -219,9 +219,9 @@ class ReviewController extends Controller
                 'verified' => $verified,
                 'helpful' => (int) $review->helpful_count,
                 'not_helpful' => (int) $review->not_helpful_count,
-                'created_at' => $review->created_at->format('d M Y'),
+                'created_at' => admin_tz($review->created_at)?->format('d M Y'),
                 'actions' => $actions,
-                'DT_RowId' => 'row_' . $review->id,
+                'DT_RowId' => 'row_'.$review->id,
                 'DT_RowData' => ['id' => $review->id, 'status' => $review->status->value],
             ];
         });
@@ -229,7 +229,7 @@ class ReviewController extends Controller
 
     // ─── Show ─────────────────────────────────────────────────────────────────
 
-    public function show(Review $review): \Illuminate\View\View
+    public function show(Review $review): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('reviews.view'), 403);
@@ -282,7 +282,7 @@ class ReviewController extends Controller
 
         // Store optional reason in ai_flag_reason as a rejection note (repurposed for internal notes)
         if ($request->filled('reason')) {
-            $review->update(['ai_flag_reason' => '[Rejection note] ' . $request->input('reason')]);
+            $review->update(['ai_flag_reason' => '[Rejection note] '.$request->input('reason')]);
         }
 
         $this->moderationService->reject($review, $admin);
@@ -364,10 +364,12 @@ class ReviewController extends Controller
 
         return implode(' ', array_map(function (string $part) {
             $len = mb_strlen($part);
-            if ($len <= 2)
+            if ($len <= 2) {
                 return $part;
+            }
             $visible = max(1, (int) ceil($len / 3));
-            return mb_substr($part, 0, $visible) . str_repeat('*', $len - $visible);
+
+            return mb_substr($part, 0, $visible).str_repeat('*', $len - $visible);
         }, $parts));
     }
 }

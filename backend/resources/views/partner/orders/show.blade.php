@@ -212,7 +212,7 @@
                                     @endif
                                 </div>
                                 <time class="text-xs text-gray-400 shrink-0 ms-4">
-                                    {{ $history->created_at->format('M d, H:i') }}
+                                    {{ vendor_tz($history->created_at)?->format('M d, H:i') }}
                                 </time>
                             </div>
                         </li>
@@ -235,7 +235,7 @@
                                     <li class="ms-4">
                                         <div class="absolute w-2 h-2 bg-gray-300 rounded-full -start-1 mt-1.5 border border-white"></div>
                                         <p class="text-sm text-gray-700">{{ $event->description }}</p>
-                                        <time class="text-xs text-gray-400">{{ $event->occurred_at?->format('M d, H:i') }}</time>
+                                        <time class="text-xs text-gray-400">{{ vendor_tz($event->occurred_at)?->format('M d, H:i') }}</time>
                                     </li>
                                 @endforeach
                             </ol>
@@ -339,10 +339,10 @@
                     </div>
                     <p
                         class="{{ $isPast ? 'text-red-800 font-bold' : ($isUrgent ? 'text-orange-700 font-semibold' : 'text-gray-800') }} text-sm">
-                        {{ $subOrder->sla_ship_deadline->diffForHumans() }}
+                        {{ vendor_tz($subOrder->sla_ship_deadline)?->diffForHumans() }}
                     </p>
                     <p class="text-xs text-gray-400 mt-1">
-                        {{ $subOrder->sla_ship_deadline->format('d M Y, H:i') }}
+                        {{ vendor_tz($subOrder->sla_ship_deadline)?->format('d M Y, H:i') }}
                     </p>
                 </div>
             @endif
@@ -438,7 +438,7 @@
                         @if($subOrder->estimated_delivery_date)
                             <div class="flex justify-between text-gray-600">
                                 <span>{{ __('partner.orders.estimated_delivery') }}</span>
-                                <span class="font-medium">{{ $subOrder->estimated_delivery_date->format('d M Y') }}</span>
+                                <span class="font-medium">{{ vendor_tz($subOrder->estimated_delivery_date)?->format('d M Y') }}</span>
                             </div>
                         @endif
                     </div>

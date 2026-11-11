@@ -130,7 +130,7 @@ Object.assign(window.TRANSLATIONS, {
                                         class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-200 text-purple-800">{{ __('admin.support_tickets.ai_badge') }}</span>
                                 @endif
                                 <span class="text-xs text-gray-400 ml-auto">
-                                    {{ $msg->created_at ? \Carbon\Carbon::parse($msg->created_at)->format('M d, Y H:i') : '' }}
+                                    {{ $msg->created_at ? admin_tz(\Carbon\Carbon::parse($msg->created_at))->format('M d, Y H:i') : '' }}
                                 </span>
                             </div>
                             <div class="text-sm text-gray-800 whitespace-pre-wrap">{{ $msg->message }}</div>
@@ -282,7 +282,7 @@ Object.assign(window.TRANSLATIONS, {
                         <dt class="text-xs text-gray-500 mb-0.5">{{ __('admin.support_tickets.first_response') }}</dt>
                         <dd class="text-sm {{ $ticket->first_response_at ? 'text-gray-700' : 'text-orange-500' }}">
                             {{ $ticket->first_response_at
-        ? \Carbon\Carbon::parse($ticket->first_response_at)->format('M d, Y H:i')
+        ? admin_tz(\Carbon\Carbon::parse($ticket->first_response_at))->format('M d, Y H:i')
         : __('admin.support_tickets.not_yet_responded') }}
                         </dd>
                     </div>
@@ -291,7 +291,7 @@ Object.assign(window.TRANSLATIONS, {
                         <div>
                             <dt class="text-xs text-gray-500 mb-0.5">{{ __('admin.support_tickets.resolved') }}</dt>
                             <dd class="text-sm text-green-700">
-                                {{ \Carbon\Carbon::parse($ticket->resolved_at)->format('M d, Y H:i') }}</dd>
+                                {{ admin_tz(\Carbon\Carbon::parse($ticket->resolved_at))->format('M d, Y H:i') }}</dd>
                         </div>
                     @endif
 

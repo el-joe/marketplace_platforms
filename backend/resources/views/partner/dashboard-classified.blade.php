@@ -50,7 +50,7 @@
                                     @endif
                                 </td>
                                 <td class="py-2 pr-4">{{ $listing->status?->label() ?? '—' }}</td>
-                                <td class="py-2 pr-4 text-gray-500">{{ $listing->created_at->format('d M Y') }}</td>
+                                <td class="py-2 pr-4 text-gray-500">{{ vendor_tz($listing->created_at)?->format('d M Y') }}</td>
                             </tr>
                         @endforeach
                     </tbody>

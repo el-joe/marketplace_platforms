@@ -71,11 +71,11 @@
             <div class="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5 border-t border-gray-100">
                 <div>
                     <p class="text-xs text-gray-400 mb-0.5">{{ __('partner.flash_sales_extra.show_starts') }}</p>
-                    <p class="text-sm font-medium text-gray-800">{{ $flashSale->sale_starts_at?->translatedFormat('j M Y H:i') ?? '—' }}</p>
+                    <p class="text-sm font-medium text-gray-800">{{ vendor_tz($flashSale->sale_starts_at)?->translatedFormat('j M Y H:i') ?? '—' }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-400 mb-0.5">{{ __('partner.flash_sales_extra.show_ends') }}</p>
-                    <p class="text-sm font-medium text-gray-800">{{ $flashSale->sale_ends_at?->translatedFormat('j M Y H:i') ?? '—' }}</p>
+                    <p class="text-sm font-medium text-gray-800">{{ vendor_tz($flashSale->sale_ends_at)?->translatedFormat('j M Y H:i') ?? '—' }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-400 mb-0.5">{{ __('partner.flash_sales_extra.min_discount_pct') }}</p>
@@ -156,7 +156,7 @@
             <div>
                 <h3 class="text-sm font-semibold text-blue-900">{{ __('partner.flash_sales_extra.submit_product_title') }}</h3>
                 <p class="text-xs text-blue-700 mt-0.5">
-                    {{ __('partner.flash_sales_extra.submission_ends', ['date' => $flashSale->submission_closes_at ? $flashSale->submission_closes_at->translatedFormat('j M Y') . ' ' . __('common.at_time') . ' ' . $flashSale->submission_closes_at->format('H:i') : '—']) }}
+                    {{ __('partner.flash_sales_extra.submission_ends', ['date' => $flashSale->submission_closes_at ? vendor_tz($flashSale->submission_closes_at)?->translatedFormat('j M Y') . ' ' . __('common.at_time') . ' ' . vendor_tz($flashSale->submission_closes_at)?->format('H:i') : '—']) }}
                 </p>
             </div>
             <button id="btn-add-product" type="button"
@@ -229,7 +229,7 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-gray-500 text-xs">
-                                {{ $sub->submitted_at?->translatedFormat('j M Y H:i') ?? '—' }}
+                                {{ vendor_tz($sub->submitted_at)?->translatedFormat('j M Y H:i') ?? '—' }}
                             </td>
                         </tr>
                     @empty

@@ -98,7 +98,7 @@
                         @foreach($shipments as $shipment)
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="py-3 px-5 text-xs text-gray-500 whitespace-nowrap">
-                                    {{ $shipment->created_at->format('Y/m/d') }}
+                                    {{ vendor_tz($shipment->created_at)?->format('Y/m/d') }}
                                 </td>
                                 <td class="py-3 px-4">
                                     <span class="font-mono text-xs text-gray-700">{{ $shipment->sub_order_number }}</span>

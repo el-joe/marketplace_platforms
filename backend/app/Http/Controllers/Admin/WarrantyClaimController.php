@@ -11,12 +11,17 @@ use App\Notifications\Customer\WarrantyClaimResolvedNotification;
 use App\Notifications\Customer\WarrantyClaimStatusChanged;
 use App\Services\WalletService;
 use App\Services\WarrantyClaimResolutionService;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WarrantyClaimController extends Controller
 {
@@ -27,7 +32,7 @@ class WarrantyClaimController extends Controller
     // Index
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('warranty_claims.view'), 403);
@@ -71,28 +76,28 @@ class WarrantyClaimController extends Controller
 
         return $this->dataTableResponse($request, $query, $columns, function ($w) {
             $statusBadge = $this->statusBadgeClass($w->status);
-            $statusLabel = __('admin.warranty_claims_section.' . $w->status);
+            $statusLabel = __('admin.warranty_claims_section.'.$w->status);
             $showUrl = route('admin.warranty-claims.show', $w->id);
             $isAdminListing = $w->listing_type === WarrantyClaim::LISTING_TYPE_ADMIN;
 
             $sellerCell = $isAdminListing
-                ? '<span class="text-sm text-gray-700">' . __('admin.warranty_claims_section.platform') . '</span>'
-                : '<span class="text-sm text-gray-700">' . e($w->vendor_store_name ?? '—') . '</span>';
+                ? '<span class="text-sm text-gray-700">'.__('admin.warranty_claims_section.platform').'</span>'
+                : '<span class="text-sm text-gray-700">'.e($w->vendor_store_name ?? '—').'</span>';
 
             $listingTypeBadge = $isAdminListing
-                ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">' . __('admin.warranty_claims_section.admin') . '</span>'
-                : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">' . __('admin.warranty_claims_section.vendor') . '</span>';
+                ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">'.__('admin.warranty_claims_section.admin').'</span>'
+                : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">'.__('admin.warranty_claims_section.vendor').'</span>';
 
             return [
-                'DT_RowId' => 'wc-' . $w->id,
-                'claim_number' => '<a href="' . $showUrl . '" class="font-mono font-medium text-primary-600 hover:underline text-xs">' . e($w->claim_number) . '</a>',
-                'customer' => '<span class="text-sm text-gray-700">' . e($w->customer_name ?? '—') . '</span>',
-                'product' => '<span class="text-sm text-gray-700">' . e($w->product_name ?? '—') . '</span>',
+                'DT_RowId' => 'wc-'.$w->id,
+                'claim_number' => '<a href="'.$showUrl.'" class="font-mono font-medium text-primary-600 hover:underline text-xs">'.e($w->claim_number).'</a>',
+                'customer' => '<span class="text-sm text-gray-700">'.e($w->customer_name ?? '—').'</span>',
+                'product' => '<span class="text-sm text-gray-700">'.e($w->product_name ?? '—').'</span>',
                 'vendor' => $sellerCell,
                 'listing_type' => $listingTypeBadge,
-                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e($statusLabel) . '</span>',
-                'created_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">' . \Carbon\Carbon::parse($w->created_at)->format('M d, Y H:i') . '</span>',
-                'actions' => '<a href="' . $showUrl . '" class="btn btn-xs btn-secondary">' . e(__('common.view')) . '</a>',
+                'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$statusBadge.'">'.e($statusLabel).'</span>',
+                'created_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">'.admin_tz(Carbon::parse($w->created_at))->format('M d, Y H:i').'</span>',
+                'actions' => '<a href="'.$showUrl.'" class="btn btn-xs btn-secondary">'.e(__('common.view')).'</a>',
             ];
         });
     }
@@ -101,7 +106,7 @@ class WarrantyClaimController extends Controller
     // Query builder (shared by datatable + export)
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildClaimsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildClaimsQuery(Request $request): Builder
     {
         // WarrantyClaim has no direct order relation; it links to an order via
         // order_items.order_id, so we join through order_items -> orders for the
@@ -121,12 +126,12 @@ class WarrantyClaimController extends Controller
             );
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where('warranty_claims.claim_number', 'like', '%' . $v . '%'),
-            'status' => fn($q, $v) => $q->where('warranty_claims.status', $v),
-            'vendor_id' => fn($q, $v) => $q->where('warranty_claims.vendor_id', $v),
-            'listing_type' => fn($q, $v) => $q->where('warranty_claims.listing_type', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('warranty_claims.created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('warranty_claims.created_at', '<=', $v),
+            'search' => fn ($q, $v) => $q->where('warranty_claims.claim_number', 'like', '%'.$v.'%'),
+            'status' => fn ($q, $v) => $q->where('warranty_claims.status', $v),
+            'vendor_id' => fn ($q, $v) => $q->where('warranty_claims.vendor_id', $v),
+            'listing_type' => fn ($q, $v) => $q->where('warranty_claims.listing_type', $v),
+            'date_from' => fn ($q, $v) => $q->where('warranty_claims.created_at', '>=', admin_day_start($v)),
+            'date_to' => fn ($q, $v) => $q->where('warranty_claims.created_at', '<=', admin_day_end($v)),
         ]);
     }
 
@@ -134,18 +139,18 @@ class WarrantyClaimController extends Controller
     // Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function exportClaims(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportClaims(Request $request): StreamedResponse
     {
         $claims = $this->buildClaimsQuery($request)->orderByDesc('warranty_claims.created_at')->get();
 
         $headers = ['Claim #', 'Order #', 'Issue Type', 'Status', 'Date'];
 
-        $rows = $claims->map(fn($w) => [
+        $rows = $claims->map(fn ($w) => [
             $w->claim_number,
             $w->order_number,
             $w->issue_type,
             $w->status,
-            optional($w->created_at)->format('d M Y H:i'),
+            optional(admin_tz($w->created_at))->format('d M Y H:i'),
         ]);
 
         return match ($request->input('export')) {
@@ -160,13 +165,13 @@ class WarrantyClaimController extends Controller
     // Show
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function show(WarrantyClaim $claim): \Illuminate\View\View
+    public function show(WarrantyClaim $claim): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('warranty_claims.view'), 403);
 
         $claim->load([
-            'messages' => fn($q) => $q->orderBy('created_at', 'asc'),
+            'messages' => fn ($q) => $q->orderBy('created_at', 'asc'),
             'customer:id,name,email',
             'product:id,name',
             'vendor:id,store_name,email',
@@ -206,8 +211,8 @@ class WarrantyClaimController extends Controller
             'sender_user_id' => $admin->id,
             'sender_role' => WarrantyClaimMessage::SENDER_ROLE_ADMIN,
             'message' => __('admin.warranty_claims_section.status_change_log', [
-                'from' => __('admin.warranty_claims_section.' . $previousStatus),
-                'to' => __('admin.warranty_claims_section.' . $data['status']),
+                'from' => __('admin.warranty_claims_section.'.$previousStatus),
+                'to' => __('admin.warranty_claims_section.'.$data['status']),
             ]),
             'is_internal_note' => true,
             'created_at' => now(),
@@ -276,7 +281,7 @@ class WarrantyClaimController extends Controller
                 'message' => sprintf(
                     "[%s] %s\n%s",
                     __('admin.warranty_claims_section.resolution'),
-                    __('admin.warranty_claims_section.' . $data['resolution']),
+                    __('admin.warranty_claims_section.'.$data['resolution']),
                     $data['resolution_notes']
                 ),
                 'is_internal_note' => false,
@@ -286,6 +291,7 @@ class WarrantyClaimController extends Controller
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json(['message' => __('admin.warranty_claims_section.resolve_failed')], 500);
         }
 
@@ -330,7 +336,7 @@ class WarrantyClaimController extends Controller
         ]);
 
         $previousStatus = $claim->status;
-        if (!$isInternal && $claim->status === WarrantyClaim::STATUS_SUBMITTED) {
+        if (! $isInternal && $claim->status === WarrantyClaim::STATUS_SUBMITTED) {
             $claim->update(['status' => WarrantyClaim::STATUS_UNDER_REVIEW]);
         }
 
@@ -345,7 +351,7 @@ class WarrantyClaimController extends Controller
                 : __('admin.warranty_claims_section.reply_sent'),
             'status' => $claim->status,
             'sender_name' => $admin->name,
-            'created_at' => $message->created_at->format('M d, Y H:i'),
+            'created_at' => admin_tz($message->created_at)?->format('M d, Y H:i'),
         ]);
     }
 
@@ -358,7 +364,7 @@ class WarrantyClaimController extends Controller
         $claim->loadMissing('orderItem.order', 'orderItem.subOrder');
         $orderItem = $claim->orderItem;
 
-        if (!$orderItem?->order) {
+        if (! $orderItem?->order) {
             return;
         }
 
@@ -368,7 +374,7 @@ class WarrantyClaimController extends Controller
             ->latest('created_at')
             ->first();
 
-        if (!$originalTransaction) {
+        if (! $originalTransaction) {
             return;
         }
 
@@ -382,7 +388,7 @@ class WarrantyClaimController extends Controller
             'amount' => $orderItem->total ?? $orderItem->price ?? 0,
             'currency' => $orderItem->order->currency ?? 'USD',
             'reason' => 'not_as_described',
-            'reason_notes' => 'Warranty claim #' . $claim->claim_number,
+            'reason_notes' => 'Warranty claim #'.$claim->claim_number,
             'refund_type' => 'partial',
             'initiated_by_customer_id' => $claim->customer_id,
             'approved_by_admin_id' => $adminId,
@@ -395,7 +401,7 @@ class WarrantyClaimController extends Controller
 
         $walletService->credit(
             $wallet,
-            \App\Support\Money::number($refund->amount),
+            Money::number($refund->amount),
             'warranty_claim',
             $claim->id,
             "Warranty claim refund #{$claim->claim_number}",
