@@ -5,6 +5,7 @@ import Image from "next/image";
 import useLocale from "@/src/hooks/use-locale";
 import Price from "@/src/components/shared/Price";
 import CartButton from "./cart-button";
+import { resolveListingType } from "./helpers/resolve-listing-type";
 import { getImageURL } from "@/src/helpers/get-image-url";
 import { getListingImage } from "@/src/types/media";
 
@@ -62,6 +63,7 @@ export default function FloatingProductSummary({ product }: Props) {
       <div className="w-58">
         <CartButton
           listingId={product.listing.listing_id}
+          listingType={resolveListingType(product.listing)}
           hasCustomAttributes={!!product.product.has_custom_attributes}
           customAttributes={product.product.custom_attributes ?? []}
         />

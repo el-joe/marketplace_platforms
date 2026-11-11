@@ -30,6 +30,7 @@ use App\Services\Shipping\ListingOriginShippingIndicator;
 use App\Services\WarrantyPlanService;
 use App\Support\Bilingual;
 use App\Support\Concerns\BuildsProductAttributeSelector;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -174,7 +175,7 @@ class ListingDetailController extends Controller
         $bestSellerBadge = $this->enrichment->getBestSellerBadge($product, $country);
         $coupons = $this->enrichment->getApplicableCoupons($product, $country, $customer, $listing instanceof VendorListing ? $listing : null);
         $paymentOptions = $this->enrichment->getPaymentOptions($country, $listing->price, $customer);
-        $warrantyPlans = $this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code, \App\Support\Money::number($listing->price));
+        $warrantyPlans = $this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code, Money::number($listing->price));
 
         $reviews = $product->reviews()
             ->where('status', 'published')
@@ -306,6 +307,7 @@ class ListingDetailController extends Controller
         if ($listing instanceof AdminListing) {
             return [
                 'listing_id' => $listing->id,
+                'listing_type' => 'admin',
                 'listing_ref' => $this->identifiers->buildListingRef($listing),
                 'vendor_sku' => $listing->platform_sku,
                 'sku' => $listing->productVariant->sku,
@@ -377,6 +379,7 @@ class ListingDetailController extends Controller
 
         return [
             'listing_id' => $listing->id,
+            'listing_type' => 'vendor',
             'listing_ref' => $this->identifiers->buildListingRef($listing),
             'vendor_sku' => $listing->vendor_sku,
             'sku' => $listing->productVariant->sku,
@@ -624,6 +627,7 @@ class ListingDetailController extends Controller
         return [
             'listing_id' => $listing->id,
             'is_selected' => $isSelected,
+            'listing_type' => 'vendor',
             'listing_ref' => $this->identifiers->buildListingRef($listing),
             'url' => route('customer.listing.show', [$country->site_code, $listing->product_variant_id.'--'.$listing->id]),
             'seller_name' => $listing->vendor->store_name,
@@ -870,6 +874,11 @@ class ListingDetailController extends Controller
         return [
             'product_id' => $product->id,
             'listing_id' => $listing->id,
+            'listing_type' => match (true) {
+                $listing instanceof AdminListing => 'admin',
+                $listing instanceof MarketerListing => 'marketer',
+                default => 'vendor',
+            },
             'listing_ref' => $this->identifiers->buildListingRef($listing),
             'name' => Bilingual::pair($product, 'name'),
             'image_url' => $primaryImage?->url,

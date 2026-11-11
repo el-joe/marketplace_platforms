@@ -44,6 +44,7 @@ interface ICartContext {
     {
       vendor_listing_id: string;
       quantity: number;
+      listing_type?: string;
     }[],
     unknown
   >;

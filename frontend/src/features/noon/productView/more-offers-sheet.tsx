@@ -20,6 +20,7 @@ import { ChevronLeft, ChevronRight, StarIcon, StoreIcon } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { OtherSeller, ProductCustomAttribute } from "./types/product-details";
 import CartButton from "./cart-button";
+import { resolveListingType } from "./helpers/resolve-listing-type";
 import { getImageURL } from "@/src/helpers/get-image-url";
 import { getListingImage } from "@/src/types/media";
 
@@ -137,6 +138,7 @@ const SheetSellerCard = ({
         <div className="min-w-33" onClick={(e) => e.stopPropagation()}>
           <CartButton
             listingId={seller.listing_id}
+            listingType={resolveListingType(seller)}
             hasCustomAttributes={hasCustomAttributes}
             customAttributes={customAttributes}
           />

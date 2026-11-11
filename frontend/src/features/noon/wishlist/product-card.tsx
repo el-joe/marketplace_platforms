@@ -14,6 +14,7 @@ import WishlistItemOptionsMenu from "./item-options-menu";
 import AnimatedBadge from "@/src/components/shared/animated-badge";
 import { mapPromoBadges } from "@/src/lib/promo-badges";
 import CartButton from "../productView/cart-button";
+import { resolveListingType } from "../productView/helpers/resolve-listing-type";
 import { ShippingBadgePill } from "@/src/components/shared/shipping-badge-pill";
 
 type Props = {
@@ -125,6 +126,7 @@ export default function ProductCard({ item }: Props) {
         <div className="flex-1">
           <CartButton
             listingId={item?.listing?.listing_id as string}
+            listingType={resolveListingType(item?.listing)}
             classes="text-xs md:text-base"
           />
         </div>

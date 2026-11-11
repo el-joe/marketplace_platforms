@@ -12,6 +12,7 @@ import { IProductDetails } from "./types";
 import useLocale from "@/src/hooks/use-locale";
 import { useCartContext } from "@/src/providers/cart-provider";
 import { Spinner } from "@/src/components/ui/spinner";
+import { resolveListingType } from "./helpers/resolve-listing-type";
 
 export default function BoughtTogether({
   boughtTogetherData,
@@ -122,6 +123,7 @@ export default function BoughtTogether({
           addItemsBulk(
             selectedItems.map((item) => ({
               vendor_listing_id: item.listing_id,
+              listing_type: resolveListingType(item),
               quantity: 1,
             })),
           ).then(() => {

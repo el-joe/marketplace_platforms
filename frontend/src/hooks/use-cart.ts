@@ -92,7 +92,12 @@ export function useCart() {
         quantity,
         listing_type: listingType,
         shipping_method_id: shippingMethodId,
-        admin_product_listing_id: adminProductListingId,
+        // The API expects admin listings under `admin_listing_id`; callers
+        // (e.g. product cards) pass the listing id as `vendorListingId`.
+        admin_listing_id:
+          listingType === "admin"
+            ? (adminProductListingId ?? vendorListingId)
+            : undefined,
         warranty_plan_id: warrantyPlanId ?? null,
         custom_attribute_values: customAttributeValues,
       }),
@@ -101,8 +106,24 @@ export function useCart() {
   });
 
   const addItemsBulk = useMutation({
-    mutationFn: (items: { vendor_listing_id: string; quantity: number }[]) =>
-      addItemsBulkCartService(items),
+    mutationFn: (
+      items: {
+        vendor_listing_id: string;
+        quantity: number;
+        listing_type?: string;
+      }[],
+    ) =>
+      // The bulk API validates each id against its own table, so admin and
+      // marketer listings must not be sent as `vendor_listing_id`.
+      addItemsBulkCartService(
+        items.map(({ vendor_listing_id: id, quantity, listing_type }) =>
+          listing_type === "admin"
+            ? { listing_type, admin_listing_id: id, quantity }
+            : listing_type === "marketer"
+              ? { listing_type, marketer_listing_id: id, quantity }
+              : { vendor_listing_id: id, quantity },
+        ),
+      ),
     onSuccess: invalidate,
     onError,
   });

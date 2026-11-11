@@ -8,6 +8,7 @@ import CouponsSlide from "@/src/features/noon/productView/coupons-slide";
 import DeliveryInformation from "@/src/features/noon/productView/delivery-information";
 import ExtendedWarranty from "@/src/features/noon/productView/ExtendedWarranty";
 import FloatingCartButton from "@/src/features/noon/productView/floating-cart-button";
+import { resolveListingType } from "@/src/features/noon/productView/helpers/resolve-listing-type";
 import PaymentDiscount from "@/src/features/noon/productView/payment-discount";
 import ProductImagesPreview from "@/src/features/noon/productView/Product-images-preview";
 import ProductOverview from "@/src/features/noon/productView/product-overview";
@@ -162,6 +163,7 @@ export default async function ProductView({ slug }: { slug: string }) {
           {/* floating add to cart button for small screens */}
           <FloatingCartButton
             listingId={productData.listing.listing_id}
+            listingType={resolveListingType(productData.listing)}
             hasCustomAttributes={!!productData.product.has_custom_attributes}
             customAttributes={productData.product.custom_attributes ?? []}
           />

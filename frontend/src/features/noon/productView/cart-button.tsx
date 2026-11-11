@@ -11,9 +11,11 @@ import { useWarrantySelection } from "./warranty-selection-context";
 import CustomAttributesModal from "@/src/components/shared/custom-attributes-modal";
 import { ProductCustomAttribute } from "./types/product-details";
 import { cn } from "@/src/lib/utils";
+import { CartListingType } from "./helpers/resolve-listing-type";
 
 type Props = {
   listingId: string;
+  listingType?: CartListingType;
   quantity?: number;
   hasCustomAttributes?: boolean;
   customAttributes?: ProductCustomAttribute[];
@@ -22,6 +24,7 @@ type Props = {
 
 export default function CartButton({
   listingId,
+  listingType = "vendor",
   quantity = 1,
   hasCustomAttributes = false,
   customAttributes = [],
@@ -52,6 +55,7 @@ export default function CartButton({
     const hadWarrantySelected = Boolean(selectedPlanId);
     return addItem({
       vendorListingId: listingId,
+      listingType,
       quantity,
       shippingMethodId: selectedDelivery as string,
       warrantyPlanId: selectedPlanId,

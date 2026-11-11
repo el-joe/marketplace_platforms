@@ -449,7 +449,9 @@ class ListingQueryService
 
         return [
             'listing_id' => $listing->id,
-            'listing_type' => $listing->global_system_type === GlobalSystemType::ExpressFbn ? 'admin' : 'vendor',
+            // Always a VendorListing here — Express-FBN is a fulfilment mode, not an admin listing;
+            // the cart resolves the id by this type, so it must stay 'vendor'.
+            'listing_type' => 'vendor',
             'listing_ref' => app(ListingIdentifierService::class)->buildListingRef($listing),
             'sku' => $variant->sku,
             'vendor_sku' => $listing->vendor_sku,
@@ -795,7 +797,7 @@ class ListingQueryService
         ?string $categoryId,
         int $perPage = 20,
         array $filters = [],
-        ?\App\Models\Country $country = null,
+        ?Country $country = null,
     ): LengthAwarePaginator {
         $sections = app(ClassifiedSectionService::class);
 

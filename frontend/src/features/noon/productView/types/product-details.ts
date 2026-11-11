@@ -116,6 +116,7 @@ export interface FrequentlyBoughtTogether {
 export interface Item {
   product_id: string;
   listing_id: string;
+  listing_type?: "vendor" | "admin" | "marketer";
   listing_ref: string;
   name: Locales;
   image_url: string;
@@ -126,6 +127,7 @@ export interface Item {
 
 export interface Listing {
   listing_id: string;
+  listing_type?: "vendor" | "admin" | "marketer";
   listing_ref: string;
   vendor_sku: string | null;
   sku: string;
@@ -150,6 +152,7 @@ export interface Listing {
 
 export interface OtherSeller {
   listing_id: string;
+  listing_type?: "vendor";
   is_selected: boolean;
   listing_ref: string;
   url: string;

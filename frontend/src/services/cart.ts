@@ -25,7 +25,7 @@ export const addItemCartService = (body: {
   vendor_listing_id: string;
   quantity: number;
   listing_type?: string;
-  admin_product_listing_id?: string;
+  admin_listing_id?: string;
   shipping_method_id?: string;
   warranty_plan_id?: string | null;
   custom_attribute_values?: ICustomAttributeValueInput[];
@@ -37,10 +37,11 @@ export const addItemCartService = (body: {
 
 export const addItemsBulkCartService = (
   items: {
-    vendor_listing_id: string;
+    vendor_listing_id?: string;
+    admin_listing_id?: string;
+    marketer_listing_id?: string;
     quantity: number;
     listing_type?: string;
-    admin_product_listing_id?: string;
     shipping_method_id?: string;
   }[],
 ) =>

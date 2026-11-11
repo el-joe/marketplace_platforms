@@ -14,6 +14,7 @@ import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import useLocale from "@/src/hooks/use-locale";
 import CartButton from "./cart-button";
+import { resolveListingType } from "./helpers/resolve-listing-type";
 import MoreOffersSheet from "./more-offers-sheet";
 import { Button } from "@/src/components/ui/button";
 import StanderWarrantyDialog from "./dialogs/stander-warranty-dialog";
@@ -169,6 +170,7 @@ const SellerCard = ({ productData }: Props) => {
       <div className="p-4 text-sm hidden lg:block">
         <CartButton
           listingId={productData.listing.listing_id}
+          listingType={resolveListingType(productData.listing)}
           hasCustomAttributes={!!productData.product.has_custom_attributes}
           customAttributes={productData.product.custom_attributes ?? []}
         />
