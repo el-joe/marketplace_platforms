@@ -26,6 +26,7 @@ use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\ShippingRate;
 use App\Models\ShippingZone;
+use App\Models\SizeGuide;
 use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Models\VendorProductCertification;
@@ -56,6 +57,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -549,7 +551,9 @@ class ListingController extends Controller
             }
         }
 
-        return view('partner.listings.show', compact('listing', 'movements', 'availableShippingMethods', 'defaultShippingMethod', 'marketerCampaigns', 'marketerCampaignStats', 'marketerCampaignBlock'));
+        $sizeGuides = SizeGuide::where('vendor_id', $this->vendorId())->orderBy('name')->get(['id', 'name']);
+
+        return view('partner.listings.show', compact('listing', 'movements', 'availableShippingMethods', 'defaultShippingMethod', 'marketerCampaigns', 'marketerCampaignStats', 'marketerCampaignBlock', 'sizeGuides'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -596,8 +600,49 @@ class ListingController extends Controller
             'product_id' => $attribute->product_id,
             'label' => $attribute->label,
             'unit' => $attribute->unit,
+            'type' => $attribute->type ?: 'text',
+            'options' => array_values($attribute->options ?? []),
             'is_required' => (bool) $attribute->is_required,
             'sort_order' => $attribute->sort_order,
+        ];
+    }
+
+    /**
+     * Shared rules for creating/updating a custom attribute (mirrors the
+     * partner mobile API in Partner\Api\ProductCustomAttributeController).
+     *
+     * @return array<string, mixed>
+     */
+    private function customAttributeRules(bool $creating): array
+    {
+        return [
+            'label' => $creating ? ['required_without:preset', 'nullable', 'string', 'max:255'] : ['sometimes', 'required', 'string', 'max:255'],
+            'preset' => ['nullable', 'string', 'in:'.implode(',', array_keys(ProductCustomAttribute::PRESETS))],
+            'type' => ['nullable', 'in:'.implode(',', ProductCustomAttribute::TYPES)],
+            'options' => ['required_if:type,select', 'nullable', 'array', 'min:1', 'max:50'],
+            'options.*' => ['string', 'max:100', 'distinct'],
+            'unit' => ['nullable', 'string', 'max:50'],
+            'is_required' => ['nullable', 'boolean'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function customAttributeAttributes(array $validated): array
+    {
+        $preset = isset($validated['preset']) ? ProductCustomAttribute::PRESETS[$validated['preset']] : null;
+        $type = $preset ? 'number' : ($validated['type'] ?? 'text');
+
+        return [
+            'label' => $validated['label'] ?? $preset[app()->getLocale() === 'ar' ? 1 : 0],
+            'type' => $type,
+            'options' => $type === 'select' ? array_values(array_filter(array_map('trim', $validated['options'] ?? []), fn ($o) => $o !== '')) : null,
+            'unit' => $validated['unit'] ?? ($preset ? 'cm' : null),
+            'is_required' => (bool) ($validated['is_required'] ?? false),
+            'sort_order' => $validated['sort_order'] ?? 0,
         ];
     }
 
@@ -614,19 +659,11 @@ class ListingController extends Controller
     {
         $this->assertVendorSellsProduct($product);
 
-        $validated = $request->validate([
-            'label' => ['required', 'string', 'max:255'],
-            'unit' => ['nullable', 'string', 'max:50'],
-            'is_required' => ['nullable', 'boolean'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
-        ]);
+        $validated = $request->validate($this->customAttributeRules(creating: true));
+        $attributes = $this->customAttributeAttributes($validated);
+        $attributes['sort_order'] = $validated['sort_order'] ?? ((int) $product->customAttributes()->max('sort_order') + 1);
 
-        $attribute = $product->customAttributes()->create([
-            'label' => $validated['label'],
-            'unit' => $validated['unit'] ?? null,
-            'is_required' => $validated['is_required'] ?? false,
-            'sort_order' => $validated['sort_order'] ?? 0,
-        ]);
+        $attribute = $product->customAttributes()->create($attributes);
 
         return response()->json(['success' => true, 'data' => $this->presentCustomAttribute($attribute)], 201);
     }
@@ -636,14 +673,16 @@ class ListingController extends Controller
         $this->assertVendorSellsProduct($product);
         abort_unless($customAttribute->product_id === $product->id, 404);
 
-        $validated = $request->validate([
-            'label' => ['sometimes', 'required', 'string', 'max:255'],
-            'unit' => ['nullable', 'string', 'max:50'],
-            'is_required' => ['nullable', 'boolean'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
-        ]);
-
-        $customAttribute->update($validated);
+        $validated = $request->validate($this->customAttributeRules(creating: false));
+        $customAttribute->update($this->customAttributeAttributes([
+            'label' => $customAttribute->label,
+            'type' => $customAttribute->type,
+            'options' => $customAttribute->options,
+            'unit' => $customAttribute->unit,
+            'is_required' => $customAttribute->is_required,
+            'sort_order' => $customAttribute->sort_order,
+            ...$validated,
+        ]));
 
         return response()->json(['success' => true, 'data' => $this->presentCustomAttribute($customAttribute)]);
     }
@@ -671,6 +710,23 @@ class ListingController extends Controller
                 'has_custom_attributes' => (bool) $product->has_custom_attributes,
             ],
         ]);
+    }
+
+    /**
+     * Attaches one of the vendor's own size guides to this listing (or
+     * detaches it with a null id).
+     */
+    public function updateSizeGuide(Request $request, VendorListing $listing): JsonResponse
+    {
+        abort_unless($listing->vendor_id === $this->vendorId(), 404);
+
+        $validated = $request->validate([
+            'size_guide_id' => ['nullable', 'uuid', Rule::exists('size_guides', 'id')->where('vendor_id', $this->vendorId())],
+        ]);
+
+        $listing->update(['size_guide_id' => $validated['size_guide_id'] ?? null]);
+
+        return response()->json(['success' => true, 'data' => ['size_guide_id' => $listing->size_guide_id]]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

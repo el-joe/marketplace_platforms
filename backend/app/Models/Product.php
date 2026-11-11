@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\AdminListingStatus;
 use App\Enums\ProductStatus;
 use App\Enums\VendorListingStatus;
+use App\Services\Customer\CategoryService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,7 +15,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Product extends Model
 {
@@ -115,10 +117,10 @@ class Product extends Model
         // caches must be invalidated.
         static::saved(function (self $product) {
             if ($product->wasRecentlyCreated || $product->isDirty('category_id') || $product->isDirty('brand_id')) {
-                \App\Services\Customer\CategoryService::flushCache();
+                CategoryService::flushCache();
             }
         });
-        static::deleted(fn () => \App\Services\Customer\CategoryService::flushCache());
+        static::deleted(fn () => CategoryService::flushCache());
     }
 
     public function category(): BelongsTo
@@ -144,6 +146,24 @@ class Product extends Model
     public function customAttributes(): HasMany
     {
         return $this->hasMany(ProductCustomAttribute::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Storefront list of custom attribute definitions, empty when the feature
+     * is switched off or the relation was not eager-loaded (never lazy-loads).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function customerCustomAttributes(): array
+    {
+        if (! $this->has_custom_attributes || ! $this->relationLoaded('customAttributes')) {
+            return [];
+        }
+
+        return $this->customAttributes
+            ->map(fn (ProductCustomAttribute $attribute) => $attribute->toCustomerArray())
+            ->values()
+            ->all();
     }
 
     /**
@@ -253,8 +273,8 @@ class Product extends Model
             "(SELECT COALESCE(SUM(vl.rating_avg * vl.rating_count) / NULLIF(SUM(vl.rating_count), 0), 0)
               FROM vendor_listings vl
               JOIN product_variants pv ON pv.id = vl.product_variant_id
-              WHERE pv.product_id = products.id AND vl.status = '" . VendorListingStatus::Active->value . "' AND vl.deleted_at IS NULL
-             ) " . $direction
+              WHERE pv.product_id = products.id AND vl.status = '".VendorListingStatus::Active->value."' AND vl.deleted_at IS NULL
+             ) ".$direction
         );
     }
 
@@ -276,7 +296,7 @@ class Product extends Model
         $adminAgg = DB::table('admin_listings as apl')
             ->join('product_variants as pv', 'pv.id', '=', 'apl.product_variant_id')
             ->where('pv.product_id', $this->id)
-            ->where('apl.status', \App\Enums\AdminListingStatus::Active->value)
+            ->where('apl.status', AdminListingStatus::Active->value)
             ->selectRaw('COALESCE(SUM(apl.rating_avg * apl.rating_count), 0) as weighted, COALESCE(SUM(apl.rating_count), 0) as count')
             ->first();
 

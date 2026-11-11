@@ -1756,5 +1756,23 @@
     "acceptedText": "Contract you accepted",
     "supersededNote": "A newer version of this contract was accepted for the same advertisement. This record is kept unchanged.",
     "recordedNote": "This record shows the contract exactly as it was shown to you, with the name you typed and the date and time of your acceptance."
+  },
+  "sizeGuide": {
+    "open": "Size guide",
+    "hide": "Hide size guide",
+    "openFullPage": "Open the full size guide",
+    "findMySize": "Find my size",
+    "yourHeight": "Height",
+    "unit": "Unit",
+    "cm": "cm",
+    "in": "inch",
+    "size": "Size",
+    "recommended": "Recommended size for you: {size}",
+    "howToMeasure": "How to measure",
+    "by": "Size guide by",
+    "tailoredNote": "Made-to-measure items are tailored to the measurements you enter when adding to cart. Measurements are approximate.",
+    "fieldRequired": "{field} is required",
+    "yes": "Yes",
+    "no": "No"
   }
 }

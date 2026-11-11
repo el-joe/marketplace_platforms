@@ -1,3 +1,4 @@
+import type { CustomAttributeValue } from "@/src/components/shared/custom-attribute-values";
 import type { ImageDTO } from "@/src/types/media";
 
 export type ApiEnvelope<T> = {
@@ -136,6 +137,8 @@ export type OrderDetailItem = {
   can_review: boolean;
   warranty: OrderWarrantySummary | null;
   can_claim_warranty: boolean;
+  /** Values the customer entered for made-to-measure products (snapshotted at checkout). */
+  custom_attributes?: CustomAttributeValue[];
 };
 
 export type OrderDetailSubOrder = {

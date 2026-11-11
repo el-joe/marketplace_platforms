@@ -6,7 +6,9 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\Customer\ListingIdentifierService;
 use App\Services\Customer\ProductDetailEnrichmentService;
+use App\Services\Customer\PromoBadgeResolver;
 use App\Support\Bilingual;
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,12 +16,12 @@ class CartItemResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $isMarketer = !is_null($this->marketer_listing_id);
-        $isAdmin = !$isMarketer && !is_null($this->admin_listing_id);
+        $isMarketer = ! is_null($this->marketer_listing_id);
+        $isAdmin = ! $isMarketer && ! is_null($this->admin_listing_id);
         $listing = $isMarketer ? $this->marketerListing : ($isAdmin ? $this->adminListing : $this->vendorListing);
         $variant = $listing?->productVariant;
         $product = $variant?->product;
-        $available = (!$isMarketer && $listing) ? $listing->warehouseInventories->sum('quantity_available') : null;
+        $available = (! $isMarketer && $listing) ? $listing->warehouseInventories->sum('quantity_available') : null;
 
         $applicableCoupons = [];
         $country = $request->attributes->get('country');
@@ -31,36 +33,36 @@ class CartItemResource extends JsonResource
                 $product,
                 $country,
                 $customer,
-                (!$isAdmin && !$isMarketer && $listing) ? $listing : null,
+                (! $isAdmin && ! $isMarketer && $listing) ? $listing : null,
             );
         }
 
         return [
-            'cart_item_id'       => $this->id,
-            'listing_id'         => $listing?->id,
-            'listing_ref'        => ($listing && !$isMarketer)
+            'cart_item_id' => $this->id,
+            'listing_id' => $listing?->id,
+            'listing_ref' => ($listing && ! $isMarketer)
                 ? app(ListingIdentifierService::class)->buildListingRef($listing)
                 : ($listing?->referral_code ?? $listing?->id),
-            'sku'                => $variant?->sku,
-            'vendor_sku'         => ($isAdmin || $isMarketer) ? null : $listing?->vendor_sku,
-            'name'               => $variant ? $variant->displayNamePair() : ($product ? Bilingual::pair($product, 'name') : ['ar' => null, 'en' => null]),
-            'product_name'       => $product ? Bilingual::pair($product, 'name') : ['ar' => null, 'en' => null],
-            'thumbnail'          => $this->resolveThumbnail($product, $variant),
-            'unit_price'   => $this->unit_price,
-            'quantity'           => $this->quantity,
-            'line_total'   => \App\Support\Money::number(round($this->unit_price * $this->quantity, 2)),
+            'sku' => $variant?->sku,
+            'vendor_sku' => ($isAdmin || $isMarketer) ? null : $listing?->vendor_sku,
+            'name' => $variant ? $variant->displayNamePair() : ($product ? Bilingual::pair($product, 'name') : ['ar' => null, 'en' => null]),
+            'product_name' => $product ? Bilingual::pair($product, 'name') : ['ar' => null, 'en' => null],
+            'thumbnail' => $this->resolveThumbnail($product, $variant),
+            'unit_price' => $this->unit_price,
+            'quantity' => $this->quantity,
+            'line_total' => Money::number(round($this->unit_price * $this->quantity, 2)),
             'max_order_quantity' => $listing?->max_order_quantity,
-            'vendor'             => !$isAdmin && !$isMarketer && $listing?->vendor ? [
-                'id'         => $listing->vendor->id,
+            'vendor' => ! $isAdmin && ! $isMarketer && $listing?->vendor ? [
+                'id' => $listing->vendor->id,
                 'store_name' => $listing->vendor->store_name,
             ] : null,
-            'promo_badges' => $listing ? \App\Services\Customer\PromoBadgeResolver::instance()->lookup($isMarketer ? 'marketer' : ($isAdmin ? 'admin' : 'vendor'), $listing->id, $product?->id) : [],
+            'promo_badges' => $listing ? PromoBadgeResolver::instance()->lookup($isMarketer ? 'marketer' : ($isAdmin ? 'admin' : 'vendor'), $listing->id, $product?->id) : [],
             'is_admin_listing' => $isAdmin,
             'listing_type' => $isMarketer ? 'marketer' : ($isAdmin ? 'admin' : 'vendor'),
-            'shipping_badge'   => (!$isMarketer && $listing?->primaryShippingMethod) ? [
-                'label'             => Bilingual::pairFromKeys($listing->primaryShippingMethod, 'badge_label_ar', 'badge_label_en'),
-                'color_hex'         => $listing->primaryShippingMethod->badge_color_hex,
-                'text_color_hex'    => $listing->primaryShippingMethod->badge_text_color_hex,
+            'shipping_badge' => (! $isMarketer && $listing?->primaryShippingMethod) ? [
+                'label' => Bilingual::pairFromKeys($listing->primaryShippingMethod, 'badge_label_ar', 'badge_label_en'),
+                'color_hex' => $listing->primaryShippingMethod->badge_color_hex,
+                'text_color_hex' => $listing->primaryShippingMethod->badge_text_color_hex,
                 'icon_color_hex' => $listing->primaryShippingMethod->badge_icon_color_hex,
                 'show_delivery_time' => (bool) $listing->primaryShippingMethod->badge_show_delivery_time,
                 'delivery_text' => ['ar' => $listing->primaryShippingMethod->badge_delivery_text_resolved_ar, 'en' => $listing->primaryShippingMethod->badge_delivery_text_resolved_en],
@@ -69,22 +71,31 @@ class CartItemResource extends JsonResource
                 'delivery_days_min' => $listing->primaryShippingMethod->min_delivery_days,
                 'delivery_days_max' => $listing->primaryShippingMethod->max_delivery_days,
             ] : null,
-            'in_stock'      => $isMarketer ? (bool) $listing : ($listing ? $available >= $this->quantity : false),
+            'in_stock' => $isMarketer ? (bool) $listing : ($listing ? $available >= $this->quantity : false),
             'price_changed' => (bool) ($this->price_changed ?? false),
             'selected_shipping_method' => $this->selectedShippingMethod ? [
-                'id'              => $this->selectedShippingMethod->id,
-                'name'            => $this->selectedShippingMethod->name,
-                'code'            => $this->selectedShippingMethod->code,
-                'badge_label_en'  => $this->selectedShippingMethod->badge_label_en,
+                'id' => $this->selectedShippingMethod->id,
+                'name' => $this->selectedShippingMethod->name,
+                'code' => $this->selectedShippingMethod->code,
+                'badge_label_en' => $this->selectedShippingMethod->badge_label_en,
                 'badge_color_hex' => $this->selectedShippingMethod->badge_color_hex,
             ] : null,
             'applicable_coupons' => $applicableCoupons,
+            'custom_attributes' => $this->relationLoaded('customAttributeValues')
+                ? $this->customAttributeValues->map(fn ($value) => [
+                    'id' => $value->product_custom_attribute_id,
+                    'label' => $value->productCustomAttribute?->label,
+                    'unit' => $value->productCustomAttribute?->unit,
+                    'type' => $value->productCustomAttribute?->type ?: 'text',
+                    'value' => $value->value,
+                ])->filter(fn ($value) => $value['label'] !== null)->values()->all()
+                : [],
             'warranty_plan_id' => $this->warranty_plan_id,
             'warranty_plan' => $this->whenLoaded('warrantyPlan', fn () => $this->warrantyPlan ? [
                 'id' => $this->warrantyPlan->id,
                 'name' => $this->warrantyPlan->localized_name,
                 'duration_months' => $this->warrantyPlan->duration_months,
-                'price' => $this->warrantyPlan->resolvePrice(\App\Support\Money::number($this->unit_price)),
+                'price' => $this->warrantyPlan->resolvePrice(Money::number($this->unit_price)),
                 'price_type' => $this->warrantyPlan->price_type,
                 'price_pct' => $this->warrantyPlan->price_pct,
                 'currency' => $this->warrantyPlan->currency,

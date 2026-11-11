@@ -155,6 +155,11 @@ class ListingQueryService
                 if (! $values) {
                     continue;
                 }
+                if (SizingFilters::handles($attrCode)) {
+                    SizingFilters::apply($builder, $attrCode, $values, 'p.id', 'vendor_listings.id');
+
+                    continue;
+                }
                 $builder->whereExists(function ($sub) use ($attrCode, $values) {
                     $sub->select(DB::raw(1))
                         ->from('product_variant_attributes as pva')
@@ -162,7 +167,7 @@ class ListingQueryService
                         ->join('attribute_values as av', 'av.id', '=', 'pva.attribute_value_id')
                         ->whereColumn('pva.product_variant_id', 'vendor_listings.product_variant_id')
                         ->where('a.code', $attrCode)
-                        ->whereIn('av.value_en', $values);
+                        ->where(fn ($match) => $match->whereIn('av.value_en', $values)->orWhereIn('av.value_ar', $values));
                 });
             }
         }
@@ -518,15 +523,7 @@ class ListingQueryService
             'is_wishlisted' => $isWishlisted,
             'is_sponsored' => $isSponsored,
             'has_custom_attributes' => (bool) $product->has_custom_attributes,
-            'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
-                ? $product->customAttributes->map(fn ($a) => [
-                    'id' => $a->id,
-                    'label' => $a->label,
-                    'unit' => $a->unit,
-                    'is_required' => (bool) $a->is_required,
-                    'sort_order' => $a->sort_order,
-                ])->values()->all()
-                : [],
+            'custom_attributes' => $product->customerCustomAttributes(),
         ];
     }
 
@@ -639,15 +636,7 @@ class ListingQueryService
                 'is_express' => (bool) $listing->primaryShippingMethod->is_express_type,
             ] : null,
             'has_custom_attributes' => (bool) $product->has_custom_attributes,
-            'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
-                ? $product->customAttributes->map(fn ($a) => [
-                    'id' => $a->id,
-                    'label' => $a->label,
-                    'unit' => $a->unit,
-                    'is_required' => (bool) $a->is_required,
-                    'sort_order' => $a->sort_order,
-                ])->values()->all()
-                : [],
+            'custom_attributes' => $product->customerCustomAttributes(),
         ];
     }
 
@@ -737,15 +726,7 @@ class ListingQueryService
             'is_wishlisted' => $isWishlisted,
             'is_sponsored' => false,
             'has_custom_attributes' => (bool) $product->has_custom_attributes,
-            'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
-                ? $product->customAttributes->map(fn ($a) => [
-                    'id' => $a->id,
-                    'label' => $a->label,
-                    'unit' => $a->unit,
-                    'is_required' => (bool) $a->is_required,
-                    'sort_order' => $a->sort_order,
-                ])->values()->all()
-                : [],
+            'custom_attributes' => $product->customerCustomAttributes(),
         ];
     }
 
@@ -1151,12 +1132,22 @@ class ListingQueryService
                 if (! $values) {
                     continue;
                 }
+                if (SizingFilters::handles($attrCode)) {
+                    if ($attrCode === SizingFilters::SIZE_CODE && $type !== 'vendor') {
+                        $q->whereRaw('1 = 0'); // size guides belong to vendor listings only
+                    } else {
+                        SizingFilters::apply($q, $attrCode, $values, 'p.id', 'l.id');
+                    }
+
+                    continue;
+                }
                 $q->whereExists(function ($sub) use ($attrCode, $values) {
                     $sub->select(DB::raw(1))->from('product_variant_attributes as pva')
                         ->join('attributes as a', 'a.id', '=', 'pva.attribute_id')
                         ->join('attribute_values as av', 'av.id', '=', 'pva.attribute_value_id')
                         ->whereColumn('pva.product_variant_id', 'l.product_variant_id')
-                        ->where('a.code', $attrCode)->whereIn('av.value_en', $values);
+                        ->where('a.code', $attrCode)
+                        ->where(fn ($match) => $match->whereIn('av.value_en', $values)->orWhereIn('av.value_ar', $values));
                 });
             }
         }

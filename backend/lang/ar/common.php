@@ -651,4 +651,9 @@ return [
             'try_again' => 'حاول مجدداً',
         ],
     ],
+    'sizing' => [
+        'made_to_measure_filter' => 'التفصيل',
+        'made_to_measure' => 'تفصيل حسب المقاس',
+        'size_filter' => 'المقاس',
+    ],
 ];

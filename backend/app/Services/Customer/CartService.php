@@ -38,6 +38,7 @@ class CartService
             'items.marketerListing.productVariant.product.images',
             'items.marketerListing.productVariant.images',
             'items.selectedShippingMethod',
+            'items.customAttributeValues.productCustomAttribute',
         ];
     }
 
@@ -185,6 +186,12 @@ class CartService
      */
     private function normalizeCustomAttributeValues(Product $product, array $values): array
     {
+        // Switched off: definitions may still exist (kept so re-enabling restores
+        // them) but the storefront no longer asks for them, so never enforce them.
+        if (! $product->has_custom_attributes) {
+            return [];
+        }
+
         $defs = $product->customAttributes()->get()->keyBy('id');
         $out = [];
         foreach ($values as $value) {
@@ -219,6 +226,27 @@ class CartService
         }
 
         return $out;
+    }
+
+    /**
+     * Customer-entered values on a cart line, labelled from the live definition.
+     *
+     * @return list<array{id: string, label: string, unit: ?string, type: string, value: string}>
+     */
+    private function presentCartItemCustomValues(CartItem $item): array
+    {
+        return $item->customAttributeValues
+            ->filter(fn ($value) => $value->productCustomAttribute !== null)
+            ->sortBy(fn ($value) => $value->productCustomAttribute->sort_order)
+            ->map(fn ($value) => [
+                'id' => $value->product_custom_attribute_id,
+                'label' => $value->productCustomAttribute->label,
+                'unit' => $value->productCustomAttribute->unit,
+                'type' => $value->productCustomAttribute->type ?: 'text',
+                'value' => $value->value,
+            ])
+            ->values()
+            ->all();
     }
 
     /** Finds an existing cart line whose custom values match exactly (keeps differing values on separate lines). */
@@ -761,6 +789,7 @@ class CartService
                             'currency' => $item->warrantyPlan->currency,
                             'image_url' => $item->warrantyPlan->image_url,
                         ] : null,
+                        'custom_attributes' => $this->presentCartItemCustomValues($item),
                     ];
                 })->values(),
             ];

@@ -66,6 +66,8 @@ export default function FloatingProductSummary({ product }: Props) {
           listingType={resolveListingType(product.listing)}
           hasCustomAttributes={!!product.product.has_custom_attributes}
           customAttributes={product.product.custom_attributes ?? []}
+          sizeGuide={product.product.size_guide}
+          sizeGuideImage={product.product.size_guide_image}
         />
       </div>
     </div>

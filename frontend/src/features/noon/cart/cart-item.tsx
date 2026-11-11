@@ -15,6 +15,7 @@ import { getImageURL } from "@/src/helpers/get-image-url";
 import { getListingImage } from "@/src/types/media";
 import AnimatedBadge from "@/src/components/shared/animated-badge";
 import { mapPromoBadges } from "@/src/lib/promo-badges";
+import CustomAttributeValues from "@/src/components/shared/custom-attribute-values";
 
 type Props = {
   item: ShippingGroupItem;
@@ -176,6 +177,7 @@ export default function CartItem({
               </p>
             )}
           </div>
+          <CustomAttributeValues values={item.custom_attributes} className="mt-1" />
         </div>
       </div>
       {/* warranty plan */}

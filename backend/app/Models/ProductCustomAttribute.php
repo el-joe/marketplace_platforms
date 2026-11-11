@@ -38,6 +38,25 @@ class ProductCustomAttribute extends Model
         'sort_order' => 'integer',
     ];
 
+    /**
+     * Customer-facing definition used by every storefront payload (PDP,
+     * product cards, cart) so the add-to-cart modal can render the right input.
+     *
+     * @return array{id: string, label: string, unit: ?string, type: string, options: array<int, string>, is_required: bool, sort_order: int}
+     */
+    public function toCustomerArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'label' => $this->label,
+            'unit' => $this->unit,
+            'type' => $this->type ?: 'text',
+            'options' => array_values($this->options ?? []),
+            'is_required' => (bool) $this->is_required,
+            'sort_order' => (int) $this->sort_order,
+        ];
+    }
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);

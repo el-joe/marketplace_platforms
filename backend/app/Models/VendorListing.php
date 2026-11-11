@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use App\Enums\FulfillmentModel;
 use App\Enums\GlobalSystemType;
 use App\Enums\VendorListingStatus;
@@ -34,12 +35,12 @@ class VendorListing extends Model
             // BIGINT base-currency units — silently truncated when cast to int
             // elsewhere. Migrated to BIGINT; money here is a whole base-currency
             // amount like every other price column, never *100/100.
-            'price' => \App\Casts\DecimalMoney::class,
-            'compare_at_price' => \App\Casts\DecimalMoney::class,
-            'cost_price' => \App\Casts\DecimalMoney::class,
+            'price' => DecimalMoney::class,
+            'compare_at_price' => DecimalMoney::class,
+            'cost_price' => DecimalMoney::class,
             // Section 6 ("first price" snapshot): read-only after creation,
             // never mass-assignable — intentionally left out of $fillable.
-            'first_price' => \App\Casts\DecimalMoney::class,
+            'first_price' => DecimalMoney::class,
             'first_price_locked_at' => 'datetime',
             'disposable_by_admin' => 'boolean',
             'declared_weight_grams' => 'integer',
@@ -102,11 +103,17 @@ class VendorListing extends Model
         'ad_boost_expires_at',
         'declared_height_cm',
         'campaign_enabled',
+        'size_guide_id',
     ];
 
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function sizeGuide(): BelongsTo
+    {
+        return $this->belongsTo(SizeGuide::class);
     }
 
     public function productVariant(): BelongsTo

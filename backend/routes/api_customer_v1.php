@@ -53,13 +53,14 @@ use App\Http\Controllers\Customer\ProductController;
 use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Customer\ReceiverController;
 use App\Http\Controllers\Customer\RefundController;
+use App\Http\Controllers\Customer\ReturnController;
 // ── Home composite (public) ───────────────────────────────────────────
 
-use App\Http\Controllers\Customer\ReturnController;
 use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\Customer\SearchController;
-use App\Http\Controllers\Customer\StaticPageController;
+use App\Http\Controllers\Customer\SizeGuideController as CustomerSizeGuideController;
 use App\Http\Controllers\Customer\SponsoredAdController;
+use App\Http\Controllers\Customer\StaticPageController;
 use App\Http\Controllers\Customer\SupportTicketController;
 use App\Http\Controllers\Customer\VendorPageController;
 use App\Http\Controllers\Customer\WalletController;
@@ -95,6 +96,11 @@ Route::prefix('products')->name('customer.products.')->group(function (): void {
 // GET /l/{identifier} — identifier IN (listing UUID, variant SKU, listing_ref, product slug)
 Route::get('l/{identifier}', [ListingDetailController::class, 'show'])
     ->name('customer.listing.show');
+
+// ── Vendor size guide ("size map") page (public) ─────────────────────
+Route::get('size-guides/{sizeGuide}', [CustomerSizeGuideController::class, 'show'])
+    ->whereUuid('sizeGuide')
+    ->name('customer.size-guides.show');
 
 // ── Unified browse (public) ───────────────────────────────────────────
 // GET /browse/{type}/{id}  — type IN (product, classified, travel); id = category UUID

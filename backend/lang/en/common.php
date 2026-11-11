@@ -651,4 +651,9 @@ return [
             'try_again' => 'Try again',
         ],
     ],
+    'sizing' => [
+        'made_to_measure_filter' => 'Tailoring',
+        'made_to_measure' => 'Made to measure',
+        'size_filter' => 'Size',
+    ],
 ];

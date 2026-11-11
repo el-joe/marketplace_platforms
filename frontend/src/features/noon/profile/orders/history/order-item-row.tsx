@@ -7,6 +7,7 @@ import type { OrderDetailItem } from "../helpers/types";
 import type { ReactNode } from "react";
 import { getImageURL } from "@/src/helpers/get-image-url";
 import { getListingImage } from "@/src/types/media";
+import CustomAttributeValues from "@/src/components/shared/custom-attribute-values";
 
 type Props = {
   item: OrderDetailItem;
@@ -44,6 +45,7 @@ export default async function OrderItemRow({
         <p className="text-sm text-gray mt-1">
           {t("qtyLabel", { count: item.quantity })}
         </p>
+        <CustomAttributeValues values={item.custom_attributes} className="mt-1" />
         {!item.can_return && (
           <p className="text-xs text-gray mt-1">
             {t("cannotExchangeOrReturn")}

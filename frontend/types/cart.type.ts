@@ -1,3 +1,4 @@
+import { CustomAttributeValue } from "@/src/components/shared/custom-attribute-values";
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { Warranty } from "@/src/features/noon/productView/types/product-details";
 import { PlacementBanner } from "@/src/types/placement-banner";
@@ -181,6 +182,8 @@ export interface ShippingGroupItem {
   vendor: Vendor | null;
   selected_shipping_method: SelectedShippingMethod;
   warranty_plan: WarrantyPlanSummary | null;
+  /** Values the customer entered for made-to-measure products. */
+  custom_attributes?: CustomAttributeValue[];
 }
 
 export interface SelectedShippingMethod {

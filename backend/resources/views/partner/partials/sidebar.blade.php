@@ -46,6 +46,7 @@
             @if($vendorAdmin?->can('listings.view'))
                 <x-partner-nav-item route="partner.product-requests.index" icon="squares-plus" :label="__('partner.nav.product_requests')" />
             @endif
+            <x-partner-nav-item route="partner.size-guides.index" icon="table-cells" :label="__('partner.nav.size_guides')" />
             <x-partner-nav-item route="partner.inventory.index" icon="cube" :label="__('partner.nav.inventory')" />
             <x-partner-nav-item route="partner.change-requests.index" icon="pencil-square" :label="__('partner.nav.change_requests')" />
             {{-- <x-partner-nav-item route="partner.ai.credits" icon="sparkles" :label="__('partner.nav.ai_credits')" /> --}}

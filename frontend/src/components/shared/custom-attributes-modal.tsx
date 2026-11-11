@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import { Button } from "../ui/button";
 import { useTranslations } from "next-intl";
+import SizeGuideView from "./size-guide/size-guide-view";
+import { SizeGuide } from "./size-guide/types";
 
 export type CustomAttributeDefinition = {
   id: string;
@@ -20,6 +22,10 @@ type Props = {
   onClose: () => void;
   onSubmit: (values: { product_custom_attribute_id: string; value: string }[]) => void;
   isSubmitting?: boolean;
+  /** The selling vendor's size map, shown inline so customers can measure while filling the form. */
+  sizeGuide?: SizeGuide | null;
+  /** Legacy product-level size chart image. */
+  sizeGuideImage?: string | null;
 };
 
 /**
@@ -34,14 +40,19 @@ export default function CustomAttributesModal({
   onClose,
   onSubmit,
   isSubmitting = false,
+  sizeGuide = null,
+  sizeGuideImage = null,
 }: Props) {
   const t = useTranslations("productView");
+  const tGuide = useTranslations("sizeGuide");
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   if (!open) return null;
 
-  const sizeGuide = attributes.find((a) => a.size_guide_image)?.size_guide_image;
+  const legacyImage =
+    sizeGuideImage ?? attributes.find((a) => a.size_guide_image)?.size_guide_image;
   const sorted = [...attributes].sort(
     (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
   );
@@ -55,7 +66,7 @@ export default function CustomAttributesModal({
           : !values[attr.id]?.trim()),
     );
     if (missing) {
-      setError(`${missing.label} is required`);
+      setError(tGuide("fieldRequired", { field: missing.label }));
       return;
     }
 
@@ -75,16 +86,30 @@ export default function CustomAttributesModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg w-full max-w-md p-4 md:p-6 flex flex-col gap-4"
+        className={`bg-white rounded-lg w-full ${sizeGuide ? "max-w-xl" : "max-w-md"} max-h-[90vh] overflow-y-auto p-4 md:p-6 flex flex-col gap-4`}
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-sm md:text-base font-semibold">
           {t("customize")}
         </h3>
 
-        {sizeGuide && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={sizeGuide} alt={t("sizeGuide")} className="max-h-48 object-contain rounded-md border" />
+        {sizeGuide ? (
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => setShowGuide((v) => !v)}
+              aria-expanded={showGuide}
+              className="self-start text-xs md:text-sm font-medium text-blue underline underline-offset-4"
+            >
+              {showGuide ? tGuide("hide") : tGuide("open")}
+            </button>
+            {showGuide && <SizeGuideView guide={sizeGuide} compact />}
+          </div>
+        ) : (
+          legacyImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={legacyImage} alt={t("sizeGuide")} className="max-h-48 object-contain rounded-md border" />
+          )
         )}
         <div className="flex flex-col gap-3">
           {sorted.map((attr) => (

@@ -2,14 +2,15 @@
 
 namespace App\Services\Customer;
 
-use App\Support\Money;
 use App\Http\Resources\Customer\ProductListResource;
 use App\Models\Attribute;
 use App\Models\Country;
 use App\Models\WishlistItem;
 use App\Services\FlashSaleService;
+use App\Services\Media\ListingImageResolver;
 use App\Services\Shared\PageBuilderService;
 use App\Support\Bilingual;
+use App\Support\Money;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
@@ -35,11 +36,10 @@ class ProductQueryService
 {
     public function __construct(
         private readonly SponsoredProductService $sponsored,
-        private readonly \App\Services\Media\ListingImageResolver $imageResolver,
+        private readonly ListingImageResolver $imageResolver,
         private readonly PageBuilderService $pageBuilder,
         private readonly FlashSaleService $flashSale,
-    ) {
-    }
+    ) {}
 
     /**
      * Paginate products with optional category scope.
@@ -53,7 +53,7 @@ class ProductQueryService
         int $perPage = 20,
         ?array $categoryIds = null,
     ): LengthAwarePaginator {
-        if ($categoryIds === null && !empty($filters['category'])) {
+        if ($categoryIds === null && ! empty($filters['category'])) {
             $categoryIds = app(CategoryService::class)->getCategoryScopeForFilter($filters['category']);
         }
 
@@ -94,7 +94,7 @@ class ProductQueryService
      */
     public function facets(Country $country, array $filters, ?array $categoryIds = null): array
     {
-        if ($categoryIds === null && !empty($filters['category'])) {
+        if ($categoryIds === null && ! empty($filters['category'])) {
             $categoryIds = app(CategoryService::class)->getCategoryScopeForFilter($filters['category']);
         }
 
@@ -110,33 +110,40 @@ class ProductQueryService
             ->selectRaw('MIN(bb.min_price) as low, MAX(bb.max_price) as high')
             ->first();
 
+        // One query yields the candidate product ids AND the made-to-measure
+        // flag, shared by catalog-attribute and sizing facets.
+        $candidates = empty($categoryIds)
+            ? collect()
+            : (clone $base)->distinct()->get(['bb.product_id', 'p.has_custom_attributes']);
+
         return [
             'price_range' => [
                 'min' => $priceRange ? Money::number($priceRange->low) : 0,
                 'max' => $priceRange ? Money::number($priceRange->high) : 0,
             ],
-            'attributes' => $this->attributeFacets($base, $categoryIds ?? []),
+            'attributes' => [
+                ...$this->attributeFacets($candidates->pluck('product_id'), $categoryIds ?? []),
+                ...SizingFilters::facets(
+                    $candidates->filter(fn ($row) => (bool) $row->has_custom_attributes)->pluck('product_id'),
+                    $country->id,
+                ),
+            ],
         ];
     }
 
     /**
      * Filterable attributes for the given categories, with per-value product counts
-     * scoped to the already-filtered product set in $base.
-     * One query for the candidate product ids, one for the attributes (+ their
+     * scoped to the already-filtered candidate product set.
+     * One query for the attributes (+ their
      * values, eager-loaded), one grouped query for every attribute's value
      * counts at once — never one query per attribute.
      *
+     * @param  \Illuminate\Support\Collection<int, string>  $productIds  Already-filtered candidate products.
      * @param  list<string>  $categoryIds
      */
-    private function attributeFacets($base, array $categoryIds): array
+    private function attributeFacets(\Illuminate\Support\Collection $productIds, array $categoryIds): array
     {
-        if (empty($categoryIds)) {
-            return [];
-        }
-
-        $productIds = (clone $base)->distinct()->pluck('bb.product_id');
-
-        if ($productIds->isEmpty()) {
+        if (empty($categoryIds) || $productIds->isEmpty()) {
             return [];
         }
 
@@ -164,16 +171,16 @@ class ProductQueryService
             $attrCounts = ($counts->get($attribute->id) ?? collect())->pluck('cnt', 'attribute_value_id');
 
             return [
-                'id'     => $attribute->id,
-                'code'   => $attribute->code,
-                'name'   => Bilingual::pair($attribute, 'name'),
-                'type'   => $attribute->type->value,
-                'unit'   => $attribute->unit,
+                'id' => $attribute->id,
+                'code' => $attribute->code,
+                'name' => Bilingual::pair($attribute, 'name'),
+                'type' => $attribute->type->value,
+                'unit' => $attribute->unit,
                 'values' => $attribute->values->map(fn ($value) => [
-                    'id'        => $value->id,
-                    'value'     => Bilingual::pair($value, 'value'),
+                    'id' => $value->id,
+                    'value' => Bilingual::pair($value, 'value'),
                     'color_hex' => $value->color_hex,
-                    'count'     => (int) ($attrCounts[$value->id] ?? 0),
+                    'count' => (int) ($attrCounts[$value->id] ?? 0),
                 ])->values()->all(),
             ];
         })->values()->all();
@@ -220,6 +227,7 @@ class ProductQueryService
                 $r->resource->is_flash_sale = $flashSaleEndsAt !== null;
                 $r->resource->flash_sale_ends_at = $flashSaleEndsAt?->toISOString();
                 $r->resource->is_mega_deal = $flashSaleEndsAt === null && $megaDealProductIds->contains($r->resource->id);
+
                 return $r->toArray(request());
             })
             ->toArray();
@@ -299,8 +307,8 @@ class ProductQueryService
 
     /**
      * @param  list<string>|null  $categoryIds  Pre-resolved category IDs (category subtree, or
-     *                                           union of subtrees for a custom page). When omitted,
-     *                                           resolved from $filters['category'] (id or slug).
+     *                                          union of subtrees for a custom page). When omitted,
+     *                                          resolved from $filters['category'] (id or slug).
      */
     public function applyFilters($builder, array $filters, ?array $categoryIds = null)
     {
@@ -313,26 +321,26 @@ class ProductQueryService
             ->leftJoin('product_variants as pv', 'pv.id', '=', 'bb.variant_id')
             ->leftJoin('shipping_methods as sm', 'sm.id', '=', 'bb.shipping_method_id');
 
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $categoryIds ??= app(CategoryService::class)->getCategoryScopeForFilter($filters['category']);
             // null = all-categories custom page (no restriction)
             if ($categoryIds !== null) {
                 $builder->whereIn('bb.category_id', $categoryIds);
             }
         }
-        if (!empty($filters['brand'])) {
+        if (! empty($filters['brand'])) {
             $builder->where('bb.brand_id', $filters['brand']);
         }
-        if (!empty($filters['price_min'])) {
+        if (! empty($filters['price_min'])) {
             $builder->where('bb.min_price', '>=', Money::number($filters['price_min']));
         }
-        if (!empty($filters['price_max'])) {
+        if (! empty($filters['price_max'])) {
             $builder->where('bb.max_price', '<=', Money::number($filters['price_max']));
         }
-        if (!empty($filters['rating_min'])) {
+        if (! empty($filters['rating_min'])) {
             $builder->where('bb.rating_avg', '>=', $filters['rating_min']);
         }
-        if (!empty($filters['condition'])) {
+        if (! empty($filters['condition'])) {
             // Aggregates (min/max price, rating, stock) never depend on this
             // filter (enhancement.md P-19: fixing that dependency was the point) —
             // it only narrows which products qualify, via the winning listing's
@@ -344,15 +352,23 @@ class ProductQueryService
                     ->where('vl_cond.condition', $filters['condition']);
             });
         }
-        if (!empty($filters['fulfillment_model'])) {
+        if (! empty($filters['fulfillment_model'])) {
             $builder->where('bb.fulfillment_model', $filters['fulfillment_model']);
         }
         if (empty($filters['include_oos'])) {
             $builder->where('bb.total_stock', '>', 0);
         }
-        if (!empty($filters['attributes']) && is_array($filters['attributes'])) {
+        if (! empty($filters['attributes']) && is_array($filters['attributes'])) {
             foreach ($filters['attributes'] as $attrCode => $values) {
-                $values = (array) $values;
+                $values = array_values(array_filter(array_map('trim', (array) $values), fn ($v) => $v !== ''));
+                if (! $values) {
+                    continue;
+                }
+                if (SizingFilters::handles($attrCode)) {
+                    SizingFilters::apply($builder, $attrCode, $values, 'bb.product_id', null, 'bb.country_id');
+
+                    continue;
+                }
                 $builder->whereExists(function ($sub) use ($attrCode, $values) {
                     $sub->select(DB::raw(1))
                         ->from('product_variant_attributes as pva')
@@ -361,7 +377,7 @@ class ProductQueryService
                         ->join('attribute_values as av', 'av.id', '=', 'pva.attribute_value_id')
                         ->whereColumn('pv_attr.product_id', 'bb.product_id')
                         ->where('a.code', $attrCode)
-                        ->whereIn('av.value_en', $values);
+                        ->where(fn ($match) => $match->whereIn('av.value_en', $values)->orWhereIn('av.value_ar', $values));
                 });
             }
         }
@@ -406,7 +422,7 @@ class ProductQueryService
     private function wishlistIds(): array
     {
         $customerId = auth('customer')->id();
-        if (!$customerId) {
+        if (! $customerId) {
             return [];
         }
 

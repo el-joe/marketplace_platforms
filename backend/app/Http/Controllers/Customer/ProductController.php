@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Customer;
 
-use App\Support\Money;
 use App\Enums\AdminListingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\ProductListRequest;
@@ -26,10 +25,12 @@ use App\Services\Customer\ProductQueryService;
 use App\Services\Customer\ProductViewService;
 use App\Services\Customer\PromoBadgeResolver;
 use App\Services\Customer\ReviewService;
+use App\Services\Customer\SizingFilters;
 use App\Services\Customer\SponsoredProductService;
 use App\Services\FlashSaleService;
 use App\Services\Shared\PageBuilderService;
 use App\Support\Concerns\BuildsProductAttributeSelector;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -123,6 +124,17 @@ class ProductController extends Controller
         }
         if (! empty($filters['price_max'])) {
             $adminBuilder->where('admin_listings.price', '<=', Money::number($filters['price_max']));
+        }
+
+        foreach ((array) ($filters['attributes'] ?? []) as $attrCode => $values) {
+            if (! SizingFilters::handles((string) $attrCode) || empty($values)) {
+                continue;
+            }
+            if ($attrCode === SizingFilters::SIZE_CODE) {
+                $adminBuilder->whereRaw('1 = 0'); // size guides belong to vendor listings only
+            } else {
+                SizingFilters::apply($adminBuilder, $attrCode, (array) $values, 'p.id');
+            }
         }
 
         $adminListings = $adminBuilder->orderBy('admin_listings.search_boost', 'desc')->orderBy('admin_listings.price')->get();

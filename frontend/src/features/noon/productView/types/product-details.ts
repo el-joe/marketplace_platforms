@@ -1,3 +1,4 @@
+import { SizeGuide } from "@/src/components/shared/size-guide/types";
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { IProduct } from "@/types";
 import { InternationalShippingIndicator } from "@/types/globals";
@@ -207,6 +208,10 @@ export interface Product {
   seo: SEO;
   has_custom_attributes?: boolean;
   custom_attributes?: ProductCustomAttribute[];
+  /** Legacy product-level size chart image (made-to-measure products only). */
+  size_guide_image?: string | null;
+  /** The selling vendor's size map for this listing (made-to-measure products only). */
+  size_guide?: SizeGuide | null;
 }
 export interface ProductCustomAttribute {
   id: string;

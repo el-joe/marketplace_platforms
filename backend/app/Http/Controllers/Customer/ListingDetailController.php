@@ -12,6 +12,7 @@ use App\Models\Country;
 use App\Models\MarketerListing;
 use App\Models\Product;
 use App\Models\ProductView;
+use App\Models\SizeGuide;
 use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Models\WishlistItem;
@@ -33,6 +34,7 @@ use App\Support\Concerns\BuildsProductAttributeSelector;
 use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ListingDetailController extends Controller
 {
@@ -514,16 +516,29 @@ class ListingDetailController extends Controller
                 $product->id,
             ),
             'has_custom_attributes' => (bool) $product->has_custom_attributes,
-            'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
-                ? $product->customAttributes->map(fn ($a) => [
-                    'id' => $a->id,
-                    'label' => $a->label,
-                    'unit' => $a->unit,
-                    'is_required' => (bool) $a->is_required,
-                    'sort_order' => $a->sort_order,
-                ])->values()->all()
-                : [],
+            'custom_attributes' => $product->customerCustomAttributes(),
+            'size_guide_image' => $product->has_custom_attributes && $product->size_guide_image
+                ? Storage::disk('public')->url($product->size_guide_image)
+                : null,
+            'size_guide' => $this->sizeGuideFor($product, $listing),
         ];
+    }
+
+    /**
+     * The selling vendor's size guide for this listing. Only surfaced for
+     * products with custom attributes switched on (made-to-measure items).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function sizeGuideFor($product, VendorListing|AdminListing|MarketerListing $listing): ?array
+    {
+        if (! $product->has_custom_attributes || ! $listing instanceof VendorListing || ! $listing->size_guide_id) {
+            return null;
+        }
+
+        $guide = SizeGuide::with('rows')->find($listing->size_guide_id);
+
+        return $guide?->toCustomerArray();
     }
 
     private function breadcrumbs($category): array

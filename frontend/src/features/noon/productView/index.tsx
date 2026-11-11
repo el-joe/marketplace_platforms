@@ -166,6 +166,8 @@ export default async function ProductView({ slug }: { slug: string }) {
             listingType={resolveListingType(productData.listing)}
             hasCustomAttributes={!!productData.product.has_custom_attributes}
             customAttributes={productData.product.custom_attributes ?? []}
+          sizeGuide={productData.product.size_guide}
+          sizeGuideImage={productData.product.size_guide_image}
           />
           <FloatingProductSummary product={productData} />
           {/* added to cart side sheet */}

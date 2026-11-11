@@ -12,6 +12,7 @@ import CustomAttributesModal from "@/src/components/shared/custom-attributes-mod
 import { ProductCustomAttribute } from "./types/product-details";
 import { cn } from "@/src/lib/utils";
 import { CartListingType } from "./helpers/resolve-listing-type";
+import { SizeGuide } from "@/src/components/shared/size-guide/types";
 
 type Props = {
   listingId: string;
@@ -19,6 +20,8 @@ type Props = {
   quantity?: number;
   hasCustomAttributes?: boolean;
   customAttributes?: ProductCustomAttribute[];
+  sizeGuide?: SizeGuide | null;
+  sizeGuideImage?: string | null;
   classes?: string;
 };
 
@@ -28,6 +31,8 @@ export default function CartButton({
   quantity = 1,
   hasCustomAttributes = false,
   customAttributes = [],
+  sizeGuide = null,
+  sizeGuideImage = null,
   classes,
 }: Props) {
   const t = useTranslations("productView");
@@ -75,6 +80,8 @@ export default function CartButton({
         <CustomAttributesModal
           open={showCustomAttributesModal}
           attributes={customAttributes}
+          sizeGuide={sizeGuide}
+          sizeGuideImage={sizeGuideImage}
           onClose={() => setShowCustomAttributesModal(false)}
           isSubmitting={isMutating}
           onSubmit={(values) => {

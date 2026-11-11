@@ -35,6 +35,7 @@ use App\Http\Controllers\Partner\ProfileController;
 use App\Http\Controllers\Partner\ReturnController;
 use App\Http\Controllers\Partner\RoleController;
 use App\Http\Controllers\Partner\ShippingCompanyController;
+use App\Http\Controllers\Partner\SizeGuideController;
 use App\Http\Controllers\Partner\SubscriptionController as PartnerSubscriptionController;
 use App\Http\Controllers\Partner\SupportController;
 use App\Http\Controllers\Partner\TeamController;
@@ -168,6 +169,19 @@ Route::middleware(['vendor.auth', 'vendor.active', 'vendor.agreement.enforce'])-
         Route::post('/products/{product}/toggle-custom-attributes', 'toggleCustomAttributes')
             ->name('products.toggle-custom-attributes')
             ->middleware('vendor.can:listings.edit');
+        Route::put('/{listing}/size-guide', 'updateSizeGuide')
+            ->name('size-guide.update')
+            ->middleware('vendor.can:listings.edit');
+    });
+
+    // ── Size guides ("size maps") for made-to-measure listings ──
+    Route::prefix('size-guides')->name('size-guides.')->controller(SizeGuideController::class)->middleware('vendor.type:product_vendor')->group(function () {
+        Route::get('/', 'index')->name('index')->middleware('vendor.can:listings.view');
+        Route::get('/create', 'create')->name('create')->middleware('vendor.can:listings.edit');
+        Route::post('/', 'store')->name('store')->middleware('vendor.can:listings.edit');
+        Route::get('/{sizeGuide}/edit', 'edit')->name('edit')->middleware('vendor.can:listings.edit');
+        Route::put('/{sizeGuide}', 'update')->name('update')->middleware('vendor.can:listings.edit');
+        Route::delete('/{sizeGuide}', 'destroy')->name('destroy')->middleware('vendor.can:listings.edit');
     });
 
     // ── Product requests (ask for a catalog product missing when adding a listing) ──

@@ -189,11 +189,13 @@
             @if($productRequest->isPending() && $canReview)
                 <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
                     <h2 class="text-sm font-semibold text-gray-900">{{ __('admin.product_requests.review_actions') }}</h2>
-                    <a href="{{ route('admin.product-requests.approve', $productRequest->id) }}"
-                       class="block w-full text-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
-                        {{ __('admin.product_requests.approve') }}
-                    </a>
-                    <p class="text-xs text-gray-500">{{ __('admin.product_requests.approve_hint') }}</p>
+                    @if(auth('admin')->user()?->can('products.create'))
+                        <a href="{{ route('admin.product-requests.approve', $productRequest->id) }}"
+                           class="block w-full text-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
+                            {{ __('admin.product_requests.approve') }}
+                        </a>
+                        <p class="text-xs text-gray-500">{{ __('admin.product_requests.approve_hint') }}</p>
+                    @endif
                 </div>
 
                 <div class="bg-white rounded-xl border border-gray-200 p-5" x-data="{ open: {{ $errors->has('rejection_reason') ? 'true' : 'false' }} }">

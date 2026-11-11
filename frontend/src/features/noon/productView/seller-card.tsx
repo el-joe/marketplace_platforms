@@ -13,6 +13,7 @@ import { IProductDetails } from "./types";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import useLocale from "@/src/hooks/use-locale";
+import SizeGuideSheet from "@/src/components/shared/size-guide/size-guide-sheet";
 import CartButton from "./cart-button";
 import { resolveListingType } from "./helpers/resolve-listing-type";
 import MoreOffersSheet from "./more-offers-sheet";
@@ -165,6 +166,11 @@ const SellerCard = ({ productData }: Props) => {
           </>
         )}
       <Separator />
+      {productData.product.size_guide && (
+        <div className="px-4 pt-4">
+          <SizeGuideSheet guide={productData.product.size_guide} />
+        </div>
+      )}
       {/* add to cart button */}
 
       <div className="p-4 text-sm hidden lg:block">
@@ -173,6 +179,8 @@ const SellerCard = ({ productData }: Props) => {
           listingType={resolveListingType(productData.listing)}
           hasCustomAttributes={!!productData.product.has_custom_attributes}
           customAttributes={productData.product.custom_attributes ?? []}
+          sizeGuide={productData.product.size_guide}
+          sizeGuideImage={productData.product.size_guide_image}
         />
       </div>
     </div>

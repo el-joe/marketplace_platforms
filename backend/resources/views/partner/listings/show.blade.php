@@ -68,6 +68,8 @@
             deleteCustomAttributeBaseUrl: '{{ route('partner.listings.custom-attributes.index', $product->id) }}',
             productId: '{{ $product->id }}',
             hasCustomAttributes: {{ $product->has_custom_attributes ? 'true' : 'false' }},
+            updateSizeGuideUrl: '{{ route('partner.listings.size-guide.update', $listing->id) }}',
+            sizeGuideId: @js($listing->size_guide_id),
             csrf: '{{ csrf_token() }}',
         };
     </script>
@@ -765,7 +767,7 @@
                 </p>
             </div>
 
-            <button @click="toggleEnabled()"
+            <button @click="toggleEnabled()" type="button"
                     class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0"
                     :class="enabled ? 'bg-primary-600' : 'bg-gray-200'">
                 <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200"
@@ -778,14 +780,20 @@
             <template x-for="attr in attributes" :key="attr.id">
                 <div class="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2">
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-800" x-text="attr.label"></p>
-                        <p class="text-xs text-gray-400" x-show="attr.unit" x-text="'Unit: ' + attr.unit"></p>
+                        <p class="text-sm font-medium text-gray-800">
+                            <span x-text="attr.label"></span>
+                            <span class="text-xs text-gray-400" x-show="attr.unit" x-text="'(' + attr.unit + ')'"></span>
+                        </p>
+                        <p class="text-xs text-gray-400">
+                            <span x-text="typeLabels[attr.type] ?? attr.type"></span>
+                            <span x-show="attr.type === 'select' && attr.options.length" x-text="': ' + attr.options.join(' · ')"></span>
+                        </p>
                     </div>
                     <span x-show="attr.is_required"
                           class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
                         {{ __('partner.listings.custom_attributes.required') }}
                     </span>
-                    <button @click="deleteAttribute(attr.id)"
+                    <button type="button" @click="deleteAttribute(attr.id)"
                             class="text-gray-400 hover:text-red-500 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -798,8 +806,19 @@
                 {{ __('partner.listings.custom_attributes.empty') }}
             </p>
 
+            {{-- One-click body measurement presets --}}
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+                <span class="text-xs text-gray-500">{{ __('partner.listings.custom_attributes.presets') }}:</span>
+                @foreach(array_keys(\App\Models\ProductCustomAttribute::PRESETS) as $preset)
+                    <button type="button" @click="addPreset('{{ $preset }}')" :disabled="saving"
+                            class="text-xs border border-gray-200 hover:border-primary-400 hover:text-primary-700 rounded-full px-3 py-1 disabled:opacity-50">
+                        + {{ __('partner.listings.custom_attributes.preset_names.'.$preset) }}
+                    </button>
+                @endforeach
+            </div>
+
             <div class="border-t border-gray-100 pt-3 mt-3" x-show="showForm" x-cloak>
-                <div class="grid grid-cols-2 gap-3 mb-2">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">
                             {{ __('partner.listings.custom_attributes.label') }}
@@ -810,6 +829,17 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">
+                            {{ __('partner.listings.custom_attributes.type') }}
+                        </label>
+                        <select x-model="newAttr.type"
+                                class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                            @foreach(\App\Models\ProductCustomAttribute::TYPES as $type)
+                                <option value="{{ $type }}">{{ __('partner.listings.custom_attributes.types.'.$type) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">
                             {{ __('partner.listings.custom_attributes.unit') }}
                         </label>
                         <input type="text" x-model="newAttr.unit"
@@ -817,17 +847,26 @@
                                class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500">
                     </div>
                 </div>
+                <div x-show="newAttr.type === 'select'" class="mb-2">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">
+                        {{ __('partner.listings.custom_attributes.options') }}
+                    </label>
+                    <textarea x-model="newAttr.optionsText" rows="3"
+                              placeholder="{{ __('partner.listings.custom_attributes.options_placeholder') }}"
+                              class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500"></textarea>
+                </div>
+                <p x-show="error" x-text="error" class="text-xs text-red-600 mb-2"></p>
                 <div class="flex items-center gap-4">
                     <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                         <input type="checkbox" x-model="newAttr.is_required" class="rounded">
                         {{ __('partner.listings.custom_attributes.mark_required') }}
                     </label>
                     <div class="flex gap-2 ms-auto">
-                        <button @click="showForm = false; resetForm()"
+                        <button type="button" @click="showForm = false; resetForm()"
                                 class="border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
                             {{ __('common.cancel') }}
                         </button>
-                        <button @click="saveAttribute()"
+                        <button type="button" @click="saveAttribute()"
                                 :disabled="!newAttr.label.trim() || saving"
                                 class="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-gray-900 text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
                             <span x-show="!saving">{{ __('common.save') }}</span>
@@ -837,82 +876,136 @@
                 </div>
             </div>
 
-            <button x-show="!showForm" @click="showForm = true"
+            <button type="button" x-show="!showForm" @click="showForm = true"
                     class="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium mt-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 {{ __('partner.listings.custom_attributes.add') }}
             </button>
+
+            {{-- Size guide (per listing, vendor-owned) --}}
+            <div class="border-t border-gray-100 pt-4 mt-4">
+                <label class="block text-sm font-semibold text-gray-800">{{ __('partner.listings.custom_attributes.size_guide') }}</label>
+                <p class="text-xs text-gray-500 mb-2">{{ __('partner.listings.custom_attributes.size_guide_hint') }}</p>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <select x-model="sizeGuideId" @change="saveSizeGuide()"
+                            class="text-sm border border-gray-200 rounded-lg px-3 py-2 sm:w-72 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                        <option value="">{{ __('partner.listings.custom_attributes.no_size_guide') }}</option>
+                        @foreach($sizeGuides as $sizeGuide)
+                            <option value="{{ $sizeGuide->id }}">{{ $sizeGuide->name }}</option>
+                        @endforeach
+                    </select>
+                    <a href="{{ $sizeGuides->isEmpty() ? route('partner.size-guides.create', ['template' => 1]) : route('partner.size-guides.index') }}"
+                       class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                        {{ $sizeGuides->isEmpty() ? __('partner.listings.custom_attributes.create_size_guide') : __('partner.listings.custom_attributes.manage_size_guides') }}
+                    </a>
+                    <span x-show="sizeGuideSaved" x-transition class="text-xs text-green-600">{{ __('partner.listings.custom_attributes.size_guide_saved') }}</span>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         function customAttributeManager() {
+            const jsonHeaders = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.LISTING_DETAIL.csrf,
+            };
+
             return {
                 enabled: window.LISTING_DETAIL.hasCustomAttributes,
                 attributes: [],
                 showForm: false,
                 saving: false,
-                newAttr: { label: '', unit: '', is_required: false },
+                error: '',
+                typeLabels: @js(__('partner.listings.custom_attributes.types')),
+                newAttr: { label: '', type: 'text', unit: '', optionsText: '', is_required: false },
+                sizeGuideId: window.LISTING_DETAIL.sizeGuideId ?? '',
+                sizeGuideSaved: false,
 
                 init() {
                     if (this.enabled) this.load();
                 },
 
                 async load() {
-                    const res = await fetch(window.LISTING_DETAIL.customAttributesUrl, {
-                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': window.LISTING_DETAIL.csrf }
-                    });
+                    const res = await fetch(window.LISTING_DETAIL.customAttributesUrl, { headers: jsonHeaders });
                     const data = await res.json();
                     this.attributes = data.data ?? [];
                 },
 
                 async toggleEnabled() {
-                    const res = await fetch(window.LISTING_DETAIL.toggleCustomAttributesUrl, {
-                        method: 'POST',
-                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': window.LISTING_DETAIL.csrf }
-                    });
+                    const res = await fetch(window.LISTING_DETAIL.toggleCustomAttributesUrl, { method: 'POST', headers: jsonHeaders });
                     const data = await res.json();
                     this.enabled = data.data?.has_custom_attributes ?? !this.enabled;
                     if (this.enabled) this.load();
                 },
 
-                async saveAttribute() {
-                    if (!this.newAttr.label.trim()) return;
+                async create(payload) {
                     this.saving = true;
+                    this.error = '';
                     try {
                         const res = await fetch(window.LISTING_DETAIL.storeCustomAttributeUrl, {
                             method: 'POST',
-                            headers: {
-                                'Accept': 'application/json',
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': window.LISTING_DETAIL.csrf
-                            },
-                            body: JSON.stringify(this.newAttr)
+                            headers: jsonHeaders,
+                            body: JSON.stringify(payload),
                         });
                         const data = await res.json();
-                        if (res.ok) {
-                            this.attributes.push(data.data);
-                            this.showForm = false;
-                            this.resetForm();
+                        if (!res.ok) {
+                            this.error = Object.values(data.errors ?? {}).flat()[0] ?? @js(__('partner.listings.custom_attributes.save_failed'));
+                            return false;
                         }
+                        this.attributes.push(data.data);
+                        return true;
                     } finally {
                         this.saving = false;
                     }
                 },
 
+                async saveAttribute() {
+                    if (!this.newAttr.label.trim()) return;
+                    const payload = {
+                        label: this.newAttr.label.trim(),
+                        type: this.newAttr.type,
+                        unit: this.newAttr.unit || null,
+                        is_required: this.newAttr.is_required,
+                    };
+                    if (this.newAttr.type === 'select') {
+                        payload.options = this.newAttr.optionsText.split('\n').map((o) => o.trim()).filter(Boolean);
+                    }
+                    if (await this.create(payload)) {
+                        this.showForm = false;
+                        this.resetForm();
+                    }
+                },
+
+                addPreset(preset) {
+                    this.create({ preset, is_required: true });
+                },
+
                 async deleteAttribute(id) {
+                    if (!confirm(@js(__('partner.listings.custom_attributes.delete_confirm')))) return;
                     const url = window.LISTING_DETAIL.deleteCustomAttributeBaseUrl + '/' + id;
-                    await fetch(url, {
-                        method: 'DELETE',
-                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': window.LISTING_DETAIL.csrf }
-                    });
+                    await fetch(url, { method: 'DELETE', headers: jsonHeaders });
                     this.attributes = this.attributes.filter(a => a.id !== id);
                 },
 
+                async saveSizeGuide() {
+                    const res = await fetch(window.LISTING_DETAIL.updateSizeGuideUrl, {
+                        method: 'PUT',
+                        headers: jsonHeaders,
+                        body: JSON.stringify({ size_guide_id: this.sizeGuideId || null }),
+                    });
+                    if (res.ok) {
+                        this.sizeGuideSaved = true;
+                        setTimeout(() => (this.sizeGuideSaved = false), 2000);
+                    }
+                },
+
                 resetForm() {
-                    this.newAttr = { label: '', unit: '', is_required: false };
+                    this.newAttr = { label: '', type: 'text', unit: '', optionsText: '', is_required: false };
+                    this.error = '';
                 }
             };
         }
