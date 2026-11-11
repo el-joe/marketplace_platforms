@@ -25,6 +25,9 @@ class PermissionSeeder extends Seeder
             'products.publish',
             'products.cost_data.view',
             'products.cost_data.edit',
+            // Vendor/marketer requests for new catalog products — Admin\ProductRequestController
+            'product_requests.view',
+            'product_requests.review',
             // Catalog – Admin Listings
             'admin_listings.view',
             'admin_listings.create',

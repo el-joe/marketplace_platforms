@@ -712,6 +712,7 @@ return [
             'orders' => 'Orders',
             'reports' => 'Reports',
             'product_listings' => 'Product Listings',
+            'product_requests' => 'Product Requests',
             'voucher_share_invitations' => 'Voucher Share Invitations',
             'commissions' => 'Commissions',
             'wallet' => 'Wallet',

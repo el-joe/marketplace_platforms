@@ -87,6 +87,7 @@ use App\Http\Controllers\Admin\PortalContentController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCostController;
 use App\Http\Controllers\Admin\ProductHighlightController;
+use App\Http\Controllers\Admin\ProductRequestController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\ReviewController;
@@ -249,6 +250,15 @@ Route::middleware(['auth.admin', 'admin.vendor.scope', 'admin.timezone'])->group
             Route::post('/calculate', [ProductCostController::class, 'calculateMargin'])->name('calculate');
             Route::post('/check-competitors', [ProductCostController::class, 'checkCompetitorPrices'])->name('check-competitors');
         });
+    });
+
+    // ─── Product Requests (vendor/marketer requests for new catalog products) ─────
+    // Approval = completing the product form: approve redirects to products.create?product_request={id}.
+    Route::prefix('product-requests')->name('product-requests.')->group(function () {
+        Route::get('/', [ProductRequestController::class, 'index'])->name('index')->middleware('admin.permission:product_requests.view');
+        Route::get('/{productRequest}', [ProductRequestController::class, 'show'])->name('show')->middleware('admin.permission:product_requests.view');
+        Route::get('/{productRequest}/approve', [ProductRequestController::class, 'approve'])->name('approve')->middleware('admin.permission:product_requests.review');
+        Route::post('/{productRequest}/reject', [ProductRequestController::class, 'reject'])->name('reject')->middleware('admin.permission:product_requests.review');
     });
 
     // ─── Branded QR Code Downloads (Admin) ───────────────────────────────────────

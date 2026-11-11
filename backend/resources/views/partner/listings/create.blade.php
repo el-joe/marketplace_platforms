@@ -31,6 +31,29 @@
     </script>
 @endpush
 
+@push('scripts')
+    <script>
+        // Carry the search text to the product-request form, and honour ?q= (e.g. from an approved product request).
+        window.addEventListener('load', () => {
+            const searchInput = document.getElementById('product-search-input');
+            const requestLink = document.getElementById('request-product-link');
+            if (!searchInput || !requestLink) return;
+
+            const syncRequestLink = () => {
+                const query = searchInput.value.trim();
+                requestLink.href = requestLink.dataset.baseUrl + (query ? '?q=' + encodeURIComponent(query) : '');
+            };
+            searchInput.addEventListener('input', syncRequestLink);
+
+            const prefill = @js((string) request()->query('q', ''));
+            if (prefill) {
+                searchInput.value = prefill;
+                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+    </script>
+@endpush
+
 @section('content')
 
     <div class="mb-4">
@@ -65,6 +88,19 @@
                 {{-- Search results --}}
                 <div id="product-search-results" class="space-y-2 max-h-96 overflow-y-auto">
                     <p class="text-xs text-gray-400 text-center py-6">{{ __('partner.listings.start_typing_to_search') }}</p>
+                </div>
+
+                {{-- Missing product → product request (search text carried over as ?q=) --}}
+                <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-gray-700">{{ __('product_requests.panel.cant_find_title') }}</p>
+                        <p class="text-xs text-gray-400">{{ __('product_requests.panel.cant_find_hint') }}</p>
+                    </div>
+                    <a id="request-product-link" href="{{ route('partner.product-requests.create') }}"
+                        data-base-url="{{ route('partner.product-requests.create') }}"
+                        class="shrink-0 border border-yellow-400 text-yellow-700 hover:bg-yellow-50 text-xs font-semibold px-3 py-2 rounded-xl transition-colors">
+                        {{ __('product_requests.panel.request_it') }}
+                    </a>
                 </div>
             </div>
         </div>

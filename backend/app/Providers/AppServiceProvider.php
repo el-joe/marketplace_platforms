@@ -83,8 +83,8 @@ use App\Services\Customer\UnifiedListingQueryService;
 use App\Services\Delivery\DeliveryFCMService;
 use App\Services\GiftCardService;
 use App\Services\Media\ListingImageResolver;
-use App\Services\PortalAnalytics\PortalTracker;
 use App\Services\Portal\JoinService;
+use App\Services\PortalAnalytics\PortalTracker;
 use App\Services\Shared\PageBuilderService;
 use App\Services\Shipping\ShippingCarrierFactory;
 use App\Services\Vendor\VendorFCMService;
@@ -359,7 +359,8 @@ class AppServiceProvider extends ServiceProvider
 
         $encryption = $val('mail_encryption');
         config(array_filter([
-            'mail.mailers.smtp.host' => $val('mail_host'),
+            // Tolerate legacy values saved with a scheme ("https://smtp-relay.brevo.com").
+            'mail.mailers.smtp.host' => ($h = $val('mail_host')) === null ? null : (preg_replace('#^[a-z][a-z0-9+.-]*://#i', '', rtrim(trim($h), '/')) ?: null),
             'mail.mailers.smtp.port' => ($p = $val('mail_port')) ? (int) $p : null,
             'mail.mailers.smtp.scheme' => $encryption === null ? null : ($encryption === 'ssl' ? 'smtps' : 'smtp'),
             'mail.mailers.smtp.username' => $val('mail_username'),

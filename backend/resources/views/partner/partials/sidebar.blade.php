@@ -43,6 +43,9 @@
         {{-- GROUP 3: الكتالوج --}}
         <x-partner-nav-group :label="__('partner.nav.catalog')">
             <x-partner-nav-item route="partner.listings.index" icon="tag" :label="__('partner.nav.listings')" />
+            @if($vendorAdmin?->can('listings.view'))
+                <x-partner-nav-item route="partner.product-requests.index" icon="squares-plus" :label="__('partner.nav.product_requests')" />
+            @endif
             <x-partner-nav-item route="partner.inventory.index" icon="cube" :label="__('partner.nav.inventory')" />
             <x-partner-nav-item route="partner.change-requests.index" icon="pencil-square" :label="__('partner.nav.change_requests')" />
             {{-- <x-partner-nav-item route="partner.ai.credits" icon="sparkles" :label="__('partner.nav.ai_credits')" /> --}}

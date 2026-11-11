@@ -68,4 +68,24 @@ return [
         'contract_updated_message' => 'تم تحديث العقد ":name" إلى الإصدار :version. يرجى مراجعته وإعادة قبوله.',
     ],
 
+    'product_requests' => [
+        'submitted' => [
+            'title' => 'طلب منتج جديد',
+            'message' => 'طلب :requester إضافة منتج جديد: ":name" (:number).',
+        ],
+        'approved' => [
+            'title' => 'تمت الموافقة على طلب المنتج',
+            'message' => 'تمت الموافقة على طلب المنتج :number. أصبح ":product" متاحًا في الكتالوج ويمكنك البدء في إدراجه.',
+            'mail_subject' => 'تمت الموافقة على طلب المنتج :number',
+            'mail_greeting' => 'مرحبًا :name،',
+            'mail_line' => 'أخبار سارة! تمت الموافقة على طلبك :number وأُضيف المنتج ":product" إلى الكتالوج.',
+            'mail_line_next' => 'يمكنك الآن إنشاء إدراج له من لوحة التحكم.',
+            'mail_action' => 'عرض الطلب',
+        ],
+        'rejected' => [
+            'title' => 'تم رفض طلب المنتج',
+            'message' => 'تم رفض طلب المنتج :number الخاص بـ ":name". السبب: :reason',
+        ],
+    ],
+
 ];

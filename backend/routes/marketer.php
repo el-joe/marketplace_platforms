@@ -18,6 +18,7 @@ use App\Http\Controllers\Marketer\InvitationWhatsAppController;
 use App\Http\Controllers\Marketer\ListingController;
 use App\Http\Controllers\Marketer\OnboardingController;
 use App\Http\Controllers\Marketer\OrderController;
+use App\Http\Controllers\Marketer\ProductRequestController;
 use App\Http\Controllers\Marketer\ProfileController;
 use App\Http\Controllers\Marketer\PromoteBookingController;
 use App\Http\Controllers\Marketer\PromoteController;
@@ -225,6 +226,15 @@ Route::middleware('web')->group(function () {
             Route::get('/{listing}/promo-badges', [ListingController::class, 'promoBadges'])->name('promo-badges.edit');
             Route::put('/{listing}/promo-badges', [ListingController::class, 'updatePromoBadges'])->name('promo-badges.update');
             Route::delete('/{listing}', [ListingController::class, 'destroy'])->name('destroy');
+        });
+
+        // Product requests (ask for a catalog product missing when adding a listing)
+        Route::prefix('product-requests')->name('product-requests.')->controller(ProductRequestController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{productRequest}', 'show')->name('show')->whereUuid('productRequest');
+            Route::post('/{productRequest}/cancel', 'cancel')->name('cancel')->whereUuid('productRequest');
         });
 
         // enhancement.md P-16: onboarding contract acceptance gate.

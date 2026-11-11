@@ -30,6 +30,7 @@ use App\Http\Controllers\Partner\PaymentMethodController;
 use App\Http\Controllers\Partner\PayoutController;
 use App\Http\Controllers\Partner\PerformanceController;
 use App\Http\Controllers\Partner\ProductCertificationController;
+use App\Http\Controllers\Partner\ProductRequestController;
 use App\Http\Controllers\Partner\ProfileController;
 use App\Http\Controllers\Partner\ReturnController;
 use App\Http\Controllers\Partner\RoleController;
@@ -167,6 +168,15 @@ Route::middleware(['vendor.auth', 'vendor.active', 'vendor.agreement.enforce'])-
         Route::post('/products/{product}/toggle-custom-attributes', 'toggleCustomAttributes')
             ->name('products.toggle-custom-attributes')
             ->middleware('vendor.can:listings.edit');
+    });
+
+    // ── Product requests (ask for a catalog product missing when adding a listing) ──
+    Route::prefix('product-requests')->name('product-requests.')->controller(ProductRequestController::class)->middleware('vendor.type:product_vendor')->group(function () {
+        Route::get('/', 'index')->name('index')->middleware('vendor.can:listings.view');
+        Route::get('/create', 'create')->name('create')->middleware('vendor.can:listings.create');
+        Route::post('/', 'store')->name('store')->middleware('vendor.can:listings.create');
+        Route::get('/{productRequest}', 'show')->name('show')->whereUuid('productRequest')->middleware('vendor.can:listings.view');
+        Route::post('/{productRequest}/cancel', 'cancel')->name('cancel')->whereUuid('productRequest')->middleware('vendor.can:listings.create');
     });
 
     // ── Inventory module ─────────────────────────────────────────────────────

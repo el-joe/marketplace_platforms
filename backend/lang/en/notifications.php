@@ -68,4 +68,24 @@ return [
         'contract_updated_message' => 'The contract ":name" has been updated to version :version. Please review and re-accept.',
     ],
 
+    'product_requests' => [
+        'submitted' => [
+            'title' => 'New Product Request',
+            'message' => ':requester requested a new product: ":name" (:number).',
+        ],
+        'approved' => [
+            'title' => 'Product Request Approved',
+            'message' => 'Your product request :number was approved. ":product" is now in the catalog and you can start listing it.',
+            'mail_subject' => 'Your product request :number was approved',
+            'mail_greeting' => 'Hello :name,',
+            'mail_line' => 'Good news! Your request :number has been approved and the product ":product" has been added to the catalog.',
+            'mail_line_next' => 'You can now create a listing for it from your panel.',
+            'mail_action' => 'View request',
+        ],
+        'rejected' => [
+            'title' => 'Product Request Rejected',
+            'message' => 'Your product request :number for ":name" was rejected. Reason: :reason',
+        ],
+    ],
+
 ];

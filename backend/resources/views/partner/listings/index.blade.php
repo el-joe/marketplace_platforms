@@ -95,6 +95,12 @@
                 <button id="bulk-archive"
                     class="bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">{{ __('partner.listings.archive') }}</button>
             </div>
+            @if(auth('vendor')->user()?->can('listings.create'))
+                <a href="{{ route('partner.product-requests.create') }}"
+                    class="border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+                    {{ __('product_requests.panel.new_request') }}
+                </a>
+            @endif
             <a href="{{ route('partner.listings.create') }}"
                 class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 text-sm font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

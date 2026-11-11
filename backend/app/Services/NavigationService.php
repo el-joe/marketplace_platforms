@@ -18,6 +18,7 @@ use App\Models\Marketer;
 use App\Models\MarketerCampaign;
 use App\Models\Order;
 use App\Models\PackagingSupplyRequest;
+use App\Models\ProductRequest;
 use App\Models\ReturnRequest;
 use App\Models\SupportTicket;
 use App\Models\TravelPackage;
@@ -33,6 +34,7 @@ use App\Models\WarrantyPurchase;
 use App\Models\WishlistGroup;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Route;
 
 class NavigationService
 {
@@ -48,7 +50,7 @@ class NavigationService
     {
         foreach ($this->adminNavigation() as $group) {
             foreach ($group['items'] as $item) {
-                if (!empty($item['route']) && \Illuminate\Support\Facades\Route::has($item['route'])) {
+                if (! empty($item['route']) && Route::has($item['route'])) {
                     try {
                         return route($item['route'], $item['route_params'] ?? []);
                     } catch (\Throwable $e) {
@@ -107,6 +109,13 @@ class NavigationService
                         'icon' => 'cube',
                         'permission' => 'products.view',
                         'badge' => null,
+                    ],
+                    [
+                        'label' => __('admin.nav.product_requests'),
+                        'route' => 'admin.product-requests.index',
+                        'icon' => 'inbox-arrow-down',
+                        'permission' => 'product_requests.view',
+                        'badge' => $this->cachedBadge('pending_product_requests', fn () => $this->countPendingProductRequests(), 60),
                     ],
                     [
                         'label' => __('admin.nav.nawy_listings'),
@@ -1220,6 +1229,15 @@ class NavigationService
         }
         try {
             return (int) VendorProductCertification::query()->where('status', 'pending')->count();
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    protected function countPendingProductRequests(): int
+    {
+        try {
+            return (int) ProductRequest::query()->pending()->count();
         } catch (\Throwable) {
             return 0;
         }

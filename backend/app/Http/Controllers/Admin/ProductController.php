@@ -19,12 +19,14 @@ use App\Models\ProductCountrySetting;
 use App\Models\ProductHighlight;
 use App\Models\ProductImage;
 use App\Models\ProductPromoBadge;
+use App\Models\ProductRequest;
 use App\Models\ProductSpecification;
 use App\Models\ProductVariant;
 use App\Models\ProductVariantAttribute;
 use App\Models\VendorListing;
 use App\Models\VendorProductCertification;
 use App\Services\ActivityLoggerService;
+use App\Services\Catalog\ProductRequestService;
 use App\Services\ProductService;
 use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\VariantSlugService;
@@ -217,9 +219,46 @@ class ProductController extends Controller
     // Create / Store
     // ──────────────────────────────────────────────────────────────────────────
 
-    public function create(): View
+    /**
+     * Product create form. With ?product_request={id} the form is pre-filled from a pending
+     * vendor/marketer product request (fields + copies of its images); saving approves it.
+     */
+    public function create(Request $request): View|RedirectResponse
     {
-        return view('admin.products.create', $this->formData());
+        $viewData = $this->formData();
+
+        if ($request->filled('product_request')) {
+            abort_unless($request->user('admin')?->can(ProductRequestService::REVIEW_PERMISSION), 403);
+
+            $productRequest = ProductRequest::query()
+                ->with(['vendor:id,store_name', 'marketer:id,name', 'category:id,name_en', 'brand:id,name_en'])
+                ->find((string) $request->query('product_request'));
+
+            if (! $productRequest || ! $productRequest->isPending()) {
+                return $productRequest
+                    ? redirect()->route('admin.product-requests.show', $productRequest->id)->with('error', __('product_requests.messages.not_pending'))
+                    : redirect()->route('admin.product-requests.index')->with('error', __('product_requests.messages.not_pending'));
+            }
+
+            $description = '<p>'.nl2br(e($productRequest->description)).'</p>';
+
+            $viewData['productRequest'] = $productRequest;
+            $viewData['prefill'] = [
+                'name_en' => $productRequest->name_en,
+                'name_ar' => $productRequest->name_ar,
+                'category_id' => $productRequest->category_id,
+                'category_label' => $productRequest->category?->name_en,
+                'brand_id' => $productRequest->brand_id,
+                'brand_label' => $productRequest->brand?->name_en,
+                'gtin' => $productRequest->gtin,
+                'model_number' => $productRequest->model_number,
+                'description_en' => $description,
+                'description_ar' => $description,
+            ];
+            $viewData['prefillImages'] = app(ProductRequestService::class)->importImagesForProductForm($productRequest);
+        }
+
+        return view('admin.products.create', $viewData);
     }
 
     public function store(StoreProductRequest $request): JsonResponse|RedirectResponse
@@ -287,7 +326,24 @@ class ProductController extends Controller
             $this->syncPromoBadges($id, $request->input('promo_badges', []));
             $this->syncSpecifications($id, $request->input('specifications', []));
 
+            $productRequest = null;
+            if ($request->filled('product_request_id')) {
+                $productRequest = ProductRequest::query()->findOrFail($request->input('product_request_id'));
+                app(ProductRequestService::class)->markApproved($productRequest, Product::findOrFail($id), $request->user('admin'));
+            }
+
             DB::commit();
+
+            if ($productRequest) {
+                $redirectUrl = route('admin.product-requests.show', $productRequest->id);
+                $message = __('admin.product_requests.approved_success', ['number' => $productRequest->request_number]);
+
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => true, 'message' => $message, 'redirect' => $redirectUrl]);
+                }
+
+                return redirect()->to($redirectUrl)->with('success', $message);
+            }
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -298,6 +354,10 @@ class ProductController extends Controller
 
             return redirect()->route('admin.products.index')
                 ->with('success', 'Product created successfully.');
+        } catch (ValidationException $e) {
+            DB::rollBack();
+
+            throw $e;
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Product creation failed', ['error' => $e->getMessage()]);

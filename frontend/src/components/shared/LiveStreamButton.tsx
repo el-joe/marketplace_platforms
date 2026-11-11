@@ -3,12 +3,24 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getStreams } from '@/src/features/noon/live-streams/api';
+import { apiPublicBaseUrlGlobal } from '@/src/lib/utils';
 
 export default function LiveStreamButton() {
   const [hasLive, setHasLive] = useState(false);
   const [radioOnly, setRadioOnly] = useState(false);
+  // Admin toggle: Settings → General → "Live Stream Button Enabled". Hidden until confirmed on.
+  const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
+    fetch(`${apiPublicBaseUrlGlobal}/settings`, { headers: { Accept: 'application/json' } })
+      .then(res => (res.ok ? res.json() : null))
+      .then(env => setEnabled(env?.data?.live_stream_button_enabled !== false))
+      .catch(() => setEnabled(true));
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) return;
+
     const check = () =>
       getStreams()
         .then(streams => {
@@ -21,7 +33,9 @@ export default function LiveStreamButton() {
     check();
     const interval = setInterval(check, 30_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [enabled]);
+
+  if (!enabled) return null;
 
   return (
     <Link

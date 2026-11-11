@@ -712,6 +712,7 @@ return [
             'orders' => 'الطلبات',
             'reports' => 'التقارير',
             'product_listings' => 'قوائم المنتجات',
+            'product_requests' => 'طلبات المنتجات',
             'voucher_share_invitations' => 'دعوات مشاركة القسائم',
             'commissions' => 'العمولات',
             'wallet' => 'المحفظة',

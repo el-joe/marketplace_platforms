@@ -50,6 +50,7 @@ return [
         'warranty_claims' => 'مطالبات الضمان',
         'catalog' => 'الكتالوج',
         'listings' => 'قوائم المنتجات',
+        'product_requests' => 'طلبات المنتجات',
         'inventory' => 'المخزون',
         'fulfillment_storage' => 'التوصيل والتخزين',
         'fulfillment' => 'نظام التوصيل',

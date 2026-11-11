@@ -3,8 +3,10 @@
 @section('page-title', __('marketer.listings.create_title'))
 
 @section('content')
-<div class="max-w-xl" x-data="{
-    query: '',
+<div class="max-w-xl" x-init="if (query.length >= 2) search()" x-data="{
+    query: @js((string) request()->query('q', '')),
+    searched: false,
+    requestProductUrl: @js(route('marketer.product-requests.create')),
     results: [],
     selected: null,
     loading: false,
@@ -15,16 +17,18 @@
         return this.countryId ? (this.allWarehouses[this.countryId] ?? []) : [];
     },
     async search() {
-        if (this.query.length < 2) { this.results = []; return; }
+        if (this.query.length < 2) { this.results = []; this.searched = false; return; }
         this.loading = true;
         const res = await fetch(`{{ route('marketer.listings.search-products') }}?q=${encodeURIComponent(this.query)}`);
         this.results = await res.json();
         this.loading = false;
+        this.searched = true;
     },
     selectVariant(v) {
         this.selected = v;
         this.query = v.name_ar + ' — ' + v.sku;
         this.results = [];
+        this.searched = false;
         document.getElementById('product_variant_id').value = v.id;
     }
 }">
@@ -63,6 +67,15 @@
                     </template>
                 </div>
                 @error('product_variant_id') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
+
+                {{-- Missing product → product request (search text carried over as ?q=) --}}
+                <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs"
+                     :class="searched && !loading && results.length === 0 ? 'rounded-lg bg-yellow-50 border border-yellow-200 px-3 py-2' : ''">
+                    <span class="text-gray-500">{{ __('product_requests.panel.cant_find_title') }}</span>
+                    <a :href="requestProductUrl + (query.trim() && !selected ? '?q=' + encodeURIComponent(query.trim()) : '')"
+                       href="{{ route('marketer.product-requests.create') }}"
+                       class="font-semibold text-yellow-700 hover:text-yellow-800 underline underline-offset-2">{{ __('product_requests.panel.request_it') }}</a>
+                </div>
             </div>
 
             {{-- Country --}}

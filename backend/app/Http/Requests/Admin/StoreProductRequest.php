@@ -3,17 +3,28 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\ProductStatus;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Product;
+use App\Models\ProductRequest;
+use App\Services\Catalog\ProductRequestService;
 use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\Vendor\ContractAssignmentService;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
+    /**
+     * products.create is enforced at route level. Saving the form for a vendor/marketer
+     * product request approves that request, which additionally needs the review permission.
+     */
     public function authorize(): bool
     {
-        return true; // Gate handled at route/policy level
+        if (! $this->filled('product_request_id')) {
+            return true;
+        }
+
+        return (bool) $this->user('admin')?->can(ProductRequestService::REVIEW_PERMISSION);
     }
 
     public function rules(): array
@@ -38,10 +49,13 @@ class StoreProductRequest extends FormRequest
             'is_hazardous' => ['boolean'],
             'has_custom_attributes' => ['boolean'],
             ...app(ContractAssignmentService::class)->rules('product'),
-            'contract_requirement' => ['nullable', Rule::in(\App\Models\Product::contractRequirements())],
+            'contract_requirement' => ['nullable', Rule::in(Product::contractRequirements())],
             'seo_title' => ['nullable', 'string', 'max:70'],
             'seo_description' => ['nullable', 'string', 'max:160'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:products,slug'],
+
+            // Set when the admin is completing a vendor/marketer product request (approves it on save)
+            'product_request_id' => ['nullable', 'uuid', 'exists:product_requests,id'],
 
             // Promo badges (product-level defaults)
             ...array_merge(PromoBadgeSyncService::rules(), [
@@ -99,6 +113,12 @@ class StoreProductRequest extends FormRequest
         $validator->after(function (Validator $validator) {
             if ($this->boolean('has_variants') && count(array_filter((array) $this->input('variants', []))) === 0) {
                 $validator->errors()->add('variants', 'Please add at least one variant, or turn off "Has Variant".');
+            }
+
+            if ($this->filled('product_request_id')
+                && ! $validator->errors()->has('product_request_id')
+                && ! ProductRequest::query()->whereKey($this->input('product_request_id'))->pending()->exists()) {
+                $validator->errors()->add('product_request_id', __('product_requests.messages.not_pending'));
             }
         });
     }

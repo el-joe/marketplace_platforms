@@ -172,6 +172,15 @@
                     {{ __('marketer.static_text.layouts_marketer.product_listings') }}
                 </a>
 
+                <a href="{{ route('marketer.product-requests.index') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                          {{ request()->routeIs('marketer.product-requests.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    {{ __('marketer.static_text.layouts_marketer.product_requests') }}
+                </a>
+
                 <a href="{{ route('marketer.coupon-participation.index') }}"
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                           {{ request()->routeIs('marketer.coupon-participation.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">

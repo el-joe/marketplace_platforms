@@ -21,6 +21,7 @@ class SettingsSeeder extends Seeder
             ['key' => 'join_option_open_souq_enabled', 'value' => true, 'category' => 'general', 'description' => 'Show "Open Souq" (classifieds) on the /join page', 'is_public' => 0],
             ['key' => 'join_option_travel_agency_enabled', 'value' => true, 'category' => 'general', 'description' => 'Show "Travel Agency" on the /join page', 'is_public' => 0],
             ['key' => 'join_option_marketer_enabled', 'value' => true, 'category' => 'general', 'description' => 'Show "Influencer / Marketer" on the /join page', 'is_public' => 0],
+            ['key' => 'live_stream_button_enabled', 'value' => true, 'category' => 'general', 'description' => 'Show the floating Live Streams button on the storefront', 'is_public' => 1],
             ['key' => 'maintenance_mode', 'value' => false, 'category' => 'general', 'description' => 'When true, show maintenance page to customers', 'is_public' => 0],
             ['key' => 'maintenance_message', 'value' => 'We are performing scheduled maintenance. Back soon!', 'category' => 'general', 'description' => 'Message shown during maintenance mode', 'is_public' => 1],
             ['key' => 'logo_file_id', 'value' => '', 'category' => 'general', 'description' => 'Platform logo file ID (from files table)', 'is_public' => 1],

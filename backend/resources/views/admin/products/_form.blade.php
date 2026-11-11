@@ -8,10 +8,13 @@
 @php
     $product = $product ?? null;
     $isEdit = $product !== null;
+    /** Create-mode defaults, e.g. from a vendor/marketer product request (ProductController::create). */
+    $prefill = $prefill ?? [];
+    $prefillImages = $prefillImages ?? [];
 
-    /** Quick helper to resolve old() → product field → default. */
-    $val = function (string $field, $default = '') use ($isEdit, $product) {
-        return old($field, $isEdit ? ($product->{$field} ?? $default) : $default);
+    /** Quick helper to resolve old() → product field → prefill → default. */
+    $val = function (string $field, $default = '') use ($isEdit, $product, $prefill) {
+        return old($field, $isEdit ? ($product->{$field} ?? $default) : ($prefill[$field] ?? $default));
     };
 
     /** Boolean helper for checkboxes / toggles. */
@@ -132,8 +135,8 @@
                         search-url="{{ route('admin.categories.search') }}"
                         placeholder="{{ __('admin.products.category_search_placeholder') }}"
                         :min-length="0"
-                        :value="$isEdit ? $product->category_id : null"
-                        :value-label="$isEdit && $product->category_id ? ($categories[$product->category_id] ?? '') : null"
+                        :value="$isEdit ? $product->category_id : ($prefill['category_id'] ?? null)"
+                        :value-label="$isEdit && $product->category_id ? ($categories[$product->category_id] ?? '') : ($prefill['category_label'] ?? null)"
                     />
                     <x-form.async-select
                         name="brand_id"
@@ -141,8 +144,8 @@
                         search-url="{{ route('admin.brands.search') }}"
                         placeholder="{{ __('admin.products.brand_search_placeholder') }}"
                         :min-length="0"
-                        :value="$isEdit ? $product->brand_id : null"
-                        :value-label="$isEdit && $product->brand_id ? ($brands[$product->brand_id] ?? '') : null"
+                        :value="$isEdit ? $product->brand_id : ($prefill['brand_id'] ?? null)"
+                        :value-label="$isEdit && $product->brand_id ? ($brands[$product->brand_id] ?? '') : ($prefill['brand_label'] ?? null)"
                     />
                 </div>
 
@@ -725,6 +728,20 @@
                 @endphp
                 <script>
                     window.existingProductImages = @json($imagesMap ?? []);
+                </script>
+                @elseif(! $isEdit && count($prefillImages) > 0)
+                {{-- Images copied from a product request (unattached ProductImage rows, attached on save) --}}
+                @php
+                    $prefillImagesMap = collect($prefillImages)->map(fn ($img) => [
+                        'id' => $img['id'],
+                        'url' => $img['url'],
+                        'name' => $img['name'],
+                        'size' => $img['size'],
+                        'mime_type' => $img['mime_type'],
+                    ])->values()->all();
+                @endphp
+                <script>
+                    window.existingProductImages = @json($prefillImagesMap);
                 </script>
                 @else
                 <script>window.existingProductImages = [];</script>

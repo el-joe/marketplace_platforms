@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\SettingCategory;
 use App\Models\Admin;
 use App\Models\Setting;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -14,17 +16,18 @@ use Illuminate\Support\Facades\Storage;
 class SettingsService
 {
     private const FILES_DISK = 'public';
+
     private const FILES_PATH = 'settings';
 
     /**
      * All settings grouped by category, keyed by category value.
      *
-     * @return array<string, \Illuminate\Support\Collection<int, Setting>>
+     * @return array<string, Collection<int, Setting>>
      */
     public function allGrouped(): array
     {
         return Setting::orderBy('key')->get()
-            ->groupBy(fn(Setting $s) => $s->category instanceof \App\Enums\SettingCategory ? $s->category->value : $s->category)
+            ->groupBy(fn (Setting $s) => $s->category instanceof SettingCategory ? $s->category->value : $s->category)
             ->all();
     }
 
@@ -35,7 +38,7 @@ class SettingsService
     {
         return Setting::where('is_public', true)
             ->get()
-            ->mapWithKeys(fn(Setting $s) => [$s->key => $s->getTypedValue()])
+            ->mapWithKeys(fn (Setting $s) => [$s->key => $s->getTypedValue()])
             ->all();
     }
 
@@ -49,6 +52,7 @@ class SettingsService
 
         if ($input instanceof UploadedFile) {
             $this->storeFileValue($setting, $input, $admin);
+
             return;
         }
 
@@ -74,8 +78,8 @@ class SettingsService
             'updated_at' => now(),
         ]);
 
-        Cache::forget('setting:' . $key);
-        Cache::forget('settings:' . ($setting->category instanceof \App\Enums\SettingCategory ? $setting->category->value : $setting->category));
+        Cache::forget('setting:'.$key);
+        Cache::forget('settings:'.($setting->category instanceof SettingCategory ? $setting->category->value : $setting->category));
     }
 
     /**
@@ -114,8 +118,8 @@ class SettingsService
             'updated_at' => now(),
         ]);
 
-        Cache::forget('setting:' . $setting->key);
-        Cache::forget('settings:' . ($setting->category instanceof \App\Enums\SettingCategory ? $setting->category->value : $setting->category));
+        Cache::forget('setting:'.$setting->key);
+        Cache::forget('settings:'.($setting->category instanceof SettingCategory ? $setting->category->value : $setting->category));
     }
 
     /**
@@ -133,7 +137,7 @@ class SettingsService
                     ->where('category', $category)
                     ->first();
 
-                if (!$setting) {
+                if (! $setting) {
                     continue; // don't create unknown keys
                 }
 
@@ -164,11 +168,12 @@ class SettingsService
                     'updated_at' => now(),
                 ]);
 
-                Cache::forget('setting:' . $key);
+                Cache::forget('setting:'.$key);
                 $count++;
             }
 
-            Cache::forget('settings:' . $category);
+            Cache::forget('settings:'.$category);
+            Cache::forget('settings:public');
         });
 
         Log::info("Settings [{$category}] saved by admin {$admin->id}: {$count} keys updated.");
@@ -205,30 +210,36 @@ class SettingsService
                 ->where('category', $category)
                 ->first();
 
-            if (!$setting || $setting->is_encrypted) {
+            if (! $setting || $setting->is_encrypted) {
                 continue;
             }
 
             $original = $setting->value;
 
             if (is_bool($original)) {
-                if (!in_array($value, ['0', '1', 0, 1, true, false], true)) {
+                if (! in_array($value, ['0', '1', 0, 1, true, false], true)) {
                     $errors[$key] = 'Must be a boolean (0 or 1).';
                 }
             } elseif (is_int($original) || is_float($original)) {
-                if (!is_numeric($value)) {
+                if (! is_numeric($value)) {
                     $errors[$key] = 'Must be a numeric value.';
                 }
             } elseif (str_contains($key, 'email')) {
-                if ($value !== '' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                if ($value !== '' && ! filter_var($value, FILTER_VALIDATE_EMAIL)) {
                     $errors[$key] = 'Must be a valid email address.';
                 }
-            } elseif (str_contains($key, 'url') || str_contains($key, 'host')) {
-                if ($value !== '' && !filter_var($value, FILTER_VALIDATE_URL)) {
+            } elseif (str_contains($key, 'host')) {
+                // A bare hostname or IP (e.g. smtp.hostinger.com) — no scheme, port or path.
+                if ($value !== '' && (preg_match('#^[a-z][a-z0-9+.-]*://#i', $value)
+                    || ! filter_var($value, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME))) {
+                    $errors[$key] = 'Must be a hostname without http:// or https:// (e.g. smtp.example.com).';
+                }
+            } elseif (str_contains($key, 'url')) {
+                if ($value !== '' && ! filter_var($value, FILTER_VALIDATE_URL)) {
                     $errors[$key] = 'Must be a valid URL.';
                 }
             } elseif (str_contains($key, 'color')) {
-                if ($value !== '' && !preg_match('/^#[0-9A-Fa-f]{6}$/', $value)) {
+                if ($value !== '' && ! preg_match('/^#[0-9A-Fa-f]{6}$/', $value)) {
                     $errors[$key] = 'Must be a valid hex color (e.g. #0284c7).';
                 }
             }

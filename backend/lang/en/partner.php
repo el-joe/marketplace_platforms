@@ -50,6 +50,7 @@ return [
         'warranty_claims' => 'Warranty Claims',
         'catalog' => 'Catalog',
         'listings' => 'Listings',
+        'product_requests' => 'Product Requests',
         'inventory' => 'Inventory',
         'fulfillment_storage' => 'Fulfillment & Storage',
         'fulfillment' => 'Fulfillment',

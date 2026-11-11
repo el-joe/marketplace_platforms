@@ -3,6 +3,7 @@
 namespace Tests\Feature\Credentials;
 
 use App\Services\Mail\MailDiagnostics;
+use App\Services\SettingsService;
 use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -111,5 +112,15 @@ class MailSettingsDiagnosticsTest extends TestCase
         $this->actingAs($editor, 'admin')->postJson(route('admin.settings.test-email'));
         $messages = app('mailer')->getSymfonyTransport()->messages();
         $this->assertSame($editor->email, $messages->last()->getEnvelope()->getRecipients()[0]->getAddress());
+    }
+
+    public function test_mail_host_must_be_a_bare_hostname_without_scheme(): void
+    {
+        $settings = app(SettingsService::class);
+
+        $this->assertArrayHasKey('mail_host', $settings->validateGroup('integrations', ['mail_host' => 'https://smtp-relay.brevo.com']));
+        $this->assertArrayHasKey('mail_host', $settings->validateGroup('integrations', ['mail_host' => 'smtp.example.com/path']));
+        $this->assertSame([], $settings->validateGroup('integrations', ['mail_host' => 'smtp.hostinger.com']));
+        $this->assertSame([], $settings->validateGroup('integrations', ['mail_host' => '']));
     }
 }

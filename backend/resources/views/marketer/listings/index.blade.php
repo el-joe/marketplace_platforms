@@ -25,10 +25,16 @@
                 </a>
             @endforeach
         </div>
-        <a href="{{ route('marketer.listings.create') }}"
-           class="px-4 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500">
-            {{ __('marketer.listings.add_listing_button') }}
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('marketer.product-requests.create') }}"
+               class="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-semibold rounded-lg text-sm hover:bg-gray-50">
+                {{ __('product_requests.panel.new_request') }}
+            </a>
+            <a href="{{ route('marketer.listings.create') }}"
+               class="px-4 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500">
+                {{ __('marketer.listings.add_listing_button') }}
+            </a>
+        </div>
     </div>
 
     @if($listings->isEmpty())
