@@ -69,7 +69,7 @@
 
     {{-- ─── DataTable ──────────────────────────────────────────────────────────── --}}
     <x-card>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table id="refunds-table" class="w-full" style="width:100%">
                 <thead>
                     <tr>

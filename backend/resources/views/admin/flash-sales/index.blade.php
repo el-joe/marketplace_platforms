@@ -58,7 +58,7 @@
             <input type="date" id="filter-date-to"   class="form-input form-input-sm w-36" placeholder="{{ __('common.to') }}">
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table id="flash-sales-table" class="w-full text-sm"></table>
         </div>
     </x-card>

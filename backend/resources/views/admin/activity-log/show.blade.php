@@ -105,7 +105,7 @@
                 @endif
             </h3>
 
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-200">

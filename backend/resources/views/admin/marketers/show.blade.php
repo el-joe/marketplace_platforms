@@ -411,7 +411,7 @@
             <p class="text-xs text-gray-500 mt-1">{{ __('admin.marketers.statement_totals', ['gross' => \App\Support\Money::format($statementTotals['gross']), 'fee' => \App\Support\Money::format($statementTotals['fee']), 'net' => \App\Support\Money::format($statementTotals['net'])]) }}</p>
             <p class="text-xs text-gray-400 mt-1">{{ __('admin.marketers.statement_hint') }}</p>
         </div>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-xs text-gray-500"><tr>
                 <th class="px-4 py-2 text-start">{{ __('admin.marketers.statement_order') }}</th>
@@ -443,7 +443,7 @@
             <h3 class="font-bold text-gray-800">{{ __('admin.marketers.sales_title') }}</h3>
             <p class="text-xs text-gray-500 mt-1" data-sales-totals>{{ __('admin.marketers.sales_totals', ['gross' => \App\Support\Money::format($salesTotals['gross']), 'commission' => \App\Support\Money::format($salesTotals['commission']), 'vat' => \App\Support\Money::format($salesTotals['vat']), 'peer' => \App\Support\Money::format($salesTotals['peer']), 'other' => \App\Support\Money::format($salesTotals['other']), 'net' => \App\Support\Money::format($salesTotals['net'])]) }}</p>
         </div>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-xs text-gray-500"><tr>
                 <th class="px-4 py-2 text-start">{{ __('admin.marketers.statement_order') }}</th>
@@ -506,7 +506,7 @@
         <div class="px-6 py-3 border-b border-gray-100">
             <h4 class="text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.finance.fixed_title') }}</h4>
             <p class="text-xs text-gray-400 mb-2">{{ __('marketer.finance.fixed_hint') }}</p>
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
             <table class="w-full text-sm" data-fixed-table>
                 <thead class="text-xs text-gray-500"><tr>
                     <th class="py-1 text-start">{{ __('marketing_fees.reports.col_campaign') }}</th>
@@ -533,7 +533,7 @@
 
         <div class="px-6 py-3 bg-gray-50">
             <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ __('marketing_fees.reports.earnings_by_campaign_title') }}</h4>
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
             <table class="w-full text-sm" data-campaign-earnings-table>
                 <thead class="text-xs text-gray-500"><tr>
                     <th class="py-1 text-start">{{ __('marketing_fees.reports.col_campaign') }}</th>
@@ -572,7 +572,7 @@
             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-600">📄</span>
             <h3 class="font-bold text-gray-800">{{ __('admin.exclusive_contracts') }}</h3>
         </div>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-500 text-xs">
                 <tr>
@@ -740,7 +740,7 @@
             <a href="{{ route('admin.marketer-listings.index', ['search' => $marketer->name]) }}" class="text-xs text-blue-600 hover:underline">{{ __('admin.marketer_listings.view_all') }}</a>
         </div>
         @if($marketer->listings->isNotEmpty())
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-500 text-xs">
                 <tr>
@@ -793,7 +793,7 @@
             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">📣</span>
             <h3 class="font-bold text-gray-800">{{ __('admin.marketers.campaigns') }} ({{ $marketer->invitations->count() }})</h3>
         </div>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-500 text-xs">
                 <tr>

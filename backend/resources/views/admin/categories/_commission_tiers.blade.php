@@ -32,51 +32,53 @@
     <p x-show="tiers.length === 0 && !adding" x-cloak class="text-sm text-gray-400 italic">{{ __('admin.categories.tier_none') }}</p>
 
     <div class="overflow-x-auto rounded-lg border border-gray-200" x-show="tiers.length > 0 || adding" x-cloak>
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 uppercase">{{ __('admin.categories.tier_price_from') }}</th>
-                    <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 uppercase">{{ __('admin.categories.tier_price_to') }}</th>
-                    <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 uppercase">{{ __('admin.categories.tier_rate') }}</th>
-                    <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 uppercase">{{ __('admin.categories.tier_min') }}</th>
-                    <th class="px-3 py-2"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100 bg-white">
-                <template x-for="tier in tiers" :key="tier.id">
+        <div class="table-responsive">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50">
                     <tr>
-                        <template x-if="editingId !== tier.id">
-                            <td class="px-3 py-2 tabular-nums" x-text="tier.price_from"></td>
-                        </template>
-                        <template x-if="editingId !== tier.id">
-                            <td class="px-3 py-2 tabular-nums text-gray-500" x-text="tier.price_to ?? '∞'"></td>
-                        </template>
-                        <template x-if="editingId !== tier.id">
-                            <td class="px-3 py-2 tabular-nums" x-text="tier.commission_rate + '%'"></td>
-                        </template>
-                        <template x-if="editingId !== tier.id">
-                            <td class="px-3 py-2 tabular-nums text-gray-500" x-text="tier.min_commission > 0 ? tier.min_commission : '—'"></td>
-                        </template>
-                        <template x-if="editingId !== tier.id">
-                            <td class="px-3 py-2 text-end whitespace-nowrap">
-                                <button type="button" class="text-xs text-blue-600 hover:underline me-3" @click="startEdit(tier)">{{ __('common.edit') }}</button>
-                                <button type="button" class="text-xs text-red-500 hover:underline" @click="remove(tier)">{{ __('common.delete') }}</button>
-                            </td>
-                        </template>
-                        <template x-if="editingId === tier.id">
-                            <td colspan="5" class="px-3 py-3 bg-blue-50">
-                                @include('admin.categories._commission_tier_fields', ['saveAction' => 'save()', 'cancelAction' => 'cancel()'])
-                            </td>
-                        </template>
+                        <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 uppercase">{{ __('admin.categories.tier_price_from') }}</th>
+                        <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 uppercase">{{ __('admin.categories.tier_price_to') }}</th>
+                        <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 uppercase">{{ __('admin.categories.tier_rate') }}</th>
+                        <th class="px-3 py-2 text-start text-xs font-medium text-gray-500 uppercase">{{ __('admin.categories.tier_min') }}</th>
+                        <th class="px-3 py-2"></th>
                     </tr>
-                </template>
-                <tr x-show="adding" x-cloak>
-                    <td colspan="5" class="px-3 py-3 bg-blue-50">
-                        @include('admin.categories._commission_tier_fields', ['saveAction' => 'save()', 'cancelAction' => 'cancel()'])
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                    <template x-for="tier in tiers" :key="tier.id">
+                        <tr>
+                            <template x-if="editingId !== tier.id">
+                                <td class="px-3 py-2 tabular-nums" x-text="tier.price_from"></td>
+                            </template>
+                            <template x-if="editingId !== tier.id">
+                                <td class="px-3 py-2 tabular-nums text-gray-500" x-text="tier.price_to ?? '∞'"></td>
+                            </template>
+                            <template x-if="editingId !== tier.id">
+                                <td class="px-3 py-2 tabular-nums" x-text="tier.commission_rate + '%'"></td>
+                            </template>
+                            <template x-if="editingId !== tier.id">
+                                <td class="px-3 py-2 tabular-nums text-gray-500" x-text="tier.min_commission > 0 ? tier.min_commission : '—'"></td>
+                            </template>
+                            <template x-if="editingId !== tier.id">
+                                <td class="px-3 py-2 text-end whitespace-nowrap">
+                                    <button type="button" class="text-xs text-blue-600 hover:underline me-3" @click="startEdit(tier)">{{ __('common.edit') }}</button>
+                                    <button type="button" class="text-xs text-red-500 hover:underline" @click="remove(tier)">{{ __('common.delete') }}</button>
+                                </td>
+                            </template>
+                            <template x-if="editingId === tier.id">
+                                <td colspan="5" class="px-3 py-3 bg-blue-50">
+                                    @include('admin.categories._commission_tier_fields', ['saveAction' => 'save()', 'cancelAction' => 'cancel()'])
+                                </td>
+                            </template>
+                        </tr>
+                    </template>
+                    <tr x-show="adding" x-cloak>
+                        <td colspan="5" class="px-3 py-3 bg-blue-50">
+                            @include('admin.categories._commission_tier_fields', ['saveAction' => 'save()', 'cancelAction' => 'cancel()'])
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 

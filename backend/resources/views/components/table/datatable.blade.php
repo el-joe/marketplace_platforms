@@ -7,11 +7,11 @@ pageLength, order, selectable, responsive, optionsJson
 
     {{-- ── Toolbar ─────────────────────────────────────────────────────── --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             {{-- Global search --}}
-            <div class="relative">
+            <div class="relative flex-1 sm:flex-none min-w-0">
                 <input type="text" id="{{ $id }}-search" placeholder="{{ __('admin.search') }}" autocomplete="off"
-                    class="form-input pl-9 w-64 text-sm">
+                    class="form-input pl-9 w-full sm:w-64 text-sm">
                 <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" fill="none"
                     stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -87,7 +87,7 @@ pageLength, order, selectable, responsive, optionsJson
 
     {{-- ── Table card ──────────────────────────────────────────────────── --}}
     <x-card :padding="'none'">
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table id="{{ $id }}" class="w-full text-sm dt-table" style="width:100%">
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>

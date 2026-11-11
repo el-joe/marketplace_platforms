@@ -64,40 +64,42 @@
 
         <div class="bg-white rounded-xl border p-6">
         <div class="font-semibold text-gray-900 mb-3">{{ __('admin.static_text.admin_marketers_contract.version_history') }}</div>
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="text-left text-gray-500 border-b">
-                    <th class="py-1.5 pr-3">Version</th>
-                    <th class="py-1.5 pr-3">Type</th>
-                    <th class="py-1.5 pr-3">Uploaded</th>
-                    <th class="py-1.5 pr-3">Status</th>
-                    <th class="py-1.5 pr-3">Acceptances</th>
-                    <th class="py-1.5 pr-3">File</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($contract->versions as $v)
-                <tr class="border-b last:border-0">
-                    <td class="py-1.5 pr-3">v{{ $v->version_number }}</td>
-                    <td class="py-1.5 pr-3">{{ $v->content_type }}</td>
-                    <td class="py-1.5 pr-3">{{ format_tz(admin_tz($v->created_at), 'd M Y H:i') }}</td>
-                    <td class="py-1.5 pr-3">
-                        @if($v->is_active)
-                            <span class="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">active</span>
-                        @else
-                            <span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500">inactive</span>
-                        @endif
-                    </td>
-                    <td class="py-1.5 pr-3">{{ $v->acceptances_count }}</td>
-                    <td class="py-1.5 pr-3">
-                        @if($v->content_type === 'pdf' && $v->file_url)
-                            <a class="text-blue-600" href="{{ route('admin.marketers.contract.download', [$marketer, $v]) }}">Download</a>
-                        @else &mdash; @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-gray-500 border-b">
+                        <th class="py-1.5 pr-3">Version</th>
+                        <th class="py-1.5 pr-3">Type</th>
+                        <th class="py-1.5 pr-3">Uploaded</th>
+                        <th class="py-1.5 pr-3">Status</th>
+                        <th class="py-1.5 pr-3">Acceptances</th>
+                        <th class="py-1.5 pr-3">File</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($contract->versions as $v)
+                    <tr class="border-b last:border-0">
+                        <td class="py-1.5 pr-3">v{{ $v->version_number }}</td>
+                        <td class="py-1.5 pr-3">{{ $v->content_type }}</td>
+                        <td class="py-1.5 pr-3">{{ format_tz(admin_tz($v->created_at), 'd M Y H:i') }}</td>
+                        <td class="py-1.5 pr-3">
+                            @if($v->is_active)
+                                <span class="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700">active</span>
+                            @else
+                                <span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500">inactive</span>
+                            @endif
+                        </td>
+                        <td class="py-1.5 pr-3">{{ $v->acceptances_count }}</td>
+                        <td class="py-1.5 pr-3">
+                            @if($v->content_type === 'pdf' && $v->file_url)
+                                <a class="text-blue-600" href="{{ route('admin.marketers.contract.download', [$marketer, $v]) }}">Download</a>
+                            @else &mdash; @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="bg-white rounded-xl border p-6" x-data="{ type: 'pdf' }">

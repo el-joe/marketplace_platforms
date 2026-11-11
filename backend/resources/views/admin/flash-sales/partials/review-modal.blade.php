@@ -27,7 +27,7 @@
 
                 <div class="bg-gray-50 rounded-lg p-3 text-sm">
                     <p class="font-semibold text-xs text-gray-500 uppercase mb-2">{{ __('admin.flash_sales.stock_levels') }}</p>
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-xs">
                             <thead>
                                 <tr class="text-gray-400 border-b">

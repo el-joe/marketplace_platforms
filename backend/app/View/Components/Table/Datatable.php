@@ -7,14 +7,23 @@ use Illuminate\View\Component;
 class Datatable extends Component
 {
     public string $id;
+
     public string $url;
+
     public array $columns;
+
     public array $filters;
+
     public array $bulkActions;
+
     public ?array $createAction;
+
     public int $pageLength;
+
     public array $order;
+
     public bool $selectable;
+
     public bool $responsive;
 
     /** JSON-encoded options passed to window.initDataTable() */
@@ -30,7 +39,7 @@ class Datatable extends Component
         int $pageLength = 25,
         array $order = [[0, 'desc']],
         bool $selectable = false,
-        bool $responsive = true,
+        bool $responsive = false,
     ) {
         $this->id = $id;
         $this->url = $url;
@@ -47,16 +56,21 @@ class Datatable extends Component
         $jsColumns = [];
         foreach ($columns as $col) {
             $jsCol = ['data' => $col['data'] ?? null, 'name' => $col['name'] ?? ''];
-            if (isset($col['orderable']))
+            if (isset($col['orderable'])) {
                 $jsCol['orderable'] = $col['orderable'];
-            if (isset($col['searchable']))
+            }
+            if (isset($col['searchable'])) {
                 $jsCol['searchable'] = $col['searchable'];
-            if (isset($col['className']))
+            }
+            if (isset($col['className'])) {
                 $jsCol['className'] = $col['className'];
-            if (isset($col['width']))
+            }
+            if (isset($col['width'])) {
                 $jsCol['width'] = $col['width'];
-            if (isset($col['render']))
-                $jsCol['render'] = $col['render'];  // raw JS expression string
+            }
+            if (isset($col['render'])) {
+                $jsCol['render'] = $col['render'];
+            }  // raw JS expression string
             $jsColumns[] = $jsCol;
         }
 

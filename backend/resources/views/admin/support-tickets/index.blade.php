@@ -111,7 +111,7 @@
 
     {{-- ─── Table ───────────────────────────────────────────────────────────── --}}
     <x-card>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table id="support-tickets-table" data-url="{{ route('admin.support-tickets.datatable') }}"
                 class="w-full text-sm">
                 <thead>

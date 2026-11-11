@@ -16,7 +16,7 @@
     </div>
 
     {{-- ─── Matrix Table ────────────────────────────────────────────────────────── --}}
-    <div class="card overflow-x-auto">
+    <div class="table-responsive card">
         <table class="w-full text-sm" id="doc-types-table">
             <thead>
                 <tr class="border-b border-gray-200 bg-gray-50">

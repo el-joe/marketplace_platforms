@@ -283,7 +283,7 @@
     <x-card>
         <h3 class="font-semibold text-gray-700 text-xs uppercase tracking-wide mb-3">Bookable Units ({{ $travelPackage->bookableUnits->count() }})</h3>
         @if($travelPackage->bookableUnits->isNotEmpty())
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>

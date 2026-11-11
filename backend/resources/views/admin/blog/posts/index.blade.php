@@ -99,7 +99,7 @@
 
     {{-- DataTable --}}
     <x-card>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table id="posts-table" class="w-full text-sm" style="width:100%">
                 <thead>
                     <tr class="border-b border-gray-100 text-start">
@@ -200,7 +200,7 @@ window.TRANSLATIONS = {
                 ],
                 order: [[5, 'desc']],
                 pageLength: 25,
-                responsive: true,
+                responsive: false,
                 language: { processing: window.TRANSLATIONS.loading, emptyTable: window.TRANSLATIONS.no_posts },
             });
         } else {

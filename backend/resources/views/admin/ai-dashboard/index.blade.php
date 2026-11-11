@@ -52,7 +52,7 @@
     {{-- Credit summary --}}
     <div class="bg-white rounded-2xl border p-5 space-y-4">
         <h2 class="font-semibold text-gray-700">{{ __('admin.ai_dashboard_section.credit_pool_summary') }}</h2>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table class="min-w-full text-sm">
                 <thead>
                     <tr class="text-start text-gray-500 border-b">

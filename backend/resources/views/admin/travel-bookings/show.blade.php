@@ -104,7 +104,7 @@
     @if($travelBooking->bookableUnit)
     <x-card>
         <h3 class="font-semibold text-gray-700 text-xs uppercase tracking-wide mb-3">Booked Unit: {{ $travelBooking->bookableUnit->name }}</h3>
-        <div class="overflow-x-auto -mx-4 -mb-4">
+        <div class="table-responsive -mx-4 -mb-4">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 border-b border-gray-100">
                     <tr>

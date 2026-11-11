@@ -171,7 +171,7 @@ body:not(.sidebar-collapsed) #sidebar-logo-icon {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
     #sidebar {
         position: fixed;
         top: 0;
@@ -203,7 +203,7 @@ html[dir="rtl"] #sidebar {
     right: 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
     html[dir="rtl"] #sidebar {
         right: 0;
         left: auto;

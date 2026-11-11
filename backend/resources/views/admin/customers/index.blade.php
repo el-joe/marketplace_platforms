@@ -93,7 +93,7 @@
 
     {{-- ─── DataTable ───────────────────────────────────────────────────────────── --}}
     <x-card>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table id="customers-table" class="w-full text-sm" style="width:100%">
                 <thead>
                     <tr class="border-b border-gray-100 text-start">

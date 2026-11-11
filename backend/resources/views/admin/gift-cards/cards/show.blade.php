@@ -59,45 +59,47 @@
 
             <div class="bg-white rounded-xl border border-gray-200 p-4">
                 <h2 class="text-sm font-semibold text-gray-900 mb-3">{{ __('admin.gift_cards_section.transactions') }}</h2>
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="text-left text-gray-400 text-xs">
-                            <th class="py-1">{{ __('admin.gift_cards_section.type') }}</th>
-                            <th class="py-1">{{ __('admin.gift_cards_section.amount') }}</th>
-                            <th class="py-1">{{ __('admin.gift_cards_section.balance_after') }}</th>
-                            <th class="py-1">{{ __('admin.gift_cards_section.order_number') }}</th>
-                            <th class="py-1">{{ __('admin.gift_cards_section.performed_by') }}</th>
-                            <th class="py-1">{{ __('admin.gift_cards_section.created_at') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php
-                            $typeColors = [
-                                'issuance' => 'bg-blue-100 text-blue-700',
-                                'redemption' => 'bg-emerald-100 text-emerald-700',
-                                'refund' => 'bg-amber-100 text-amber-700',
-                                'admin_adjustment' => 'bg-purple-100 text-purple-700',
-                                'expiry' => 'bg-gray-100 text-gray-600',
-                            ];
-                        @endphp
-                        @forelse($card->transactions as $tx)
-                        <tr class="border-t border-gray-100">
-                            <td class="py-1.5">
-                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium {{ $typeColors[$tx->type] ?? 'bg-gray-100 text-gray-600' }}">
-                                    {{ __('admin.gift_cards_section.' . $tx->type) ?: $tx->type }}
-                                </span>
-                            </td>
-                            <td class="py-1.5">{{ $tx->amount }}</td>
-                            <td class="py-1.5">{{ $tx->balance_after }}</td>
-                            <td class="py-1.5">{{ $tx->order?->order_number ?? '—' }}</td>
-                            <td class="py-1.5">{{ $tx->performedByAdmin?->name ?? $tx->performedByCustomer?->name ?? '—' }}</td>
-                            <td class="py-1.5">{{ admin_tz($tx->created_at)?->format('Y-m-d H:i') }}</td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="6" class="py-3 text-center text-gray-400">{{ __('admin.gift_cards_section.no_transactions') }}</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-400 text-xs">
+                                <th class="py-1">{{ __('admin.gift_cards_section.type') }}</th>
+                                <th class="py-1">{{ __('admin.gift_cards_section.amount') }}</th>
+                                <th class="py-1">{{ __('admin.gift_cards_section.balance_after') }}</th>
+                                <th class="py-1">{{ __('admin.gift_cards_section.order_number') }}</th>
+                                <th class="py-1">{{ __('admin.gift_cards_section.performed_by') }}</th>
+                                <th class="py-1">{{ __('admin.gift_cards_section.created_at') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php
+                                $typeColors = [
+                                    'issuance' => 'bg-blue-100 text-blue-700',
+                                    'redemption' => 'bg-emerald-100 text-emerald-700',
+                                    'refund' => 'bg-amber-100 text-amber-700',
+                                    'admin_adjustment' => 'bg-purple-100 text-purple-700',
+                                    'expiry' => 'bg-gray-100 text-gray-600',
+                                ];
+                            @endphp
+                            @forelse($card->transactions as $tx)
+                            <tr class="border-t border-gray-100">
+                                <td class="py-1.5">
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium {{ $typeColors[$tx->type] ?? 'bg-gray-100 text-gray-600' }}">
+                                        {{ __('admin.gift_cards_section.' . $tx->type) ?: $tx->type }}
+                                    </span>
+                                </td>
+                                <td class="py-1.5">{{ $tx->amount }}</td>
+                                <td class="py-1.5">{{ $tx->balance_after }}</td>
+                                <td class="py-1.5">{{ $tx->order?->order_number ?? '—' }}</td>
+                                <td class="py-1.5">{{ $tx->performedByAdmin?->name ?? $tx->performedByCustomer?->name ?? '—' }}</td>
+                                <td class="py-1.5">{{ admin_tz($tx->created_at)?->format('Y-m-d H:i') }}</td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="6" class="py-3 text-center text-gray-400">{{ __('admin.gift_cards_section.no_transactions') }}</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 

@@ -210,7 +210,7 @@
                         <h3 class="text-sm font-semibold text-gray-700">{{ __('admin.admin_listings.warehouse_inventory_title') }}</h3>
                         <button type="button" @click="openAdjustStock()" class="btn btn-primary btn-sm">{{ __('admin.admin_listings.adjust_stock') }}</button>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="table-base w-full">
                             <thead>
                                 <tr>
@@ -246,7 +246,7 @@
                 </div>
 
                 {{-- ── Tab: Flash Sales ─────────────────────────────────────── --}}
-                <div x-show="tab === 'flash-sales'" x-cloak class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+                <div x-show="tab === 'flash-sales'" x-cloak class="table-responsive bg-white rounded-xl border border-gray-200 shadow-sm">
                     <table class="table-base w-full">
                         <thead>
                             <tr>
@@ -286,7 +286,7 @@
                 </div>
 
                 {{-- ── Tab: Marketer Campaigns ──────────────────────────────── --}}
-                <div x-show="tab === 'campaigns'" x-cloak class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+                <div x-show="tab === 'campaigns'" x-cloak class="table-responsive bg-white rounded-xl border border-gray-200 shadow-sm">
                     <table class="table-base w-full">
                         <thead>
                             <tr>

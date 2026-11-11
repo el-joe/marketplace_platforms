@@ -31,7 +31,7 @@
                 <h2 class="text-base font-semibold text-gray-800">{{ __('admin.currencies_section.all_currencies') }}</h2>
             </x-slot>
 
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="w-full text-sm">
                     <thead>
                         <tr

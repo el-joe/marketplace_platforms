@@ -142,7 +142,7 @@
             <x-slot:title>{{ __('admin.portal_analytics.funnel.title') }}</x-slot:title>
             <div class="p-6">
                 <p class="text-sm text-gray-500 mb-4">{{ __('admin.portal_analytics.funnel.subtitle') }}</p>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="min-w-full text-sm" id="pa-funnel">
                         <thead>
                             <tr class="text-xs uppercase tracking-wider text-gray-500 border-b border-gray-200">
@@ -177,7 +177,7 @@
         {{-- Top pages --}}
         <x-card class="mb-6">
             <x-slot:title>{{ __('admin.portal_analytics.top_pages.title') }}</x-slot:title>
-            <div class="p-6 overflow-x-auto">
+            <div class="table-responsive p-6">
                 <table class="min-w-full text-sm">
                     <thead>
                         <tr class="text-xs uppercase tracking-wider text-gray-500 border-b border-gray-200">

@@ -53,7 +53,7 @@
         {{-- Fixed fees --}}
         <div x-show="tab === 'fixed'" class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.fixed_hint') }}</p>
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
@@ -140,7 +140,7 @@
                         </select>
                     </form>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50">
                             <tr>
@@ -181,7 +181,7 @@
         {{-- Classified / travel campaign fees: variable fee per country and vertical (the fixed tab still applies on top) --}}
         <div x-show="tab === 'verticals'" x-cloak class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.verticals_hint') }}</p>
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
@@ -276,7 +276,7 @@
                 <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
                     <h2 class="text-base font-semibold text-gray-900">{{ __('marketing_fees.reports.campaign_fees_title') }}</h2>
                     <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.reports.campaign_fees_hint') }}</p>
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="min-w-full divide-y divide-gray-200 text-sm" data-report-campaign-fees>
                             <thead class="bg-gray-50">
                                 <tr>
@@ -311,7 +311,7 @@
                 <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
                     <h2 class="text-base font-semibold text-gray-900">{{ __('marketing_fees.reports.commissions_title') }}</h2>
                     <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.reports.commissions_hint') }}</p>
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="min-w-full divide-y divide-gray-200 text-sm" data-report-commissions>
                             <thead class="bg-gray-50">
                                 <tr>

@@ -19,43 +19,45 @@
     </div>
 
     <x-card padding="none">
-        <table id="free-period-rules-table" class="table-base w-full">
-            <thead>
-                <tr>
-                    <th>{{ __('admin.fbn_section.min_weight_grams') }}</th>
-                    <th>{{ __('admin.fbn_section.max_weight_grams') }}</th>
-                    <th>{{ __('admin.fbn_section.free_days') }}</th>
-                    <th class="text-center w-24">{{ __('common.actions') }}</th>
-                </tr>
-            </thead>
-            <tbody id="free-period-rules-body">
-                @foreach($rules as $rule)
-                    <tr data-id="{{ $rule->id }}">
-                        <td>{{ number_format($rule->min_weight_grams) }}</td>
-                        <td>{{ $rule->max_weight_grams !== null ? number_format($rule->max_weight_grams) : '—' }}</td>
-                        <td>{{ $rule->free_days }}</td>
-                        <td class="text-center">
-                            <div class="flex items-center justify-center gap-1">
-                                <button type="button" class="btn-edit-rule p-1 rounded text-gray-400 hover:text-primary-600"
-                                        data-id="{{ $rule->id }}"
-                                        data-min="{{ $rule->min_weight_grams }}"
-                                        data-max="{{ $rule->max_weight_grams }}"
-                                        data-days="{{ $rule->free_days }}" title="{{ __('admin.static_text.admin_fbn_storage_fees_free_period_rules.edit') }}">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                </button>
-                                <button type="button" class="btn-delete-rule p-1 rounded text-gray-400 hover:text-danger-600" data-id="{{ $rule->id }}" title="{{ __('admin.static_text.admin_fbn_storage_fees_free_period_rules.delete') }}">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9.5 3h5a1 1 0 011 1v3h-7V4a1 1 0 011-1z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
+        <div class="table-responsive">
+            <table id="free-period-rules-table" class="table-base w-full">
+                <thead>
+                    <tr>
+                        <th>{{ __('admin.fbn_section.min_weight_grams') }}</th>
+                        <th>{{ __('admin.fbn_section.max_weight_grams') }}</th>
+                        <th>{{ __('admin.fbn_section.free_days') }}</th>
+                        <th class="text-center w-24">{{ __('common.actions') }}</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody id="free-period-rules-body">
+                    @foreach($rules as $rule)
+                        <tr data-id="{{ $rule->id }}">
+                            <td>{{ number_format($rule->min_weight_grams) }}</td>
+                            <td>{{ $rule->max_weight_grams !== null ? number_format($rule->max_weight_grams) : '—' }}</td>
+                            <td>{{ $rule->free_days }}</td>
+                            <td class="text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <button type="button" class="btn-edit-rule p-1 rounded text-gray-400 hover:text-primary-600"
+                                            data-id="{{ $rule->id }}"
+                                            data-min="{{ $rule->min_weight_grams }}"
+                                            data-max="{{ $rule->max_weight_grams }}"
+                                            data-days="{{ $rule->free_days }}" title="{{ __('admin.static_text.admin_fbn_storage_fees_free_period_rules.edit') }}">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="btn-delete-rule p-1 rounded text-gray-400 hover:text-danger-600" data-id="{{ $rule->id }}" title="{{ __('admin.static_text.admin_fbn_storage_fees_free_period_rules.delete') }}">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9.5 3h5a1 1 0 011 1v3h-7V4a1 1 0 011-1z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     </x-card>
 
     <x-modal id="free-period-rule-modal" title="{{ __('admin.fbn_section.manage_free_period_rules') }}" size="md">

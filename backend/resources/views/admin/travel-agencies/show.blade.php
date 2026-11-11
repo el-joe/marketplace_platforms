@@ -68,7 +68,7 @@
         <div class="px-5 py-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900">{{ __('admin.travel.packages') }} ({{ $travelAgency->packages->count() }})</h3>
         </div>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table class="min-w-full divide-y divide-gray-100 text-sm">
                 <thead class="bg-gray-50">
                     <tr>

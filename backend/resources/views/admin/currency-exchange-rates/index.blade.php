@@ -68,7 +68,7 @@
                     <div class="px-5 py-3 border-b border-gray-100">
                         <h3 class="text-sm font-semibold text-gray-900">{{ $pair }}</h3>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="table-base w-full">
                             <thead>
                                 <tr>

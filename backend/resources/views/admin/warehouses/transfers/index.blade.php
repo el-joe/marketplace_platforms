@@ -70,7 +70,7 @@
 
     {{-- ─── Table ───────────────────────────────────────────────────────────── --}}
     <x-card>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table id="transfers-table" data-url="{{ route('admin.warehouses.transfers.datatable') }}"
                 class="w-full text-sm">
                 <thead>

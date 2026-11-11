@@ -140,7 +140,7 @@
         </button>
     </div>
 
-    <div id="rates-table-wrapper" class="overflow-x-auto">
+    <div id="rates-table-wrapper" class="table-responsive">
         <table class="w-full text-sm">
             <thead class="border-b border-gray-200">
                 <tr class="text-start text-xs font-medium text-gray-500">

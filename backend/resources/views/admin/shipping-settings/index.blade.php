@@ -154,22 +154,24 @@
             </div>
 
             <x-card padding="none">
-                <table id="shipping-rates-table" class="table-base w-full">
-                    <thead>
-                        <tr>
-                            <th>{{ __('admin.shipping_settings.zone') }}</th>
-                            <th>{{ __('admin.shipping_settings.method') }}</th>
-                            <th>{{ __('admin.shipping_settings.carrier') }}</th>
-                            <th class="text-end">Base Fee</th>
-                            <th class="text-end">Rate/kg</th>
-                            <th class="text-end">Free Threshold</th>
-                            <th class="text-end">COD Fee</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-center w-16">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table id="shipping-rates-table" class="table-base w-full">
+                        <thead>
+                            <tr>
+                                <th>{{ __('admin.shipping_settings.zone') }}</th>
+                                <th>{{ __('admin.shipping_settings.method') }}</th>
+                                <th>{{ __('admin.shipping_settings.carrier') }}</th>
+                                <th class="text-end">Base Fee</th>
+                                <th class="text-end">Rate/kg</th>
+                                <th class="text-end">Free Threshold</th>
+                                <th class="text-end">COD Fee</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center w-16">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </x-card>
         </div> --}}
 
@@ -177,7 +179,7 @@
              TAB: Country Settings
              ════════════════════════════════════════════════════════════════════ --}}
         <div x-show="activeTab === 'settings'" x-cloak>
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="table-base w-full">
                     <thead>
                         <tr>

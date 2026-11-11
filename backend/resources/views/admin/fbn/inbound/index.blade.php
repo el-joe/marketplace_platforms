@@ -54,7 +54,7 @@
 
 {{-- ─── DataTable ───────────────────────────────────────────────────────────── --}}
 <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-    <div class="overflow-x-auto">
+    <div class="table-responsive">
         <table id="tbl-inbound" class="w-full text-sm">
             <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
                 <tr>

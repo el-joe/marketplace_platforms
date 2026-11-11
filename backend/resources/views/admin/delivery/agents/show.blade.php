@@ -214,7 +214,7 @@
                     <option value="failed">{{ __('admin.delivery_section.failed') }}</option>
                 </select>
             </div>
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
             <table id="assignments-table" class="w-full text-sm" style="width:100%">
                 <thead>
                     <tr>
@@ -309,7 +309,7 @@
     {{-- ── Shifts Tab ───────────────────────────────────────────────────────── --}}
     <div x-show="tab === 'shifts'" x-cloak>
         <x-card>
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
             <table class="w-full text-sm">
                 <thead class="text-xs text-gray-500 uppercase border-b">
                     <tr>

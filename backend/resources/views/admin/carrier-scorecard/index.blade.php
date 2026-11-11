@@ -36,7 +36,7 @@
     </div>
 
     <div class="card overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>

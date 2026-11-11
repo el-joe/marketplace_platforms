@@ -51,7 +51,7 @@
 
     {{-- Table --}}
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table id="newsletter-table" class="w-full text-sm text-gray-700" style="width:100%">
                 <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500">
                     <tr>

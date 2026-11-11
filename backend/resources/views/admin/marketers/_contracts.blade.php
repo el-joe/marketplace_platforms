@@ -83,7 +83,7 @@
     {{-- Collaboration contracts that apply to this marketer --}}
     <div class="px-6 py-4 border-b border-gray-100" data-testid="applicable-contracts">
         <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ __('contracts.marketer.applicable_title') }}</h4>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-500 text-xs"><tr>
                     <th class="px-3 py-2 text-start">{{ __('admin.contracts.col_name') }}</th>
@@ -115,7 +115,7 @@
     {{-- Signed by sellers --}}
     <div class="px-6 py-4" data-testid="signed-contracts">
         <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ __('contracts.marketer.signed_title') }}</h4>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-500 text-xs"><tr>
                     <th class="px-3 py-2 text-start">{{ __('admin.contracts.col_name') }}</th>

@@ -23,39 +23,41 @@
 
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-100 font-semibold text-sm">{{ __('admin.coupon_participation_section.cps_requests') }}</div>
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-500 text-xs">
-                <tr>
-                    <th class="px-4 py-2 text-start">{{ __('admin.coupon_participation_section.cps_type') }}</th>
-                    <th class="px-4 py-2 text-start">{{ __('admin.coupon_participation_section.cps_participant') }}</th>
-                    <th class="px-4 py-2 text-start">{{ __('admin.coupon_participation_section.cps_offered_fee') }}</th>
-                    <th class="px-4 py-2 text-start">{{ __('admin.coupon_participation_section.cps_status') }}</th>
-                    <th class="px-4 py-2"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($requests as $row)
-                @php $r = $row['model']; @endphp
-                <tr>
-                    <td class="px-4 py-2">{{ $r->participant_type === 'vendor' ? __('admin.coupon_participation_section.cps_vendor') : __('admin.coupon_participation_section.cps_marketer') }}</td>
-                    <td class="px-4 py-2">{{ $row['participant_name'] }}</td>
-                    <td class="px-4 py-2">{{ \App\Support\Money::format($r->offered_fee_amount) }} {{ $invitation->currency }}</td>
-                    <td class="px-4 py-2">{{ $r->status }} ({{ $r->payment_method === 'bank_transfer' ? __('partner.payment_method_bank_transfer') : __('partner.payment_method_wallet') }})
-                        @if($r->bank_transfer_proof_path)<div class="text-xs text-gray-500">{{ $r->bank_transfer_proof_path }}</div>@endif</td>
-                    <td class="px-4 py-2 text-end space-s-2">
-                        @if($r->status === 'pending')
-                            <button class="text-green-600 text-xs" data-approve="{{ route('admin.coupon-participation-invitations.requests.approve', [$invitation->id, $r->id]) }}">{{ __('admin.coupon_participation_section.cps_approve') }}</button>
-                            <button class="text-red-600 text-xs" data-refund="1" data-reject="{{ route('admin.coupon-participation-invitations.requests.reject', [$invitation->id, $r->id]) }}">{{ __('admin.coupon_participation_section.cps_reject') }}</button>
-                        @elseif($r->status === 'approved')
-                            <button class="text-blue-600 text-xs" data-mark-paid="{{ route('admin.coupon-participation-invitations.requests.mark-paid', [$invitation->id, $r->id]) }}">{{ __('admin.coupon_participation_section.cps_mark_paid') }}</button>
-                        @endif
-                    </td>
-                </tr>
-                @empty
-                <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">{{ __('admin.coupon_participation_section.cps_no_requests') }}</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500 text-xs">
+                    <tr>
+                        <th class="px-4 py-2 text-start">{{ __('admin.coupon_participation_section.cps_type') }}</th>
+                        <th class="px-4 py-2 text-start">{{ __('admin.coupon_participation_section.cps_participant') }}</th>
+                        <th class="px-4 py-2 text-start">{{ __('admin.coupon_participation_section.cps_offered_fee') }}</th>
+                        <th class="px-4 py-2 text-start">{{ __('admin.coupon_participation_section.cps_status') }}</th>
+                        <th class="px-4 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($requests as $row)
+                    @php $r = $row['model']; @endphp
+                    <tr>
+                        <td class="px-4 py-2">{{ $r->participant_type === 'vendor' ? __('admin.coupon_participation_section.cps_vendor') : __('admin.coupon_participation_section.cps_marketer') }}</td>
+                        <td class="px-4 py-2">{{ $row['participant_name'] }}</td>
+                        <td class="px-4 py-2">{{ \App\Support\Money::format($r->offered_fee_amount) }} {{ $invitation->currency }}</td>
+                        <td class="px-4 py-2">{{ $r->status }} ({{ $r->payment_method === 'bank_transfer' ? __('partner.payment_method_bank_transfer') : __('partner.payment_method_wallet') }})
+                            @if($r->bank_transfer_proof_path)<div class="text-xs text-gray-500">{{ $r->bank_transfer_proof_path }}</div>@endif</td>
+                        <td class="px-4 py-2 text-end space-s-2">
+                            @if($r->status === 'pending')
+                                <button class="text-green-600 text-xs" data-approve="{{ route('admin.coupon-participation-invitations.requests.approve', [$invitation->id, $r->id]) }}">{{ __('admin.coupon_participation_section.cps_approve') }}</button>
+                                <button class="text-red-600 text-xs" data-refund="1" data-reject="{{ route('admin.coupon-participation-invitations.requests.reject', [$invitation->id, $r->id]) }}">{{ __('admin.coupon_participation_section.cps_reject') }}</button>
+                            @elseif($r->status === 'approved')
+                                <button class="text-blue-600 text-xs" data-mark-paid="{{ route('admin.coupon-participation-invitations.requests.mark-paid', [$invitation->id, $r->id]) }}">{{ __('admin.coupon_participation_section.cps_mark_paid') }}</button>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">{{ __('admin.coupon_participation_section.cps_no_requests') }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 

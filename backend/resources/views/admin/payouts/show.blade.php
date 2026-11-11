@@ -138,7 +138,7 @@
             {{-- ──────────────────────────────────── --}}
             @if($payout->items->isNotEmpty())
                 <x-card title="{{ __('admin.payouts.sub_orders_included') }}">
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="min-w-full text-sm">
                             <thead class="bg-gray-50 border-b border-gray-200">
                                 <tr>
@@ -186,7 +186,7 @@
             {{-- ──────────────────────────────────── --}}
             @if($ledgerEntries->isNotEmpty())
                 <x-card title="{{ __('admin.payouts.ledger_entries') }}">
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="min-w-full text-sm">
                             <thead class="bg-gray-50 border-b border-gray-200">
                                 <tr>

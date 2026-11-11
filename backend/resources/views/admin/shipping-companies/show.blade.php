@@ -108,7 +108,7 @@
             @if($shippingCompany->supervisors->isEmpty())
             <div class="px-6 py-8 text-center text-gray-400 text-sm">{{ __('admin.shipping_section.no_supervisors') }}</div>
             @else
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
                         <tr>
@@ -186,7 +186,7 @@
             @if($shippingCompany->agents->isEmpty())
             <div class="px-6 py-8 text-center text-gray-400 text-sm">{{ __('admin.shipping_section.no_agents') }}</div>
             @else
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
                         <tr>

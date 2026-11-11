@@ -121,7 +121,7 @@
 
     {{-- ─── Table ─────────────────────────────────────────────────────────── --}}
     <x-card>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table id="activity-log-table" data-url="{{ route('admin.activity-log.datatable') }}" class="w-full text-sm">
                 <thead>
                     <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-200">
@@ -213,7 +213,7 @@
             {{-- Changes diff --}}
             <div id="detail-changes-section" class="hidden">
                 <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{ __('admin.activity_log_section.changes') }}</h4>
-                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                <div class="table-responsive border border-gray-200 rounded-lg">
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50">
                             <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-200">

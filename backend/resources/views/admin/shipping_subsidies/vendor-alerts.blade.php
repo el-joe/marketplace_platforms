@@ -263,43 +263,45 @@
         <div class="mt-10">
             <h2 class="text-base font-semibold text-gray-900 mb-4">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.reviewed_alerts') }}</h2>
             <x-card padding="none">
-                <table class="table-base w-full">
-                    <thead>
-                        <tr>
-                            <th>{{ __('admin.shipping_subsidies.vendor') }}</th>
-                            <th>{{ __('admin.shipping_subsidies.warehouse') }}</th>
-                            <th>{{ __('admin.shipping_subsidies.zones_configured') }}</th>
-                            <th>{{ __('admin.shipping_subsidies.carrier') }}</th>
-                            <th>{{ __('admin.shipping_subsidies.status') }}</th>
-                            <th>{{ __('admin.shipping_subsidies.reviewed_by') }}</th>
-                            <th>{{ __('admin.shipping_subsidies.date') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($reviewed as $alert)
+                <div class="table-responsive">
+                    <table class="table-base w-full">
+                        <thead>
                             <tr>
-                                <td>{{ $alert->vendor->store_name ?? '—' }}</td>
-                                <td>{{ $alert->warehouse->name ?? '—' }}</td>
-                                <td>
-                                    @if($alert->results->isNotEmpty())
-                                        {{ $alert->results->pluck('zone.name')->filter()->unique()->join(', ') }}
-                                    @else
-                                        —
-                                    @endif
-                                </td>
-                                <td class="text-gray-500">{{ $alert->carrier->name ?? 'All carriers' }}</td>
-                                <td>
-                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium
-                                        {{ $alert->status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                                        {{ ucfirst($alert->status) }}
-                                    </span>
-                                </td>
-                                <td class="text-gray-500 text-xs">{{ $alert->reviewedBy->name ?? '—' }}</td>
-                                <td class="text-gray-400 text-xs">{{ admin_tz($alert->reviewed_at)?->format('M d, Y') ?? '—' }}</td>
+                                <th>{{ __('admin.shipping_subsidies.vendor') }}</th>
+                                <th>{{ __('admin.shipping_subsidies.warehouse') }}</th>
+                                <th>{{ __('admin.shipping_subsidies.zones_configured') }}</th>
+                                <th>{{ __('admin.shipping_subsidies.carrier') }}</th>
+                                <th>{{ __('admin.shipping_subsidies.status') }}</th>
+                                <th>{{ __('admin.shipping_subsidies.reviewed_by') }}</th>
+                                <th>{{ __('admin.shipping_subsidies.date') }}</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach($reviewed as $alert)
+                                <tr>
+                                    <td>{{ $alert->vendor->store_name ?? '—' }}</td>
+                                    <td>{{ $alert->warehouse->name ?? '—' }}</td>
+                                    <td>
+                                        @if($alert->results->isNotEmpty())
+                                            {{ $alert->results->pluck('zone.name')->filter()->unique()->join(', ') }}
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td class="text-gray-500">{{ $alert->carrier->name ?? 'All carriers' }}</td>
+                                    <td>
+                                        <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                                            {{ $alert->status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                                            {{ ucfirst($alert->status) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-gray-500 text-xs">{{ $alert->reviewedBy->name ?? '—' }}</td>
+                                    <td class="text-gray-400 text-xs">{{ admin_tz($alert->reviewed_at)?->format('M d, Y') ?? '—' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </x-card>
         </div>
     @endif

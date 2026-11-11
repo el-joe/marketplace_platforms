@@ -234,7 +234,7 @@
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                     <table id="submissions-table" class="w-full text-sm"></table>
                     </div>
                 </div>
@@ -291,7 +291,7 @@
                                 </div>
                             @endif
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                         <table id="invitations-table" class="w-full text-sm"></table>
                         </div>
                     </x-card>
@@ -308,7 +308,7 @@
                         </div>
 
                         <x-card title="{{ __('admin.flash_sales.top_products') }}">
-                            <div class="overflow-x-auto">
+                            <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead class="text-xs text-gray-500 uppercase bg-gray-50">
                                     <tr>
@@ -348,7 +348,7 @@
                         </div>
 
                         <x-card title="{{ __('admin.flash_sales.daily_breakdown') }}">
-                            <div class="overflow-x-auto">
+                            <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead class="text-xs text-gray-500 uppercase bg-gray-50">
                                     <tr>

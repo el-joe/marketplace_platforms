@@ -24,7 +24,7 @@
         {{-- 3. Block Types --}}
         <section>
             <h2 class="text-lg font-semibold text-gray-900">{{ __('docs/features/page-builder.block_types.heading') }}</h2>
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="min-w-full text-sm text-left text-gray-600 border border-gray-200 rounded-lg overflow-hidden">
                     <thead class="bg-gray-50 text-gray-700">
                         <tr>

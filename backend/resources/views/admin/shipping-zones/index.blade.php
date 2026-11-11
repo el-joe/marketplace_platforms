@@ -307,7 +307,7 @@
                             </div>
                         </div>
 
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table id="rates-table" class="w-full text-sm">
                                 <thead class="bg-gray-50 border-b text-xs text-gray-500 uppercase">
                                     <tr>

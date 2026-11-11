@@ -178,7 +178,7 @@
                     <a href="{{ route('admin.orders.index') }}"
                         class="text-sm text-primary-600 hover:text-primary-700 font-medium">{{ __('admin.dashboard.view_all_orders') }} →</a>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="min-w-full text-sm">
                         <thead>
                             <tr class="border-b border-gray-100 bg-gray-50">
@@ -309,7 +309,7 @@
                     <a href="{{ route('admin.vendors.index') }}"
                         class="text-sm text-primary-600 hover:text-primary-700 font-medium">{{ __('admin.dashboard.view_all_vendors') }} →</a>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="min-w-full text-sm">
                         <thead>
                             <tr class="border-b border-gray-100 bg-gray-50">
@@ -359,7 +359,7 @@
                     <a href="{{ route('admin.products.index') }}"
                         class="text-sm text-primary-600 hover:text-primary-700 font-medium">{{ __('admin.dashboard.view_all_products') }} →</a>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="min-w-full text-sm">
                         <thead>
                             <tr class="border-b border-gray-100 bg-gray-50">

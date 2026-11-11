@@ -329,7 +329,7 @@
                         {{ __('admin.ad_campaigns.add_product') }}
                     </button>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table id="campaign-products-table" class="w-full text-sm" style="width:100%"
                         data-datatable-url="{{ route('admin.ad-campaigns.products.datatable', $campaign) }}"
                         data-store-url="{{ route('admin.ad-campaigns.products.store', $campaign) }}"
@@ -356,7 +356,7 @@
                 @if($campaign->keywords->isEmpty())
                     <p class="text-sm text-gray-400 py-6 text-center">{{ __('admin.ad_campaigns.no_keywords') }}</p>
                 @else
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-100 text-start">
@@ -412,7 +412,7 @@
                 @if($campaign->categoryTargets->isEmpty())
                     <p class="text-sm text-gray-400 py-6 text-center">{{ __('admin.ad_campaigns.no_category_targets') }}</p>
                 @else
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-100 text-start">
@@ -462,7 +462,7 @@
 
             {{-- Daily stats table --}}
             <x-card title="{{ __('admin.ad_campaigns.daily_breakdown') }}">
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="border-b border-gray-100 text-start">
@@ -503,7 +503,7 @@
                 @if($campaign->fraudPatterns->isEmpty())
                     <p class="text-sm text-gray-400 py-6 text-center">{{ __('admin.ad_campaigns.no_fraud_patterns') }}</p>
                 @else
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-100 text-start">

@@ -24,7 +24,7 @@
     </div>
 
     <x-card padding="none">
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table class="table-base w-full">
                 <thead>
                     <tr>

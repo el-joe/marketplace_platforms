@@ -71,7 +71,7 @@
 
 {{-- ─── Campaigns table ────────────────────────────────────────────────────── --}}
 <x-card>
-    <div class="overflow-x-auto">
+    <div class="table-responsive">
         <table class="min-w-full text-sm">
             <thead>
                 <tr class="text-xs text-gray-500 uppercase tracking-wide border-b">

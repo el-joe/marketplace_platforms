@@ -90,7 +90,7 @@
                     @if($orders->isEmpty())
                         <p class="text-sm text-gray-500 py-4 text-center">{{ __('admin.customers_section.no_orders_yet') }}</p>
                     @else
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-100 text-start text-xs text-gray-500 uppercase">
@@ -136,7 +136,7 @@
 
                 <div id="orders-datatable-section" class="mt-4 hidden">
                     <x-card title="{{ __('admin.customers_section.all_orders') }}">
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table id="orders-datatable" class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-100 text-start text-xs text-gray-500 uppercase">
@@ -198,7 +198,7 @@
                     @if($reviews->isEmpty())
                         <p class="text-sm text-gray-500 py-4 text-center">{{ __('admin.customers_section.no_reviews_yet') }}</p>
                     @else
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-100 text-start text-xs text-gray-500 uppercase">
@@ -249,7 +249,7 @@
                     @if($returnRequests->isEmpty())
                         <p class="text-sm text-gray-500 py-4 text-center">{{ __('admin.customers_section.no_return_requests') }}</p>
                     @else
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-100 text-start text-xs text-gray-500 uppercase">
@@ -283,7 +283,7 @@
                     @if($disputes->isEmpty())
                         <p class="text-sm text-gray-500 py-4 text-center">{{ __('admin.customers_section.no_disputes') }}</p>
                     @else
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-100 text-start text-xs text-gray-500 uppercase">
@@ -317,7 +317,7 @@
                     @if($tickets->isEmpty())
                         <p class="text-sm text-gray-500 py-4 text-center">{{ __('admin.customers_section.no_support_tickets') }}</p>
                     @else
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-100 text-start text-xs text-gray-500 uppercase">
@@ -451,7 +451,7 @@
                 @endif
 
                 <x-card title="{{ __('admin.customers_section.wallet_transactions') }}" class="mt-4">
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table id="wallet-transactions-datatable" class="w-full text-sm"
                             data-url="{{ route('admin.customers.wallet.transactions.datatable', $customer->id) }}">
                             <thead>
@@ -488,19 +488,21 @@
 
                     @if($referralStats['total_referred'] > 0)
                         <div id="referrals-datatable-wrapper">
-                            <table id="referrals-datatable" class="w-full text-sm"
-                                   data-url="{{ route('admin.customers.referrals.datatable', $customer->id) }}">
-                                <thead>
-                                    <tr class="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
-                                        <th class="pb-2 pr-3 font-medium">Name</th>
-                                        <th class="pb-2 pr-3 font-medium">Email</th>
-                                        <th class="pb-2 pr-3 font-medium">Orders</th>
-                                        <th class="pb-2 pr-3 font-medium">{{ __('admin.static_text.admin_customers_show.loyalty_pts') }}</th>
-                                        <th class="pb-2 font-medium">Joined</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table id="referrals-datatable" class="w-full text-sm"
+                                       data-url="{{ route('admin.customers.referrals.datatable', $customer->id) }}">
+                                    <thead>
+                                        <tr class="border-b border-gray-100 text-left text-xs text-gray-500 uppercase tracking-wide">
+                                            <th class="pb-2 pr-3 font-medium">Name</th>
+                                            <th class="pb-2 pr-3 font-medium">Email</th>
+                                            <th class="pb-2 pr-3 font-medium">Orders</th>
+                                            <th class="pb-2 pr-3 font-medium">{{ __('admin.static_text.admin_customers_show.loyalty_pts') }}</th>
+                                            <th class="pb-2 font-medium">Joined</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
                         </div>
                         <script>
                             document.addEventListener('DOMContentLoaded', function () {
@@ -522,7 +524,7 @@
                     @if($warrantyClaims->isEmpty())
                         <p class="text-sm text-gray-500 py-4 text-center">{{ __('admin.customers_section.no_warranty_claims') }}</p>
                     @else
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-100 text-start text-xs text-gray-500 uppercase">
@@ -573,7 +575,7 @@
                     @if($giftCards->isEmpty())
                         <p class="text-sm text-gray-500 py-4 text-center">{{ __('admin.customers_section.no_gift_cards') }}</p>
                     @else
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-100 text-start text-xs text-gray-500 uppercase">
@@ -618,7 +620,7 @@
                     @if($notifications->isEmpty())
                         <p class="text-sm text-gray-500 py-4 text-center">{{ __('admin.customers_section.no_notifications_yet') }}</p>
                     @else
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-100 text-start text-xs text-gray-500 uppercase">
@@ -688,7 +690,7 @@
                     </div>
 
                     @if($deviceTokens->isNotEmpty())
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-100 text-start text-xs text-gray-500 uppercase">

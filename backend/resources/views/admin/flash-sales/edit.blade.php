@@ -215,7 +215,7 @@
                         </div>
                     @endif
                 </div>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                 <table id="invitations-table" class="w-full text-sm"></table>
                 </div>
             </x-card>
@@ -278,7 +278,7 @@
             </div>
 
             <x-card>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                 <table id="submissions-table" class="w-full text-sm"></table>
                 </div>
             </x-card>
@@ -307,18 +307,20 @@
             </div>
 
             <x-card title="{{ __('admin.flash_sales.live_submissions') }}">
-                <table id="live-submissions-table" class="w-full text-sm">
-                    <thead>
-                        <tr class="text-xs uppercase text-gray-500 border-b">
-                            <th class="py-2 px-3 text-start">{{ __('admin.flash_sales.product') }}</th>
-                            <th class="py-2 px-3 text-end">{{ __('admin.flash_sales.sold') }}</th>
-                            <th class="py-2 px-3 text-end">{{ __('admin.flash_sales.remaining') }}</th>
-                            <th class="py-2 px-3 text-end">{{ __('admin.flash_sales.revenue') }}</th>
-                            <th class="py-2 px-3">{{ __('admin.status') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody id="live-submissions-tbody"></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table id="live-submissions-table" class="w-full text-sm">
+                        <thead>
+                            <tr class="text-xs uppercase text-gray-500 border-b">
+                                <th class="py-2 px-3 text-start">{{ __('admin.flash_sales.product') }}</th>
+                                <th class="py-2 px-3 text-end">{{ __('admin.flash_sales.sold') }}</th>
+                                <th class="py-2 px-3 text-end">{{ __('admin.flash_sales.remaining') }}</th>
+                                <th class="py-2 px-3 text-end">{{ __('admin.flash_sales.revenue') }}</th>
+                                <th class="py-2 px-3">{{ __('admin.status') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="live-submissions-tbody"></tbody>
+                    </table>
+                </div>
             </x-card>
         </div>
         @endif

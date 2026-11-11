@@ -18,7 +18,7 @@
         @endforeach
     </div>
 
-    <div class="overflow-x-auto rounded-xl border bg-white">
+    <div class="table-responsive rounded-xl border bg-white">
         <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600">
                 <tr>

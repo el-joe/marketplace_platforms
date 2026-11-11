@@ -78,7 +78,7 @@
 
     {{-- ─── Table ───────────────────────────────────────────────────────────── --}}
     <x-card>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table id="warranty-claims-table" data-url="{{ route('admin.warranty-claims.datatable') }}" class="w-full text-sm">
                 <thead>
                     <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-200">

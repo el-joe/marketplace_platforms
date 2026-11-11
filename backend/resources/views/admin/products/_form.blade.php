@@ -349,7 +349,7 @@
                     </div>
 
                     {{-- Variants table --}}
-                    <div class="overflow-x-auto rounded-xl border border-gray-200">
+                    <div class="table-responsive rounded-xl border border-gray-200">
                         <table class="min-w-full text-sm" id="variants-table">
                             <thead class="bg-gray-50 border-b border-gray-200">
                                 <tr>
@@ -810,7 +810,7 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 border-b border-gray-100">
                             <tr>

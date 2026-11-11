@@ -28,18 +28,20 @@
     </div>
 
     <x-card padding="none">
-        <table id="warehouse-shipping-surcharges-table" class="table-base w-full">
-            <thead>
-                <tr>
-                    <th>{{ __('admin.warehouses_section.warehouse_column') }}</th>
-                    <th>{{ __('admin.warehouses_section.code_column') }}</th>
-                    <th class="text-end">{{ __('admin.warehouses_section.extra_shipping_column') }}</th>
-                    <th class="text-center">{{ __('admin.warehouses_section.active_column') }}</th>
-                    <th class="text-center w-20">{{ __('common.actions') }}</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div class="table-responsive">
+            <table id="warehouse-shipping-surcharges-table" class="table-base w-full">
+                <thead>
+                    <tr>
+                        <th>{{ __('admin.warehouses_section.warehouse_column') }}</th>
+                        <th>{{ __('admin.warehouses_section.code_column') }}</th>
+                        <th class="text-end">{{ __('admin.warehouses_section.extra_shipping_column') }}</th>
+                        <th class="text-center">{{ __('admin.warehouses_section.active_column') }}</th>
+                        <th class="text-center w-20">{{ __('common.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </x-card>
 
     <x-modal id="warehouse-surcharge-modal" title="{{ __('admin.warehouses_section.surcharge_modal_title') }}" size="md">

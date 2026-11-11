@@ -181,76 +181,78 @@
     @endif
 
     <div class="bg-white rounded-xl border overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-500 text-xs">
-                <tr>
-                    <th class="px-4 py-3 text-start">{{ __('admin.marketers.col_name') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_type') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_gender') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_country') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_status') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_campaigns') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_registered_at') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_actions') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($marketers as $marketer)
-                @php
-                    $statusCls = [
-                        'pending'    => 'bg-yellow-100 text-yellow-700',
-                        'active'     => 'bg-green-100 text-green-700',
-                        'suspended'  => 'bg-red-100 text-red-700',
-                        'rejected'   => 'bg-gray-100 text-gray-500',
-                        'blacklisted'=> 'bg-red-200 text-red-800',
-                    ][$marketer->global_status?->value] ?? 'bg-gray-100 text-gray-500';
-                @endphp
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3">
-                        <a href="{{ route('admin.marketers.show', $marketer) }}" class="font-semibold text-gray-900 hover:text-blue-600">{{ $marketer->name }}</a>
-                        <div class="text-xs text-gray-400">{{ $marketer->email }}</div>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                        @forelse($marketer->marketerJobs as $job)
-                            <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $job->key === 'influencer' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
-                                {{ app()->getLocale() === 'ar' ? $job->name_ar : $job->name_en }}
-                            </span>
-                        @empty
-                            <span class="text-gray-300 text-xs">-</span>
-                        @endforelse
-                    </td>
-                    <td class="px-4 py-3 text-center text-xs text-gray-500">
-                        {{ $marketer->marketerProfile?->gender ? __('admin.marketers.gender_'.$marketer->marketerProfile->gender->value) : '-' }}
-                    </td>
-                    <td class="px-4 py-3 text-center text-gray-500 text-xs">{{ $marketer->country?->name_ar ?? '-' }}</td>
-                    <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded text-xs {{ $statusCls }}">{{ $marketer->global_status?->value }}</span></td>
-                    <td class="px-4 py-3 text-center">{{ $marketer->invitations_count }}</td>
-                    <td class="px-4 py-3 text-center text-xs text-gray-500">{{ admin_tz($marketer->created_at)?->format('Y-m-d') }}</td>
-                    <td class="px-4 py-3 text-center">
-                        @if($marketer->global_status?->value === 'pending')
-                            <form method="POST" action="{{ route('admin.marketers.approve', $marketer) }}" class="inline">
-                                @csrf
-                                <button class="text-xs px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600">{{ __('admin.marketers.approve') }}</button>
-                            </form>
-                        @elseif($marketer->global_status?->value === 'active')
-                            <form method="POST" action="{{ route('admin.marketers.suspend', $marketer) }}" class="inline">
-                                @csrf
-                                <input type="hidden" name="reason" value="Admin action">
-                                <button class="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200">{{ __('admin.marketers.suspend') }}</button>
-                            </form>
-                        @elseif($marketer->global_status?->value === 'suspended')
-                            <form method="POST" action="{{ route('admin.marketers.activate', $marketer) }}" class="inline">
-                                @csrf
-                                <button class="text-xs px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200">{{ __('admin.marketers.activate') }}</button>
-                            </form>
-                        @endif
-                    </td>
-                </tr>
-                @empty
-                <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">{{ __('admin.marketers.no_results') }}</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500 text-xs">
+                    <tr>
+                        <th class="px-4 py-3 text-start">{{ __('admin.marketers.col_name') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_type') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_gender') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_country') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_status') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_campaigns') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_registered_at') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($marketers as $marketer)
+                    @php
+                        $statusCls = [
+                            'pending'    => 'bg-yellow-100 text-yellow-700',
+                            'active'     => 'bg-green-100 text-green-700',
+                            'suspended'  => 'bg-red-100 text-red-700',
+                            'rejected'   => 'bg-gray-100 text-gray-500',
+                            'blacklisted'=> 'bg-red-200 text-red-800',
+                        ][$marketer->global_status?->value] ?? 'bg-gray-100 text-gray-500';
+                    @endphp
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3">
+                            <a href="{{ route('admin.marketers.show', $marketer) }}" class="font-semibold text-gray-900 hover:text-blue-600">{{ $marketer->name }}</a>
+                            <div class="text-xs text-gray-400">{{ $marketer->email }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            @forelse($marketer->marketerJobs as $job)
+                                <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $job->key === 'influencer' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
+                                    {{ app()->getLocale() === 'ar' ? $job->name_ar : $job->name_en }}
+                                </span>
+                            @empty
+                                <span class="text-gray-300 text-xs">-</span>
+                            @endforelse
+                        </td>
+                        <td class="px-4 py-3 text-center text-xs text-gray-500">
+                            {{ $marketer->marketerProfile?->gender ? __('admin.marketers.gender_'.$marketer->marketerProfile->gender->value) : '-' }}
+                        </td>
+                        <td class="px-4 py-3 text-center text-gray-500 text-xs">{{ $marketer->country?->name_ar ?? '-' }}</td>
+                        <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded text-xs {{ $statusCls }}">{{ $marketer->global_status?->value }}</span></td>
+                        <td class="px-4 py-3 text-center">{{ $marketer->invitations_count }}</td>
+                        <td class="px-4 py-3 text-center text-xs text-gray-500">{{ admin_tz($marketer->created_at)?->format('Y-m-d') }}</td>
+                        <td class="px-4 py-3 text-center">
+                            @if($marketer->global_status?->value === 'pending')
+                                <form method="POST" action="{{ route('admin.marketers.approve', $marketer) }}" class="inline">
+                                    @csrf
+                                    <button class="text-xs px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600">{{ __('admin.marketers.approve') }}</button>
+                                </form>
+                            @elseif($marketer->global_status?->value === 'active')
+                                <form method="POST" action="{{ route('admin.marketers.suspend', $marketer) }}" class="inline">
+                                    @csrf
+                                    <input type="hidden" name="reason" value="Admin action">
+                                    <button class="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200">{{ __('admin.marketers.suspend') }}</button>
+                                </form>
+                            @elseif($marketer->global_status?->value === 'suspended')
+                                <form method="POST" action="{{ route('admin.marketers.activate', $marketer) }}" class="inline">
+                                    @csrf
+                                    <button class="text-xs px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200">{{ __('admin.marketers.activate') }}</button>
+                                </form>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">{{ __('admin.marketers.no_results') }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
         <div class="px-4 py-3 border-t">{{ $marketers->withQueryString()->links() }}</div>
     </div>
 </div>

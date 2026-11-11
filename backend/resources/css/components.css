@@ -106,6 +106,58 @@
     @apply px-4 py-3 text-gray-700 border-b border-gray-100;
 }
 
+/* ---------------------------------------------------------
+   Responsive (horizontally scrollable) tables
+   Wrap any <table> in <div class="table-responsive"> so wide
+   tables scroll left/right inside their card instead of
+   overflowing the page or being clipped on small screens.
+   --------------------------------------------------------- */
+.table-responsive {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+}
+
+.table-responsive > table {
+    width: 100%;
+}
+
+/* Browsers default <fieldset> to min-width: min-content, which lets a wide
+   table stretch the form past the screen instead of scrolling inside it. */
+fieldset {
+    min-width: 0;
+}
+
+/* DataTables v2 default layout: make the table row scroll, not the whole widget */
+div.dt-container div.dt-layout-row.dt-layout-table {
+    display: block;
+}
+
+div.dt-container div.dt-layout-row.dt-layout-table > div.dt-layout-cell {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1023.98px) {
+    /* Keep cells on one line so columns stay readable and the table scrolls
+       instead of crushing text. :where() keeps specificity at zero so
+       utilities like .whitespace-normal on a cell still win. */
+    :where(.table-responsive, div.dt-container) :where(th, td) {
+        white-space: nowrap;
+    }
+
+    /* Allow genuinely long-text cells to opt back into wrapping with a sane width */
+    :where(.table-responsive, div.dt-container) :where(td.whitespace-normal, td.text-wrap, th.whitespace-normal) {
+        min-width: 12rem;
+    }
+}
+
 /* =========================================================
    SIDEBAR
    ========================================================= */

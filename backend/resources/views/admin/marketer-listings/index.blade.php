@@ -76,7 +76,7 @@
             <div class="px-6 py-3 bg-emerald-50 text-emerald-700 text-sm border-b border-emerald-100">{{ session('success') }}</div>
         @endif
 
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-500 text-xs">
                     <tr>

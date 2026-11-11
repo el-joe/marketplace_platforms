@@ -21,23 +21,25 @@
     </div>
 
     <x-card padding="none">
-        <table id="shipping-subsidies-table" class="table-base w-full">
-            <thead>
-                <tr>
-                    <th>{{ __('admin.shipping_subsidies_section.warehouse_col') }}</th>
-                    <th>{{ __('admin.shipping_subsidies_section.zone_col') }}</th>
-                    <th>{{ __('admin.shipping_subsidies_section.country_col') }}</th>
-                    <th>{{ __('admin.shipping_subsidies_section.method_col') }}</th>
-                    <th class="text-end">{{ __('admin.shipping_subsidies_section.subsidy_cap_col') }}</th>
-                    <th class="text-end">{{ __('admin.shipping_subsidies_section.max_subsidy_weight_col') }}</th>
-                    <th>{{ __('admin.shipping_subsidies_section.currency_col') }}</th>
-                    <th>{{ __('admin.shipping_subsidies_section.split_col') }}</th>
-                    <th class="text-center">{{ __('admin.shipping_subsidies_section.status_col') }}</th>
-                    <th class="text-center w-20">{{ __('common.actions') }}</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div class="table-responsive">
+            <table id="shipping-subsidies-table" class="table-base w-full">
+                <thead>
+                    <tr>
+                        <th>{{ __('admin.shipping_subsidies_section.warehouse_col') }}</th>
+                        <th>{{ __('admin.shipping_subsidies_section.zone_col') }}</th>
+                        <th>{{ __('admin.shipping_subsidies_section.country_col') }}</th>
+                        <th>{{ __('admin.shipping_subsidies_section.method_col') }}</th>
+                        <th class="text-end">{{ __('admin.shipping_subsidies_section.subsidy_cap_col') }}</th>
+                        <th class="text-end">{{ __('admin.shipping_subsidies_section.max_subsidy_weight_col') }}</th>
+                        <th>{{ __('admin.shipping_subsidies_section.currency_col') }}</th>
+                        <th>{{ __('admin.shipping_subsidies_section.split_col') }}</th>
+                        <th class="text-center">{{ __('admin.shipping_subsidies_section.status_col') }}</th>
+                        <th class="text-center w-20">{{ __('common.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </x-card>
 
     <x-modal id="shipping-subsidy-modal" title="{{ __('admin.shipping_subsidies_section.subsidy_configuration') }}" size="md">

@@ -78,7 +78,7 @@
 
 {{-- ─── Table ───────────────────────────────────────────────────────────────── --}}
 <x-card>
-    <div class="overflow-x-auto">
+    <div class="table-responsive">
         <table class="min-w-full text-sm">
             <thead>
                 <tr class="text-left text-gray-500 border-b border-gray-100">

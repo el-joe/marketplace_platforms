@@ -32,7 +32,7 @@
 
         {{-- Tree Table --}}
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="w-full text-sm" id="categories-table">
                     <thead>
                         <tr

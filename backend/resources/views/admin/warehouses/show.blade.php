@@ -196,7 +196,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table id="inventory-table"
                         data-url="{{ route('admin.warehouses.inventory.datatable', $warehouse->id) }}"
                         class="w-full text-sm">
@@ -221,7 +221,7 @@
         <div x-show="tab === 'movements'" x-cloak>
             <x-card>
                 <h3 class="text-sm font-semibold text-gray-800 mb-4">{{ __('admin.warehouses_section.recent_movements_title') }}</h3>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-200">
@@ -282,7 +282,7 @@
                     <h3 class="text-sm font-semibold text-gray-800">{{ __('admin.warehouses_section.recent_transfers') }}</h3>
                     <a href="{{ route('admin.warehouses.transfers.create') }}" class="btn btn-primary btn-xs">{{ __('admin.warehouses_section.new_transfer') }}</a>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-200">
@@ -360,7 +360,7 @@
                         <h3 class="text-sm font-semibold text-gray-800">{{ __('admin.warehouses_section.per_vendor_storage_limits') }}</h3>
                         <button type="button" id="btn-add-vendor-limit" class="btn btn-primary btn-xs">{{ __('admin.warehouses_section.add_limit') }}</button>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-200">
@@ -419,7 +419,7 @@
                         Free storage: {{ $warehouse->free_storage_days }} days.
                         Daily fee: {{ \App\Support\Money::format($warehouse->daily_fee_per_unit) }} {{ $warehouse->daily_fee_currency ?? '—' }} per unit/day.
                     </p>
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table id="overage-fees-table"
                             data-url="{{ route('admin.warehouses.overage-fees.datatable', $warehouse->id) }}"
                             class="w-full text-sm">
@@ -452,7 +452,7 @@
                 @if($allZonesInCountry->isEmpty())
                     <p class="text-sm text-gray-500">{{ __('admin.warehouses_section.no_gap_zones') }}</p>
                 @else
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-200">
@@ -557,19 +557,21 @@
                 <button type="button" id="close-movements-modal" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <div class="px-6 py-5 max-h-[70vh] overflow-y-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-200">
-                            <th class="pb-3 pr-4">{{ __('admin.warehouses_section.time_column') }}</th>
-                            <th class="pb-3 pr-4">{{ __('admin.warehouses_section.type_column') }}</th>
-                            <th class="pb-3 pr-4 text-end">{{ __('admin.warehouses_section.delta_column') }}</th>
-                            <th class="pb-3 pr-4 text-end">{{ __('admin.warehouses_section.after_column') }}</th>
-                            <th class="pb-3 pr-4">{{ __('admin.warehouses_section.reason_column') }}</th>
-                            <th class="pb-3">{{ __('admin.warehouses_section.by_column') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody id="movements-modal-body" class="divide-y divide-gray-100"></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-200">
+                                <th class="pb-3 pr-4">{{ __('admin.warehouses_section.time_column') }}</th>
+                                <th class="pb-3 pr-4">{{ __('admin.warehouses_section.type_column') }}</th>
+                                <th class="pb-3 pr-4 text-end">{{ __('admin.warehouses_section.delta_column') }}</th>
+                                <th class="pb-3 pr-4 text-end">{{ __('admin.warehouses_section.after_column') }}</th>
+                                <th class="pb-3 pr-4">{{ __('admin.warehouses_section.reason_column') }}</th>
+                                <th class="pb-3">{{ __('admin.warehouses_section.by_column') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="movements-modal-body" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

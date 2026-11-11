@@ -100,30 +100,32 @@
                 <div class="px-5 py-4 border-b border-gray-100">
                     <h2 class="text-sm font-semibold text-gray-900">{{ __('admin.coupons_section.recent_usages') }}</h2>
                 </div>
-                <table class="min-w-full text-sm">
-                    <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
-                        <tr>
-                            <th class="px-5 py-2 text-start">{{ __('admin.coupons_section.customer') }}</th>
-                            <th class="px-5 py-2 text-start">{{ __('admin.coupons_section.order') }}</th>
-                            <th class="px-5 py-2 text-end">{{ __('admin.coupons_section.discount_amount') }}</th>
-                            <th class="px-5 py-2 text-end">{{ __('admin.coupons_section.used_at') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @forelse($recentUsages as $usage)
+                <div class="table-responsive">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
                             <tr>
-                                <td class="px-5 py-2">{{ $usage['customer'] ?? '—' }}</td>
-                                <td class="px-5 py-2">{{ $usage['order_number'] ?? '—' }}</td>
-                                <td class="px-5 py-2 text-end">{{ number_format($usage['discount_amount'], 2) }}</td>
-                                <td class="px-5 py-2 text-end text-gray-500">{{ \Illuminate\Support\Carbon::parse($usage['used_at'])->format('Y-m-d H:i') }}</td>
+                                <th class="px-5 py-2 text-start">{{ __('admin.coupons_section.customer') }}</th>
+                                <th class="px-5 py-2 text-start">{{ __('admin.coupons_section.order') }}</th>
+                                <th class="px-5 py-2 text-end">{{ __('admin.coupons_section.discount_amount') }}</th>
+                                <th class="px-5 py-2 text-end">{{ __('admin.coupons_section.used_at') }}</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="px-5 py-6 text-center text-gray-400">{{ __('admin.coupons_section.no_usages_yet') }}</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse($recentUsages as $usage)
+                                <tr>
+                                    <td class="px-5 py-2">{{ $usage['customer'] ?? '—' }}</td>
+                                    <td class="px-5 py-2">{{ $usage['order_number'] ?? '—' }}</td>
+                                    <td class="px-5 py-2 text-end">{{ number_format($usage['discount_amount'], 2) }}</td>
+                                    <td class="px-5 py-2 text-end text-gray-500">{{ \Illuminate\Support\Carbon::parse($usage['used_at'])->format('Y-m-d H:i') }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="px-5 py-6 text-center text-gray-400">{{ __('admin.coupons_section.no_usages_yet') }}</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 

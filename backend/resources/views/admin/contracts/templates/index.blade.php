@@ -111,143 +111,145 @@
     </form>
 
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-            <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600">
-                <tr>
-                    <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_name') }}</th>
-                    <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_scope') }}</th>
-                    <th class="px-4 py-3 text-start">{{ __('contracts.marketer.display_on') }}</th>
-                    <th class="px-4 py-3 text-start">{{ __('contracts.admin.col_country') }}</th>
-                    <th class="px-4 py-3 text-start">{{ __('contracts.sections.col_sections') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.contracts.col_version') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.contracts.col_status') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.contracts.col_assigned') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.contracts.signatures') }}</th>
-                    <th class="px-4 py-3"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse ($templates as $template)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 font-medium text-gray-900">
-                            {{ $template->name }}
-                            @if ($template->isFileMode())
-                                <span class="ms-1 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">{{ __('admin.contracts.mode_file_badge') }}</span>
-                                @foreach (['ar', 'en'] as $language)
-                                    @if (isset($template->files[$language]))
-                                        <a href="{{ route('admin.contracts.templates.file', [$template, $language]) }}" target="_blank" class="ms-1 text-[10px] font-semibold uppercase text-primary-600 hover:underline">{{ $language }}</a>
-                                    @endif
-                                @endforeach
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            {{ __('admin.contracts.scope_' . $template->category_scope) }}
-                            <div class="text-[11px] text-gray-400">{{ $template->contract_kind?->label() }}</div>
-                        </td>
-                        <td class="px-4 py-3">
-                            @if ($template->isMarketerScope())
-                                <div class="flex max-w-xs flex-wrap gap-1">
-                                    @foreach ($template->displayDestinations as $destination)
-                                        <span class="rounded-full bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700">{{ $destination->label() }}</span>
-                                    @endforeach
-                                    @if ($template->marketers_count > 0)
-                                        <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-700">{{ __('contracts.marketer.n_marketers', ['count' => $template->marketers_count]) }}</span>
-                                    @endif
-                                    @if ($template->category)
-                                        <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] text-indigo-700">{{ app()->getLocale() === 'ar' ? $template->category->name_ar : $template->category->name_en }}</span>
-                                    @endif
-                                </div>
-                            @else
-                                <span class="text-gray-300">—</span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            @if ($template->country)
-                                {{ app()->getLocale() === 'ar' ? $template->country->name_ar : $template->country->name_en }}
-                            @else
-                                <span class="text-gray-400">{{ __('contracts.admin.legacy_country') }}</span>
-                            @endif
-                            @if ($template->is_country_default)
-                                <span class="ms-1 rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">{{ __('contracts.admin.default_badge') }}</span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            @php($linkedSections = $sectionBadges[$template->id] ?? collect())
-                            @if ($linkedSections->isEmpty())
-                                <span class="text-gray-300">—</span>
-                            @else
-                                <div class="flex max-w-xs flex-wrap gap-1">
-                                    @foreach ($linkedSections->take(3) as $section)
-                                        <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">{{ app()->getLocale() === 'ar' ? $section->name_ar : $section->name_en }}</span>
-                                    @endforeach
-                                    @if ($linkedSections->count() > 3)
-                                        <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600" title="{{ $linkedSections->skip(3)->map(fn ($section) => app()->getLocale() === 'ar' ? $section->name_ar : $section->name_en)->implode(', ') }}">{{ __('contracts.sections.more', ['count' => $linkedSections->count() - 3]) }}</span>
-                                    @endif
-                                </div>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3 text-center">v{{ $template->version }}</td>
-                        <td class="px-4 py-3 text-center">
-                            @if ($template->isScheduled())
-                                <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{{ __('admin.contracts.status_scheduled', ['date' => $template->effective_at->format('d/m/Y')]) }}</span>
-                            @elseif ($template->is_published)
-                                <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">{{ __('admin.contracts.status_published') }}</span>
-                            @elseif ($template->is_active)
-                                <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">{{ __('admin.contracts.status_draft') }}</span>
-                            @else
-                                <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">{{ __('admin.contracts.status_retired') }}</span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3 text-center">{{ $assignedCounts[$template->id] ?? 0 }}</td>
-                        <td class="px-4 py-3 text-center">{{ $signatureCounts[$template->id] ?? 0 }}</td>
-                        <td class="px-4 py-3 text-end whitespace-nowrap space-x-3">
-                            <a href="{{ route('admin.contracts.templates.signatures', $template) }}" class="text-xs font-medium text-primary-600 hover:underline">{{ __('admin.contracts.signatures') }}</a>
-                            <a href="{{ route('admin.contracts.templates.edit', $template) }}" class="text-xs font-medium text-primary-600 hover:underline">{{ __('common.edit') }}</a>
-                            @if (! $template->is_published && $template->is_active)
-                                <form method="POST" action="{{ route('admin.contracts.templates.publish', $template) }}" class="inline"
-                                      onsubmit="return confirm(@js(__('admin.contracts.publish_confirm')))">
-                                    @csrf
-                                    <button type="submit" class="text-xs font-medium text-emerald-700 hover:underline">{{ __('admin.contracts.publish') }}</button>
-                                </form>
-                            @endif
-                            @if ($template->is_published && $template->country_id && ! $template->isPlatformScope())
-                                <form method="POST" action="{{ route('admin.contracts.templates.default', $template) }}" class="inline">
-                                    @csrf
-                                    <input type="hidden" name="default" value="{{ $template->is_country_default ? 0 : 1 }}">
-                                    <button type="submit" class="text-xs font-medium text-indigo-700 hover:underline">{{ $template->is_country_default ? __('contracts.admin.unset_default') : __('contracts.admin.set_default') }}</button>
-                                </form>
-                            @endif
-                            @if ($template->is_published)
-                                @php($signatureCount = (int) ($signatureCounts[$template->id] ?? 0))
-                                <form method="POST" action="{{ route('admin.contracts.templates.retire', $template) }}" class="inline"
-                                      onsubmit="return confirm(@js($signatureCount > 0 ? __('contracts.admin.retire_confirm_signed', ['count' => $signatureCount]) : __('contracts.admin.retire_confirm')))">
-                                    @csrf
-                                    @if ($signatureCount > 0)<input type="hidden" name="confirm_signatures" value="1">@endif
-                                    <button type="submit" class="text-xs font-medium text-amber-700 hover:underline">{{ __('contracts.admin.retire') }}</button>
-                                </form>
-                            @elseif (! $template->is_active)
-                                <form method="POST" action="{{ route('admin.contracts.templates.reactivate', $template) }}" class="inline">
-                                    @csrf
-                                    <button type="submit" class="text-xs font-medium text-gray-600 hover:underline">{{ __('contracts.admin.reactivate') }}</button>
-                                </form>
-                            @endif
-                            @if (! $template->is_published && (int) ($signatureCounts[$template->id] ?? 0) === 0)
-                                <form method="POST" action="{{ route('admin.contracts.templates.destroy', $template) }}" class="inline"
-                                      onsubmit="return confirm(@js(__('admin.contracts.delete_confirm')))">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-xs font-medium text-red-600 hover:underline">{{ __('common.delete') }}</button>
-                                </form>
-                            @endif
-                        </td>
-                    </tr>
-                @empty
+        <div class="table-responsive">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600">
                     <tr>
-                        <td colspan="10" class="px-4 py-10 text-center text-gray-400">{{ __('admin.contracts.no_templates') }}</td>
+                        <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_name') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_scope') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('contracts.marketer.display_on') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('contracts.admin.col_country') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('contracts.sections.col_sections') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.contracts.col_version') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.contracts.col_status') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.contracts.col_assigned') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.contracts.signatures') }}</th>
+                        <th class="px-4 py-3"></th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($templates as $template)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-medium text-gray-900">
+                                {{ $template->name }}
+                                @if ($template->isFileMode())
+                                    <span class="ms-1 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">{{ __('admin.contracts.mode_file_badge') }}</span>
+                                    @foreach (['ar', 'en'] as $language)
+                                        @if (isset($template->files[$language]))
+                                            <a href="{{ route('admin.contracts.templates.file', [$template, $language]) }}" target="_blank" class="ms-1 text-[10px] font-semibold uppercase text-primary-600 hover:underline">{{ $language }}</a>
+                                        @endif
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                {{ __('admin.contracts.scope_' . $template->category_scope) }}
+                                <div class="text-[11px] text-gray-400">{{ $template->contract_kind?->label() }}</div>
+                            </td>
+                            <td class="px-4 py-3">
+                                @if ($template->isMarketerScope())
+                                    <div class="flex max-w-xs flex-wrap gap-1">
+                                        @foreach ($template->displayDestinations as $destination)
+                                            <span class="rounded-full bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700">{{ $destination->label() }}</span>
+                                        @endforeach
+                                        @if ($template->marketers_count > 0)
+                                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-700">{{ __('contracts.marketer.n_marketers', ['count' => $template->marketers_count]) }}</span>
+                                        @endif
+                                        @if ($template->category)
+                                            <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] text-indigo-700">{{ app()->getLocale() === 'ar' ? $template->category->name_ar : $template->category->name_en }}</span>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-gray-300">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                @if ($template->country)
+                                    {{ app()->getLocale() === 'ar' ? $template->country->name_ar : $template->country->name_en }}
+                                @else
+                                    <span class="text-gray-400">{{ __('contracts.admin.legacy_country') }}</span>
+                                @endif
+                                @if ($template->is_country_default)
+                                    <span class="ms-1 rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">{{ __('contracts.admin.default_badge') }}</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                @php($linkedSections = $sectionBadges[$template->id] ?? collect())
+                                @if ($linkedSections->isEmpty())
+                                    <span class="text-gray-300">—</span>
+                                @else
+                                    <div class="flex max-w-xs flex-wrap gap-1">
+                                        @foreach ($linkedSections->take(3) as $section)
+                                            <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">{{ app()->getLocale() === 'ar' ? $section->name_ar : $section->name_en }}</span>
+                                        @endforeach
+                                        @if ($linkedSections->count() > 3)
+                                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600" title="{{ $linkedSections->skip(3)->map(fn ($section) => app()->getLocale() === 'ar' ? $section->name_ar : $section->name_en)->implode(', ') }}">{{ __('contracts.sections.more', ['count' => $linkedSections->count() - 3]) }}</span>
+                                        @endif
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-center">v{{ $template->version }}</td>
+                            <td class="px-4 py-3 text-center">
+                                @if ($template->isScheduled())
+                                    <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{{ __('admin.contracts.status_scheduled', ['date' => $template->effective_at->format('d/m/Y')]) }}</span>
+                                @elseif ($template->is_published)
+                                    <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">{{ __('admin.contracts.status_published') }}</span>
+                                @elseif ($template->is_active)
+                                    <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">{{ __('admin.contracts.status_draft') }}</span>
+                                @else
+                                    <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">{{ __('admin.contracts.status_retired') }}</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-center">{{ $assignedCounts[$template->id] ?? 0 }}</td>
+                            <td class="px-4 py-3 text-center">{{ $signatureCounts[$template->id] ?? 0 }}</td>
+                            <td class="px-4 py-3 text-end whitespace-nowrap space-x-3">
+                                <a href="{{ route('admin.contracts.templates.signatures', $template) }}" class="text-xs font-medium text-primary-600 hover:underline">{{ __('admin.contracts.signatures') }}</a>
+                                <a href="{{ route('admin.contracts.templates.edit', $template) }}" class="text-xs font-medium text-primary-600 hover:underline">{{ __('common.edit') }}</a>
+                                @if (! $template->is_published && $template->is_active)
+                                    <form method="POST" action="{{ route('admin.contracts.templates.publish', $template) }}" class="inline"
+                                          onsubmit="return confirm(@js(__('admin.contracts.publish_confirm')))">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-medium text-emerald-700 hover:underline">{{ __('admin.contracts.publish') }}</button>
+                                    </form>
+                                @endif
+                                @if ($template->is_published && $template->country_id && ! $template->isPlatformScope())
+                                    <form method="POST" action="{{ route('admin.contracts.templates.default', $template) }}" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="default" value="{{ $template->is_country_default ? 0 : 1 }}">
+                                        <button type="submit" class="text-xs font-medium text-indigo-700 hover:underline">{{ $template->is_country_default ? __('contracts.admin.unset_default') : __('contracts.admin.set_default') }}</button>
+                                    </form>
+                                @endif
+                                @if ($template->is_published)
+                                    @php($signatureCount = (int) ($signatureCounts[$template->id] ?? 0))
+                                    <form method="POST" action="{{ route('admin.contracts.templates.retire', $template) }}" class="inline"
+                                          onsubmit="return confirm(@js($signatureCount > 0 ? __('contracts.admin.retire_confirm_signed', ['count' => $signatureCount]) : __('contracts.admin.retire_confirm')))">
+                                        @csrf
+                                        @if ($signatureCount > 0)<input type="hidden" name="confirm_signatures" value="1">@endif
+                                        <button type="submit" class="text-xs font-medium text-amber-700 hover:underline">{{ __('contracts.admin.retire') }}</button>
+                                    </form>
+                                @elseif (! $template->is_active)
+                                    <form method="POST" action="{{ route('admin.contracts.templates.reactivate', $template) }}" class="inline">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-medium text-gray-600 hover:underline">{{ __('contracts.admin.reactivate') }}</button>
+                                    </form>
+                                @endif
+                                @if (! $template->is_published && (int) ($signatureCounts[$template->id] ?? 0) === 0)
+                                    <form method="POST" action="{{ route('admin.contracts.templates.destroy', $template) }}" class="inline"
+                                          onsubmit="return confirm(@js(__('admin.contracts.delete_confirm')))">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-xs font-medium text-red-600 hover:underline">{{ __('common.delete') }}</button>
+                                    </form>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="10" class="px-4 py-10 text-center text-gray-400">{{ __('admin.contracts.no_templates') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div>{{ $templates->links() }}</div>

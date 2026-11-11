@@ -31,7 +31,7 @@
         <div class="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">{{ __('admin.static_text.admin_marketers_contract_acceptances.no_contract_has_been_created_for') }}</div>
     @endunless
 
-    <div class="bg-white rounded-xl border overflow-x-auto">
+    <div class="table-responsive bg-white rounded-xl border">
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-gray-500 border-b">

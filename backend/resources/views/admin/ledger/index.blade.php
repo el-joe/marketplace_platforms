@@ -106,7 +106,7 @@
 
     {{-- ─── DataTable (NO actions column) ──────────────────────────────────────── --}}
     <x-card>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table id="ledger-table" class="w-full" style="width:100%">
                 <thead>
                     <tr>

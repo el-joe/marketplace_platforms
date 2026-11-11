@@ -138,7 +138,7 @@
                     {{ __('admin.delivery_section.no_agents_in_zone') }}
                 </div>
             @else
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
                             <tr>

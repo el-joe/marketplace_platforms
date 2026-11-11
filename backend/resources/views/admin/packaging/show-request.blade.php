@@ -20,7 +20,7 @@
         <div class="lg:col-span-2 space-y-5">
             <div class="bg-white rounded-xl border border-gray-200 p-5">
                 <h2 class="text-sm font-semibold text-gray-900 mb-4">{{ __('admin.packaging_show_request_section.order_items') }}</h2>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>

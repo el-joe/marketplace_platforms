@@ -46,7 +46,7 @@
         </dl>
 
         <h2 class="text-sm font-semibold text-gray-700 mb-3">{{ __('admin.vendors.view_earnings') }}</h2>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table class="min-w-full text-sm">
                 <thead>
                     <tr class="text-left text-gray-500 border-b border-gray-100">

@@ -19,7 +19,7 @@
             <button type="button" id="btn-add-cost-reference" class="btn btn-primary btn-sm">{{ __('admin.admin_listings.add_cost_reference') }}</button>
         </div>
 
-        <div class="overflow-x-auto border border-gray-200 rounded-xl">
+        <div class="table-responsive border border-gray-200 rounded-xl">
             <table id="cost-references-table" class="table-base w-full text-sm">
                 <thead>
                     <tr>

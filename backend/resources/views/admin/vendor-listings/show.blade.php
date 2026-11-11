@@ -134,35 +134,37 @@
             </div>
         </dl>
 
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-            <thead>
-                <tr>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.recorded_at') }}</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.price') }}</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.source') }}</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.recorded_by') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($priceHistory as $entry)
+        <div class="table-responsive">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead>
                     <tr>
-                        <td class="px-3 py-2 text-gray-800">{{ $entry->recorded_at?->format('Y-m-d H:i') }}</td>
-                        <td class="px-3 py-2 text-gray-800">{{ number_format($entry->price, 2) }} {{ $listing->currency }}</td>
-                        <td class="px-3 py-2">
-                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
-                                {{ $entry->source === 'initial' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700' }}">
-                                {{ ucfirst($entry->source) }}
-                            </span>
-                        </td>
-                        <td class="px-3 py-2 text-gray-500">{{ $entry->recorded_by ?? '—' }}</td>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.recorded_at') }}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.price') }}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.source') }}</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.recorded_by') }}</th>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="4" class="px-3 py-4 text-center text-gray-400">{{ __('admin.static_text.admin_vendor_listings_show.no_price_history_recorded_yet') }}</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($priceHistory as $entry)
+                        <tr>
+                            <td class="px-3 py-2 text-gray-800">{{ $entry->recorded_at?->format('Y-m-d H:i') }}</td>
+                            <td class="px-3 py-2 text-gray-800">{{ number_format($entry->price, 2) }} {{ $listing->currency }}</td>
+                            <td class="px-3 py-2">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+                                    {{ $entry->source === 'initial' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700' }}">
+                                    {{ ucfirst($entry->source) }}
+                                </span>
+                            </td>
+                            <td class="px-3 py-2 text-gray-500">{{ $entry->recorded_by ?? '—' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-3 py-4 text-center text-gray-400">{{ __('admin.static_text.admin_vendor_listings_show.no_price_history_recorded_yet') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
         <div class="mt-3">
             {{ $priceHistory->onEachSide(1)->links() }}

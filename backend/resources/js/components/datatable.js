@@ -13,7 +13,7 @@
  *     pageLength: 25,
  *     order:      [[0, 'desc']],
  *     selectable: true,
- *     responsive: true,
+ *     responsive: false, // true = collapse columns instead of horizontal scroll
  *   });
  */
 import $ from 'jquery';
@@ -240,12 +240,14 @@ window.initDataTable = function (tableId, options) {
     const defaults = {
         processing: true,
         serverSide: true,
-        responsive: options.responsive !== false,
+        // Horizontal scroll by default; collapsing columns (Responsive ext.) is opt-in
+        responsive: options.responsive === true,
+        autoWidth: false,
         pageLength: options.pageLength || 25,
         order: options.order || [[0, 'desc']],
         language: dtLanguage,
         // Custom DOM layout — we render info + paginator only; search/filter is handled manually
-        dom: 'rt<"dt-footer flex items-center justify-between px-4 py-3 border-t border-gray-100"<"text-sm text-gray-500"i><"flex items-center gap-1"p>>',
+        dom: 'r<"table-responsive"t><"dt-footer flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-t border-gray-100"<"text-sm text-gray-500"i><"flex items-center gap-1"p>>',
         ajax: {
             url: options.url,
             type: options.ajaxMethod || 'POST',

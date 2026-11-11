@@ -165,7 +165,7 @@
         <x-card>
             <x-slot:title>{{ __('admin.analytics.top_products') }}</x-slot:title>
             <x-slot:subtitle>{{ __('admin.analytics.top_products_subtitle') }}</x-slot:subtitle>
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
@@ -188,7 +188,7 @@
         <x-card>
             <x-slot:title>{{ __('admin.analytics.top_vendors') }}</x-slot:title>
             <x-slot:subtitle>{{ __('admin.analytics.top_vendors_subtitle') }}</x-slot:subtitle>
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
@@ -246,7 +246,7 @@
                     <p id="zero-result-rate" class="text-xl font-bold text-gray-900">—</p>
                 </div>
             </div>
-            <div class="overflow-x-auto max-h-64">
+            <div class="table-responsive max-h-64">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50 sticky top-0">
                         <tr>
@@ -313,7 +313,7 @@
                 </div>
                 <div>
                     <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ __('admin.analytics.breach_by_vendor') }}</h4>
-                    <div class="overflow-x-auto max-h-48">
+                    <div class="table-responsive max-h-48">
                         <table class="min-w-full text-sm">
                             <thead>
                                 <tr class="text-xs text-gray-500">
@@ -357,7 +357,7 @@
                 </div>
                 <div>
                     <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ __('admin.analytics.top_campaigns') }}</h4>
-                    <div class="overflow-x-auto max-h-48">
+                    <div class="table-responsive max-h-48">
                         <table class="min-w-full text-sm">
                             <thead>
                                 <tr class="text-xs text-gray-500">
@@ -397,7 +397,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                     <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ __('admin.analytics.top_flash_sales') }}</h4>
-                    <div class="overflow-x-auto max-h-56">
+                    <div class="table-responsive max-h-56">
                         <table class="min-w-full text-sm">
                             <thead>
                                 <tr class="text-xs text-gray-500">
@@ -413,7 +413,7 @@
                 </div>
                 <div>
                     <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ __('admin.analytics.top_vendors_flash') }}</h4>
-                    <div class="overflow-x-auto max-h-56">
+                    <div class="table-responsive max-h-56">
                         <table class="min-w-full text-sm">
                             <thead>
                                 <tr class="text-xs text-gray-500">

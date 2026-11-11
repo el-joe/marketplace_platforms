@@ -69,7 +69,7 @@
                     @endforeach
                 </ul>
 
-                <div class="flex gap-2 pt-3 border-t border-gray-100">
+                <div class="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
                     <button type="button" class="flex-1 btn btn-ghost btn-xs btn-edit-plan"
                         data-plan="{{ json_encode($plan) }}">{{ __('admin.subscriptions.edit') }}</button>
                     <button type="button"

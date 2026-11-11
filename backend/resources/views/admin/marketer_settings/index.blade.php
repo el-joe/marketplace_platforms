@@ -105,7 +105,7 @@
                 <form method="POST" action="{{ route('admin.marketer-settings.influencer-defaults.update') }}" class="mt-5">
                     @csrf
                     <fieldset @disabled(! $canEdit)>
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="min-w-full divide-y divide-gray-200 text-sm">
                                 <thead class="bg-gray-50">
                                     <tr>
@@ -150,7 +150,7 @@
                 <h2 class="text-lg font-semibold text-gray-900">{{ __('marketer_settings.influencer.overrides_title') }}</h2>
                 <p class="mt-1 text-sm text-gray-500">{{ __('marketer_settings.influencer.overrides_hint') }}</p>
 
-                <div class="mt-4 overflow-x-auto">
+                <div class="table-responsive mt-4">
                     <table class="min-w-full divide-y divide-gray-200 text-sm" data-influencer-overrides>
                         <thead class="bg-gray-50">
                             <tr>
@@ -253,7 +253,7 @@
                     </div>
 
                     <fieldset @disabled(! $canEdit)>
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="min-w-full divide-y divide-gray-200 text-sm">
                                 <thead class="bg-gray-50">
                                     <tr>

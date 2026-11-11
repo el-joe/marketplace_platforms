@@ -255,7 +255,7 @@
                     <p class="text-sm text-gray-400">{{ __('admin.marketer_campaigns.no_invitations') }}</p>
                 @endif
             @else
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="min-w-full text-sm">
                         <thead>
                             <tr class="text-left text-gray-500 border-b border-gray-100">
@@ -340,7 +340,7 @@
         @endphp
         @if($transferred->isNotEmpty() || $unreplaced->isNotEmpty())
             <x-card title="{{ __('admin.marketer_campaigns.transfers_title') }}">
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="text-start text-gray-500 border-b">
@@ -381,7 +381,7 @@
                     @if($referralChains->count() > 1)
                         <div class="text-xs font-semibold text-gray-500 mb-1">{{ __('admin.marketer_campaigns.code_chain_n', ['n' => $n + 1]) }}</div>
                     @endif
-                    <div class="overflow-x-auto mb-4">
+                    <div class="table-responsive mb-4">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="text-start text-gray-500 border-b">
@@ -478,32 +478,34 @@
             @if($marketerCampaign->conversions->isEmpty())
                 <p class="text-sm text-gray-400">{{ __('admin.marketer_campaigns.no_conversions') }}</p>
             @else
-                <table class="min-w-full text-sm">
-                    <thead>
-                        <tr class="text-left text-gray-500 border-b border-gray-100">
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.conversion_order') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.conversion_commission') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.conversion_clicked_at') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.conversion_paid_at') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($marketerCampaign->conversions as $conversion)
-                            <tr class="border-b border-gray-50">
-                                <td class="py-2 pr-4">{{ $conversion->order?->order_number ?? $conversion->order_id }}</td>
-                                <td class="py-2 pr-4">{{ \App\Support\Money::format($conversion->commission_amount) }} {{ $conversion->currency }}</td>
-                                <td class="py-2 pr-4">{{ $conversion->referral_clicked_at?->format('d M Y H:i') ?? '—' }}</td>
-                                <td class="py-2 pr-4">
-                                    @if($conversion->paid_at)
-                                        {{ admin_tz($conversion->paid_at)?->format('d M Y H:i') }}
-                                    @else
-                                        <x-badge color="warning">{{ __('admin.marketer_campaigns.conversion_not_paid') }}</x-badge>
-                                    @endif
-                                </td>
+                <div class="table-responsive">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b border-gray-100">
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.conversion_order') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.conversion_commission') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.conversion_clicked_at') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.conversion_paid_at') }}</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach($marketerCampaign->conversions as $conversion)
+                                <tr class="border-b border-gray-50">
+                                    <td class="py-2 pr-4">{{ $conversion->order?->order_number ?? $conversion->order_id }}</td>
+                                    <td class="py-2 pr-4">{{ \App\Support\Money::format($conversion->commission_amount) }} {{ $conversion->currency }}</td>
+                                    <td class="py-2 pr-4">{{ $conversion->referral_clicked_at?->format('d M Y H:i') ?? '—' }}</td>
+                                    <td class="py-2 pr-4">
+                                        @if($conversion->paid_at)
+                                            {{ admin_tz($conversion->paid_at)?->format('d M Y H:i') }}
+                                        @else
+                                            <x-badge color="warning">{{ __('admin.marketer_campaigns.conversion_not_paid') }}</x-badge>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             @endif
         </x-card>
     </div>
@@ -518,186 +520,188 @@
                 <div class="mb-3 rounded-lg bg-purple-50 px-4 py-2 text-xs text-purple-800" data-testid="admin-samples-summary">
                     {{ __('admin.marketer_campaigns.samples_summary', ['count' => $liveSamples->count(), 'units' => $liveSamples->sum('quantity'), 'dispatched' => $liveSamples->whereNotNull('stock_deducted_at')->count()]) }}
                 </div>
-                <table class="min-w-full text-sm">
-                    <thead>
-                        <tr class="text-left text-gray-500 border-b border-gray-100">
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_owner') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_marketer') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_quantity') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_status') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_stock_deducted') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_commission') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.delivery_address') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_dispatched_at') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_delivered_at') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_change_status') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($marketerCampaign->samples as $sample)
-                            <tr class="border-b border-gray-50">
-                                <td class="py-2 pr-4">
-                                    {{ __('admin.marketer_campaigns.sample_type_'.($sample->sample_type ?? ($sample->sample_owner === 'platform' ? 'admin' : 'influencer'))) }}
-                                </td>
-                                <td class="py-2 pr-4">{{ $sample->invitation?->marketer?->name ?? '—' }}</td>
-                                <td class="py-2 pr-4">{{ $sample->quantity }}</td>
-                                <td class="py-2 pr-4">
-                                    <x-badge color="{{ $sample->status === 'pending' ? 'warning' : ($sample->status === 'dispatched' ? 'primary' : ($sample->status === 'delivered' ? 'success' : ($sample->status === 'cancelled' ? 'gray' : 'danger'))) }}">
-                                        {{ match($sample->status) {
-                                            'pending'    => __('admin.marketer_campaigns.sample_status_pending'),
-                                            'dispatched' => __('admin.marketer_campaigns.sample_status_dispatched'),
-                                            'delivered'  => __('admin.marketer_campaigns.sample_status_delivered'),
-                                            'returned'   => __('admin.marketer_campaigns.sample_status_returned'),
-                                            'cancelled'  => __('admin.marketer_campaigns.sample_status_cancelled'),
-                                            default      => $sample->status,
-                                        } }}
-                                    </x-badge>
-                                </td>
-                                <td class="py-2 pr-4 text-xs">{{ $sample->stock_deducted_at?->format('d M Y H:i') ?? '—' }}</td>
-                                <td class="py-2 pr-4 text-xs" dir="ltr">{{ $sample->stock_deducted_at ? \App\Support\Money::format($sample->commission_amount).' '.$sample->commission_currency : '—' }}</td>
-                                <td class="py-2 pr-4 text-xs text-gray-600 max-w-xs">
-                                    @if($sample->sample_owner === 'marketer' && $sample->delivery_address_snapshot)
-                                        <div class="space-y-0.5">
-                                            <div class="font-medium">{{ $sample->delivery_address_snapshot['address_line_1'] ?? '' }}</div>
-                                            @if(!empty($sample->delivery_address_snapshot['address_line_2']))
-                                                <div>{{ $sample->delivery_address_snapshot['address_line_2'] }}</div>
-                                            @endif
-                                            <div>{{ $sample->delivery_address_snapshot['city'] ?? '' }}, {{ $sample->delivery_address_snapshot['country'] ?? '' }}</div>
-                                            <div class="text-blue-600">{{ $sample->delivery_address_snapshot['phone'] ?? '' }}</div>
-                                            @if(!empty($sample->delivery_address_snapshot['notes']))
-                                                <div class="text-gray-400 italic">{{ $sample->delivery_address_snapshot['notes'] }}</div>
-                                            @endif
-                                        </div>
-                                    @elseif($sample->sample_owner === 'marketer' && !$sample->delivery_address_snapshot)
-                                        <span class="text-amber-600 font-semibold">⚠ {{ __('admin.marketer_campaigns.no_address_recorded') }}</span>
-                                    @else
-                                        <span class="text-gray-300">—</span>
-                                    @endif
-                                </td>
-                                <td class="py-2 pr-4">{{ $sample->dispatched_at?->format('d M Y H:i') ?? '—' }}</td>
-                                <td class="py-2 pr-4">{{ admin_tz($sample->delivered_at)?->format('d M Y H:i') ?? '—' }}</td>
-                                <td class="py-2 pr-4">
-                                    @if($sample->status === 'pending' && $sample->invitation && $sample->invitation->status !== 'accepted')
-                                        <span class="text-xs text-amber-600">{{ __('admin.marketer_campaigns.sample_awaiting_acceptance') }}</span>
-                                    @elseif(! in_array($sample->status, ['delivered', 'returned', 'cancelled'], true))
-                                        <form action="{{ route('admin.marketer-campaigns.samples.update', [$marketerCampaign, $sample]) }}"
-                                              method="POST" class="inline-flex gap-1">
-                                            @csrf
-                                            @method('PATCH')
-
-                                            @if($sample->status === 'pending')
-                                                <button type="submit" name="status" value="dispatched"
-                                                        class="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
-                                                    {{ __('admin.marketer_campaigns.sample_action_dispatch') }}
-                                                </button>
-                                            @endif
-
-                                            @if($sample->status === 'dispatched')
-                                                <button type="submit" name="status" value="delivered"
-                                                        class="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
-                                                    {{ __('admin.marketer_campaigns.sample_action_deliver') }}
-                                                </button>
-                                            @endif
-
-                                            <button type="submit" name="status" value="returned"
-                                                    class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200"
-                                                    onclick="return confirm('{{ __('admin.marketer_campaigns.sample_confirm_return') }}')">
-                                                {{ __('admin.marketer_campaigns.sample_action_return') }}
-                                            </button>
-                                        </form>
-                                    @else
-                                        <span class="text-xs text-gray-300">—</span>
-                                    @endif
-                                </td>
+                <div class="table-responsive">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b border-gray-100">
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_owner') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_marketer') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_quantity') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_status') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_stock_deducted') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_commission') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.delivery_address') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_dispatched_at') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_delivered_at') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_change_status') }}</th>
                             </tr>
-                            @php $sampleProduct = $sample->product(); @endphp
-                            @if($sample->customAttributeValues->isNotEmpty())
-                                <tr>
-                                    <td colspan="10" class="px-4 py-2 bg-purple-50 text-xs">
-                                        <strong class="text-purple-700">{{ __('admin.marketer_campaigns.sample_custom_details') }}:</strong>
-                                        @foreach($sample->customAttributeValues as $val)
-                                            <span class="me-3">{{ $val->label }}: <strong>{{ $val->value }}</strong> {{ $val->unit }}</span>
-                                        @endforeach
+                        </thead>
+                        <tbody>
+                            @foreach($marketerCampaign->samples as $sample)
+                                <tr class="border-b border-gray-50">
+                                    <td class="py-2 pr-4">
+                                        {{ __('admin.marketer_campaigns.sample_type_'.($sample->sample_type ?? ($sample->sample_owner === 'platform' ? 'admin' : 'influencer'))) }}
                                     </td>
-                                </tr>
-                            @elseif($sampleProduct?->has_custom_attributes)
-                                <tr>
-                                    <td colspan="10" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
-                                        {{ __('admin.marketer_campaigns.sample_awaiting_vendor_details') }}
+                                    <td class="py-2 pr-4">{{ $sample->invitation?->marketer?->name ?? '—' }}</td>
+                                    <td class="py-2 pr-4">{{ $sample->quantity }}</td>
+                                    <td class="py-2 pr-4">
+                                        <x-badge color="{{ $sample->status === 'pending' ? 'warning' : ($sample->status === 'dispatched' ? 'primary' : ($sample->status === 'delivered' ? 'success' : ($sample->status === 'cancelled' ? 'gray' : 'danger'))) }}">
+                                            {{ match($sample->status) {
+                                                'pending'    => __('admin.marketer_campaigns.sample_status_pending'),
+                                                'dispatched' => __('admin.marketer_campaigns.sample_status_dispatched'),
+                                                'delivered'  => __('admin.marketer_campaigns.sample_status_delivered'),
+                                                'returned'   => __('admin.marketer_campaigns.sample_status_returned'),
+                                                'cancelled'  => __('admin.marketer_campaigns.sample_status_cancelled'),
+                                                default      => $sample->status,
+                                            } }}
+                                        </x-badge>
                                     </td>
-                                </tr>
-                            @endif
-                            @php
-                                $sampleMarketer = $sample->invitation?->marketer;
-                                $sampleProfile  = $sampleMarketer?->marketerProfile;
-                                $isInfluencer   = $sampleMarketer?->isInfluencer() ?? false;
-                            @endphp
-                            @if ($isInfluencer && $sampleProfile)
-                                <tr>
-                                    <td colspan="10" class="px-4 py-3 bg-blue-50 border-t border-blue-100">
-                                        <div class="text-xs font-semibold text-blue-800 mb-2">
-                                            {{ __('admin.marketer_campaigns.influencer_measurements') }}
-                                        </div>
-                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-xs">
-                                            @foreach([
-                                                'clothing_size'   => $sampleProfile->clothing_size,
-                                                'shirt_size'      => $sampleProfile->shirt_size,
-                                                'pants_size'      => $sampleProfile->pants_size,
-                                                'dress_size'      => $sampleProfile->dress_size,
-                                                'abaya_size'      => $sampleProfile->abaya_size,
-                                                'shoe_size'       => $sampleProfile->shoe_size
-                                                                      ? "{$sampleProfile->shoe_size} ({$sampleProfile->shoe_size_system})"
-                                                                      : null,
-                                                'chest_cm'        => $sampleProfile->chest_cm,
-                                                'waist_cm'        => $sampleProfile->waist_cm,
-                                                'hip_cm'          => $sampleProfile->hip_cm,
-                                                'height_cm'       => $sampleProfile->height_cm,
-                                                'item_length_cm'          => $sampleProfile->item_length_cm,
-                                                'sleeve_from_neck_cm'     => $sampleProfile->sleeve_from_neck_cm,
-                                                'sleeve_from_shoulder_cm' => $sampleProfile->sleeve_from_shoulder_cm,
-                                                'sleeve_width_cm'         => $sampleProfile->sleeve_width_cm,
-                                            ] as $label => $value)
-                                                @if(!is_null($value) && $value !== '')
-                                                <div>
-                                                    <span class="text-gray-500">{{ __('admin.marketer_campaigns.measurement_' . $label) }}:</span>
-                                                    <span class="font-medium text-gray-900">{{ $value }}</span>
-                                                </div>
+                                    <td class="py-2 pr-4 text-xs">{{ $sample->stock_deducted_at?->format('d M Y H:i') ?? '—' }}</td>
+                                    <td class="py-2 pr-4 text-xs" dir="ltr">{{ $sample->stock_deducted_at ? \App\Support\Money::format($sample->commission_amount).' '.$sample->commission_currency : '—' }}</td>
+                                    <td class="py-2 pr-4 text-xs text-gray-600 max-w-xs">
+                                        @if($sample->sample_owner === 'marketer' && $sample->delivery_address_snapshot)
+                                            <div class="space-y-0.5">
+                                                <div class="font-medium">{{ $sample->delivery_address_snapshot['address_line_1'] ?? '' }}</div>
+                                                @if(!empty($sample->delivery_address_snapshot['address_line_2']))
+                                                    <div>{{ $sample->delivery_address_snapshot['address_line_2'] }}</div>
                                                 @endif
-                                            @endforeach
-                                        </div>
-                                        @if ($sampleProfile->measurements_notes)
-                                        <div class="text-xs text-gray-600 mt-2">
-                                            <span class="font-semibold">{{ __('admin.marketer_campaigns.measurement_notes') }}:</span>
-                                            {{ $sampleProfile->measurements_notes }}
-                                        </div>
+                                                <div>{{ $sample->delivery_address_snapshot['city'] ?? '' }}, {{ $sample->delivery_address_snapshot['country'] ?? '' }}</div>
+                                                <div class="text-blue-600">{{ $sample->delivery_address_snapshot['phone'] ?? '' }}</div>
+                                                @if(!empty($sample->delivery_address_snapshot['notes']))
+                                                    <div class="text-gray-400 italic">{{ $sample->delivery_address_snapshot['notes'] }}</div>
+                                                @endif
+                                            </div>
+                                        @elseif($sample->sample_owner === 'marketer' && !$sample->delivery_address_snapshot)
+                                            <span class="text-amber-600 font-semibold">⚠ {{ __('admin.marketer_campaigns.no_address_recorded') }}</span>
+                                        @else
+                                            <span class="text-gray-300">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-2 pr-4">{{ $sample->dispatched_at?->format('d M Y H:i') ?? '—' }}</td>
+                                    <td class="py-2 pr-4">{{ admin_tz($sample->delivered_at)?->format('d M Y H:i') ?? '—' }}</td>
+                                    <td class="py-2 pr-4">
+                                        @if($sample->status === 'pending' && $sample->invitation && $sample->invitation->status !== 'accepted')
+                                            <span class="text-xs text-amber-600">{{ __('admin.marketer_campaigns.sample_awaiting_acceptance') }}</span>
+                                        @elseif(! in_array($sample->status, ['delivered', 'returned', 'cancelled'], true))
+                                            <form action="{{ route('admin.marketer-campaigns.samples.update', [$marketerCampaign, $sample]) }}"
+                                                  method="POST" class="inline-flex gap-1">
+                                                @csrf
+                                                @method('PATCH')
+
+                                                @if($sample->status === 'pending')
+                                                    <button type="submit" name="status" value="dispatched"
+                                                            class="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+                                                        {{ __('admin.marketer_campaigns.sample_action_dispatch') }}
+                                                    </button>
+                                                @endif
+
+                                                @if($sample->status === 'dispatched')
+                                                    <button type="submit" name="status" value="delivered"
+                                                            class="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+                                                        {{ __('admin.marketer_campaigns.sample_action_deliver') }}
+                                                    </button>
+                                                @endif
+
+                                                <button type="submit" name="status" value="returned"
+                                                        class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200"
+                                                        onclick="return confirm('{{ __('admin.marketer_campaigns.sample_confirm_return') }}')">
+                                                    {{ __('admin.marketer_campaigns.sample_action_return') }}
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="text-xs text-gray-300">—</span>
                                         @endif
                                     </td>
                                 </tr>
-                            @elseif ($isInfluencer && !$sampleProfile)
-                                <tr>
-                                    <td colspan="10" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
-                                        {{ __('admin.marketer_campaigns.no_measurements_on_file') }}
-                                    </td>
-                                </tr>
-                            @endif
-                        @endforeach
-                    </tbody>
-                    <tfoot class="bg-gray-50 border-t-2 border-gray-100">
-                        <tr>
-                            <td colspan="2" class="py-2 pr-4 font-semibold text-gray-700">
-                                {{ __('admin.marketer_campaigns.sample_total') }}
-                            </td>
-                            <td class="py-2 pr-4 font-bold text-gray-900">
-                                {{ $marketerCampaign->samples->sum('quantity') }}
-                            </td>
-                            <td colspan="4" class="py-2 pr-4 text-xs text-gray-500">
-                                {{ $marketerCampaign->samples->where('status', 'delivered')->count() }}
-                                / {{ $marketerCampaign->samples->count() }}
-                                {{ __('admin.marketer_campaigns.sample_delivered_count') }}
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
+                                @php $sampleProduct = $sample->product(); @endphp
+                                @if($sample->customAttributeValues->isNotEmpty())
+                                    <tr>
+                                        <td colspan="10" class="px-4 py-2 bg-purple-50 text-xs">
+                                            <strong class="text-purple-700">{{ __('admin.marketer_campaigns.sample_custom_details') }}:</strong>
+                                            @foreach($sample->customAttributeValues as $val)
+                                                <span class="me-3">{{ $val->label }}: <strong>{{ $val->value }}</strong> {{ $val->unit }}</span>
+                                            @endforeach
+                                        </td>
+                                    </tr>
+                                @elseif($sampleProduct?->has_custom_attributes)
+                                    <tr>
+                                        <td colspan="10" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
+                                            {{ __('admin.marketer_campaigns.sample_awaiting_vendor_details') }}
+                                        </td>
+                                    </tr>
+                                @endif
+                                @php
+                                    $sampleMarketer = $sample->invitation?->marketer;
+                                    $sampleProfile  = $sampleMarketer?->marketerProfile;
+                                    $isInfluencer   = $sampleMarketer?->isInfluencer() ?? false;
+                                @endphp
+                                @if ($isInfluencer && $sampleProfile)
+                                    <tr>
+                                        <td colspan="10" class="px-4 py-3 bg-blue-50 border-t border-blue-100">
+                                            <div class="text-xs font-semibold text-blue-800 mb-2">
+                                                {{ __('admin.marketer_campaigns.influencer_measurements') }}
+                                            </div>
+                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-xs">
+                                                @foreach([
+                                                    'clothing_size'   => $sampleProfile->clothing_size,
+                                                    'shirt_size'      => $sampleProfile->shirt_size,
+                                                    'pants_size'      => $sampleProfile->pants_size,
+                                                    'dress_size'      => $sampleProfile->dress_size,
+                                                    'abaya_size'      => $sampleProfile->abaya_size,
+                                                    'shoe_size'       => $sampleProfile->shoe_size
+                                                                          ? "{$sampleProfile->shoe_size} ({$sampleProfile->shoe_size_system})"
+                                                                          : null,
+                                                    'chest_cm'        => $sampleProfile->chest_cm,
+                                                    'waist_cm'        => $sampleProfile->waist_cm,
+                                                    'hip_cm'          => $sampleProfile->hip_cm,
+                                                    'height_cm'       => $sampleProfile->height_cm,
+                                                    'item_length_cm'          => $sampleProfile->item_length_cm,
+                                                    'sleeve_from_neck_cm'     => $sampleProfile->sleeve_from_neck_cm,
+                                                    'sleeve_from_shoulder_cm' => $sampleProfile->sleeve_from_shoulder_cm,
+                                                    'sleeve_width_cm'         => $sampleProfile->sleeve_width_cm,
+                                                ] as $label => $value)
+                                                    @if(!is_null($value) && $value !== '')
+                                                    <div>
+                                                        <span class="text-gray-500">{{ __('admin.marketer_campaigns.measurement_' . $label) }}:</span>
+                                                        <span class="font-medium text-gray-900">{{ $value }}</span>
+                                                    </div>
+                                                    @endif
+                                                @endforeach
+                                            </div>
+                                            @if ($sampleProfile->measurements_notes)
+                                            <div class="text-xs text-gray-600 mt-2">
+                                                <span class="font-semibold">{{ __('admin.marketer_campaigns.measurement_notes') }}:</span>
+                                                {{ $sampleProfile->measurements_notes }}
+                                            </div>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @elseif ($isInfluencer && !$sampleProfile)
+                                    <tr>
+                                        <td colspan="10" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
+                                            {{ __('admin.marketer_campaigns.no_measurements_on_file') }}
+                                        </td>
+                                    </tr>
+                                @endif
+                            @endforeach
+                        </tbody>
+                        <tfoot class="bg-gray-50 border-t-2 border-gray-100">
+                            <tr>
+                                <td colspan="2" class="py-2 pr-4 font-semibold text-gray-700">
+                                    {{ __('admin.marketer_campaigns.sample_total') }}
+                                </td>
+                                <td class="py-2 pr-4 font-bold text-gray-900">
+                                    {{ $marketerCampaign->samples->sum('quantity') }}
+                                </td>
+                                <td colspan="4" class="py-2 pr-4 text-xs text-gray-500">
+                                    {{ $marketerCampaign->samples->where('status', 'delivered')->count() }}
+                                    / {{ $marketerCampaign->samples->count() }}
+                                    {{ __('admin.marketer_campaigns.sample_delivered_count') }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             @endif
         </x-card>
     </div>

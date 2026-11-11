@@ -30,7 +30,7 @@
 <div class="grid grid-cols-12 gap-6">
     <div class="col-span-12 lg:col-span-8 space-y-6">
         <x-card title="{{ __('admin.travel_agency_change_requests.request_details') }}">
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-gray-100 text-start">

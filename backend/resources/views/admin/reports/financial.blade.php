@@ -97,7 +97,7 @@
         {{ __('common.loading') }}
     </div>
 
-    <div id="table-wrap" class="hidden overflow-x-auto">
+    <div id="table-wrap" class="table-responsive hidden">
         <table class="min-w-full text-sm">
             <thead>
                 <tr class="bg-gray-50 border-b border-gray-200">
@@ -137,7 +137,7 @@
         <button id="btn-export-marketing" type="button" class="btn btn-secondary btn-sm">{{ __('marketing_fees.reports.export_csv') }}</button>
     </div>
     <div id="marketing-empty" class="hidden py-10 text-center text-sm text-gray-400">{{ __('admin.finance.no_data_for_period') }}</div>
-    <div class="overflow-x-auto" id="marketing-wrap">
+    <div class="table-responsive" id="marketing-wrap">
         <table class="min-w-full text-sm">
             <thead>
                 <tr class="bg-gray-50 border-b border-gray-200">
@@ -172,7 +172,7 @@
         <div class="px-4 pb-2">
             <h3 class="text-xs font-semibold text-gray-500 uppercase mb-2">{{ __('admin.finance.top_zones_by_admin_cost') }}</h3>
         </div>
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table class="min-w-full text-sm">
                 <thead>
                     <tr class="bg-gray-50 border-b border-gray-200">
@@ -202,7 +202,7 @@
         </a>
     </div>
 
-    <div class="overflow-x-auto">
+    <div class="table-responsive">
         <table class="min-w-full text-sm">
             <thead>
                 <tr class="bg-gray-50 border-b border-gray-200">

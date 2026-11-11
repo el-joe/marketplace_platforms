@@ -130,45 +130,47 @@
         {{-- TAB 2: Country Assignment & Home Pages --}}
         <div x-show="tab === 'countries'">
             <x-card padding="none" class="overflow-x-auto">
-                <table class="table-base">
-                    <thead>
-                        <tr>
-                            <th>{{ __('admin.app_contexts.country') }}</th>
-                            <th>{{ __('admin.app_contexts.active') }}</th>
-                            <th>{{ __('admin.app_contexts.home_page') }}</th>
-                            <th>{{ __('admin.app_contexts.actions') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($countries as $country)
-                            @php $assignment = $assignments->get($country->id) @endphp
-                            <tr class="js-country-row" data-country-id="{{ $country->id }}">
-                                <td class="font-medium text-gray-800">
-                                    {{ $country->flag_emoji ? $country->flag_emoji . ' ' : '' }}{{ $country->name_en }}
-                                </td>
-                                <td>
-                                    <input type="checkbox" class="js-country-active rounded border-gray-300 text-primary-600"
-                                           @checked($assignment?->is_active)>
-                                </td>
-                                <td>
-                                    <select class="js-country-home-page form-select" data-select2-init style="min-width: 220px;">
-                                        <option value="">{{ __('admin.app_contexts.no_home_page') }}</option>
-                                        @foreach ($pages as $page)
-                                            <option value="{{ $page->id }}" @selected($assignment?->home_page_id === $page->id)>
-                                                {{ $page->name }} ({{ $page->page_type }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-primary js-save-country-assignment">
-                                        {{ __('admin.app_contexts.save') }}
-                                    </button>
-                                </td>
+                <div class="table-responsive">
+                    <table class="table-base">
+                        <thead>
+                            <tr>
+                                <th>{{ __('admin.app_contexts.country') }}</th>
+                                <th>{{ __('admin.app_contexts.active') }}</th>
+                                <th>{{ __('admin.app_contexts.home_page') }}</th>
+                                <th>{{ __('admin.app_contexts.actions') }}</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach ($countries as $country)
+                                @php $assignment = $assignments->get($country->id) @endphp
+                                <tr class="js-country-row" data-country-id="{{ $country->id }}">
+                                    <td class="font-medium text-gray-800">
+                                        {{ $country->flag_emoji ? $country->flag_emoji . ' ' : '' }}{{ $country->name_en }}
+                                    </td>
+                                    <td>
+                                        <input type="checkbox" class="js-country-active rounded border-gray-300 text-primary-600"
+                                               @checked($assignment?->is_active)>
+                                    </td>
+                                    <td>
+                                        <select class="js-country-home-page form-select" data-select2-init style="min-width: 220px;">
+                                            <option value="">{{ __('admin.app_contexts.no_home_page') }}</option>
+                                            @foreach ($pages as $page)
+                                                <option value="{{ $page->id }}" @selected($assignment?->home_page_id === $page->id)>
+                                                    {{ $page->name }} ({{ $page->page_type }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-primary js-save-country-assignment">
+                                            {{ __('admin.app_contexts.save') }}
+                                        </button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </x-card>
         </div>
 

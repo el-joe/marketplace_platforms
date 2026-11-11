@@ -197,7 +197,7 @@
                     <x-slot name="actions">
                         <button type="button" data-modal-open="request-doc-modal" class="btn btn-secondary btn-sm text-xs">{{ __('admin.vendors.request_document_btn') }}</button>
                     </x-slot>
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-100 text-start">
@@ -248,7 +248,7 @@
                     @if($vendor->bankAccounts->isEmpty())
                         <p class="text-sm text-gray-400 text-center py-6">{{ __('admin.vendors.no_bank_accounts') }}</p>
                     @else
-                        <div class="overflow-x-auto">
+                        <div class="table-responsive">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-100 text-start">
@@ -324,7 +324,7 @@
                         </div>
                     @endif
 
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-100 text-start">
@@ -404,7 +404,7 @@
             {{-- ── Orders ────────────────────────────────────────────────────── --}}
             <div x-show="tab === 'orders'">
                 <x-card title="{{ __('admin.vendors.order_history') }}">
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-100 text-start">
@@ -440,7 +440,7 @@
             {{-- ── Payouts ───────────────────────────────────────────────────── --}}
             <div x-show="tab === 'payouts'">
                 <x-card title="{{ __('admin.vendors.payout_history') }}">
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-100 text-start">
@@ -486,7 +486,7 @@
             <div x-show="tab === 'city_surcharges'">
                 <x-card title="{{ __('admin.vendors.tab_city_surcharges') }}">
                     <p class="text-xs text-gray-500 mb-4">{{ __('admin.vendors.city_surcharges_note') }}</p>
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-100 text-start">
@@ -528,7 +528,7 @@
                             'staff'   => 'bg-gray-100 text-gray-600',
                         ];
                     @endphp
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-100 text-start">
@@ -599,7 +599,7 @@
             <div x-show="tab === 'locks'">
                 <x-card title="{{ __('admin.vendors.tab_locks') }}">
                     <p class="text-xs text-gray-500 mb-4">{{ __('admin.vendors.locks_note') }}</p>
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-100 text-start">

@@ -47,7 +47,7 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="table-responsive">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-500 text-xs">
                     <tr>

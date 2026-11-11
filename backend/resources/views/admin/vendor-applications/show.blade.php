@@ -134,7 +134,7 @@
                 @if($vendor->documents->isEmpty())
                     <p class="text-sm text-gray-400 py-4 text-center">{{ __('admin.vendors.no_documents_uploaded') }}</p>
                 @else
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-100 text-start">

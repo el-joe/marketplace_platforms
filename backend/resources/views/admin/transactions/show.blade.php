@@ -249,7 +249,7 @@
             {{-- ─── Associated Refunds ──────────────────────────────────────────── --}}
             @if($transaction->refunds->isNotEmpty())
                 <x-card title="{{ __('admin.transactions.associated_refunds') }}">
-                    <div class="overflow-x-auto">
+                    <div class="table-responsive">
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="border-b border-gray-100 text-xs text-gray-500 uppercase text-start">

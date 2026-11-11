@@ -56,19 +56,21 @@
 
     {{-- ─── DataTable ──────────────────────────────────────────────────────── --}}
     <x-card padding="none">
-        <table id="weight-slabs-table" class="table-base w-full">
-            <thead>
-                <tr>
-                    <th>{{ __('admin.weight_slabs.shipping_method') }}</th>
-                    <th>{{ __('admin.weight_slabs.country') }}</th>
-                    <th>{{ __('admin.weight_slabs.col_weight_range') }}</th>
-                    <th class="text-end">{{ __('admin.weight_slabs.col_extra_fee') }}</th>
-                    <th class="text-center">{{ __('admin.weight_slabs.col_status') }}</th>
-                    <th class="text-center w-24">{{ __('admin.weight_slabs.col_actions') }}</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div class="table-responsive">
+            <table id="weight-slabs-table" class="table-base w-full">
+                <thead>
+                    <tr>
+                        <th>{{ __('admin.weight_slabs.shipping_method') }}</th>
+                        <th>{{ __('admin.weight_slabs.country') }}</th>
+                        <th>{{ __('admin.weight_slabs.col_weight_range') }}</th>
+                        <th class="text-end">{{ __('admin.weight_slabs.col_extra_fee') }}</th>
+                        <th class="text-center">{{ __('admin.weight_slabs.col_status') }}</th>
+                        <th class="text-center w-24">{{ __('admin.weight_slabs.col_actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </x-card>
 
     {{-- ─── Reference Table ────────────────────────────────────────────────── --}}
@@ -76,7 +78,7 @@
         <h2 class="text-base font-semibold text-gray-900 mb-2">{{ __('admin.weight_slabs.reference_title') }}</h2>
         <p class="text-sm text-gray-500 mb-3">{{ __('admin.weight_slabs.reference_subtitle') }}</p>
         <x-card padding="none">
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="table-base w-full">
                     <thead>
                         <tr>

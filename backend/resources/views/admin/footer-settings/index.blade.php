@@ -29,7 +29,7 @@
             @php $groupLinks = $links->get($groupKey, collect()); @endphp
 
             <x-card :title="$meta['label']">
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                     <table class="table-base w-full text-sm" id="footer-links-table-{{ $groupKey }}">
                         <thead>
                             <tr>

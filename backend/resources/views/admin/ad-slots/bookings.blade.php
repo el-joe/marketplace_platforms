@@ -60,7 +60,7 @@
         @if($bookings->isEmpty())
             <p class="text-sm text-gray-400 py-6 text-center">{{ __('admin.ad_slots.no_bookings_for_slot') }}</p>
         @else
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-gray-100 text-start">

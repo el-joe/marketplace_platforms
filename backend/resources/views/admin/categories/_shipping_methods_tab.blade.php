@@ -33,57 +33,59 @@
 
     <template x-if="!loading && methods.length > 0">
         <div class="border border-gray-200 rounded-lg overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
-                    <tr>
-                        <th class="w-8 px-2 py-2"></th>
-                        <th class="text-start px-3 py-2">{{ __('admin.categories.method_name') }}</th>
-                        <th class="text-start px-3 py-2">{{ __('admin.categories.method_code') }}</th>
-                        <th class="text-start px-3 py-2">{{ __('admin.categories.is_default') }}</th>
-                        <th class="text-start px-3 py-2">{{ __('admin.categories.available_express_fbn') }}</th>
-                        <th class="text-start px-3 py-2">{{ __('admin.categories.available_merchant_fbp') }}</th>
-                        <th class="text-end px-3 py-2">{{ __('admin.actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody id="csm-sortable-body" class="divide-y divide-gray-100">
-                    <template x-for="m in methods" :key="m.id">
-                        <tr :data-id="m.id" class="hover:bg-gray-50">
-                            <td class="px-2 py-2 text-gray-300 cursor-move csm-drag-handle">
-                                <x-heroicon name="bars-3" class="w-4 h-4" />
-                            </td>
-                            <td class="px-3 py-2 font-medium text-gray-800" x-text="m.name"></td>
-                            <td class="px-3 py-2 text-gray-500" x-text="m.code"></td>
-                            <td class="px-3 py-2">
-                                <template x-if="m.is_default">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-700">
-                                        {{ __('admin.categories.default_badge') }}
-                                    </span>
-                                </template>
-                                <template x-if="!m.is_default">
-                                    <button type="button" class="text-xs text-primary-600 hover:underline" @click="setDefault(m)">
-                                        {{ __('admin.categories.set_as_default') }}
-                                    </button>
-                                </template>
-                            </td>
-                            <td class="px-3 py-2">
-                                <input type="checkbox" class="rounded border-gray-300 text-primary-600"
-                                    :checked="m.is_available_for_express_fbn"
-                                    @change="toggleFlag(m, 'is_available_for_express_fbn', $event.target.checked)">
-                            </td>
-                            <td class="px-3 py-2">
-                                <input type="checkbox" class="rounded border-gray-300 text-primary-600"
-                                    :checked="m.is_available_for_merchant_fbp"
-                                    @change="toggleFlag(m, 'is_available_for_merchant_fbp', $event.target.checked)">
-                            </td>
-                            <td class="px-3 py-2 text-end">
-                                <button type="button" class="text-xs text-red-600 hover:underline" @click="confirmRemove(m)">
-                                    {{ __('admin.remove') }}
-                                </button>
-                            </td>
+            <div class="table-responsive">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                        <tr>
+                            <th class="w-8 px-2 py-2"></th>
+                            <th class="text-start px-3 py-2">{{ __('admin.categories.method_name') }}</th>
+                            <th class="text-start px-3 py-2">{{ __('admin.categories.method_code') }}</th>
+                            <th class="text-start px-3 py-2">{{ __('admin.categories.is_default') }}</th>
+                            <th class="text-start px-3 py-2">{{ __('admin.categories.available_express_fbn') }}</th>
+                            <th class="text-start px-3 py-2">{{ __('admin.categories.available_merchant_fbp') }}</th>
+                            <th class="text-end px-3 py-2">{{ __('admin.actions') }}</th>
                         </tr>
-                    </template>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody id="csm-sortable-body" class="divide-y divide-gray-100">
+                        <template x-for="m in methods" :key="m.id">
+                            <tr :data-id="m.id" class="hover:bg-gray-50">
+                                <td class="px-2 py-2 text-gray-300 cursor-move csm-drag-handle">
+                                    <x-heroicon name="bars-3" class="w-4 h-4" />
+                                </td>
+                                <td class="px-3 py-2 font-medium text-gray-800" x-text="m.name"></td>
+                                <td class="px-3 py-2 text-gray-500" x-text="m.code"></td>
+                                <td class="px-3 py-2">
+                                    <template x-if="m.is_default">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-700">
+                                            {{ __('admin.categories.default_badge') }}
+                                        </span>
+                                    </template>
+                                    <template x-if="!m.is_default">
+                                        <button type="button" class="text-xs text-primary-600 hover:underline" @click="setDefault(m)">
+                                            {{ __('admin.categories.set_as_default') }}
+                                        </button>
+                                    </template>
+                                </td>
+                                <td class="px-3 py-2">
+                                    <input type="checkbox" class="rounded border-gray-300 text-primary-600"
+                                        :checked="m.is_available_for_express_fbn"
+                                        @change="toggleFlag(m, 'is_available_for_express_fbn', $event.target.checked)">
+                                </td>
+                                <td class="px-3 py-2">
+                                    <input type="checkbox" class="rounded border-gray-300 text-primary-600"
+                                        :checked="m.is_available_for_merchant_fbp"
+                                        @change="toggleFlag(m, 'is_available_for_merchant_fbp', $event.target.checked)">
+                                </td>
+                                <td class="px-3 py-2 text-end">
+                                    <button type="button" class="text-xs text-red-600 hover:underline" @click="confirmRemove(m)">
+                                        {{ __('admin.remove') }}
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </template>
 

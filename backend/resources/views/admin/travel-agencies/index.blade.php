@@ -47,7 +47,7 @@
         </form>
 
         <div id="agencies-table-wrap" class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div class="overflow-x-auto">
+            <div class="table-responsive">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>

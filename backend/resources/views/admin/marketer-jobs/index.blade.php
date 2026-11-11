@@ -67,55 +67,57 @@
     </div>
 
     <div class="bg-white rounded-xl border overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-500 text-xs">
-                <tr>
-                    <th class="px-4 py-3 text-start">{{ __('admin.marketer_jobs.col_key') }}</th>
-                    <th class="px-4 py-3 text-start">{{ __('admin.marketer_jobs.col_name_ar') }}</th>
-                    <th class="px-4 py-3 text-start">{{ __('admin.marketer_jobs.col_name_en') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.marketer_jobs.col_sort_order') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.marketer_jobs.col_marketers_count') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.marketer_jobs.col_status') }}</th>
-                    <th class="px-4 py-3 text-center">{{ __('admin.marketer_jobs.col_actions') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($marketerJobs as $job)
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3 font-mono text-xs text-gray-500" dir="ltr">{{ $job->key }}</td>
-                    <td class="px-4 py-3">{{ $job->name_ar }}</td>
-                    <td class="px-4 py-3" dir="ltr">{{ $job->name_en }}</td>
-                    <td class="px-4 py-3 text-center text-gray-500">{{ $job->sort_order }}</td>
-                    <td class="px-4 py-3 text-center text-gray-500">{{ $job->marketers_count }}</td>
-                    <td class="px-4 py-3 text-center">
-                        <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $job->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                            {{ $job->is_active ? __('admin.marketer_jobs.active') : __('admin.marketer_jobs.inactive') }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                        <div class="flex justify-center gap-2">
-                            <a href="{{ route('admin.marketer-jobs.edit', $job) }}" class="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">{{ __('admin.marketer_jobs.edit') }}</a>
-                            <form method="POST" action="{{ route('admin.marketer-jobs.toggle-active', $job) }}" class="inline">
-                                @csrf
-                                <button class="text-xs px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200">
-                                    {{ $job->is_active ? __('admin.marketer_jobs.deactivate') : __('admin.marketer_jobs.activate') }}
-                                </button>
-                            </form>
-                            @if($job->marketers_count === 0)
-                            <form method="POST" action="{{ route('admin.marketer-jobs.destroy', $job) }}" class="inline" onsubmit="return confirm('{{ __('admin.marketer_jobs.delete_confirm') }}');">
-                                @csrf
-                                @method('DELETE')
-                                <button class="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200">{{ __('admin.marketer_jobs.delete') }}</button>
-                            </form>
-                            @endif
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">{{ __('admin.marketer_jobs.no_jobs') }}</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500 text-xs">
+                    <tr>
+                        <th class="px-4 py-3 text-start">{{ __('admin.marketer_jobs.col_key') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('admin.marketer_jobs.col_name_ar') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('admin.marketer_jobs.col_name_en') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.marketer_jobs.col_sort_order') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.marketer_jobs.col_marketers_count') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.marketer_jobs.col_status') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('admin.marketer_jobs.col_actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($marketerJobs as $job)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-mono text-xs text-gray-500" dir="ltr">{{ $job->key }}</td>
+                        <td class="px-4 py-3">{{ $job->name_ar }}</td>
+                        <td class="px-4 py-3" dir="ltr">{{ $job->name_en }}</td>
+                        <td class="px-4 py-3 text-center text-gray-500">{{ $job->sort_order }}</td>
+                        <td class="px-4 py-3 text-center text-gray-500">{{ $job->marketers_count }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $job->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                                {{ $job->is_active ? __('admin.marketer_jobs.active') : __('admin.marketer_jobs.inactive') }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex justify-center gap-2">
+                                <a href="{{ route('admin.marketer-jobs.edit', $job) }}" class="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">{{ __('admin.marketer_jobs.edit') }}</a>
+                                <form method="POST" action="{{ route('admin.marketer-jobs.toggle-active', $job) }}" class="inline">
+                                    @csrf
+                                    <button class="text-xs px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200">
+                                        {{ $job->is_active ? __('admin.marketer_jobs.deactivate') : __('admin.marketer_jobs.activate') }}
+                                    </button>
+                                </form>
+                                @if($job->marketers_count === 0)
+                                <form method="POST" action="{{ route('admin.marketer-jobs.destroy', $job) }}" class="inline" onsubmit="return confirm('{{ __('admin.marketer_jobs.delete_confirm') }}');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200">{{ __('admin.marketer_jobs.delete') }}</button>
+                                </form>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">{{ __('admin.marketer_jobs.no_jobs') }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 @endsection

@@ -45,28 +45,30 @@
             <div class="px-5 py-3 border-b border-gray-100">
                 <h2 class="text-sm font-semibold text-gray-700">{{ __('admin.warranty_purchases_section.revenue_by_plan') }}</h2>
             </div>
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-100">
-                        <th class="px-5 py-2">{{ __('admin.warranty_purchases_section.plan_col') }}</th>
-                        <th class="px-5 py-2">{{ __('admin.warranty_purchases_section.sales_count') }}</th>
-                        <th class="px-5 py-2">{{ __('admin.warranty_purchases_section.total_revenue_col') }}</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($revenueByPlan as $row)
-                        <tr>
-                            <td class="px-5 py-2.5 text-gray-700">{{ $row->plan_name ?? '—' }}</td>
-                            <td class="px-5 py-2.5 text-gray-700">{{ number_format($row->sales_count) }}</td>
-                            <td class="px-5 py-2.5 text-gray-700">{{ number_format($row->total, 2) }}</td>
+            <div class="table-responsive">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-start text-xs font-medium text-gray-500 border-b border-gray-100">
+                            <th class="px-5 py-2">{{ __('admin.warranty_purchases_section.plan_col') }}</th>
+                            <th class="px-5 py-2">{{ __('admin.warranty_purchases_section.sales_count') }}</th>
+                            <th class="px-5 py-2">{{ __('admin.warranty_purchases_section.total_revenue_col') }}</th>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="px-5 py-6 text-center text-gray-400">—</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($revenueByPlan as $row)
+                            <tr>
+                                <td class="px-5 py-2.5 text-gray-700">{{ $row->plan_name ?? '—' }}</td>
+                                <td class="px-5 py-2.5 text-gray-700">{{ number_format($row->sales_count) }}</td>
+                                <td class="px-5 py-2.5 text-gray-700">{{ number_format($row->total, 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="px-5 py-6 text-center text-gray-400">—</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
     </div>

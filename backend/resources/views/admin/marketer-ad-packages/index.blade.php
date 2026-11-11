@@ -10,7 +10,7 @@
     @if(session('success'))<div class="p-3 bg-green-100 text-green-800 rounded">{{ session('success') }}</div>@endif
     @if(session('error'))<div class="p-3 bg-red-100 text-red-800 rounded">{{ session('error') }}</div>@endif
 
-    <div class="bg-white rounded-xl border overflow-x-auto">
+    <div class="table-responsive bg-white rounded-xl border">
         <table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr>
                 <th class="p-3 text-start">{{ __('ad_packages.name') }}</th><th class="p-3 text-start">{{ __('ad_packages.package_price') }}</th>
@@ -37,7 +37,7 @@
     </div>
 
     <h2 class="text-lg font-bold">{{ __('ad_packages.pending_subscriptions') }}</h2>
-    <div class="bg-white rounded-xl border overflow-x-auto">
+    <div class="table-responsive bg-white rounded-xl border">
         <table class="min-w-full text-sm">
             <thead class="bg-gray-50"><tr>
                 <th class="p-3 text-start">{{ __('ad_packages.marketer') }}</th><th class="p-3 text-start">{{ __('ad_packages.name') }}</th>
@@ -63,7 +63,7 @@
     </div>
 
     <h2 class="text-lg font-bold">{{ __('ad_packages.recent_subscriptions') }}</h2>
-    <div class="bg-white rounded-xl border overflow-x-auto">
+    <div class="table-responsive bg-white rounded-xl border">
         <table class="min-w-full text-sm"><tbody>
         @foreach($recent as $s)
             <tr class="border-t"><td class="p-3">{{ $s->marketer?->name ?? $s->marketer_id }}</td><td class="p-3">{{ $s->package?->name_ar }}</td>

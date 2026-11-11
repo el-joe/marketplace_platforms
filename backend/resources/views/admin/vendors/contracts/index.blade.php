@@ -10,7 +10,7 @@
 
     <section class="space-y-2">
         <h2 class="text-sm font-semibold text-gray-700">{{ __('admin.vendor_contracts.enrollments') }}</h2>
-        <div class="overflow-x-auto rounded-xl border bg-white">
+        <div class="table-responsive rounded-xl border bg-white">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600">
                     <tr>
@@ -39,7 +39,7 @@
 
     <section class="space-y-2">
         <h2 class="text-sm font-semibold text-gray-700">{{ __('admin.vendor_contracts.signatures') }}</h2>
-        <div class="overflow-x-auto rounded-xl border bg-white">
+        <div class="table-responsive rounded-xl border bg-white">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600">
                     <tr>
@@ -83,7 +83,7 @@
 
     <section class="space-y-3" data-testid="vendor-marketer-contracts">
         <h2 class="text-lg font-semibold text-gray-900">{{ __('contracts.marketer.vendor_profile_title') }}</h2>
-        <div class="overflow-x-auto rounded-xl border bg-white">
+        <div class="table-responsive rounded-xl border bg-white">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600"><tr>
                     <th class="px-4 py-3 text-start">{{ __('admin.contracts.col_name') }}</th>

@@ -142,7 +142,7 @@
                     <button type="button" id="btn-add-country-row" class="btn btn-secondary text-xs">{{ __('admin.packaging_catalog.add_country') }}</button>
                 </div>
             </div>
-            <div class="overflow-x-auto border border-gray-200 rounded-lg">
+            <div class="table-responsive border border-gray-200 rounded-lg">
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50">
                         <tr>

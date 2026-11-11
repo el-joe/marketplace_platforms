@@ -64,7 +64,7 @@
             @if($assignments->isEmpty())
                 <p class="px-4 py-6 text-sm text-gray-400 text-center">{{ __('admin.cod.no_assignments_linked') }}</p>
             @else
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                 <table class="min-w-full divide-y divide-gray-100 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
@@ -108,7 +108,7 @@
             @if($earnings->isEmpty())
                 <p class="px-4 py-6 text-sm text-gray-400 text-center">{{ __('admin.cod.no_earnings_in_period') }}</p>
             @else
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                 <table class="min-w-full divide-y divide-gray-100 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
@@ -145,7 +145,7 @@
                 <div class="px-4 py-3 border-b border-amber-100 bg-amber-50">
                     <h2 class="font-semibold text-amber-800 text-sm">{{ __('admin.cod.unsettled_not_in_settlement') }}</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="table-responsive">
                 <table class="min-w-full divide-y divide-gray-100 text-sm">
                     <thead class="bg-gray-50">
                         <tr>

@@ -86,7 +86,7 @@
 
 {{-- ─── DataTable ───────────────────────────────────────────────────────────── --}}
 <x-card>
-    <div class="overflow-x-auto">
+    <div class="table-responsive">
         <table id="agents-table" class="w-full text-sm" style="width:100%">
             <thead>
                 <tr>

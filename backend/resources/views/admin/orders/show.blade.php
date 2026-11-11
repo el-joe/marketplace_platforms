@@ -231,7 +231,7 @@
                             <div class="sub-order-body">
 
                                 {{-- Items table --}}
-                                <div class="overflow-x-auto">
+                                <div class="table-responsive">
                                     <table class="min-w-full text-sm">
                                         <thead class="bg-gray-50/50 border-b border-gray-100">
                                             <tr>
