@@ -199,6 +199,7 @@ class SettingsService
 
     /**
      * Basic validation for a settings array.
+     * Every setting is optional: empty values (null after ConvertEmptyStringsToNull, or '') are not validated.
      * Returns array of errors keyed by setting key.
      */
     public function validateGroup(string $category, array $data): array
@@ -214,7 +215,6 @@ class SettingsService
                 continue;
             }
 
-            // All settings are optional: empty values (null after ConvertEmptyStringsToNull, or '') skip validation.
             if ($value === null || $value === '') {
                 continue;
             }

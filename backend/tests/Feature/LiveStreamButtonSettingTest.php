@@ -27,4 +27,19 @@ class LiveStreamButtonSettingTest extends TestCase
 
         $this->getJson(route('public.settings'))->assertOk()->assertJsonPath('data.live_stream_button_enabled', false);
     }
+
+    public function test_general_settings_save_with_optional_fields_left_empty(): void
+    {
+        $this->seed(SettingsSeeder::class);
+
+        $this->actingAs($this->adminWith(['settings.view', 'settings.edit']), 'admin')
+            ->postJson(route('admin.settings.save', 'general'), ['settings' => [
+                'favicon_url' => '',
+                'support_email' => '',
+                'live_stream_button_enabled' => '0',
+            ]])
+            ->assertOk();
+
+        $this->getJson(route('public.settings'))->assertOk()->assertJsonPath('data.live_stream_button_enabled', false);
+    }
 }
