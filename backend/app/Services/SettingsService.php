@@ -214,6 +214,11 @@ class SettingsService
                 continue;
             }
 
+            // All settings are optional: empty values (null after ConvertEmptyStringsToNull, or '') skip validation.
+            if ($value === null || $value === '') {
+                continue;
+            }
+
             $original = $setting->value;
 
             if (is_bool($original)) {
