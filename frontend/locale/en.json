@@ -820,6 +820,7 @@
     "payWith": "Pay with",
     "prepareCheckoutFailed": "Something went wrong while preparing your checkout. Please try again.",
     "insufficientWalletBalance": "Insufficient wallet balance",
+    "cardPaymentsAccepted": "Debit & credit cards accepted (Visa, Mastercard)",
     "marketerContractTitle": "Terms and conditions",
     "marketerContractAccept": "I agree",
     "marketerContractCancel": "Cancel",

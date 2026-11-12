@@ -78,6 +78,7 @@ class PaymentService
             ], now()->addDays(1)),
             webhookUrl: route('webhooks.payment', $gateway->getCode()),
             metadata: ['idempotency_key' => $idempotencyKey],
+            customerName: $order->customer->name ?? null,
         );
 
         $result = $gateway->initiate($data);

@@ -813,6 +813,7 @@
     "payWith": "الدفع باستخدام",
     "prepareCheckoutFailed": "حدث خطأ أثناء تجهيز طلبك. يرجى المحاولة مرة أخرى.",
     "insufficientWalletBalance": "رصيد المحفظة غير كافٍ",
+    "cardPaymentsAccepted": "نقبل الدفع بالبطاقات البنكية والائتمانية (فيزا، ماستركارد)",
     "marketerContractTitle": "الشروط والأحكام",
     "marketerContractAccept": "أوافق",
     "marketerContractCancel": "إلغاء",

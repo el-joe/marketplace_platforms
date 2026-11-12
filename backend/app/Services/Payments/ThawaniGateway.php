@@ -75,10 +75,15 @@ class ThawaniGateway extends AbstractPaymentGateway
             ]],
             'success_url' => $data->successUrl,
             'cancel_url'  => $data->cancelUrl,
-            'metadata'    => array_merge($data->metadata, [
-                'order_id'    => $data->orderId,
-                'customer_id' => $data->customerId,
-            ]),
+            // Thawani's activation checklist requires the customer's name,
+            // contact number and email to be passed on the session metadata.
+            'metadata'    => array_filter(array_merge($data->metadata, [
+                'order_id'       => $data->orderId,
+                'customer_id'    => $data->customerId,
+                'customer_name'  => $data->customerName,
+                'customer_email' => $data->customerEmail,
+                'customer_phone' => $data->customerPhone,
+            ]), fn ($value) => $value !== null && $value !== ''),
         ];
 
         try {

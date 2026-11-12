@@ -12,6 +12,10 @@ type Props = {
   walletBalance: number;
 };
 
+// Online card gateways — shown with an explicit "card payments accepted" note
+// (required by Thawani's merchant activation checklist).
+const CARD_GATEWAYS = ["thawani", "paytabs", "stripe"];
+
 export default function PaymentMethodsCard({
   methods,
   selectedPaymentMethod,
@@ -29,6 +33,7 @@ export default function PaymentMethodsCard({
         {methods.map((m) => {
           const isWallet = m.gateway_code === "wallet";
           const isDisabled = isWallet && total > walletBalance;
+          const isCard = CARD_GATEWAYS.includes(m.gateway_code);
 
           return (
             <div
@@ -54,7 +59,9 @@ export default function PaymentMethodsCard({
                 >
                   {isDisabled
                     ? t("insufficientWalletBalance")
-                    : m.display_name[locale]}
+                    : isCard
+                      ? t("cardPaymentsAccepted")
+                      : m.display_name[locale]}
                 </p>
               </div>
             </div>

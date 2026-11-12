@@ -16,5 +16,6 @@ readonly class PaymentInitiationData
         public string  $cancelUrl,
         public ?string $webhookUrl = null,
         public array   $metadata = [],
+        public ?string $customerName = null,
     ) {}
 }
