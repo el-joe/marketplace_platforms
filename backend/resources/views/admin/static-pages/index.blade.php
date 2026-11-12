@@ -39,6 +39,16 @@
                 <input type="text" id="search-input" class="form-input w-full text-sm" placeholder="{{ __('admin.static_pages.search_placeholder') }}">
             </div>
             <div class="w-44">
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_pages.country') }}</label>
+                <select id="filter-country" class="form-input w-full text-sm">
+                    <option value="">{{ __('admin.static_pages.any_country') }}</option>
+                    <option value="global">{{ __('admin.static_pages.all_countries') }}</option>
+                    @foreach($countries as $country)
+                        <option value="{{ $country->id }}">{{ trim(($country->flag_emoji ?? '').' '.$country->name_en) }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="w-44">
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_pages.audience') }}</label>
                 <select id="filter-audience" class="form-input w-full text-sm">
                     <option value="">{{ __('admin.static_pages.all_audiences') }}</option>
@@ -75,6 +85,7 @@
                 <thead>
                     <tr class="border-b border-gray-100 text-start">
                         <th class="py-2 pe-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.static_pages.page_title') }}</th>
+                        <th class="py-2 pe-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.static_pages.country') }}</th>
                         <th class="py-2 pe-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.static_pages.audience') }}</th>
                         <th class="py-2 pe-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.static_pages.footer_group') }}</th>
                         <th class="py-2 pe-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.static_pages.in_footer') }}</th>
@@ -107,6 +118,7 @@
     const DATATABLE_URL = {{ Js::from(route('admin.static-pages.datatable')) }};
     const COLUMNS = [
         { data: 'title', orderable: true },
+        { data: 'country', orderable: true },
         { data: 'audience', orderable: true },
         { data: 'footer_group', orderable: true },
         { data: 'show_in_footer', orderable: true },
@@ -123,6 +135,7 @@
     function getFilters() {
         return {
             search: { value: document.getElementById('search-input').value },
+            country_id: document.getElementById('filter-country').value,
             audience: document.getElementById('filter-audience').value,
             footer_group: document.getElementById('filter-footer-group').value,
             is_active: document.getElementById('filter-active').value,
@@ -137,7 +150,7 @@
             dt = window.initDataTable('static-pages-table', {
                 url: DATATABLE_URL,
                 columns: COLUMNS,
-                order: [[5, 'asc']],
+                order: [[6, 'asc']],
                 pageLength: 25,
                 extraData: getFilters,
             });
@@ -152,6 +165,7 @@
                 headers: { 'X-CSRF-TOKEN': CSRF },
                 data: function (d) {
                     const f = getFilters();
+                    d.country_id = f.country_id;
                     d.audience = f.audience;
                     d.footer_group = f.footer_group;
                     d.is_active = f.is_active;
@@ -159,7 +173,7 @@
                 },
             },
             columns: COLUMNS,
-            order: [[5, 'asc']],
+            order: [[6, 'asc']],
             pageLength: 25,
             language: { processing: I18N.loading, emptyTable: I18N.empty },
         });
@@ -171,14 +185,14 @@
         initTable();
     }
 
-    ['filter-audience', 'filter-footer-group', 'filter-active'].forEach(id =>
+    ['filter-country', 'filter-audience', 'filter-footer-group', 'filter-active'].forEach(id =>
         document.getElementById(id)?.addEventListener('change', reload));
     document.getElementById('search-input')?.addEventListener('input', function () {
         clearTimeout(this._t);
         this._t = setTimeout(reload, 400);
     });
     document.getElementById('clear-filters')?.addEventListener('click', () => {
-        ['search-input', 'filter-audience', 'filter-footer-group', 'filter-active'].forEach(id => {
+        ['search-input', 'filter-country', 'filter-audience', 'filter-footer-group', 'filter-active'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
         });

@@ -50,6 +50,7 @@ class StaticPage extends Model
     public const CACHE_VERSION_KEY = 'static_pages_cache_version';
 
     protected $fillable = [
+        'country_id',
         'slug',
         'title_en',
         'title_ar',
@@ -91,6 +92,12 @@ class StaticPage extends Model
         return 'slug';
     }
 
+    /** NULL = global page, shown in every country unless that country overrides the slug. */
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class);
+    }
+
     public function updatedByAdmin(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'updated_by_admin_id');
@@ -117,6 +124,55 @@ class StaticPage extends Model
     public function scopeForStorefront(Builder $query): Builder
     {
         return $query->forAudience(self::AUDIENCE_STOREFRONT);
+    }
+
+    /**
+     * Pages visible in a country: its own pages plus global ones whose slug the
+     * country does not override with an active page. A null country returns global pages only.
+     */
+    public function scopeForCountry(Builder $query, ?string $countryId): Builder
+    {
+        if ($countryId === null) {
+            return $query->whereNull('static_pages.country_id');
+        }
+
+        return $query->where(function (Builder $q) use ($countryId) {
+            $q->where('static_pages.country_id', $countryId)
+                ->orWhere(function (Builder $global) use ($countryId) {
+                    $global->whereNull('static_pages.country_id')
+                        ->whereNotExists(function ($override) use ($countryId) {
+                            $override->selectRaw('1')
+                                ->from('static_pages as overrides')
+                                ->whereColumn('overrides.slug', 'static_pages.slug')
+                                ->where('overrides.country_id', $countryId)
+                                ->where('overrides.is_active', true)
+                                ->whereNull('overrides.deleted_at');
+                        });
+                });
+        });
+    }
+
+    /**
+     * The page a country sees for a slug: its own active page, else the global one.
+     * Inactive country pages fall back to the global page.
+     */
+    public static function resolveForCountry(string $slug, ?string $countryId, string $audience): ?self
+    {
+        return static::query()
+            ->active()
+            ->forAudience($audience)
+            ->where('slug', $slug)
+            ->where(fn (Builder $q) => $q->whereNull('country_id')->when($countryId, fn (Builder $q) => $q->orWhere('country_id', $countryId)))
+            ->orderByRaw('country_id IS NULL')
+            ->first();
+    }
+
+    /** Country id of the current seller-portal visitor (see Country::resolveSiteCode()). */
+    public static function portalCountryId(): ?string
+    {
+        $siteCode = Country::resolveSiteCode(null);
+
+        return $siteCode ? Country::where('site_code', $siteCode)->value('id') : null;
     }
 
     public function scopeInFooter(Builder $query): Builder
@@ -187,14 +243,17 @@ class StaticPage extends Model
      * Footer links for one site, cached as plain arrays (the database cache
      * store corrupts serialized models — see PortalContent::forPage()).
      *
+     * Pass a country to get its pages plus non-overridden global ones.
+     *
      * @return array<int, array{id: string, slug: string, title: array{ar: ?string, en: ?string}, footer_group: ?string, sort_order: int}>
      */
-    public static function footerLinksFor(string $audience): array
+    public static function footerLinksFor(string $audience, ?string $countryId = null): array
     {
-        return SafeCache::remember(static::cacheKey("footer.{$audience}"), 3600, fn () => static::query()
+        return SafeCache::remember(static::cacheKey("footer.{$audience}.".($countryId ?? 'global')), 3600, fn () => static::query()
             ->active()
             ->inFooter()
             ->forAudience($audience)
+            ->forCountry($countryId)
             ->ordered()
             ->get(['id', 'slug', 'title_en', 'title_ar', 'footer_group', 'sort_order'])
             ->map(fn (self $page) => [

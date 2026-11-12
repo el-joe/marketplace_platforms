@@ -1,4 +1,4 @@
-import { fetchGlobalInstance } from "../lib/utils";
+import { fetchGlobalInstance, fetchInstance } from "../lib/utils";
 
 export interface FooterCategoryLink {
   id: string;
@@ -48,11 +48,25 @@ export interface FooterData {
   static_pages: FooterStaticPageLink[];
 }
 
+/**
+ * Footer for the visitor's country: static pages (About, Terms, Contact, ...)
+ * are per-country, with global pages as the fallback. Falls back to the global
+ * footer if the country-scoped call fails (e.g. no/unknown country cookie).
+ */
 export const getFooterData = async () => {
-  const res = await fetchGlobalInstance<{ data: FooterData }>(
-    "/footer",
-    undefined,
-    true,
-  );
-  return res.data;
+  try {
+    const res = await fetchInstance<{ data: FooterData }>(
+      "/footer",
+      undefined,
+      true,
+    );
+    return res.data;
+  } catch {
+    const res = await fetchGlobalInstance<{ data: FooterData }>(
+      "/footer",
+      undefined,
+      true,
+    );
+    return res.data;
+  }
 };

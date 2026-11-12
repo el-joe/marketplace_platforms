@@ -1,8 +1,9 @@
-{{-- Shared create/edit form. Expects: $page (?StaticPage), $audiences, $footerGroups. --}}
+{{-- Shared create/edit form. Expects: $page (?StaticPage), $copyFrom (?StaticPage, create pre-fill), $audiences, $footerGroups, $countries. --}}
 @php
     $isEdit = (bool) $page;
-    $val = fn (string $field, $default = null) => old($field, $page?->{$field} ?? $default);
-    $showInFooter = (bool) old('show_in_footer', $page?->show_in_footer ?? false);
+    $source = $page ?? $copyFrom ?? null;
+    $val = fn (string $field, $default = null) => old($field, $source?->{$field} ?? $default);
+    $showInFooter = (bool) old('show_in_footer', $source?->show_in_footer ?? false);
     $isActive = (bool) old('is_active', $page?->is_active ?? true);
 @endphp
 
@@ -51,7 +52,7 @@
                         label="{{ __('admin.static_pages.content') }} ({{ __('common.english') }})"
                         profile="full"
                         :minHeight="360"
-                        :value="$page?->content_en ?? ''"
+                        :value="old('content_en', $source?->content_en ?? '')"
                     />
 
                     <div dir="rtl">
@@ -60,7 +61,7 @@
                             label="{{ __('admin.static_pages.content') }} ({{ __('common.arabic') }})"
                             profile="full"
                             :minHeight="360"
-                            :value="$page?->content_ar ?? ''"
+                            :value="old('content_ar', $source?->content_ar ?? '')"
                         />
                     </div>
                 </div>
@@ -103,6 +104,25 @@
         <div class="w-full lg:w-80 flex-shrink-0 space-y-4">
             <x-card title="{{ __('admin.static_pages.settings') }}">
                 <div class="p-4 space-y-4">
+                    @if($copyFrom)
+                        <p class="text-xs rounded-lg bg-primary-50 text-primary-700 px-3 py-2">{{ __('admin.static_pages.copy_hint', ['title' => $copyFrom->title_en]) }}</p>
+                    @endif
+
+                    <div>
+                        <label class="form-label text-xs">{{ __('admin.static_pages.country') }}</label>
+                        <select name="country_id" class="form-input w-full text-sm @error('country_id') is-invalid @enderror">
+                            <option value="">{{ __('admin.static_pages.all_countries') }}</option>
+                            @foreach($countries as $country)
+                                <option value="{{ $country->id }}" @selected((string) old('country_id', $page?->country_id) === (string) $country->id)>{{ trim(($country->flag_emoji ?? '').' '.$country->name_en) }}{{ $country->is_active ? '' : ' ('.__('common.inactive').')' }}</option>
+                            @endforeach
+                        </select>
+                        @error('country_id')
+                            <p class="form-error">{{ $message }}</p>
+                        @else
+                            <p class="text-xs text-gray-400 mt-1">{{ __('admin.static_pages.country_hint') }}</p>
+                        @enderror
+                    </div>
+
                     <div>
                         <label class="form-label text-xs">{{ __('admin.static_pages.audience') }} <span class="text-red-500">*</span></label>
                         <select name="audience" class="form-input w-full text-sm @error('audience') is-invalid @enderror">

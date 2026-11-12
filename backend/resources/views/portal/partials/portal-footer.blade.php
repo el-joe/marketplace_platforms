@@ -3,7 +3,7 @@
     $locale = $isAr ? 'ar' : 'en';
 
     // Admin-managed static pages (Admin > Static Pages), cached as plain arrays.
-    $staticPageGroups = collect(\App\Models\StaticPage::footerLinksFor(\App\Models\StaticPage::AUDIENCE_PORTAL))
+    $staticPageGroups = collect(\App\Models\StaticPage::footerLinksFor(\App\Models\StaticPage::AUDIENCE_PORTAL, \App\Models\StaticPage::portalCountryId()))
         ->groupBy(fn (array $link) => $link['footer_group'] ?? '')
         ->sortBy(fn ($links, string $group) => $group === '' ? PHP_INT_MAX : array_search($group, \App\Models\StaticPage::FOOTER_GROUPS, true));
 @endphp

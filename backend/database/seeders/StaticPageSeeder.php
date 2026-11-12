@@ -19,7 +19,7 @@ class StaticPageSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->definitions() as $i => $page) {
-            if (StaticPage::withTrashed()->where('slug', $page['slug'])->exists()) {
+            if (StaticPage::withTrashed()->whereNull('country_id')->where('slug', $page['slug'])->exists()) {
                 continue;
             }
 
@@ -41,6 +41,9 @@ class StaticPageSeeder extends Seeder
             $this->page('about-us', StaticPage::FOOTER_GROUP_COMPANY, 'About Us', 'من نحن',
                 'Learn more about Nawy, our mission and the team behind the marketplace.',
                 'تعرّف على ناوي ورسالتنا والفريق الذي يقف وراء المنصة.'),
+            $this->page('contact-us', StaticPage::FOOTER_GROUP_HELP, 'Contact Us', 'تواصل معنا',
+                'How to reach the Nawy customer support team by email, phone or WhatsApp.',
+                'طرق التواصل مع فريق خدمة عملاء ناوي عبر البريد الإلكتروني أو الهاتف أو واتساب.'),
             $this->page('terms-and-conditions', StaticPage::FOOTER_GROUP_POLICIES, 'Terms & Conditions', 'الشروط والأحكام',
                 'The terms and conditions that govern your use of the Nawy platform.',
                 'الشروط والأحكام التي تنظّم استخدامك لمنصة ناوي.'),
@@ -50,6 +53,9 @@ class StaticPageSeeder extends Seeder
             $this->page('return-policy', StaticPage::FOOTER_GROUP_POLICIES, 'Return Policy', 'سياسة الإرجاع',
                 'Eligibility, timelines and steps for returning an order on Nawy.',
                 'شروط الأهلية والمدد الزمنية وخطوات إرجاع الطلبات على ناوي.'),
+            $this->page('refund-policy', StaticPage::FOOTER_GROUP_POLICIES, 'Refund Policy', 'سياسة الاسترداد',
+                'When and how refunds are issued for cancelled or returned orders, including card payments.',
+                'متى وكيف يتم استرداد المبالغ للطلبات الملغاة أو المرتجعة، بما في ذلك المدفوعات بالبطاقة.'),
             $this->page('shipping-policy', StaticPage::FOOTER_GROUP_POLICIES, 'Shipping Policy', 'سياسة الشحن',
                 'Delivery areas, timelines and shipping fees on Nawy.',
                 'مناطق التوصيل والمدد الزمنية ورسوم الشحن على ناوي.'),

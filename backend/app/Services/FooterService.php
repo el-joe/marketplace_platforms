@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Country;
 use App\Models\FooterLink;
 use App\Models\StaticPage;
 use App\Support\Bilingual;
@@ -13,18 +14,23 @@ class FooterService
 {
     public const CACHE_VERSION_KEY = 'footer_cache_version';
 
-    public function getFooterData(): array
+    /**
+     * Footer payload; static page links are scoped to the given country (its own
+     * pages + global ones it doesn't override), or global-only when null.
+     */
+    public function getFooterData(?Country $country = null): array
     {
         $version = Cache::get(self::CACHE_VERSION_KEY, 1);
+        $countryKey = $country?->id ?? 'global';
 
-        return SafeCache::remember("footer_v{$version}", 3600, function () {
+        return SafeCache::remember("footer_v{$version}.{$countryKey}", 3600, function () use ($country) {
             return [
                 'categories' => $this->footerCategories(),
                 'social_links' => $this->linksFor('social'),
                 'bottom_nav_links' => $this->bottomNavLinks(),
                 'app_store_links' => $this->linksFor('app_store'),
                 'payment_methods' => $this->linksFor('payment_method'),
-                'static_pages' => $this->staticPageLinks(),
+                'static_pages' => $this->staticPageLinks($country),
             ];
         });
     }
@@ -68,11 +74,11 @@ class FooterService
      *
      * @return array<int, array{id: string, slug: string, title: array{ar: ?string, en: ?string}, footer_group: ?string, sort_order: int, link: string}>
      */
-    private function staticPageLinks(): array
+    private function staticPageLinks(?Country $country): array
     {
         return array_map(
             fn (array $page) => $page + ['link' => '/pages/'.$page['slug']],
-            StaticPage::footerLinksFor(StaticPage::AUDIENCE_STOREFRONT),
+            StaticPage::footerLinksFor(StaticPage::AUDIENCE_STOREFRONT, $country?->id),
         );
     }
 

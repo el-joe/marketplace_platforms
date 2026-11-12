@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Country;
 use App\Models\StaticPage;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -44,6 +45,11 @@ class StaticPageFactory extends Factory
     public function inFooter(string $group = StaticPage::FOOTER_GROUP_POLICIES, int $sortOrder = 0): static
     {
         return $this->state(['show_in_footer' => true, 'footer_group' => $group, 'sort_order' => $sortOrder]);
+    }
+
+    public function forCountry(Country $country): static
+    {
+        return $this->state(['country_id' => $country->id]);
     }
 
     public function inactive(): static

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Country;
 use App\Models\StaticPage;
 use App\Support\HtmlSanitizer;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -38,14 +40,18 @@ class StaticPageController extends Controller
             ],
             'audiences' => StaticPage::AUDIENCES,
             'footerGroups' => StaticPage::FOOTER_GROUPS,
+            'countries' => $this->countries(),
         ]);
     }
 
     public function datatable(Request $request): JsonResponse
     {
-        $query = StaticPage::query()->select('static_pages.*');
+        $query = StaticPage::query()->select('static_pages.*')->with('country:id,name_en,flag_emoji');
 
         $query = $this->applyFilters($query, $request, [
+            'country_id' => fn ($q, $v) => $v === 'global'
+                ? $q->whereNull('static_pages.country_id')
+                : $q->where('static_pages.country_id', $v),
             'audience' => fn ($q, $v) => $q->where('static_pages.audience', $v),
             'footer_group' => fn ($q, $v) => $q->where('static_pages.footer_group', $v),
             'is_active' => fn ($q, $v) => $q->where('static_pages.is_active', $v === '1'),
@@ -53,6 +59,7 @@ class StaticPageController extends Controller
 
         $columns = [
             ['searchable_columns' => ['static_pages.title_en', 'static_pages.title_ar', 'static_pages.slug'], 'orderable_column' => 'static_pages.title_en'],
+            ['searchable_columns' => [], 'orderable_column' => 'static_pages.country_id'],
             ['searchable_columns' => [], 'orderable_column' => 'static_pages.audience'],
             ['searchable_columns' => [], 'orderable_column' => 'static_pages.footer_group'],
             ['searchable_columns' => [], 'orderable_column' => 'static_pages.show_in_footer'],
@@ -68,13 +75,18 @@ class StaticPageController extends Controller
         $admin = auth('admin')->user();
         $canEdit = $admin->can('static_pages.edit');
         $canDelete = $admin->can('static_pages.delete');
+        $canCreate = $admin->can('static_pages.create');
 
-        return $this->dataTableResponse($request, $query, $columns, function (StaticPage $page) use ($canEdit, $canDelete) {
+        return $this->dataTableResponse($request, $query, $columns, function (StaticPage $page) use ($canEdit, $canDelete, $canCreate) {
             $titleHtml = '<div class="min-w-0">'
                 .'<div class="font-medium text-gray-900 truncate max-w-xs">'.e($page->title_en).'</div>'
                 .'<div class="text-xs text-gray-500 truncate max-w-xs" dir="rtl">'.e($page->title_ar).'</div>'
                 .'<div class="text-xs text-gray-400 truncate max-w-xs font-mono">/'.e($page->slug).'</div>'
                 .'</div>';
+
+            $countryHtml = $page->country
+                ? '<span class="text-xs text-gray-700 whitespace-nowrap">'.e(trim(($page->country->flag_emoji ?? '').' '.$page->country->name_en)).'</span>'
+                : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">'.e(__('admin.static_pages.all_countries')).'</span>';
 
             $audienceHtml = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700">'
                 .e(__('admin.static_pages.audiences.'.$page->audience)).'</span>';
@@ -97,6 +109,9 @@ class StaticPageController extends Controller
                     .'<button type="button" class="btn-toggle w-full text-start px-4 py-2 text-gray-600 hover:bg-gray-50" data-url="'.e(route('admin.static-pages.toggle', $page->id)).'">'
                     .e(__($page->is_active ? 'admin.static_pages.deactivate' : 'admin.static_pages.activate')).'</button>';
             }
+            if ($canCreate) {
+                $items .= '<a href="'.e(route('admin.static-pages.create', ['copy_from' => $page->id])).'" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">'.e(__('admin.static_pages.copy_for_country')).'</a>';
+            }
             if ($canDelete) {
                 $items .= '<button type="button" class="btn-delete w-full text-start px-4 py-2 text-red-500 hover:bg-gray-50" data-url="'.e(route('admin.static-pages.destroy', $page->id)).'">'.e(__('common.delete')).'</button>';
             }
@@ -111,6 +126,7 @@ class StaticPageController extends Controller
 
             return [
                 'title' => $titleHtml,
+                'country' => $countryHtml,
                 'audience' => $audienceHtml,
                 'footer_group' => $groupHtml,
                 'show_in_footer' => $footerHtml,
@@ -121,9 +137,19 @@ class StaticPageController extends Controller
         });
     }
 
-    public function create(): View
+    /**
+     * `?copy_from={id}` pre-fills the form from an existing page (e.g. to give one
+     * country its own version of a global page); the admin then picks the country.
+     */
+    public function create(Request $request): View
     {
-        return view('admin.static-pages.create', $this->formData(null));
+        $source = $request->filled('copy_from')
+            ? StaticPage::find($request->query('copy_from'))
+            : null;
+
+        return view('admin.static-pages.create', $this->formData(null) + [
+            'copyFrom' => $source,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -173,14 +199,27 @@ class StaticPageController extends Controller
     {
         return [
             'page' => $page,
+            'copyFrom' => null,
             'audiences' => StaticPage::AUDIENCES,
             'footerGroups' => StaticPage::FOOTER_GROUPS,
+            'countries' => $this->countries(),
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.static_pages.title'), 'url' => route('admin.static-pages.index')],
                 ['label' => $page ? $page->title_en : __('admin.static_pages.new_page')],
             ],
         ];
+    }
+
+    /**
+     * @return Collection<int, Country>
+     */
+    private function countries(): Collection
+    {
+        return Country::query()
+            ->orderByDesc('is_active')
+            ->orderBy('name_en')
+            ->get(['id', 'name_en', 'flag_emoji', 'is_active']);
     }
 
     /**
@@ -201,8 +240,14 @@ class StaticPageController extends Controller
         $data = $request->validate([
             'title_en' => ['required', 'string', 'max:255'],
             'title_ar' => ['required', 'string', 'max:255'],
-            // Rule::unique ignores soft deletes, so trashed pages keep their slug reserved.
-            'slug' => ['required', 'string', 'max:150', Rule::unique('static_pages', 'slug')->ignore($page?->id)],
+            'country_id' => ['nullable', 'uuid', Rule::exists('countries', 'id')],
+            // Unique per country (NULL = global). Rule::unique ignores soft deletes, so
+            // trashed pages keep their slug reserved.
+            'slug' => ['required', 'string', 'max:150', Rule::unique('static_pages', 'slug')
+                ->ignore($page?->id)
+                ->where(fn ($q) => $request->filled('country_id')
+                    ? $q->where('country_id', $request->input('country_id'))
+                    : $q->whereNull('country_id'))],
             'content_en' => ['nullable', 'string'],
             'content_ar' => ['nullable', 'string'],
             'seo_title_en' => ['nullable', 'string', 'max:255'],
@@ -216,10 +261,12 @@ class StaticPageController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ], [
             'slug.required' => __('admin.static_pages.slug_required'),
+            'slug.unique' => __('admin.static_pages.slug_taken_for_country'),
             'footer_group.required_if_accepted' => __('admin.static_pages.footer_group_required'),
         ]);
 
         return [
+            'country_id' => $data['country_id'] ?? null,
             'title_en' => $data['title_en'],
             'title_ar' => $data['title_ar'],
             'slug' => $data['slug'],

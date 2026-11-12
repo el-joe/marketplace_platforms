@@ -10610,6 +10610,13 @@ return [
     ],
 
     'static_pages' => [
+        'country' => 'Country',
+        'all_countries' => 'All countries (global)',
+        'any_country' => 'Any',
+        'country_hint' => 'Global pages show in every country. A page for one country replaces the global page with the same slug there.',
+        'copy_for_country' => 'Copy for another country',
+        'copy_hint' => 'Pre-filled from “:title”. Pick a country to give it its own version.',
+        'slug_taken_for_country' => 'A page with this slug already exists for the selected country.',
         'title' => 'Static Pages',
         'subtitle' => 'Bilingual content pages (About Us, Terms, Privacy, Return & Shipping policies) shown on the seller portal and/or the storefront.',
         'permission_group' => 'Content — Static Pages',

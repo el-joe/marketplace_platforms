@@ -47,6 +47,11 @@ Route::prefix('v1')->group(function (): void {
     // ── Marketer public profile (country-scoped — controller reads the
     //    resolved country from `detect.country` to filter/localize results) ──
     Route::prefix('{country}')->middleware('detect.country')->group(function (): void {
+        // Footer with the resolved country's static pages (About, Terms, Contact, ...)
+        Route::get('footer', [FooterController::class, 'index'])
+            ->name('public.country.footer')
+            ->middleware('throttle:60,1');
+
         // Nawi Ads popup — only bookings made for the resolved country
         Route::get('active-popup', [AdPopupController::class, 'show'])
             ->name('public.active-popup')
