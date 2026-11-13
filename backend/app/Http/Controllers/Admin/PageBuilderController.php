@@ -208,6 +208,33 @@ class PageBuilderController extends Controller
         return response()->json(['success' => true, 'data' => ['page' => $newPage], 'message' => 'Page duplicated.']);
     }
 
+    public function copyPageToCountries(Request $request, Page $page)
+    {
+        $this->authorizeManage();
+
+        $data = $request->validate([
+            'country_ids' => 'required|array|min:1',
+            'country_ids.*' => 'uuid|exists:countries,id|distinct',
+            'name' => 'nullable|string|max:150',
+        ]);
+
+        $created = [];
+        $warnings = [];
+        foreach (Country::whereIn('id', $data['country_ids'])->get() as $country) {
+            $result = $this->service->copyPageToCountry($page, $country, $this->admin(), $data['name'] ?? null);
+            $created[] = ['id' => $result['page']->id, 'name' => $result['page']->name, 'country_id' => $country->id, 'site_code' => $country->site_code];
+            foreach ($result['warnings'] as $w) {
+                $warnings[] = "{$country->name_en}: {$w}";
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => ['pages' => $created, 'warnings' => $warnings],
+            'message' => __('admin.page_builder.copy_to_country.done', ['count' => count($created)]),
+        ]);
+    }
+
     public function publishPage(Request $request, Page $page)
     {
         $this->authorizeManage();

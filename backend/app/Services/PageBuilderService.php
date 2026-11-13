@@ -711,6 +711,142 @@ class PageBuilderService
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Copy page to another country
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Page types whose reference_id is country-bound and cannot be copied across countries. */
+    public const COPY_BLOCKED_TYPES = ['vendor', 'custom_page'];
+
+    /**
+     * Copy a page (sections, blocks and every block item) into another country as a draft.
+     * Revisions, analytics, A/B links, paid items and home-page assignment are not copied.
+     *
+     * @return array{page: Page, warnings: array<int,string>}
+     */
+    public function copyPageToCountry(Page $page, Country $target, Admin $admin, ?string $name = null): array
+    {
+        if ((string) $page->country_id === (string) $target->id) {
+            throw ValidationException::withMessages(['country_id' => [__('admin.page_builder.copy_to_country.same_country')]]);
+        }
+        if (in_array($page->page_type, self::COPY_BLOCKED_TYPES, true)) {
+            throw ValidationException::withMessages(['page' => [__('admin.page_builder.copy_to_country.type_not_supported')]]);
+        }
+        if ($page->app_context_key) {
+            $active = \App\Models\AppContextCountry::where('country_id', $target->id)
+                ->where('is_active', true)
+                ->whereHas('appContext', fn ($q) => $q->where('key', $page->app_context_key))
+                ->exists();
+            if (! $active) {
+                throw ValidationException::withMessages(['country_id' => [__('admin.page_builder.copy_to_country.no_app_context', ['context' => $page->app_context_key])]]);
+            }
+        }
+
+        $warnings = [];
+
+        $newPage = DB::transaction(function () use ($page, $target, $admin, $name, &$warnings) {
+            $newPage = $page->replicate();
+            $newPage->country_id = $target->id;
+            $newPage->name = $name !== null && trim($name) !== '' ? trim($name) : $page->name;
+            $newPage->slug = $this->uniqueSlugForCountry($page->slug, $target->id);
+            $newPage->status = 'draft';
+            $newPage->version = 1;
+            $newPage->is_default = false;
+            $newPage->publish_at = null;
+            $newPage->published_at = null;
+            $newPage->unpublish_at = null;
+            $newPage->published_by_admin_id = null;
+            $newPage->last_edited_by_admin_id = $admin->id;
+            $newPage->save();
+
+            $sectionIdMap = [];
+            foreach (PageSection::where('page_id', $page->id)->orderBy('position')->get() as $section) {
+                $newSection = $section->replicate();
+                $newSection->page_id = $newPage->id;
+                $newSection->save();
+                $sectionIdMap[$section->id] = $newSection->id;
+            }
+
+            $blocks = $page->blocks()->get();
+            foreach ($blocks as $block) {
+                $newBlock = $block->replicate();
+                $newBlock->page_id = $newPage->id;
+                $newBlock->section_id = $block->section_id !== null ? ($sectionIdMap[$block->section_id] ?? null) : null;
+                $newBlock->country_override = null;
+                $newBlock->ab_test_id = null;
+                $newBlock->ab_variant = null;
+                $newBlock->created_by_admin_id = $admin->id;
+                $newBlock->updated_by_admin_id = $admin->id;
+                $newBlock->save();
+
+                foreach ($block->slides()->get() as $slide) {
+                    if ($slide->is_paid) {
+                        $warnings[] = __('admin.page_builder.copy_to_country.skipped_paid');
+                        continue;
+                    }
+                    $copy = $slide->replicate();
+                    $copy->page_block_id = $newBlock->id;
+                    $copy->save();
+                }
+
+                foreach ($block->adImageItems()->get() as $item) {
+                    if ($item->is_paid) {
+                        $warnings[] = __('admin.page_builder.copy_to_country.skipped_paid');
+                        continue;
+                    }
+                    $copy = $item->replicate();
+                    $copy->page_block_id = $newBlock->id;
+                    $copy->save();
+                }
+
+                foreach ($block->blockProducts()->get() as $row) {
+                    $copy = $row->replicate();
+                    $copy->page_block_id = $newBlock->id;
+                    $copy->added_by_admin_id = $admin->id;
+                    $copy->save();
+                }
+
+                foreach ($block->blockCategories()->get() as $row) {
+                    $copy = $row->replicate();
+                    $copy->page_block_id = $newBlock->id;
+                    $copy->save();
+                }
+
+                foreach ($block->blockBrands()->get() as $row) {
+                    $copy = $row->replicate();
+                    $copy->page_block_id = $newBlock->id;
+                    $copy->save();
+                }
+
+                foreach ($block->blockSellers()->with('seller')->get() as $row) {
+                    if (! $row->seller || (string) $row->seller->country_id !== (string) $target->id) {
+                        $warnings[] = __('admin.page_builder.copy_to_country.skipped_seller', ['name' => $row->seller?->store_name ?? $row->seller_id]);
+                        continue;
+                    }
+                    $copy = $row->replicate();
+                    $copy->page_block_id = $newBlock->id;
+                    $copy->save();
+                }
+            }
+
+            return $newPage;
+        });
+
+        return ['page' => $newPage, 'warnings' => array_values(array_unique($warnings))];
+    }
+
+    private function uniqueSlugForCountry(string $base, string $countryId): string
+    {
+        $slug = $base;
+        $suffix = 1;
+        while (Page::withTrashed()->where('country_id', $countryId)->where('slug', $slug)->exists()) {
+            $suffix++;
+            $slug = "{$base}-{$suffix}";
+        }
+
+        return $slug;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Delete slide / ad-image
     // ─────────────────────────────────────────────────────────────────────────
 

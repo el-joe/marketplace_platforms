@@ -9726,6 +9726,19 @@ return [
             'create_page' => 'Create page',
         ],
 
+        'copy_to_country' => [
+            'button' => 'Copy to another country',
+            'title' => 'Copy page to another country',
+            'description' => 'Copies all sections, blocks and items as a draft. Nothing goes live until you publish it.',
+            'target_countries' => 'Target countries',
+            'submit' => 'Copy page',
+            'done' => ':count page(s) copied as draft.',
+            'same_country' => 'Choose a country different from the page\'s current country.',
+            'type_not_supported' => 'Vendor and custom pages cannot be copied to another country.',
+            'no_app_context' => 'The target country has no active ":context" app context.',
+            'skipped_paid' => 'Paid slides/images were not copied.',
+            'skipped_seller' => 'Seller ":name" does not belong to the target country and was skipped.',
+        ],
         'edit_page_modal' => [
             'title' => 'Edit page',
             'edit_page' => 'Edit page',

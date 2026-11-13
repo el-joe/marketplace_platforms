@@ -212,6 +212,11 @@
                     class="hidden inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                     <x-heroicon name="pencil-square" class="w-4 h-4" />
                 </button>
+                <button type="button" id="copy-page-btn"
+                    title="{{ __('admin.page_builder.copy_to_country.button') }}"
+                    class="hidden inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                    <x-heroicon name="document-duplicate" class="w-4 h-4" />
+                </button>
                 <button type="button" id="delete-page-btn"
                     title="{{ __('admin.page_builder.edit_page_modal.delete_page') }}"
                     class="hidden inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors">
@@ -336,6 +341,7 @@
 
 @include('admin.page-builder.partials.create-page-modal')
 @include('admin.page-builder.partials.edit-page-modal')
+@include('admin.page-builder.partials.copy-page-modal')
 @include('admin.page-builder.partials.slide-modal')
 @include('admin.page-builder.partials.ad-image-modal')
 @include('admin.page-builder.partials.version-drawer')

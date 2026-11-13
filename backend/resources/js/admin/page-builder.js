@@ -69,6 +69,7 @@ const ROUTES = {
 
     pageUpdate: (id) => `/page-builder/pages/${id}`,
     pageDelete: (id) => `/page-builder/pages/${id}`,
+    pageCopyToCountries: (id) => `/page-builder/pages/${id}/copy-to-countries`,
     pageDuplicate: (id) => `/page-builder/pages/${id}/duplicate`,
 
     searchVendors: '/page-builder/search/vendors',
@@ -172,7 +173,7 @@ function loadPage(pageId) {
     closeConfigPanel();
 
     $('#toolbar-actions-row').toggleClass('hidden', !state.currentPageId);
-    $('#edit-page-btn, #delete-page-btn').toggleClass('hidden', !state.currentPageId);
+    $('#edit-page-btn, #delete-page-btn, #copy-page-btn').toggleClass('hidden', !state.currentPageId);
 
     if (!pageId) {
         state.currentPageMeta = null;
@@ -1803,6 +1804,47 @@ $('#edit-page-form').on('submit', function (e) {
         .fail((xhr) => {
             const errs = xhr.responseJSON?.errors || {};
             const first = Object.values(errs)[0]?.[0] || xhr.responseJSON?.message || window.TRANSLATIONS?.couldNotUpdatePage || 'Could not update page.';
+            Toast.error(first);
+        }));
+});
+
+$('#copy-page-btn').on('click', function () {
+    if (!state.currentPageId || !state.currentPageMeta) return;
+    const p = state.currentPageMeta;
+    $('#copy_name').val(p.name || '');
+    $('#copy-country-list input[type="checkbox"]').prop('checked', false);
+    // The source country is not a valid target
+    $('#copy-country-list label').each(function () {
+        $(this).toggleClass('hidden', String($(this).data('country-id')) === String(p.country_id));
+    });
+    $('#copy-page-modal').modal('open');
+});
+
+$('#copy-page-form').on('submit', function (e) {
+    e.preventDefault();
+    if (!state.currentPageId) return;
+    const countryIds = $('#copy-country-list input:checked').map((_, el) => el.value).get();
+    if (!countryIds.length) {
+        Toast.error(window.TRANSLATIONS?.copySelectCountry || 'Select at least one country.');
+        return;
+    }
+    const $btn = $('#copy-page-modal button[type="submit"][form="copy-page-form"]');
+    withLoading($btn, ajax({
+        url: ROUTES.pageCopyToCountries(state.currentPageId),
+        method: 'POST',
+        data: { country_ids: countryIds, name: $('#copy_name').val() },
+    })
+        .done((res) => {
+            Toast.success(res.message || 'Page copied.');
+            (res.data?.warnings || []).forEach((w) => Toast.warning ? Toast.warning(w) : Toast.error(w));
+            $('#copy-page-modal').modal('close');
+            (res.data?.pages || []).forEach((np) => {
+                $('#page-select').append(`<option value="${np.id}">${$('<div>').text(np.name).html()} (${np.site_code || '—'})</option>`);
+            });
+        })
+        .fail((xhr) => {
+            const errs = xhr.responseJSON?.errors || {};
+            const first = Object.values(errs)[0]?.[0] || xhr.responseJSON?.message || 'Could not copy page.';
             Toast.error(first);
         }));
 });

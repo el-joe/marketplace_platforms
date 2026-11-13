@@ -563,6 +563,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope', 'admin.timezone'])->group
         Route::put('/pages/{page}', [PageBuilderController::class, 'updatePage'])->name('pages.update');
         Route::delete('/pages/{page}', [PageBuilderController::class, 'deletePage'])->name('pages.delete');
         Route::post('/pages/{page}/duplicate', [PageBuilderController::class, 'duplicatePage'])->name('pages.duplicate');
+        Route::post('/pages/{page}/copy-to-countries', [PageBuilderController::class, 'copyPageToCountries'])->name('pages.copy-to-countries');
         Route::post('/pages/{page}/publish', [PageBuilderController::class, 'publishPage'])->name('pages.publish');
         Route::post('/pages/{page}/clear-cache', [PageBuilderController::class, 'clearPageCache'])->name('pages.clear-cache');
         Route::get('/pages/{page}/revisions', [PageBuilderController::class, 'getPageRevisions'])->name('pages.revisions');
