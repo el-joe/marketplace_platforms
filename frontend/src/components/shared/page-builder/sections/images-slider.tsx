@@ -75,8 +75,11 @@ export const ImagesSlider = ({ data }: { data: Block }) => {
                   alt="category"
                   width={2400}
                   height={400}
+                  // Slides are only ~1/columns of the viewport wide; without
+                  // `sizes` next/image requests the 3840px variant for every tile.
+                  sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
                   className={cn(
-                    "object-fill h-full",
+                    "w-full h-full object-fill",
                     heights[
                       (data?.config?.size_preset ||
                         "medium") as keyof typeof heights

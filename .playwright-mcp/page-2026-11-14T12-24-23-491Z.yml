@@ -1,0 +1,1358 @@
+- generic [active] [ref=f2e1]:
+  - banner [ref=f2e2]:
+    - generic [ref=f2e4]:
+      - button [ref=f2e5] [cursor=pointer]
+      - link [ref=f2e6] [cursor=pointer]:
+        - /url: /uae-en
+        - img "Logo" [ref=f2e7]
+      - button "Other uae" [ref=f2e8] [cursor=pointer]:
+        - generic [ref=f2e9]: Other
+        - generic [ref=f2e10]: uae
+      - group [ref=f2e12]:
+        - group [ref=f2e13]:
+          - button "Search for" [ref=f2e14] [cursor=pointer]
+        - textbox "What are you looking for?" [ref=f2e19]
+      - button "العربية" [ref=f2e20] [cursor=pointer]
+      - button "Log in" [ref=f2e23] [cursor=pointer]
+      - link [ref=f2e26] [cursor=pointer]:
+        - /url: /uae-en/orders
+        - button "Orders" [ref=f2e27]
+      - link [ref=f2e30] [cursor=pointer]:
+        - /url: /uae-en/wishlist
+        - button "Wishlist" [ref=f2e31]
+      - link [ref=f2e34] [cursor=pointer]:
+        - /url: /uae-en/cart
+        - button "Cart" [ref=f2e35]
+    - button [ref=f2e65] [cursor=pointer]
+  - main [ref=f2e66]:
+    - generic [ref=f2e67]:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - link:
+                      - /url: "#"
+                - generic:
+                  - generic:
+                    - link:
+                      - /url: "#"
+              - generic [ref=f2e68] [cursor=pointer]
+              - generic [ref=f2e69] [cursor=pointer]
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: "#"
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: "#"
+                  - generic:
+                    - generic:
+                      - link:
+                        - /url: "#"
+                - generic [ref=f2e70] [cursor=pointer]
+                - generic [ref=f2e71] [cursor=pointer]
+            - generic:
+              - generic:
+                - link "back to school":
+                  - /url: "#"
+                  - generic:
+                    - img "back to school"
+      - generic [ref=f2e76]:
+        - generic [ref=f2e77]:
+          - link [ref=f2e80] [cursor=pointer]:
+            - /url: /uae-en/deals
+            - img "category" [ref=f2e81]
+          - link [ref=f2e84] [cursor=pointer]:
+            - /url: /uae-en/top-picks
+            - img "category" [ref=f2e85]
+          - link [ref=f2e88] [cursor=pointer]:
+            - /url: /uae-en/grocery
+            - img "category" [ref=f2e89]
+          - link [ref=f2e92] [cursor=pointer]:
+            - /url: /uae-en/electronics
+            - img "category" [ref=f2e93]
+          - link [ref=f2e96] [cursor=pointer]:
+            - /url: /uae-en/smartphones
+            - img "category" [ref=f2e97]
+          - link [ref=f2e100] [cursor=pointer]:
+            - /url: /uae-en/laptops
+            - img "category" [ref=f2e101]
+          - link [ref=f2e104] [cursor=pointer]:
+            - /url: /uae-en/beauty
+            - img "category" [ref=f2e105]
+          - link [ref=f2e108] [cursor=pointer]:
+            - /url: /uae-en/gift-cards
+            - img "category" [ref=f2e109]
+          - link [ref=f2e112] [cursor=pointer]:
+            - /url: /uae-en/womens-fashion
+            - img "category" [ref=f2e113]
+          - link [ref=f2e116] [cursor=pointer]:
+            - /url: /uae-en/mens-fashion
+            - img "category" [ref=f2e117]
+          - link [ref=f2e120] [cursor=pointer]:
+            - /url: /uae-en/kitchen
+            - img "category" [ref=f2e121]
+          - link [ref=f2e124] [cursor=pointer]:
+            - /url: /uae-en/health
+            - img "category" [ref=f2e125]
+          - link [ref=f2e128] [cursor=pointer]:
+            - /url: /uae-en/footwear
+            - img "category" [ref=f2e129]
+          - link [ref=f2e132] [cursor=pointer]:
+            - /url: "#"
+            - img "category" [ref=f2e133]
+          - link [ref=f2e136] [cursor=pointer]:
+            - /url: /uae-en/watches
+            - img "category" [ref=f2e137]
+        - generic [ref=f2e138] [cursor=pointer]
+        - generic [ref=f2e139] [cursor=pointer]
+      - generic [ref=f2e142]:
+        - generic [ref=f2e144]:
+          - heading "More reasons to shop" [level=3] [ref=f2e145]
+          - generic [ref=f2e146]:
+            - link [ref=f2e148] [cursor=pointer]:
+              - /url: "#"
+            - link [ref=f2e150] [cursor=pointer]:
+              - /url: "#"
+            - link [ref=f2e152] [cursor=pointer]:
+              - /url: "#"
+            - link [ref=f2e154] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=f2e156]:
+          - generic [ref=f2e160]:
+            - paragraph [ref=f2e164]: "--:"
+            - paragraph [ref=f2e165]: "--:"
+            - paragraph [ref=f2e166]: "--"
+          - generic [ref=f2e169]:
+            - heading "Mega Deals" [level=3] [ref=f2e170]
+            - link [ref=f2e171] [cursor=pointer]:
+              - /url: /uae-en/deals
+              - button "All deals" [ref=f2e172]
+          - generic [ref=f2e173]:
+            - generic [ref=f2e174]:
+              - generic [ref=f2e175]:
+                - generic [ref=f2e176]: Smartphones
+                - img "iPhone 15 Pro Natural Titanium / 128GB" [ref=f2e177]
+                - button [ref=f2e178] [cursor=pointer]
+              - link "iPhone 15 Pro Natural Titanium / 128GB  5,000" [ref=f2e179] [cursor=pointer]:
+                - /url: /uae-en/products/8a113f7a-d74d-41f7-adf6-7f5a6a58dad0--d8eb910d-ef12-4082-b097-d2b8c0670108
+                - heading "iPhone 15 Pro Natural Titanium / 128GB" [level=4] [ref=f2e180]
+                - generic [ref=f2e182]:
+                  - generic [ref=f2e183]: 
+                  - paragraph [ref=f2e184]: 5,000
+            - generic [ref=f2e185]:
+              - generic [ref=f2e186]:
+                - generic [ref=f2e187]: Stationery
+                - img "CASIO FX-991CW Advanced Scientific Calculator SKU-VPFCG0RG" [ref=f2e188]
+                - button [ref=f2e189] [cursor=pointer]
+              - link "CASIO FX-991CW Advanced Scientific Calculator SKU-VPFCG0RG  97" [ref=f2e190] [cursor=pointer]:
+                - /url: /uae-en/products/423fb650-48e7-4a3a-8d94-a58a94b8926f--31ade416-4737-4dbd-9cf9-df873ce55171
+                - heading "CASIO FX-991CW Advanced Scientific Calculator SKU-VPFCG0RG" [level=4] [ref=f2e191]
+                - generic [ref=f2e193]:
+                  - generic [ref=f2e194]: 
+                  - paragraph [ref=f2e195]: "97"
+            - generic [ref=f2e196]:
+              - generic [ref=f2e197]:
+                - generic [ref=f2e198]: Kitchen & Dining
+                - img "Philips Espresso Machine Series 3300 Black" [ref=f2e199]
+                - button [ref=f2e200] [cursor=pointer]
+              - link "Philips Espresso Machine Series 3300 Black  126,000" [ref=f2e201] [cursor=pointer]:
+                - /url: /uae-en/products/9dd67665-4ba9-48e5-89b8-63fad7b5dbd8--2640c679-58bb-4fce-9272-ae8f8a176581
+                - heading "Philips Espresso Machine Series 3300 Black" [level=4] [ref=f2e202]
+                - generic [ref=f2e204]:
+                  - generic [ref=f2e205]: 
+                  - paragraph [ref=f2e206]: 126,000
+            - generic [ref=f2e207]:
+              - generic [ref=f2e208]:
+                - generic [ref=f2e209]: Smartphones
+                - img "iPhone 17 Pro Max Cosmic Orange / 256GB / 12GB" [ref=f2e210]
+                - button [ref=f2e211] [cursor=pointer]
+              - link "iPhone 17 Pro Max Cosmic Orange / 256GB / 12GB  5,900" [ref=f2e212] [cursor=pointer]:
+                - /url: /uae-en/products/d3e208b5-e11e-4267-b3b1-90eae88ea8a1--157ee73b-c075-4509-9dc4-0b0493917e4b
+                - heading "iPhone 17 Pro Max Cosmic Orange / 256GB / 12GB" [level=4] [ref=f2e213]
+                - generic [ref=f2e215]:
+                  - generic [ref=f2e216]: 
+                  - paragraph [ref=f2e217]: 5,900
+        - generic [ref=f2e219]:
+          - heading "In focus" [level=3] [ref=f2e220]
+          - generic [ref=f2e221]:
+            - link [ref=f2e223] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=f2e224]:
+              - link [ref=f2e225] [cursor=pointer]:
+                - /url: "#"
+              - generic "Ad" [ref=f2e226]
+      - generic [ref=f2e230]:
+        - heading "Shop your school checklist" [level=2] [ref=f2e232]
+        - generic [ref=f2e233]:
+          - generic [ref=f2e234]:
+            - generic [ref=f2e236]:
+              - generic [ref=f2e237]:
+                - generic [ref=f2e238]: Men's Clothing
+                - button [ref=f2e239] [cursor=pointer]
+                - button [ref=f2e240] [cursor=pointer]
+                - button [ref=f2e241] [cursor=pointer]
+                - button [ref=f2e244] [cursor=pointer]
+                - img "Levi's 511 Slim Fit Jeans" [ref=f2e254]
+              - link "Levi's 511 Slim Fit Jeans Dark Indigo / 32×32 0.0 (0)  150 Express Delivery" [ref=f2e255] [cursor=pointer]:
+                - /url: /uae-en/products/caaf38d4-72a1-4462-9110-0a3a771a3b7c--874c117b-d103-4448-aab4-3eb5c19a3ce9
+                - generic [ref=f2e256]:
+                  - heading "Levi's 511 Slim Fit Jeans Dark Indigo / 32×32" [level=3] [ref=f2e257]
+                  - generic [ref=f2e258]:
+                    - generic [ref=f2e261]: "0.0"
+                    - generic [ref=f2e262]: (0)
+                  - generic [ref=f2e264]:
+                    - generic [ref=f2e265]: 
+                    - paragraph [ref=f2e266]: "150"
+                  - img "Express Delivery"
+            - generic [ref=f2e268]:
+              - generic [ref=f2e269]:
+                - generic [ref=f2e270]: Laptops
+                - button [ref=f2e271] [cursor=pointer]
+                - button [ref=f2e272] [cursor=pointer]
+                - button [ref=f2e273] [cursor=pointer]
+                - button [ref=f2e276] [cursor=pointer]
+              - link "MacBook Pro 16\" M3 Max Silver / 1TB 0.0 (0)  89,999 same day" [ref=f2e282] [cursor=pointer]:
+                - /url: /uae-en/products/ba52b927-44e7-4bdf-9b14-3733f6c90706--b7f22e45-6313-4286-884f-8313df889d69
+                - generic [ref=f2e283]:
+                  - heading "MacBook Pro 16\" M3 Max Silver / 1TB" [level=3] [ref=f2e284]
+                  - generic [ref=f2e285]:
+                    - generic [ref=f2e288]: "0.0"
+                    - generic [ref=f2e289]: (0)
+                  - generic [ref=f2e291]:
+                    - generic [ref=f2e292]: 
+                    - paragraph [ref=f2e293]: 89,999
+                  - generic [ref=f2e294]: same day
+            - generic [ref=f2e301]:
+              - generic [ref=f2e302]:
+                - generic [ref=f2e303]: Men's Clothing
+                - button [ref=f2e304] [cursor=pointer]
+                - button [ref=f2e305] [cursor=pointer]
+                - button [ref=f2e306] [cursor=pointer]
+                - button [ref=f2e309] [cursor=pointer]
+              - link "Classic Slim Fit Oxford Shirt White / S 0.0 (0)  12,000 Express Delivery" [ref=f2e316] [cursor=pointer]:
+                - /url: /uae-en/products/d00fa2f8-ce72-4ef8-ad78-bbdca74125fb--253d6503-d1a2-4e4c-b817-f1575b01ba57
+                - generic [ref=f2e317]:
+                  - heading "Classic Slim Fit Oxford Shirt White / S" [level=3] [ref=f2e318]
+                  - generic [ref=f2e319]:
+                    - generic [ref=f2e322]: "0.0"
+                    - generic [ref=f2e323]: (0)
+                  - generic [ref=f2e325]:
+                    - generic [ref=f2e326]: 
+                    - paragraph [ref=f2e327]: 12,000
+                  - img "Express Delivery"
+            - generic [ref=f2e329]:
+              - generic [ref=f2e330]:
+                - generic [ref=f2e331]: Smartphones
+                - button [ref=f2e332] [cursor=pointer]
+                - button [ref=f2e333] [cursor=pointer]
+                - button [ref=f2e334] [cursor=pointer]
+                - button [ref=f2e337] [cursor=pointer]
+                - img "Xiaomi 14 Ultra" [ref=f2e346]
+              - link "Xiaomi 14 Ultra Black / 256GB 0.0 (0)  370,000 same day" [ref=f2e347] [cursor=pointer]:
+                - /url: /uae-en/products/1c974903-f662-4a7d-8aff-e2e230053796--d9c32d0c-3527-4bfb-8680-8379255c33fa
+                - generic [ref=f2e348]:
+                  - heading "Xiaomi 14 Ultra Black / 256GB" [level=3] [ref=f2e349]
+                  - generic [ref=f2e350]:
+                    - generic [ref=f2e353]: "0.0"
+                    - generic [ref=f2e354]: (0)
+                  - generic [ref=f2e356]:
+                    - generic [ref=f2e357]: 
+                    - paragraph [ref=f2e358]: 370,000
+                  - generic [ref=f2e359]: same day
+            - generic [ref=f2e366]:
+              - generic [ref=f2e367]:
+                - generic [ref=f2e368]: Skincare
+                - button [ref=f2e369] [cursor=pointer]
+                - button [ref=f2e370] [cursor=pointer]
+                - button [ref=f2e371] [cursor=pointer]
+                - button [ref=f2e374] [cursor=pointer]
+                - img "Nivea Men's Energy Face Wash" [ref=f2e382]
+              - link "Nivea Men's Energy Face Wash 100ml 0.0 (0)  11,000 same day" [ref=f2e383] [cursor=pointer]:
+                - /url: /uae-en/products/f2d0aa72-db61-4a9a-8278-b8b40f779d06--ffd95254-fbce-4adf-9302-6b6ee5448f2f
+                - generic [ref=f2e384]:
+                  - heading "Nivea Men's Energy Face Wash 100ml" [level=3] [ref=f2e385]
+                  - generic [ref=f2e386]:
+                    - generic [ref=f2e389]: "0.0"
+                    - generic [ref=f2e390]: (0)
+                  - generic [ref=f2e392]:
+                    - generic [ref=f2e393]: 
+                    - paragraph [ref=f2e394]: 11,000
+                  - generic [ref=f2e395]: same day
+            - generic [ref=f2e402]:
+              - generic [ref=f2e403]:
+                - generic [ref=f2e404]: Vitamins & Supplements
+                - button [ref=f2e405] [cursor=pointer]
+                - button [ref=f2e406] [cursor=pointer]
+                - button [ref=f2e407] [cursor=pointer]
+                - button [ref=f2e410] [cursor=pointer]
+                - img "Vitamin D3 + K2 Supplement 5000 IU" [ref=f2e417]
+              - link "Vitamin D3 + K2 Supplement 5000 IU 120 capsules 0.0 (0)  15 Express Delivery" [ref=f2e418] [cursor=pointer]:
+                - /url: /uae-en/products/c9f57129-587a-44cc-86e7-898b4176c440--9c217259-0ec4-41ed-b7f3-9b2e518f9567
+                - generic [ref=f2e419]:
+                  - heading "Vitamin D3 + K2 Supplement 5000 IU 120 capsules" [level=3] [ref=f2e420]
+                  - generic [ref=f2e421]:
+                    - generic [ref=f2e424]: "0.0"
+                    - generic [ref=f2e425]: (0)
+                  - generic [ref=f2e427]:
+                    - generic [ref=f2e428]: 
+                    - paragraph [ref=f2e429]: "15"
+                  - img "Express Delivery"
+            - generic [ref=f2e431]:
+              - generic [ref=f2e432]:
+                - generic [ref=f2e433]: Kitchen & Dining
+                - button [ref=f2e434] [cursor=pointer]
+                - button [ref=f2e435] [cursor=pointer]
+                - button [ref=f2e436] [cursor=pointer]
+                - button [ref=f2e439] [cursor=pointer]
+                - img "Philips Espresso Machine Series 3300" [ref=f2e448]
+              - link "Philips Espresso Machine Series 3300 Black 0.0 (0)  126,000 Scheduled Delivery" [ref=f2e449] [cursor=pointer]:
+                - /url: /uae-en/products/9dd67665-4ba9-48e5-89b8-63fad7b5dbd8--2640c679-58bb-4fce-9272-ae8f8a176581
+                - generic [ref=f2e450]:
+                  - heading "Philips Espresso Machine Series 3300 Black" [level=3] [ref=f2e451]
+                  - generic [ref=f2e452]:
+                    - generic [ref=f2e455]: "0.0"
+                    - generic [ref=f2e456]: (0)
+                  - generic [ref=f2e458]:
+                    - generic [ref=f2e459]: 
+                    - paragraph [ref=f2e460]: 126,000
+                  - generic [ref=f2e461]: Scheduled Delivery
+            - generic [ref=f2e469]:
+              - generic [ref=f2e470]:
+                - generic [ref=f2e471]: Skincare
+                - button [ref=f2e472] [cursor=pointer]
+                - button [ref=f2e473] [cursor=pointer]
+                - button [ref=f2e474] [cursor=pointer]
+                - button [ref=f2e477] [cursor=pointer]
+                - img "L'Oréal Paris Revitalift Serum" [ref=f2e485]
+              - link "L'Oréal Paris Revitalift Serum 30ml 0.0 (0)  16,000 same day" [ref=f2e486] [cursor=pointer]:
+                - /url: /uae-en/products/558f8e1e-8091-4426-9625-b67ccea8b790--3b92beaa-1cbc-457b-a7dd-67a958cc0a19
+                - generic [ref=f2e487]:
+                  - heading "L'Oréal Paris Revitalift Serum 30ml" [level=3] [ref=f2e488]
+                  - generic [ref=f2e489]:
+                    - generic [ref=f2e492]: "0.0"
+                    - generic [ref=f2e493]: (0)
+                  - generic [ref=f2e495]:
+                    - generic [ref=f2e496]: 
+                    - paragraph [ref=f2e497]: 16,000
+                  - generic [ref=f2e498]: same day
+            - generic [ref=f2e505]:
+              - generic [ref=f2e506]:
+                - generic [ref=f2e507]: Smartphones
+                - button [ref=f2e508] [cursor=pointer]
+                - button [ref=f2e509] [cursor=pointer]
+                - button [ref=f2e510] [cursor=pointer]
+                - button [ref=f2e513] [cursor=pointer]
+              - link "iPhone 15 Pro Natural Titanium / 128GB 0.0 (0)  5,000 same day" [ref=f2e521] [cursor=pointer]:
+                - /url: /uae-en/products/8a113f7a-d74d-41f7-adf6-7f5a6a58dad0--d8eb910d-ef12-4082-b097-d2b8c0670108
+                - generic [ref=f2e522]:
+                  - heading "iPhone 15 Pro Natural Titanium / 128GB" [level=3] [ref=f2e523]
+                  - generic [ref=f2e524]:
+                    - generic [ref=f2e527]: "0.0"
+                    - generic [ref=f2e528]: (0)
+                  - generic [ref=f2e530]:
+                    - generic [ref=f2e531]: 
+                    - paragraph [ref=f2e532]: 5,000
+                  - generic [ref=f2e533]: same day
+            - generic [ref=f2e540]:
+              - generic [ref=f2e541]:
+                - generic [ref=f2e542]: Headphones & Audio
+                - button [ref=f2e543] [cursor=pointer]
+                - button [ref=f2e544] [cursor=pointer]
+                - button [ref=f2e545] [cursor=pointer]
+                - button [ref=f2e548] [cursor=pointer]
+              - link "Sony WH-1000XM5 Wireless Headphones Black 0.0 (0)  2,000 same day" [ref=f2e554] [cursor=pointer]:
+                - /url: /uae-en/products/647865d9-b3e1-4688-ad4f-8e450515b508--3a1f1fc5-53d7-4f74-9940-d23547ea63b0
+                - generic [ref=f2e555]:
+                  - heading "Sony WH-1000XM5 Wireless Headphones Black" [level=3] [ref=f2e556]
+                  - generic [ref=f2e557]:
+                    - generic [ref=f2e560]: "0.0"
+                    - generic [ref=f2e561]: (0)
+                  - generic [ref=f2e563]:
+                    - generic [ref=f2e564]: 
+                    - paragraph [ref=f2e565]: 2,000
+                  - generic [ref=f2e566]: same day
+          - generic [ref=f2e572] [cursor=pointer]
+          - generic [ref=f2e573] [cursor=pointer]
+      - generic [ref=f2e577]:
+        - heading "Bestsellers for you" [level=2] [ref=f2e579]
+        - generic [ref=f2e580]:
+          - generic [ref=f2e581]:
+            - generic [ref=f2e583]:
+              - generic [ref=f2e584]:
+                - generic [ref=f2e585]: Vitamins & Supplements
+                - button [ref=f2e586] [cursor=pointer]
+                - button [ref=f2e587] [cursor=pointer]
+                - button [ref=f2e588] [cursor=pointer]
+                - button [ref=f2e591] [cursor=pointer]
+                - img "Vitamin D3 + K2 Supplement 5000 IU" [ref=f2e598]
+              - link "Vitamin D3 + K2 Supplement 5000 IU 120 capsules 0.0 (0)  15 Express Delivery" [ref=f2e599] [cursor=pointer]:
+                - /url: /uae-en/products/c9f57129-587a-44cc-86e7-898b4176c440--9c217259-0ec4-41ed-b7f3-9b2e518f9567
+                - generic [ref=f2e600]:
+                  - heading "Vitamin D3 + K2 Supplement 5000 IU 120 capsules" [level=3] [ref=f2e601]
+                  - generic [ref=f2e602]:
+                    - generic [ref=f2e605]: "0.0"
+                    - generic [ref=f2e606]: (0)
+                  - generic [ref=f2e608]:
+                    - generic [ref=f2e609]: 
+                    - paragraph [ref=f2e610]: "15"
+                  - img "Express Delivery"
+            - generic [ref=f2e612]:
+              - generic [ref=f2e613]:
+                - generic [ref=f2e614]: Laptops
+                - button [ref=f2e615] [cursor=pointer]
+                - button [ref=f2e616] [cursor=pointer]
+                - button [ref=f2e617] [cursor=pointer]
+                - button [ref=f2e620] [cursor=pointer]
+              - link "MacBook Pro 16\" M3 Max Silver / 1TB 0.0 (0)  89,999 same day" [ref=f2e626] [cursor=pointer]:
+                - /url: /uae-en/products/ba52b927-44e7-4bdf-9b14-3733f6c90706--b7f22e45-6313-4286-884f-8313df889d69
+                - generic [ref=f2e627]:
+                  - heading "MacBook Pro 16\" M3 Max Silver / 1TB" [level=3] [ref=f2e628]
+                  - generic [ref=f2e629]:
+                    - generic [ref=f2e632]: "0.0"
+                    - generic [ref=f2e633]: (0)
+                  - generic [ref=f2e635]:
+                    - generic [ref=f2e636]: 
+                    - paragraph [ref=f2e637]: 89,999
+                  - generic [ref=f2e638]: same day
+            - generic [ref=f2e645]:
+              - generic [ref=f2e646]:
+                - generic [ref=f2e647]: Kitchen & Dining
+                - button [ref=f2e648] [cursor=pointer]
+                - button [ref=f2e649] [cursor=pointer]
+                - button [ref=f2e650] [cursor=pointer]
+                - button [ref=f2e653] [cursor=pointer]
+                - img "Philips Espresso Machine Series 3300" [ref=f2e662]
+              - link "Philips Espresso Machine Series 3300 Black 0.0 (0)  126,000 Scheduled Delivery" [ref=f2e663] [cursor=pointer]:
+                - /url: /uae-en/products/9dd67665-4ba9-48e5-89b8-63fad7b5dbd8--2640c679-58bb-4fce-9272-ae8f8a176581
+                - generic [ref=f2e664]:
+                  - heading "Philips Espresso Machine Series 3300 Black" [level=3] [ref=f2e665]
+                  - generic [ref=f2e666]:
+                    - generic [ref=f2e669]: "0.0"
+                    - generic [ref=f2e670]: (0)
+                  - generic [ref=f2e672]:
+                    - generic [ref=f2e673]: 
+                    - paragraph [ref=f2e674]: 126,000
+                  - generic [ref=f2e675]: Scheduled Delivery
+            - generic [ref=f2e683]:
+              - generic [ref=f2e684]:
+                - generic [ref=f2e685]: Smartphones
+                - button [ref=f2e686] [cursor=pointer]
+                - button [ref=f2e687] [cursor=pointer]
+                - button [ref=f2e688] [cursor=pointer]
+                - button [ref=f2e691] [cursor=pointer]
+              - link "iPhone 15 Pro Natural Titanium / 128GB 0.0 (0)  5,000 same day" [ref=f2e699] [cursor=pointer]:
+                - /url: /uae-en/products/8a113f7a-d74d-41f7-adf6-7f5a6a58dad0--d8eb910d-ef12-4082-b097-d2b8c0670108
+                - generic [ref=f2e700]:
+                  - heading "iPhone 15 Pro Natural Titanium / 128GB" [level=3] [ref=f2e701]
+                  - generic [ref=f2e702]:
+                    - generic [ref=f2e705]: "0.0"
+                    - generic [ref=f2e706]: (0)
+                  - generic [ref=f2e708]:
+                    - generic [ref=f2e709]: 
+                    - paragraph [ref=f2e710]: 5,000
+                  - generic [ref=f2e711]: same day
+            - generic [ref=f2e718]:
+              - generic [ref=f2e719]:
+                - generic [ref=f2e720]: Beverages
+                - button [ref=f2e721] [cursor=pointer]
+                - button [ref=f2e722] [cursor=pointer]
+                - button [ref=f2e723] [cursor=pointer]
+                - button [ref=f2e726] [cursor=pointer]
+                - img "Nescafé Gold Blend Instant Coffee 200g" [ref=f2e734]
+              - link "Nescafé Gold Blend Instant Coffee 200g 400g 0.0 (0)  20 Click & Collect" [ref=f2e735] [cursor=pointer]:
+                - /url: /uae-en/products/ef2eb030-ef40-4e88-ab8f-7b7f52cb42bd--b6d235b4-5fc7-43ea-b966-3d18c409105c
+                - generic [ref=f2e736]:
+                  - heading "Nescafé Gold Blend Instant Coffee 200g 400g" [level=3] [ref=f2e737]
+                  - generic [ref=f2e738]:
+                    - generic [ref=f2e741]: "0.0"
+                    - generic [ref=f2e742]: (0)
+                  - generic [ref=f2e744]:
+                    - generic [ref=f2e745]: 
+                    - paragraph [ref=f2e746]: "20"
+                  - generic [ref=f2e747]: Click & Collect
+            - generic [ref=f2e757]:
+              - generic [ref=f2e758]:
+                - generic [ref=f2e759]: Smartphones
+                - button [ref=f2e760] [cursor=pointer]
+                - button [ref=f2e761] [cursor=pointer]
+                - button [ref=f2e762] [cursor=pointer]
+                - button [ref=f2e765] [cursor=pointer]
+                - img "Xiaomi 14 Ultra" [ref=f2e774]
+              - link "Xiaomi 14 Ultra Black / 256GB 0.0 (0)  370,000 same day" [ref=f2e775] [cursor=pointer]:
+                - /url: /uae-en/products/1c974903-f662-4a7d-8aff-e2e230053796--d9c32d0c-3527-4bfb-8680-8379255c33fa
+                - generic [ref=f2e776]:
+                  - heading "Xiaomi 14 Ultra Black / 256GB" [level=3] [ref=f2e777]
+                  - generic [ref=f2e778]:
+                    - generic [ref=f2e781]: "0.0"
+                    - generic [ref=f2e782]: (0)
+                  - generic [ref=f2e784]:
+                    - generic [ref=f2e785]: 
+                    - paragraph [ref=f2e786]: 370,000
+                  - generic [ref=f2e787]: same day
+            - generic [ref=f2e794]:
+              - generic [ref=f2e795]:
+                - generic [ref=f2e796]: Headphones & Audio
+                - button [ref=f2e797] [cursor=pointer]
+                - button [ref=f2e798] [cursor=pointer]
+                - button [ref=f2e799] [cursor=pointer]
+                - button [ref=f2e802] [cursor=pointer]
+              - link "Sony WH-1000XM5 Wireless Headphones Black 0.0 (0)  2,000 same day" [ref=f2e808] [cursor=pointer]:
+                - /url: /uae-en/products/647865d9-b3e1-4688-ad4f-8e450515b508--3a1f1fc5-53d7-4f74-9940-d23547ea63b0
+                - generic [ref=f2e809]:
+                  - heading "Sony WH-1000XM5 Wireless Headphones Black" [level=3] [ref=f2e810]
+                  - generic [ref=f2e811]:
+                    - generic [ref=f2e814]: "0.0"
+                    - generic [ref=f2e815]: (0)
+                  - generic [ref=f2e817]:
+                    - generic [ref=f2e818]: 
+                    - paragraph [ref=f2e819]: 2,000
+                  - generic [ref=f2e820]: same day
+            - generic [ref=f2e827]:
+              - generic [ref=f2e828]:
+                - generic [ref=f2e829]: Kids' Toys
+                - button [ref=f2e830] [cursor=pointer]
+                - button [ref=f2e831] [cursor=pointer]
+                - button [ref=f2e832] [cursor=pointer]
+                - button [ref=f2e835] [cursor=pointer]
+                - img "LEGO Technic Bugatti Bolide Set" [ref=f2e843]
+              - link "LEGO Technic Bugatti Bolide Set Standard 0.0 (0)  30,000 Scheduled Delivery" [ref=f2e844] [cursor=pointer]:
+                - /url: /uae-en/products/e7c864e0-7cc3-4c83-b9a6-f11c59602613--ead7c95f-9ffb-45ff-8179-171c5a2ad2d0
+                - generic [ref=f2e845]:
+                  - heading "LEGO Technic Bugatti Bolide Set Standard" [level=3] [ref=f2e846]
+                  - generic [ref=f2e847]:
+                    - generic [ref=f2e850]: "0.0"
+                    - generic [ref=f2e851]: (0)
+                  - generic [ref=f2e853]:
+                    - generic [ref=f2e854]: 
+                    - paragraph [ref=f2e855]: 30,000
+                  - generic [ref=f2e856]: Scheduled Delivery
+            - generic [ref=f2e864]:
+              - generic [ref=f2e865]:
+                - generic [ref=f2e866]: Skincare
+                - button [ref=f2e867] [cursor=pointer]
+                - button [ref=f2e868] [cursor=pointer]
+                - button [ref=f2e869] [cursor=pointer]
+                - button [ref=f2e872] [cursor=pointer]
+                - img "Nivea Men's Energy Face Wash" [ref=f2e880]
+              - link "Nivea Men's Energy Face Wash 100ml 0.0 (0)  11,000 same day" [ref=f2e881] [cursor=pointer]:
+                - /url: /uae-en/products/f2d0aa72-db61-4a9a-8278-b8b40f779d06--ffd95254-fbce-4adf-9302-6b6ee5448f2f
+                - generic [ref=f2e882]:
+                  - heading "Nivea Men's Energy Face Wash 100ml" [level=3] [ref=f2e883]
+                  - generic [ref=f2e884]:
+                    - generic [ref=f2e887]: "0.0"
+                    - generic [ref=f2e888]: (0)
+                  - generic [ref=f2e890]:
+                    - generic [ref=f2e891]: 
+                    - paragraph [ref=f2e892]: 11,000
+                  - generic [ref=f2e893]: same day
+          - generic [ref=f2e899] [cursor=pointer]
+          - generic [ref=f2e900] [cursor=pointer]
+      - generic [ref=f2e904]:
+        - heading "Maximize your savings" [level=2] [ref=f2e906]
+        - generic [ref=f2e907]:
+          - generic [ref=f2e908]:
+            - link [ref=f2e911] [cursor=pointer]:
+              - /url: /uae-en/laptops
+              - img "category" [ref=f2e912]
+            - link [ref=f2e915] [cursor=pointer]:
+              - /url: /uae-en/smartphones
+              - img "category" [ref=f2e916]
+            - link [ref=f2e919] [cursor=pointer]:
+              - /url: /uae-en/detergent
+              - img "category" [ref=f2e920]
+            - link [ref=f2e923] [cursor=pointer]:
+              - /url: /uae-en/toys
+              - img "category" [ref=f2e924]
+            - link [ref=f2e927] [cursor=pointer]:
+              - /url: /uae-en/beauty
+              - img "category" [ref=f2e928]
+            - link [ref=f2e931] [cursor=pointer]:
+              - /url: /uae-en/beauty
+              - img "category" [ref=f2e932]
+            - link [ref=f2e935] [cursor=pointer]:
+              - /url: /uae-en/cameras
+              - img "category" [ref=f2e936]
+            - link [ref=f2e939] [cursor=pointer]:
+              - /url: /uae-en/detergent
+              - img "category" [ref=f2e940]
+          - generic [ref=f2e941] [cursor=pointer]
+          - generic [ref=f2e942] [cursor=pointer]
+      - generic [ref=f2e946]:
+        - heading "Lowest prices on top brands" [level=2] [ref=f2e948]
+        - generic [ref=f2e949]:
+          - generic [ref=f2e950]:
+            - generic [ref=f2e952]:
+              - generic [ref=f2e953]:
+                - generic [ref=f2e954]: Kitchen & Dining
+                - button [ref=f2e955] [cursor=pointer]
+                - button [ref=f2e956] [cursor=pointer]
+                - button [ref=f2e957] [cursor=pointer]
+                - button [ref=f2e960] [cursor=pointer]
+                - img "Philips Espresso Machine Series 3300" [ref=f2e969]
+              - link "Philips Espresso Machine Series 3300 Black 0.0 (0)  126,000 Scheduled Delivery" [ref=f2e970] [cursor=pointer]:
+                - /url: /uae-en/products/9dd67665-4ba9-48e5-89b8-63fad7b5dbd8--2640c679-58bb-4fce-9272-ae8f8a176581
+                - generic [ref=f2e971]:
+                  - heading "Philips Espresso Machine Series 3300 Black" [level=3] [ref=f2e972]
+                  - generic [ref=f2e973]:
+                    - generic [ref=f2e976]: "0.0"
+                    - generic [ref=f2e977]: (0)
+                  - generic [ref=f2e979]:
+                    - generic [ref=f2e980]: 
+                    - paragraph [ref=f2e981]: 126,000
+                  - generic [ref=f2e982]: Scheduled Delivery
+            - generic [ref=f2e990]:
+              - generic [ref=f2e991]:
+                - generic [ref=f2e992]: Smartphones
+                - button [ref=f2e993] [cursor=pointer]
+                - button [ref=f2e994] [cursor=pointer]
+                - button [ref=f2e995] [cursor=pointer]
+                - button [ref=f2e998] [cursor=pointer]
+                - img "Xiaomi 14 Ultra" [ref=f2e1007]
+              - link "Xiaomi 14 Ultra Black / 256GB 0.0 (0)  370,000 same day" [ref=f2e1008] [cursor=pointer]:
+                - /url: /uae-en/products/1c974903-f662-4a7d-8aff-e2e230053796--d9c32d0c-3527-4bfb-8680-8379255c33fa
+                - generic [ref=f2e1009]:
+                  - heading "Xiaomi 14 Ultra Black / 256GB" [level=3] [ref=f2e1010]
+                  - generic [ref=f2e1011]:
+                    - generic [ref=f2e1014]: "0.0"
+                    - generic [ref=f2e1015]: (0)
+                  - generic [ref=f2e1017]:
+                    - generic [ref=f2e1018]: 
+                    - paragraph [ref=f2e1019]: 370,000
+                  - generic [ref=f2e1020]: same day
+            - generic [ref=f2e1027]:
+              - generic [ref=f2e1028]:
+                - generic [ref=f2e1029]: Skincare
+                - button [ref=f2e1030] [cursor=pointer]
+                - button [ref=f2e1031] [cursor=pointer]
+                - button [ref=f2e1032] [cursor=pointer]
+                - button [ref=f2e1035] [cursor=pointer]
+                - img "Nivea Men's Energy Face Wash" [ref=f2e1043]
+              - link "Nivea Men's Energy Face Wash 100ml 0.0 (0)  11,000 same day" [ref=f2e1044] [cursor=pointer]:
+                - /url: /uae-en/products/f2d0aa72-db61-4a9a-8278-b8b40f779d06--ffd95254-fbce-4adf-9302-6b6ee5448f2f
+                - generic [ref=f2e1045]:
+                  - heading "Nivea Men's Energy Face Wash 100ml" [level=3] [ref=f2e1046]
+                  - generic [ref=f2e1047]:
+                    - generic [ref=f2e1050]: "0.0"
+                    - generic [ref=f2e1051]: (0)
+                  - generic [ref=f2e1053]:
+                    - generic [ref=f2e1054]: 
+                    - paragraph [ref=f2e1055]: 11,000
+                  - generic [ref=f2e1056]: same day
+            - generic [ref=f2e1063]:
+              - generic [ref=f2e1064]:
+                - generic [ref=f2e1065]: Men's Clothing
+                - button [ref=f2e1066] [cursor=pointer]
+                - button [ref=f2e1067] [cursor=pointer]
+                - button [ref=f2e1068] [cursor=pointer]
+                - button [ref=f2e1071] [cursor=pointer]
+              - link "Classic Slim Fit Oxford Shirt White / S 0.0 (0)  12,000 Express Delivery" [ref=f2e1078] [cursor=pointer]:
+                - /url: /uae-en/products/d00fa2f8-ce72-4ef8-ad78-bbdca74125fb--253d6503-d1a2-4e4c-b817-f1575b01ba57
+                - generic [ref=f2e1079]:
+                  - heading "Classic Slim Fit Oxford Shirt White / S" [level=3] [ref=f2e1080]
+                  - generic [ref=f2e1081]:
+                    - generic [ref=f2e1084]: "0.0"
+                    - generic [ref=f2e1085]: (0)
+                  - generic [ref=f2e1087]:
+                    - generic [ref=f2e1088]: 
+                    - paragraph [ref=f2e1089]: 12,000
+                  - img "Express Delivery"
+            - generic [ref=f2e1091]:
+              - generic [ref=f2e1092]:
+                - generic [ref=f2e1093]: Vitamins & Supplements
+                - button [ref=f2e1094] [cursor=pointer]
+                - button [ref=f2e1095] [cursor=pointer]
+                - button [ref=f2e1096] [cursor=pointer]
+                - button [ref=f2e1099] [cursor=pointer]
+                - img "Vitamin D3 + K2 Supplement 5000 IU" [ref=f2e1106]
+              - link "Vitamin D3 + K2 Supplement 5000 IU 120 capsules 0.0 (0)  15 Express Delivery" [ref=f2e1107] [cursor=pointer]:
+                - /url: /uae-en/products/c9f57129-587a-44cc-86e7-898b4176c440--9c217259-0ec4-41ed-b7f3-9b2e518f9567
+                - generic [ref=f2e1108]:
+                  - heading "Vitamin D3 + K2 Supplement 5000 IU 120 capsules" [level=3] [ref=f2e1109]
+                  - generic [ref=f2e1110]:
+                    - generic [ref=f2e1113]: "0.0"
+                    - generic [ref=f2e1114]: (0)
+                  - generic [ref=f2e1116]:
+                    - generic [ref=f2e1117]: 
+                    - paragraph [ref=f2e1118]: "15"
+                  - img "Express Delivery"
+            - generic [ref=f2e1120]:
+              - generic [ref=f2e1121]:
+                - generic [ref=f2e1122]: Men's Clothing
+                - button [ref=f2e1123] [cursor=pointer]
+                - button [ref=f2e1124] [cursor=pointer]
+                - button [ref=f2e1125] [cursor=pointer]
+                - button [ref=f2e1128] [cursor=pointer]
+                - img "Levi's 511 Slim Fit Jeans" [ref=f2e1138]
+              - link "Levi's 511 Slim Fit Jeans Dark Indigo / 32×32 0.0 (0)  150 Express Delivery" [ref=f2e1139] [cursor=pointer]:
+                - /url: /uae-en/products/caaf38d4-72a1-4462-9110-0a3a771a3b7c--874c117b-d103-4448-aab4-3eb5c19a3ce9
+                - generic [ref=f2e1140]:
+                  - heading "Levi's 511 Slim Fit Jeans Dark Indigo / 32×32" [level=3] [ref=f2e1141]
+                  - generic [ref=f2e1142]:
+                    - generic [ref=f2e1145]: "0.0"
+                    - generic [ref=f2e1146]: (0)
+                  - generic [ref=f2e1148]:
+                    - generic [ref=f2e1149]: 
+                    - paragraph [ref=f2e1150]: "150"
+                  - img "Express Delivery"
+            - generic [ref=f2e1152]:
+              - generic [ref=f2e1153]:
+                - generic [ref=f2e1154]: Beverages
+                - button [ref=f2e1155] [cursor=pointer]
+                - button [ref=f2e1156] [cursor=pointer]
+                - button [ref=f2e1157] [cursor=pointer]
+                - button [ref=f2e1160] [cursor=pointer]
+                - img "Nescafé Gold Blend Instant Coffee 200g" [ref=f2e1168]
+              - link "Nescafé Gold Blend Instant Coffee 200g 400g 0.0 (0)  20 Click & Collect" [ref=f2e1169] [cursor=pointer]:
+                - /url: /uae-en/products/ef2eb030-ef40-4e88-ab8f-7b7f52cb42bd--b6d235b4-5fc7-43ea-b966-3d18c409105c
+                - generic [ref=f2e1170]:
+                  - heading "Nescafé Gold Blend Instant Coffee 200g 400g" [level=3] [ref=f2e1171]
+                  - generic [ref=f2e1172]:
+                    - generic [ref=f2e1175]: "0.0"
+                    - generic [ref=f2e1176]: (0)
+                  - generic [ref=f2e1178]:
+                    - generic [ref=f2e1179]: 
+                    - paragraph [ref=f2e1180]: "20"
+                  - generic [ref=f2e1181]: Click & Collect
+            - generic [ref=f2e1191]:
+              - generic [ref=f2e1192]:
+                - generic [ref=f2e1193]: Vitamins & Supplements
+                - button [ref=f2e1194] [cursor=pointer]
+                - button [ref=f2e1195] [cursor=pointer]
+                - button [ref=f2e1196] [cursor=pointer]
+                - button [ref=f2e1199] [cursor=pointer]
+                - img "Bosch S5 Car Battery 74Ah" [ref=f2e1207]
+              - link "Bosch S5 Car Battery 74Ah 74Ah 0.0 (0)  180 Express Delivery" [ref=f2e1208] [cursor=pointer]:
+                - /url: /uae-en/products/3fb6093e-56e1-4c16-beec-47092200a9b6--aabac841-a0ab-4a87-a188-4dd993cfdccf
+                - generic [ref=f2e1209]:
+                  - heading "Bosch S5 Car Battery 74Ah 74Ah" [level=3] [ref=f2e1210]
+                  - generic [ref=f2e1211]:
+                    - generic [ref=f2e1214]: "0.0"
+                    - generic [ref=f2e1215]: (0)
+                  - generic [ref=f2e1217]:
+                    - generic [ref=f2e1218]: 
+                    - paragraph [ref=f2e1219]: "180"
+                  - img "Express Delivery"
+          - generic [ref=f2e1220] [cursor=pointer]
+          - generic [ref=f2e1221] [cursor=pointer]
+      - generic [ref=f2e1223]:
+        - img "back to school" [ref=f2e1225]
+        - generic [ref=f2e1228]:
+          - generic [ref=f2e1229]:
+            - link [ref=f2e1232] [cursor=pointer]:
+              - /url: /uae-en/backpacks
+              - img "category" [ref=f2e1233]
+            - link [ref=f2e1236] [cursor=pointer]:
+              - /url: /uae-en/stationary
+              - img "category" [ref=f2e1237]
+            - link [ref=f2e1240] [cursor=pointer]:
+              - /url: /uae-en/laptops
+              - img "category" [ref=f2e1241]
+            - link [ref=f2e1244] [cursor=pointer]:
+              - /url: /uae-en/stationary
+              - img "category" [ref=f2e1245]
+            - link [ref=f2e1248] [cursor=pointer]:
+              - /url: /uae-en/water-bottles
+              - img "category" [ref=f2e1249]
+            - link [ref=f2e1252] [cursor=pointer]:
+              - /url: /uae-en/desks
+              - img "category" [ref=f2e1253]
+            - link [ref=f2e1256] [cursor=pointer]:
+              - /url: /uae-en/nursery
+              - img "category" [ref=f2e1257]
+          - generic [ref=f2e1258] [cursor=pointer]
+          - generic [ref=f2e1259] [cursor=pointer]
+      - generic [ref=f2e1263]:
+        - 'heading "Up to 750 AED off | Use Code: EXCHANGE" [level=2] [ref=f2e1265]'
+        - generic [ref=f2e1266]:
+          - generic [ref=f2e1267]:
+            - generic [ref=f2e1269]:
+              - generic [ref=f2e1270]:
+                - generic [ref=f2e1271]: Laptops
+                - button [ref=f2e1272] [cursor=pointer]
+                - button [ref=f2e1273] [cursor=pointer]
+                - button [ref=f2e1274] [cursor=pointer]
+                - button [ref=f2e1277] [cursor=pointer]
+              - link "MacBook Pro 16\" M3 Max Silver / 1TB 0.0 (0)  89,999 same day" [ref=f2e1283] [cursor=pointer]:
+                - /url: /uae-en/products/ba52b927-44e7-4bdf-9b14-3733f6c90706--b7f22e45-6313-4286-884f-8313df889d69
+                - generic [ref=f2e1284]:
+                  - heading "MacBook Pro 16\" M3 Max Silver / 1TB" [level=3] [ref=f2e1285]
+                  - generic [ref=f2e1286]:
+                    - generic [ref=f2e1289]: "0.0"
+                    - generic [ref=f2e1290]: (0)
+                  - generic [ref=f2e1292]:
+                    - generic [ref=f2e1293]: 
+                    - paragraph [ref=f2e1294]: 89,999
+                  - generic [ref=f2e1295]: same day
+            - generic [ref=f2e1302]:
+              - generic [ref=f2e1303]:
+                - generic [ref=f2e1304]: Smartphones
+                - button [ref=f2e1305] [cursor=pointer]
+                - button [ref=f2e1306] [cursor=pointer]
+                - button [ref=f2e1307] [cursor=pointer]
+                - button [ref=f2e1310] [cursor=pointer]
+              - link "iPhone 15 Pro Natural Titanium / 128GB 0.0 (0)  5,000 same day" [ref=f2e1318] [cursor=pointer]:
+                - /url: /uae-en/products/8a113f7a-d74d-41f7-adf6-7f5a6a58dad0--d8eb910d-ef12-4082-b097-d2b8c0670108
+                - generic [ref=f2e1319]:
+                  - heading "iPhone 15 Pro Natural Titanium / 128GB" [level=3] [ref=f2e1320]
+                  - generic [ref=f2e1321]:
+                    - generic [ref=f2e1324]: "0.0"
+                    - generic [ref=f2e1325]: (0)
+                  - generic [ref=f2e1327]:
+                    - generic [ref=f2e1328]: 
+                    - paragraph [ref=f2e1329]: 5,000
+                  - generic [ref=f2e1330]: same day
+            - generic [ref=f2e1337]:
+              - generic [ref=f2e1338]:
+                - generic [ref=f2e1339]: Smartphones
+                - button [ref=f2e1340] [cursor=pointer]
+                - button [ref=f2e1341] [cursor=pointer]
+                - button [ref=f2e1342] [cursor=pointer]
+                - button [ref=f2e1345] [cursor=pointer]
+                - img "Xiaomi 14 Ultra" [ref=f2e1354]
+              - link "Xiaomi 14 Ultra Black / 256GB 0.0 (0)  370,000 same day" [ref=f2e1355] [cursor=pointer]:
+                - /url: /uae-en/products/1c974903-f662-4a7d-8aff-e2e230053796--d9c32d0c-3527-4bfb-8680-8379255c33fa
+                - generic [ref=f2e1356]:
+                  - heading "Xiaomi 14 Ultra Black / 256GB" [level=3] [ref=f2e1357]
+                  - generic [ref=f2e1358]:
+                    - generic [ref=f2e1361]: "0.0"
+                    - generic [ref=f2e1362]: (0)
+                  - generic [ref=f2e1364]:
+                    - generic [ref=f2e1365]: 
+                    - paragraph [ref=f2e1366]: 370,000
+                  - generic [ref=f2e1367]: same day
+            - generic [ref=f2e1374]:
+              - generic [ref=f2e1375]:
+                - generic [ref=f2e1376]: Headphones & Audio
+                - button [ref=f2e1377] [cursor=pointer]
+                - button [ref=f2e1378] [cursor=pointer]
+                - button [ref=f2e1379] [cursor=pointer]
+                - button [ref=f2e1382] [cursor=pointer]
+              - link "Sony WH-1000XM5 Wireless Headphones Black 0.0 (0)  2,000 same day" [ref=f2e1388] [cursor=pointer]:
+                - /url: /uae-en/products/647865d9-b3e1-4688-ad4f-8e450515b508--3a1f1fc5-53d7-4f74-9940-d23547ea63b0
+                - generic [ref=f2e1389]:
+                  - heading "Sony WH-1000XM5 Wireless Headphones Black" [level=3] [ref=f2e1390]
+                  - generic [ref=f2e1391]:
+                    - generic [ref=f2e1394]: "0.0"
+                    - generic [ref=f2e1395]: (0)
+                  - generic [ref=f2e1397]:
+                    - generic [ref=f2e1398]: 
+                    - paragraph [ref=f2e1399]: 2,000
+                  - generic [ref=f2e1400]: same day
+            - generic [ref=f2e1407]:
+              - generic [ref=f2e1408]:
+                - generic [ref=f2e1409]: Smartphones
+                - button [ref=f2e1410] [cursor=pointer]
+                - button [ref=f2e1411] [cursor=pointer]
+                - button [ref=f2e1412] [cursor=pointer]
+                - button [ref=f2e1415] [cursor=pointer]
+              - link "iPhone 17 Pro Max Cosmic Orange / 256GB / 12GB 0.0 (0)  5,900 It runs out quickly Free shipping same day" [ref=f2e1421] [cursor=pointer]:
+                - /url: /uae-en/products/d3e208b5-e11e-4267-b3b1-90eae88ea8a1--157ee73b-c075-4509-9dc4-0b0493917e4b
+                - generic [ref=f2e1422]:
+                  - heading "iPhone 17 Pro Max Cosmic Orange / 256GB / 12GB" [level=3] [ref=f2e1423]
+                  - generic [ref=f2e1424]:
+                    - generic [ref=f2e1427]: "0.0"
+                    - generic [ref=f2e1428]: (0)
+                  - generic [ref=f2e1430]:
+                    - generic [ref=f2e1431]: 
+                    - paragraph [ref=f2e1432]: 5,900
+                  - generic [ref=f2e1434]:
+                    - paragraph [ref=f2e1441]: It runs out quickly
+                    - paragraph [ref=f2e1449]: Free shipping
+                  - generic [ref=f2e1450]: same day
+            - generic [ref=f2e1457]:
+              - generic [ref=f2e1458]:
+                - generic [ref=f2e1459]: Gaming
+                - button [ref=f2e1460] [cursor=pointer]
+                - button [ref=f2e1461] [cursor=pointer]
+                - button [ref=f2e1462] [cursor=pointer]
+                - button [ref=f2e1465] [cursor=pointer]
+              - link "SteelSeries Arctis Nova Pro Wired Gaming Headset with GameDAC Gen 2, ClearCast Gen 2 Mic, 40mm Neodymium Drivers, 38 Ohm Impedance, 10-40,000 Hz Frequency Response, Multi-System Connectivity (PC, PS5, PS4, Mac, Switch), Black | 61527 SKU-NA0AS0PX 0.0 (0)  751 same day" [ref=f2e1472] [cursor=pointer]:
+                - /url: /uae-en/products/68fc09ba-6c5c-43ef-950c-bf8043d79b47--621c3dad-bdf7-41dd-9c79-87f6aabb9842
+                - generic [ref=f2e1473]:
+                  - heading "SteelSeries Arctis Nova Pro Wired Gaming Headset with GameDAC Gen 2, ClearCast Gen 2 Mic, 40mm Neodymium Drivers, 38 Ohm Impedance, 10-40,000 Hz Frequency Response, Multi-System Connectivity (PC, PS5, PS4, Mac, Switch), Black | 61527 SKU-NA0AS0PX" [level=3] [ref=f2e1474]
+                  - generic [ref=f2e1475]:
+                    - generic [ref=f2e1478]: "0.0"
+                    - generic [ref=f2e1479]: (0)
+                  - generic [ref=f2e1481]:
+                    - generic [ref=f2e1482]: 
+                    - paragraph [ref=f2e1483]: "751"
+                  - generic [ref=f2e1484]: same day
+            - generic [ref=f2e1491]:
+              - generic [ref=f2e1492]:
+                - generic [ref=f2e1493]: Cameras
+                - button [ref=f2e1494] [cursor=pointer]
+                - button [ref=f2e1495] [cursor=pointer]
+                - button [ref=f2e1496] [cursor=pointer]
+                - button [ref=f2e1499] [cursor=pointer]
+              - link "Sony Alpha A9 Full-Frame Mirrorless Digital Camera (Body Only) SKU-B70LO0MU 0.0 (0)  14,992 same day" [ref=f2e1507] [cursor=pointer]:
+                - /url: /uae-en/products/8b82df40-9203-4ec3-ab18-6c87e71de88f--cea6f614-22d8-47e6-8a33-599283064ca9
+                - generic [ref=f2e1508]:
+                  - heading "Sony Alpha A9 Full-Frame Mirrorless Digital Camera (Body Only) SKU-B70LO0MU" [level=3] [ref=f2e1509]
+                  - generic [ref=f2e1510]:
+                    - generic [ref=f2e1513]: "0.0"
+                    - generic [ref=f2e1514]: (0)
+                  - generic [ref=f2e1516]:
+                    - generic [ref=f2e1517]: 
+                    - paragraph [ref=f2e1518]: 14,992
+                  - generic [ref=f2e1519]: same day
+            - generic [ref=f2e1526]:
+              - generic [ref=f2e1527]:
+                - generic [ref=f2e1528]: Smart Home
+                - button [ref=f2e1529] [cursor=pointer]
+                - button [ref=f2e1530] [cursor=pointer]
+                - button [ref=f2e1531] [cursor=pointer]
+                - button [ref=f2e1534] [cursor=pointer]
+              - link "TP-LINK Mini Smart Wi-Fi Socket, Remote Control, Energy Monitoring, Flame-Retardant, Works With Alexa & Google, Tapo P110 White SKU-L06CPRK5 0.0 (0)  58 Scheduled Delivery" [ref=f2e1541] [cursor=pointer]:
+                - /url: /uae-en/products/50d3dc22-0bdd-4e5f-a8e8-481dfee31c83--81063214-645e-4225-bbd4-9b86dd457a31
+                - generic [ref=f2e1542]:
+                  - heading "TP-LINK Mini Smart Wi-Fi Socket, Remote Control, Energy Monitoring, Flame-Retardant, Works With Alexa & Google, Tapo P110 White SKU-L06CPRK5" [level=3] [ref=f2e1543]
+                  - generic [ref=f2e1544]:
+                    - generic [ref=f2e1547]: "0.0"
+                    - generic [ref=f2e1548]: (0)
+                  - generic [ref=f2e1550]:
+                    - generic [ref=f2e1551]: 
+                    - paragraph [ref=f2e1552]: "58"
+                  - generic [ref=f2e1553]: Scheduled Delivery
+            - generic [ref=f2e1561]:
+              - generic [ref=f2e1562]:
+                - generic [ref=f2e1563]: Cameras
+                - button [ref=f2e1564] [cursor=pointer]
+                - button [ref=f2e1565] [cursor=pointer]
+                - button [ref=f2e1566] [cursor=pointer]
+                - button [ref=f2e1569] [cursor=pointer]
+              - link "Canon EOS R8 Mirrorless Camera with RF 24-50mm F4.5-6.3 IS STM Lens SKU-CJ2QZ15V 0.0 (0)  4,650 same day" [ref=f2e1577] [cursor=pointer]:
+                - /url: /uae-en/products/429a062b-7774-4e05-a085-270eb67e1fd2--fbf081d7-6cae-4c14-8522-a4b4609bc5d7
+                - generic [ref=f2e1578]:
+                  - heading "Canon EOS R8 Mirrorless Camera with RF 24-50mm F4.5-6.3 IS STM Lens SKU-CJ2QZ15V" [level=3] [ref=f2e1579]
+                  - generic [ref=f2e1580]:
+                    - generic [ref=f2e1583]: "0.0"
+                    - generic [ref=f2e1584]: (0)
+                  - generic [ref=f2e1586]:
+                    - generic [ref=f2e1587]: 
+                    - paragraph [ref=f2e1588]: 4,650
+                  - generic [ref=f2e1589]: same day
+          - generic [ref=f2e1595] [cursor=pointer]
+          - generic [ref=f2e1596] [cursor=pointer]
+      - generic [ref=f2e1599]:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - link:
+                  - /url: "#"
+            - generic:
+              - generic:
+                - link:
+                  - /url: "#"
+            - generic:
+              - generic:
+                - link:
+                  - /url: "#"
+          - generic [ref=f2e1600] [cursor=pointer]
+          - generic [ref=f2e1601] [cursor=pointer]
+      - generic [ref=f2e1605]:
+        - heading "Grocery Saver week | 1–7 September" [level=2] [ref=f2e1607]
+        - generic [ref=f2e1608]:
+          - generic [ref=f2e1609]:
+            - generic [ref=f2e1610]:
+              - link [ref=f2e1612] [cursor=pointer]:
+                - /url: /uae-en/water
+                - img "category" [ref=f2e1613]
+              - link [ref=f2e1615] [cursor=pointer]:
+                - /url: /uae-en/coffee
+                - img "category" [ref=f2e1616]
+            - generic [ref=f2e1617]:
+              - link [ref=f2e1619] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1620]
+              - link [ref=f2e1622] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1623]
+            - generic [ref=f2e1624]:
+              - link [ref=f2e1626] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1627]
+              - link [ref=f2e1629] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1630]
+            - generic [ref=f2e1631]:
+              - link [ref=f2e1633] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1634]
+              - link [ref=f2e1636] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1637]
+            - generic [ref=f2e1638]:
+              - link [ref=f2e1640] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1641]
+              - link [ref=f2e1643] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1644]
+            - generic [ref=f2e1645]:
+              - link [ref=f2e1647] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1648]
+              - link [ref=f2e1650] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1651]
+            - generic [ref=f2e1652]:
+              - link [ref=f2e1654] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1655]
+              - link [ref=f2e1657] [cursor=pointer]:
+                - /url: "#"
+                - img "category" [ref=f2e1658]
+            - link [ref=f2e1661] [cursor=pointer]:
+              - /url: "#"
+              - img "category" [ref=f2e1662]
+          - generic [ref=f2e1663] [cursor=pointer]
+          - generic [ref=f2e1664] [cursor=pointer]
+      - generic [ref=f2e1668]:
+        - heading "Furniture" [level=2] [ref=f2e1670]
+        - generic [ref=f2e1671]:
+          - generic [ref=f2e1672]:
+            - link [ref=f2e1675] [cursor=pointer]:
+              - /url: "#"
+              - img "category" [ref=f2e1676]
+            - link [ref=f2e1679] [cursor=pointer]:
+              - /url: "#"
+              - img "category" [ref=f2e1680]
+            - link [ref=f2e1683] [cursor=pointer]:
+              - /url: "#"
+              - img "category" [ref=f2e1684]
+            - link [ref=f2e1687] [cursor=pointer]:
+              - /url: "#"
+              - img "category" [ref=f2e1688]
+            - link [ref=f2e1691] [cursor=pointer]:
+              - /url: "#"
+              - img "category" [ref=f2e1692]
+            - link [ref=f2e1695] [cursor=pointer]:
+              - /url: "#"
+              - img "category" [ref=f2e1696]
+            - link [ref=f2e1699] [cursor=pointer]:
+              - /url: "#"
+              - img "category" [ref=f2e1700]
+          - generic [ref=f2e1701] [cursor=pointer]
+          - generic [ref=f2e1702] [cursor=pointer]
+      - generic "Classified sections" [ref=f2e1703]:
+        - generic [ref=f2e1704]:
+          - generic [ref=f2e1705]:
+            - generic [ref=f2e1707]:
+              - heading [level=2] [ref=f2e1708]:
+                - link "Realstate" [ref=f2e1709] [cursor=pointer]:
+                  - /url: /uae-en/classified/real-state
+              - paragraph [ref=f2e1710]: 1 ads
+            - link "View all ads" [ref=f2e1711] [cursor=pointer]:
+              - /url: /uae-en/classified/real-state
+          - list [ref=f2e1712]:
+            - listitem [ref=f2e1713]:
+              - link "Furnished Apartment for Rent in Dubai Marina  8,500 Furnished Apartment for Rent in Dubai Marina Abu Dhabi" [ref=f2e1714] [cursor=pointer]:
+                - /url: /uae-en/classified/find/CL-EX1N2Z9C
+                - img "Furnished Apartment for Rent in Dubai Marina" [ref=f2e1716]
+                - generic [ref=f2e1717]:
+                  - generic [ref=f2e1719]:
+                    - generic [ref=f2e1720]: 
+                    - paragraph [ref=f2e1721]: 8,500
+                  - heading "Furnished Apartment for Rent in Dubai Marina" [level=3] [ref=f2e1722]
+                  - paragraph [ref=f2e1723]:
+                    - generic [ref=f2e1727]: Abu Dhabi
+    - generic [ref=f2e1728]:
+      - heading "Popular searches" [level=2] [ref=f2e1729]
+      - generic [ref=f2e1730]:
+        - link "iphone 15" [ref=f2e1731] [cursor=pointer]:
+          - /url: /uae-en/search?q=iphone%2015
+        - link "Vitamin" [ref=f2e1732] [cursor=pointer]:
+          - /url: /uae-en/search?q=Vitamin
+        - link "Samsung Galaxy Book4 Pro 16\"" [ref=f2e1733] [cursor=pointer]:
+          - /url: /uae-en/search?q=Samsung%20Galaxy%20Book4%20Pro%2016%22
+        - link "iphone 15 pro" [ref=f2e1734] [cursor=pointer]:
+          - /url: /uae-en/search?q=iphone%2015%20pro
+        - link "iphone 17 pro max cosmic orange / 256gb / 12gb" [ref=f2e1735] [cursor=pointer]:
+          - /url: /uae-en/search?q=iphone%2017%20pro%20max%20cosmic%20orange%20%2F%20256gb%20%2F%2012gb
+        - link "iphone" [ref=f2e1736] [cursor=pointer]:
+          - /url: /uae-en/search?q=iphone
+        - link "macbook pro 16\" m3 max" [ref=f2e1737] [cursor=pointer]:
+          - /url: /uae-en/search?q=macbook%20pro%2016%22%20m3%20max
+        - link "Elegant long dress with bow embroidery for Muslim women in the Middle East – Ramadan style. XXL" [ref=f2e1738] [cursor=pointer]:
+          - /url: /uae-en/search?q=Elegant%20long%20dress%20with%20bow%20embroidery%20for%20Muslim%20women%20in%20the%20Middle%20East%20%E2%80%93%20Ramadan%20style.%20XXL
+        - link "iphone 15 pro white titanium / 512gb" [ref=f2e1739] [cursor=pointer]:
+          - /url: /uae-en/search?q=iphone%2015%20pro%20white%20titanium%20%2F%20512gb
+        - link "tefal easy fry air fryer 4.2l white" [ref=f2e1740] [cursor=pointer]:
+          - /url: /uae-en/search?q=tefal%20easy%20fry%20air%20fryer%204.2l%20white
+        - link "test" [ref=f2e1741] [cursor=pointer]:
+          - /url: /uae-en/search?q=test
+        - link "iph" [ref=f2e1742] [cursor=pointer]:
+          - /url: /uae-en/search?q=iph
+    - generic [ref=f2e1744]:
+      - generic [ref=f2e1745]:
+        - heading "We're Always Here To Help" [level=2] [ref=f2e1746]
+        - paragraph [ref=f2e1747]: Reach out to us through any of these support channels
+      - generic [ref=f2e1748]:
+        - generic [ref=f2e1753]:
+          - paragraph [ref=f2e1754]: Help center
+          - heading "help.co.com" [level=3] [ref=f2e1755]
+        - generic [ref=f2e1761]:
+          - paragraph [ref=f2e1762]: Email support
+          - heading "help.co.com" [level=3] [ref=f2e1763]
+    - generic [ref=f2e1764]:
+      - generic [ref=f2e1765]:
+        - generic [ref=f2e1766]:
+          - generic [ref=f2e1767]:
+            - heading "Automotive" [level=5] [ref=f2e1768]
+            - list [ref=f2e1769]:
+              - listitem [ref=f2e1770]:
+                - link "Parts & Tools" [ref=f2e1771] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/a905a668-c527-478c-aefe-546d90749a0b
+              - listitem [ref=f2e1772]:
+                - link "Car Care" [ref=f2e1773] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/ca3f17a8-98c1-412d-8b83-1d8877ca70b9
+              - listitem [ref=f2e1774]:
+                - link "Car Accessories" [ref=f2e1775] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/6f9512ea-806d-491e-b05d-787d65adf68e
+          - generic [ref=f2e1776]:
+            - heading "Electronics" [level=5] [ref=f2e1777]
+            - list [ref=f2e1778]:
+              - listitem [ref=f2e1779]:
+                - link "Smart Home" [ref=f2e1780] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/9cd88f2f-2243-4d2e-bd9a-7f6d03ed80ce
+              - listitem [ref=f2e1781]:
+                - link "Laptops" [ref=f2e1782] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/a4ffd9a8-0a1b-4fb7-9b37-78c1d87037a1
+              - listitem [ref=f2e1783]:
+                - link "Smartphones" [ref=f2e1784] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/c3ba5ac7-57aa-4832-8fbf-63ac6bf97121
+              - listitem [ref=f2e1785]:
+                - link "Gaming" [ref=f2e1786] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/fc67bcc1-3d83-4bdd-9750-989e6e212ac7
+              - listitem [ref=f2e1787]:
+                - link "Headphones & Audio" [ref=f2e1788] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/077cd98f-d318-4bd6-9bd3-c900757e817e
+              - listitem [ref=f2e1789]:
+                - link "Accessories" [ref=f2e1790] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/247465e8-18cc-4e4e-af4b-1824f71c0cb5
+              - listitem [ref=f2e1791]:
+                - link "Tablets" [ref=f2e1792] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/48a93d7d-efaf-47fd-82b6-b663f08ea22a
+              - listitem [ref=f2e1793]:
+                - link "Mobiles & Accessories" [ref=f2e1794] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/4c8bb90e-c488-4dc8-a246-71f505b1b56b
+              - listitem [ref=f2e1795]:
+                - link "iPhone 17 Series" [ref=f2e1796] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/6aec960d-f1e8-4b58-8b9f-9ce3d0805e19
+              - listitem [ref=f2e1797]:
+                - link "Laptops & Accessories" [ref=f2e1798] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/5775e21a-05e5-485b-aea3-649385402e60
+              - listitem [ref=f2e1799]:
+                - link "Gaming Essentials" [ref=f2e1800] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/0fcc1ca4-aa11-4b2a-9b84-ec33d04db99c
+              - listitem [ref=f2e1801]:
+                - link "Televisions & Home Entertainment" [ref=f2e1802] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/baf94760-1431-4a1d-843e-55f78d7b660a
+              - listitem [ref=f2e1803]:
+                - link "Cameras" [ref=f2e1804] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/f2ed00a6-f42b-4bc0-8bfa-dcdafdb663b2
+              - listitem [ref=f2e1805]:
+                - link "Top Brands" [ref=f2e1806] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/7c1fd095-de1b-4c5d-a142-27d718fb4438
+          - generic [ref=f2e1807]:
+            - heading "Grocery & Food" [level=5] [ref=f2e1808]
+            - list [ref=f2e1809]:
+              - listitem [ref=f2e1810]:
+                - link "Organic & Natural" [ref=f2e1811] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/ce2e399b-ead8-464f-a7c2-d2f8d9d09b6e
+              - listitem [ref=f2e1812]:
+                - link "Food Staples" [ref=f2e1813] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/d3368ed0-c02d-472f-8bc4-44201a2ebaed
+              - listitem [ref=f2e1814]:
+                - link "Beverages" [ref=f2e1815] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/61d4ff88-7b79-425d-aaa3-38d4536c786f
+              - listitem [ref=f2e1816]:
+                - link "Snacks & Sweets" [ref=f2e1817] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/633c95fd-606c-438f-a6ff-3b6b1746bf5a
+          - generic [ref=f2e1818]:
+            - heading "Fashion" [level=5] [ref=f2e1819]
+            - list [ref=f2e1820]:
+              - listitem [ref=f2e1821]:
+                - link "Men's Clothing" [ref=f2e1822] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/90ef4336-bd7d-43d1-9d81-8e1dfe5ac6fc
+              - listitem [ref=f2e1823]:
+                - link "Jewellery & Watches" [ref=f2e1824] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/98f12900-c025-4867-8bd8-9b014b967c64
+              - listitem [ref=f2e1825]:
+                - link "Men's Shoes" [ref=f2e1826] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/92905d43-d0bd-47a1-888b-6fa08b36e4f9
+              - listitem [ref=f2e1827]:
+                - link "Women's Clothing" [ref=f2e1828] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/fc92e66b-5de4-4bcd-85a0-18fc34f170cd
+              - listitem [ref=f2e1829]:
+                - link "Women's Shoes" [ref=f2e1830] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/89880a40-ca45-4199-a73c-6a68311dac50
+              - listitem [ref=f2e1831]:
+                - link "Sunglasses" [ref=f2e1832] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/14fd2136-4928-44e2-bc1c-0630265786a9
+              - listitem [ref=f2e1833]:
+                - link "Kids' Clothing" [ref=f2e1834] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/3e165112-0ea5-4323-97f8-340885543a69
+              - listitem [ref=f2e1835]:
+                - link "Bags & Luggage" [ref=f2e1836] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/7b6e82ba-b38a-449e-bb2e-f36a4d388d1f
+          - generic [ref=f2e1837]:
+            - heading "Books & Stationery" [level=5] [ref=f2e1838]
+            - list [ref=f2e1839]:
+              - listitem [ref=f2e1840]:
+                - link "Arabic Books" [ref=f2e1841] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/f9644e22-784a-4ef5-8930-4a8ffee93ad3
+              - listitem [ref=f2e1842]:
+                - link "Stationery" [ref=f2e1843] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/7052d1e0-41bd-4c50-aa9d-08fde1aea3dc
+              - listitem [ref=f2e1844]:
+                - link "English Books" [ref=f2e1845] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/8dc47a43-8157-4bef-86cf-3ba8b710e510
+          - generic [ref=f2e1846]:
+            - heading "Health & Wellness" [level=5] [ref=f2e1847]
+            - list [ref=f2e1848]:
+              - listitem [ref=f2e1849]:
+                - link "Medical Devices" [ref=f2e1850] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/ccfd4f81-63cf-4975-8c85-31ccf7184845
+              - listitem [ref=f2e1851]:
+                - link "Baby Care" [ref=f2e1852] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/d7ea57d7-13cb-4ac1-97cb-df479e6fbf1d
+              - listitem [ref=f2e1853]:
+                - link "Vitamins & Supplements" [ref=f2e1854] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/1b3f8d99-82b9-4a70-91b5-9af8a9001261
+          - generic [ref=f2e1855]:
+            - heading "Beauty & Fragrance" [level=5] [ref=f2e1856]
+            - list [ref=f2e1857]:
+              - listitem [ref=f2e1858]:
+                - link "Men's Grooming" [ref=f2e1859] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/b349f38b-42e4-4774-9861-26f24faa2fa2
+              - listitem [ref=f2e1860]:
+                - link "Fragrances" [ref=f2e1861] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/cdd93b01-dc50-4485-aae3-1d45b396d1c6
+              - listitem [ref=f2e1862]:
+                - link "Skincare" [ref=f2e1863] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/e2638f41-5b63-4477-a517-b2a14c84ad84
+              - listitem [ref=f2e1864]:
+                - link "Hair Care" [ref=f2e1865] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/3694316c-a5bd-4664-8bf7-84bd42fb1b84
+              - listitem [ref=f2e1866]:
+                - link "Makeup" [ref=f2e1867] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/5f9701f0-967d-4dc0-83e6-3961278fde99
+          - generic [ref=f2e1868]:
+            - heading "Home & Living" [level=5] [ref=f2e1869]
+            - list [ref=f2e1870]:
+              - listitem [ref=f2e1871]:
+                - link "Bedding & Bath" [ref=f2e1872] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/0575a0b9-15cc-4bdc-8c8e-525a82aa470b
+              - listitem [ref=f2e1873]:
+                - link "Garden & Outdoor" [ref=f2e1874] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/b0cea234-2182-422f-8fda-ef2716cb49c7
+              - listitem [ref=f2e1875]:
+                - link "Lighting" [ref=f2e1876] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/ba59c2a8-a670-4880-a062-f01423a3aa4a
+              - listitem [ref=f2e1877]:
+                - link "Home Décor" [ref=f2e1878] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/e4fa3413-7d71-4868-abbc-d66d499ba94b
+              - listitem [ref=f2e1879]:
+                - link "Kitchen & Dining" [ref=f2e1880] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/75137ed7-9898-4686-a40f-80b3278b2b52
+              - listitem [ref=f2e1881]:
+                - link "Furniture" [ref=f2e1882] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/813da334-239e-4e0d-8673-9bbf8ac847a9
+          - generic [ref=f2e1883]:
+            - heading "Toys & Games" [level=5] [ref=f2e1884]
+            - list [ref=f2e1885]:
+              - listitem [ref=f2e1886]:
+                - link "Kids' Toys" [ref=f2e1887] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/9579dfe8-2862-46e4-8d0f-64201471c860
+              - listitem [ref=f2e1888]:
+                - link "Board Games" [ref=f2e1889] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/ac0a5be7-610f-4d3f-861e-fc7773ce5baf
+              - listitem [ref=f2e1890]:
+                - link "Educational" [ref=f2e1891] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/115293a8-ad56-42c2-8b24-da758d7a9ee3
+          - generic [ref=f2e1892]:
+            - heading "Deals" [level=5] [ref=f2e1893]
+            - list
+          - generic [ref=f2e1894]:
+            - heading "Beauty & Fragrances" [level=5] [ref=f2e1895]
+            - list [ref=f2e1896]:
+              - listitem [ref=f2e1897]:
+                - link "Makeup" [ref=f2e1898] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/c96a2761-fa01-4f3d-afbe-ff277015a0aa
+              - listitem [ref=f2e1899]:
+                - link "Skincare" [ref=f2e1900] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/4d92b726-299e-4909-b8c3-7dc88fd3e304
+              - listitem [ref=f2e1901]:
+                - link "Fragrances" [ref=f2e1902] [cursor=pointer]:
+                  - /url: /uae-en/browse/product/cace16c8-af23-4b74-b380-32c775967b13
+          - generic [ref=f2e1903]:
+            - heading "Company" [level=5] [ref=f2e1904]
+            - list [ref=f2e1905]:
+              - listitem [ref=f2e1906]:
+                - link "About Us" [ref=f2e1907] [cursor=pointer]:
+                  - /url: /uae-en/pages/about-us
+          - generic [ref=f2e1908]:
+            - heading "Policies" [level=5] [ref=f2e1909]
+            - list [ref=f2e1910]:
+              - listitem [ref=f2e1911]:
+                - link "Terms & Conditions" [ref=f2e1912] [cursor=pointer]:
+                  - /url: /uae-en/pages/terms-and-conditions
+              - listitem [ref=f2e1913]:
+                - link "Privacy Policy" [ref=f2e1914] [cursor=pointer]:
+                  - /url: /uae-en/pages/privacy-policy
+              - listitem [ref=f2e1915]:
+                - link "Return Policy" [ref=f2e1916] [cursor=pointer]:
+                  - /url: /uae-en/pages/return-policy
+              - listitem [ref=f2e1917]:
+                - link "Refund Policy" [ref=f2e1918] [cursor=pointer]:
+                  - /url: /uae-en/pages/refund-policy
+              - listitem [ref=f2e1919]:
+                - link "Shipping Policy" [ref=f2e1920] [cursor=pointer]:
+                  - /url: /uae-en/pages/shipping-policy
+          - generic [ref=f2e1921]:
+            - heading "Help" [level=5] [ref=f2e1922]
+            - list [ref=f2e1923]:
+              - listitem [ref=f2e1924]:
+                - link "Contact Us" [ref=f2e1925] [cursor=pointer]:
+                  - /url: /uae-en/pages/contact-us
+        - generic [ref=f2e1926]:
+          - generic [ref=f2e1927]:
+            - heading "Shop on the go" [level=5] [ref=f2e1928]
+            - generic [ref=f2e1929]:
+              - link [ref=f2e1930] [cursor=pointer]:
+                - /url: https://apps.apple.com
+              - link [ref=f2e1931] [cursor=pointer]:
+                - /url: https://play.google.com
+              - link [ref=f2e1932] [cursor=pointer]:
+                - /url: https://appgallery.huawei.com
+          - generic [ref=f2e1933]:
+            - heading "Contact with us" [level=5] [ref=f2e1934]
+            - generic [ref=f2e1935]:
+              - link [ref=f2e1936] [cursor=pointer]:
+                - /url: https://facebook.com
+              - link [ref=f2e1937] [cursor=pointer]:
+                - /url: https://x.com
+      - generic [ref=f2e1939]:
+        - paragraph [ref=f2e1940]: © 2026 brand. all rights reserved
+        - generic [ref=f2e1941]:
+          - img "Mastercard" [ref=f2e1942]
+          - img "Visa" [ref=f2e1943]
+          - img "Tabby" [ref=f2e1944]
+          - img "Tamara" [ref=f2e1945]
+  - link "Shop Nawy Options" [ref=f2e1946] [cursor=pointer]:
+    - /url: /uae-en/nawy-options
+    - generic [aria-hidden] [ref=f2e1947]: ⚡
+    - generic [ref=f2e1948]: Nawy Options

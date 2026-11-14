@@ -26,7 +26,8 @@ export const Banner = ({ data }: { data: Block }) => {
         <Image
           src={imageUrl || mobileImageUrl || "/images/no-image-available-icon.jpg"}
           alt={data?.banner?.alt_text?.[locale] || data?.banner?.alt_text?.en || ""}
-          className={"object-cover responsive-ratio h-full max-h-100"}
+          // fill (not cover) so the whole banner stays visible instead of being cropped.
+          className={"w-full h-full max-h-100 object-fill responsive-ratio"}
           // style={
           //   {
           //     "--banner-ratio": aspectRatio,

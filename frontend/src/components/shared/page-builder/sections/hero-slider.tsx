@@ -114,7 +114,9 @@ export default function HeroSlider({ data }: Props) {
                     "/images/no-image-available-icon.jpg"
                   }
                   alt={banner?.title?.[locale] || banner?.title?.en || ""}
-                  className={"object-cover responsive-ratio h-full max-h-100"}
+                  // fill (not cover) so the whole banner — headline and CTA —
+                  // stays visible instead of being cropped to the 400px box.
+                  className={"w-full h-full max-h-100 object-fill responsive-ratio"}
                   // style={
                   //   {
                   //     "--banner-ratio": aspectRatio,

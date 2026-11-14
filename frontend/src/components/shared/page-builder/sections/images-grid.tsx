@@ -50,7 +50,8 @@ export default function ImagesGrid({ data }: { data: Block }) {
                     alt={locale === "ar" ? item?.label?.ar || "" : item?.label?.en || ""}
                     width={1200}
                     height={800}
-                    className={"object-fill h-full"}
+                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    className="w-full h-full object-fill"
                   />
                 </SponsoredLink>
               );
@@ -75,7 +76,8 @@ export default function ImagesGrid({ data }: { data: Block }) {
                   alt={locale === "ar" ? item?.alt_text?.ar || "" : item?.alt_text?.en || ""}
                   width={1200}
                   height={800}
-                  className={"object-fill h-full"}
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  className="w-full h-full object-fill"
                 />
               </SponsoredLink>
             ))}

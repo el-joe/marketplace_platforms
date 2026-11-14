@@ -1,0 +1,38 @@
+[    1764ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:3100/_next/static/chunks/node_modules_next_dist_115brz8._.js:2478
+[    1839ms] [LOG] [HMR] connected @ http://127.0.0.1:3100/_next/static/chunks/node_modules_next_dist_115brz8._.js:2478
+[    1974ms] [LOG] [Fast Refresh] rebuilding @ http://127.0.0.1:3100/_next/static/chunks/node_modules_next_dist_115brz8._.js:2478
+[    2094ms] [ERROR] Access to fetch at 'https://api.nawyweb.com/api/customer/v1/countries' from origin 'http://127.0.0.1:3100' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://127.0.0.1:3100/uae-en:1
+[    2094ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://api.nawyweb.com/api/customer/v1/countries:1
+[    2105ms] TypeError: Failed to fetch
+    at http://127.0.0.1:3100/_next/static/chunks/_11y3r_j._.js:3488:28
+    at DevContext.asyncModule [as a] (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:522:5)
+    at module evaluation (http://127.0.0.1:3100/_next/static/chunks/_11y3r_j._.js:3460:30)
+    at http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1307:27
+    at runModuleExecutionHooks (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1636:13)
+    at instantiateModuleShared (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1305:9)
+    at instantiateModule (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1621:12)
+    at getOrInstantiateModuleFromParent (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1604:12)
+    at DevContext.esmImport [as i] (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:278:20)
+    at http://127.0.0.1:3100/_next/static/chunks/_11y3r_j._.js:3613:147
+    at DevContext.asyncModule [as a] (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:522:5)
+    at module evaluation (http://127.0.0.1:3100/_next/static/chunks/_11y3r_j._.js:3605:30)
+    at http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1307:27
+    at runModuleExecutionHooks (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1636:13)
+    at instantiateModuleShared (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1305:9)
+    at instantiateModule (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1621:12)
+    at getOrInstantiateModuleFromParent (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1604:12)
+    at DevContext.esmImport [as i] (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:278:20)
+    at http://127.0.0.1:3100/_next/static/chunks/_11y3r_j._.js:4072:191
+    at DevContext.asyncModule [as a] (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:522:5)
+    at module evaluation (http://127.0.0.1:3100/_next/static/chunks/_11y3r_j._.js:4060:30)
+    at http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1307:27
+    at runModuleExecutionHooks (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1636:13)
+    at instantiateModuleShared (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1305:9)
+    at instantiateModule (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1621:12)
+    at getOrInstantiateModuleFromParent (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:1604:12)
+    at DevContext.commonJsRequire [as r] (http://127.0.0.1:3100/_next/static/chunks/turbopack-_0p44nws._.js:299:12)
+    at requireAsyncModule (http://127.0.0.1:3100/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:68:78)
+    at http://127.0.0.1:3100/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:91:20
+[    2164ms] [LOG] [Fast Refresh] done in 291ms @ http://127.0.0.1:3100/_next/static/chunks/node_modules_next_dist_115brz8._.js:2478
+[    2296ms] [LOG] [Fast Refresh] rebuilding @ http://127.0.0.1:3100/_next/static/chunks/node_modules_next_dist_115brz8._.js:2478
+[    2336ms] [LOG] [Fast Refresh] done in 140ms @ http://127.0.0.1:3100/_next/static/chunks/node_modules_next_dist_115brz8._.js:2478
