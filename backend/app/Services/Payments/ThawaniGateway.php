@@ -3,20 +3,24 @@
 namespace App\Services\Payments;
 
 use App\DTOs\Payment\ConnectionTestResult;
-use App\Enums\PaymentTransactionStatus;
 use App\DTOs\Payment\PaymentInitiationData;
 use App\DTOs\Payment\PaymentInitiationResult;
 use App\DTOs\Payment\PaymentVerificationResult;
 use App\DTOs\Payment\RefundResult;
 use App\DTOs\Payment\WebhookResult;
+use App\Enums\PaymentTransactionStatus;
 use App\Models\Currency;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 
 class ThawaniGateway extends AbstractPaymentGateway
 {
-    private const BASE_URL_SANDBOX    = 'https://uatcheckout.thawani.om/api/v1';
+    private const BASE_URL_SANDBOX = 'https://uatcheckout.thawani.om/api/v1';
+
     private const BASE_URL_PRODUCTION = 'https://checkout.thawani.om/api/v1';
-    private const CHECKOUT_URL_SANDBOX    = 'https://uatcheckout.thawani.om/pay/';
+
+    private const CHECKOUT_URL_SANDBOX = 'https://uatcheckout.thawani.om/pay/';
+
     private const CHECKOUT_URL_PRODUCTION = 'https://checkout.thawani.om/pay/';
 
     public function getCode(): string
@@ -34,14 +38,14 @@ class ThawaniGateway extends AbstractPaymentGateway
         return $this->isProduction() ? self::CHECKOUT_URL_PRODUCTION : self::CHECKOUT_URL_SANDBOX;
     }
 
-    private function httpClient(): \Illuminate\Http\Client\PendingRequest
+    private function httpClient(): PendingRequest
     {
         $creds = $this->credentials();
 
         return Http::baseUrl($this->baseUrl())
             ->withHeaders([
                 'Thawani-Api-Key' => $creds['secret_key'] ?? '',
-                'Content-Type'    => 'application/json',
+                'Content-Type' => 'application/json',
             ])
             ->timeout(20);
     }
@@ -62,25 +66,25 @@ class ThawaniGateway extends AbstractPaymentGateway
 
     public function initiate(PaymentInitiationData $data): PaymentInitiationResult
     {
-        $currency     = $this->settlementCurrency();
+        $currency = $this->settlementCurrency();
         $gatewayAmount = $this->toGatewayAmount($data->amountCents, $currency);
 
         $payload = [
             'client_reference_id' => $data->orderNumber,
-            'mode'                => 'payment',
-            'products'            => [[
-                'name'        => 'Order ' . $data->orderNumber,
-                'quantity'    => 1,
+            'mode' => 'payment',
+            'products' => [[
+                'name' => 'Order '.$data->orderNumber,
+                'quantity' => 1,
                 'unit_amount' => $gatewayAmount,
             ]],
             'success_url' => $data->successUrl,
-            'cancel_url'  => $data->cancelUrl,
+            'cancel_url' => $data->cancelUrl,
             // Thawani's activation checklist requires the customer's name,
             // contact number and email to be passed on the session metadata.
-            'metadata'    => array_filter(array_merge($data->metadata, [
-                'order_id'       => $data->orderId,
-                'customer_id'    => $data->customerId,
-                'customer_name'  => $data->customerName,
+            'metadata' => array_filter(array_merge($data->metadata, [
+                'order_id' => $data->orderId,
+                'customer_id' => $data->customerId,
+                'customer_name' => $data->customerName,
                 'customer_email' => $data->customerEmail,
                 'customer_phone' => $data->customerPhone,
             ]), fn ($value) => $value !== null && $value !== ''),
@@ -89,18 +93,18 @@ class ThawaniGateway extends AbstractPaymentGateway
         try {
             $response = $this->httpClient()->post('/checkout/session', $payload);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 return new PaymentInitiationResult(
                     success: false,
-                    errorMessage: 'Thawani error: ' . $response->body(),
+                    errorMessage: 'Thawani error: '.$response->body(),
                     rawResponse: $response->json() ?? [],
                 );
             }
 
-            $body      = $response->json();
+            $body = $response->json();
             $sessionId = $body['data']['session_id'] ?? null;
 
-            if (!$sessionId) {
+            if (! $sessionId) {
                 return new PaymentInitiationResult(
                     success: false,
                     errorMessage: 'No session_id returned',
@@ -112,16 +116,17 @@ class ThawaniGateway extends AbstractPaymentGateway
 
             return new PaymentInitiationResult(
                 success: true,
-                redirectUrl: $this->checkoutUrl() . $sessionId . '?key=' . $publishableKey,
+                redirectUrl: $this->checkoutUrl().$sessionId.'?key='.$publishableKey,
                 gatewayTransactionId: $sessionId,
                 sessionId: $sessionId,
                 rawResponse: $body,
             );
         } catch (\Throwable $e) {
             report($e);
+
             return new PaymentInitiationResult(
                 success: false,
-                errorMessage: 'Connection error: ' . $e->getMessage(),
+                errorMessage: 'Connection error: '.$e->getMessage(),
             );
         }
     }
@@ -129,9 +134,9 @@ class ThawaniGateway extends AbstractPaymentGateway
     public function verify(string $transactionReference): PaymentVerificationResult
     {
         try {
-            $response = $this->httpClient()->get('/checkout/session/' . $transactionReference);
+            $response = $this->httpClient()->get('/checkout/session/'.$transactionReference);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 return new PaymentVerificationResult(
                     success: false,
                     status: PaymentTransactionStatus::Failed->value,
@@ -142,14 +147,14 @@ class ThawaniGateway extends AbstractPaymentGateway
                 );
             }
 
-            $body        = $response->json();
+            $body = $response->json();
             $sessionData = $body['data'] ?? [];
-            $rawStatus   = $sessionData['payment_status'] ?? 'unpaid';
+            $rawStatus = $sessionData['payment_status'] ?? 'unpaid';
 
             $status = match ($rawStatus) {
-                'paid'   => PaymentTransactionStatus::Succeeded,
+                'paid' => PaymentTransactionStatus::Succeeded,
                 'unpaid' => PaymentTransactionStatus::Pending,
-                default  => PaymentTransactionStatus::Failed,
+                default => PaymentTransactionStatus::Failed,
             };
 
             $amount = $this->fromGatewayAmount(
@@ -167,6 +172,7 @@ class ThawaniGateway extends AbstractPaymentGateway
             );
         } catch (\Throwable $e) {
             report($e);
+
             return new PaymentVerificationResult(
                 success: false,
                 status: PaymentTransactionStatus::Failed->value,
@@ -177,18 +183,65 @@ class ThawaniGateway extends AbstractPaymentGateway
         }
     }
 
+    /**
+     * Thawani refunds a payment, not a checkout session: the session's invoice leads to its
+     * payment (GET /payments?checkout_invoice=…), whose payment_id is refunded with POST /refunds.
+     * The whole payment is refunded, so a partial amount is refused here and should go to the
+     * customer wallet instead.
+     */
     public function refund(string $transactionReference, int|float $amountCents, string $reason): RefundResult
     {
         try {
-            $response = $this->httpClient()
-                ->post('/checkout/session/' . $transactionReference . '/refund', [
-                    'reason' => $reason,
-                ]);
+            $session = $this->httpClient()->get('/checkout/session/'.$transactionReference);
+            $invoice = $session->json('data.invoice');
 
-            if (!$response->successful()) {
+            if (! $session->successful() || ! $invoice) {
                 return new RefundResult(
                     success: false,
-                    errorMessage: 'Thawani refund failed: ' . $response->body(),
+                    errorMessage: 'Thawani refund failed: checkout session or its invoice was not found.',
+                    rawResponse: $session->json() ?? [],
+                );
+            }
+
+            $payments = $this->httpClient()->get('/payments', [
+                'checkout_invoice' => $invoice,
+                'limit' => 10,
+                'skip' => 0,
+            ]);
+            $paymentRows = collect($payments->json('data') ?? []);
+            $payment = $paymentRows->first(fn (array $row) => ($row['status'] ?? null) === 'successful') ?? $paymentRows->first();
+
+            if (! $payments->successful() || empty($payment['payment_id'])) {
+                return new RefundResult(
+                    success: false,
+                    errorMessage: "Thawani refund failed: no payment found for invoice {$invoice}.",
+                    rawResponse: $payments->json() ?? [],
+                );
+            }
+
+            $paidAmount = $this->fromGatewayAmount($payment['amount'] ?? 0, $this->settlementCurrency());
+
+            if ($paidAmount > 0 && $amountCents + 0.0005 < $paidAmount) {
+                return new RefundResult(
+                    success: false,
+                    errorMessage: 'Thawani refunds the whole payment; refund this partial amount to the customer wallet instead.',
+                    rawResponse: ['payment' => $payment],
+                );
+            }
+
+            $response = $this->httpClient()->post('/refunds', [
+                'payment_id' => $payment['payment_id'],
+                'reason' => mb_substr($reason !== '' ? $reason : 'Refund', 0, 255),
+                'metadata' => [
+                    'checkout_session' => $transactionReference,
+                    'invoice' => $invoice,
+                ],
+            ]);
+
+            if (! $response->successful()) {
+                return new RefundResult(
+                    success: false,
+                    errorMessage: 'Thawani refund failed: '.$response->body(),
                     rawResponse: $response->json() ?? [],
                 );
             }
@@ -203,6 +256,7 @@ class ThawaniGateway extends AbstractPaymentGateway
             );
         } catch (\Throwable $e) {
             report($e);
+
             return new RefundResult(
                 success: false,
                 errorMessage: $e->getMessage(),
@@ -210,41 +264,52 @@ class ThawaniGateway extends AbstractPaymentGateway
         }
     }
 
+    /**
+     * Thawani signs every webhook: `thawani-signature` is the hex HMAC-SHA256 of
+     * "{raw body}-{thawani-timestamp}" with the webhook secret from the Thawani merchant portal.
+     * A webhook is accepted only when that secret is configured and the signature matches, and the
+     * payment status is then re-read from Thawani's API instead of being trusted from the payload.
+     */
     public function handleWebhook(array $payload, array $headers): WebhookResult
     {
-        $webhookSecret   = $this->config->getWebhookSecret();
-        $signatureHeader = $headers['x-thawani-signature'][0]
-            ?? $headers['X-Thawani-Signature'][0]
-            ?? null;
+        $headers = array_change_key_case($headers, CASE_LOWER);
+        $header = fn (string $name): ?string => is_array($headers[$name] ?? null)
+            ? ($headers[$name][0] ?? null)
+            : ($headers[$name] ?? null);
 
-        // Default to valid when no signing secret is configured or Thawani omits the header
-        $signatureValid = true;
-        if ($webhookSecret && $signatureHeader) {
-            $expected       = hash_hmac('sha256', json_encode($payload), $webhookSecret);
-            $signatureValid = hash_equals($expected, $signatureHeader);
+        $webhookSecret = $this->config->getWebhookSecret();
+        $signature = $header('thawani-signature');
+        $timestamp = $header('thawani-timestamp');
+        $rawBody = request()->getContent() ?: json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        $signatureValid = $webhookSecret !== null && $webhookSecret !== ''
+            && $signature !== null && $timestamp !== null
+            && hash_equals(hash_hmac('sha256', $rawBody.'-'.$timestamp, $webhookSecret), strtolower($signature));
+
+        $data = $payload['data'] ?? $payload;
+        $sessionId = $data['session_id'] ?? $payload['session_id'] ?? null;
+        $orderReference = $data['client_reference_id'] ?? $payload['client_reference_id'] ?? null;
+        $eventType = $payload['event_type'] ?? $data['payment_status'] ?? $data['status'] ?? null;
+
+        $resultingStatus = PaymentTransactionStatus::Pending->value;
+        if ($signatureValid && $sessionId) {
+            $verified = $this->verify($sessionId);
+            $resultingStatus = $verified->status;
+            $orderReference ??= $verified->rawResponse['data']['client_reference_id'] ?? null;
         }
-
-        $sessionId     = $payload['session_id'] ?? $payload['data']['session_id'] ?? null;
-        $paymentStatus = $payload['payment_status'] ?? $payload['data']['payment_status'] ?? null;
-
-        $resultingStatus = match ($paymentStatus) {
-            'paid'   => PaymentTransactionStatus::Succeeded->value,
-            'unpaid' => PaymentTransactionStatus::Pending->value,
-            default  => PaymentTransactionStatus::Failed->value,
-        };
 
         $this->logWebhook(
             payload: $payload,
             headers: $headers,
             signatureValid: $signatureValid,
-            eventType: $paymentStatus,
+            eventType: $eventType,
         );
 
         return new WebhookResult(
             signatureValid: $signatureValid,
-            eventType: $paymentStatus,
+            eventType: $eventType,
             gatewayTransactionId: $sessionId,
-            orderReference: $payload['client_reference_id'] ?? null,
+            orderReference: $orderReference,
             resultingStatus: $resultingStatus,
             parsedPayload: $payload,
         );
@@ -267,14 +332,14 @@ class ThawaniGateway extends AbstractPaymentGateway
             return new ConnectionTestResult(
                 success: $response->successful(),
                 message: $response->successful()
-                    ? 'Connected to Thawani ' . ($this->isProduction() ? 'production' : 'sandbox') . ' successfully'
-                    : 'Thawani responded with status ' . $response->status(),
+                    ? 'Connected to Thawani '.($this->isProduction() ? 'production' : 'sandbox').' successfully'
+                    : 'Thawani responded with status '.$response->status(),
                 details: ['status_code' => $response->status()],
             );
         } catch (\Throwable $e) {
             return new ConnectionTestResult(
                 success: false,
-                message: 'Connection failed: ' . $e->getMessage(),
+                message: 'Connection failed: '.$e->getMessage(),
             );
         }
     }
