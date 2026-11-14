@@ -27,19 +27,19 @@ class OrderCancelled extends BaseCustomerNotification
         }
 
         return [
-            'title'            => 'Order Cancelled',
-            'title_ar'         => 'تم إلغاء الطلب',
-            'message'          => $message,
-            'message_ar'       => $messageAr,
-            'url'              => route('customer.orders.show', $this->subOrder->order->order_number),
-            'sub_order_id'     => $this->subOrder->id,
+            'title' => 'Order Cancelled',
+            'title_ar' => 'تم إلغاء الطلب',
+            'message' => $message,
+            'message_ar' => $messageAr,
+            'url' => route('customer.orders.show', ['country' => $this->subOrder->order->country?->site_code, 'order_number' => $this->subOrder->order->order_number]),
+            'sub_order_id' => $this->subOrder->id,
             'sub_order_number' => $this->subOrder->sub_order_number,
-            'reason'           => $this->reason,
+            'reason' => $this->reason,
         ];
     }
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('customer.' . $this->subOrder->order->customer_id)];
+        return [new PrivateChannel('customer.'.$this->subOrder->order->customer_id)];
     }
 }

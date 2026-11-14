@@ -8,9 +8,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 
 class ReturnStatusChangedNotification extends BaseDatabaseBroadcastNotification
 {
-    public function __construct(private readonly ReturnRequest $returnRequest)
-    {
-    }
+    public function __construct(private readonly ReturnRequest $returnRequest) {}
 
     public function notificationType(): string
     {
@@ -22,8 +20,8 @@ class ReturnStatusChangedNotification extends BaseDatabaseBroadcastNotification
         return [
             'title' => 'Return Request Update',
             'message' => "Your return request ({$this->returnRequest->return_number}) status changed to "
-                . str_replace('_', ' ', $this->returnRequest->status->value) . '.',
-            'url' => route('customer.returns.show', $this->returnRequest->id),
+                .str_replace('_', ' ', $this->returnRequest->status->value).'.',
+            'url' => route('customer.returns.show', ['country' => $this->returnRequest->order?->country?->site_code, 'return_number' => $this->returnRequest->return_number]),
             'return_request_id' => $this->returnRequest->id,
             'status' => $this->returnRequest->status->value,
         ];
@@ -31,6 +29,6 @@ class ReturnStatusChangedNotification extends BaseDatabaseBroadcastNotification
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('customer.' . $this->returnRequest->customer_id)];
+        return [new PrivateChannel('customer.'.$this->returnRequest->customer_id)];
     }
 }

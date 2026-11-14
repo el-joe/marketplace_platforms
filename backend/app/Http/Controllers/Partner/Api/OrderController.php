@@ -8,13 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Vendor\SubOrderDetailResource;
 use App\Http\Resources\Vendor\SubOrderListResource;
 use App\Http\Responses\ApiResponse;
-use App\Models\InventoryMovement;
 use App\Models\OrderStatusHistory;
-use App\Models\ProductVariant;
 use App\Models\SubOrder;
-use App\Models\VendorListing;
-use App\Models\WarehouseInventory;
 use App\Services\Inventory\InventoryService;
+use App\Services\OrderCancellationService;
 use App\Services\OrderStateMachine;
 use App\Services\Shipping\ShipmentService;
 use Illuminate\Http\JsonResponse;
@@ -126,6 +123,10 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'No shipping method assigned. Contact support.'], 422);
         }
 
+        if (is_null($subOrder->carrier_id)) {
+            return response()->json(['success' => false, 'message' => 'No shipping carrier assigned. Contact support.'], 422);
+        }
+
         $vendorId = $this->vendorId();
         $adminId = $this->adminId();
 
@@ -148,6 +149,9 @@ class OrderController extends Controller
                     'vendor_id' => $vendorId,
                     'vendor_admin' => $adminId,
                 ],
+                // The vendor ships straight from placed/confirmed: walk the intermediate
+                // processing/packed states the state machine requires (as the admin ship does).
+                advance: true,
             );
 
             $inventoryService = app(InventoryService::class);
@@ -185,23 +189,13 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Order cannot be updated in its current state.'], 422);
         }
 
-        DB::transaction(function () use ($subOrder) {
-            $fromStatus = $subOrder->status->value;
-            $subOrder->update(['status' => 'out_for_delivery']);
-
-            OrderStatusHistory::create([
-                'order_id' => $subOrder->order_id,
-                'sub_order_id' => $subOrder->id,
-                'from_status' => $fromStatus,
-                'to_status' => 'out_for_delivery',
-                'changed_by_admin_id' => null,
-                'metadata' => json_encode([
-                    'vendor_id' => $this->vendorId(),
-                    'vendor_admin' => $this->adminId(),
-                    'action' => 'marked_out_for_delivery',
-                ]),
-            ]);
-        });
+        // Through the state machine: validated transition, history, order rollup and the
+        // customer-facing tracking event.
+        $this->stateMachine->transition($subOrder, 'out_for_delivery', CancelActor::Vendor, [
+            'vendor_id' => $this->vendorId(),
+            'vendor_admin' => $this->adminId(),
+            'action' => 'marked_out_for_delivery',
+        ]);
 
         return response()->json(['success' => true, 'message' => 'Order marked as out for delivery.']);
     }
@@ -244,66 +238,11 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Order cannot be cancelled in its current state.'], 422);
         }
 
-        $vendorId = $this->vendorId();
-        $adminId = $this->adminId();
+        $reason = trim($request->input('reason').' '.($request->input('reason_notes') ?? ''));
 
-        DB::transaction(function () use ($request, $subOrder, $vendorId, $adminId) {
-            $fromStatus = $subOrder->status->value;
-
-            $subOrder->update([
-                'status' => 'cancelled',
-                'cancelled_at' => now(),
-                'cancellation_reason' => $request->input('reason'),
-            ]);
-
-            foreach ($subOrder->items as $item) {
-                $vendorListing = VendorListing::where('product_variant_id', $item->product_variant_id)
-                    ->where('vendor_id', $vendorId)
-                    ->first();
-
-                if (! $vendorListing) {
-                    continue;
-                }
-
-                $inventory = WarehouseInventory::where('vendor_listing_id', $vendorListing->id)
-                    ->where('warehouse_id', $subOrder->warehouse_id)
-                    ->first();
-
-                if (! $inventory) {
-                    continue;
-                }
-
-                $newReserved = max(0, $inventory->quantity_reserved - $item->quantity);
-                $inventory->update(['quantity_reserved' => $newReserved]);
-
-                InventoryMovement::create([
-                    'warehouse_inventory_id' => $inventory->id,
-                    'movement_type' => 'reservation_release',
-                    'quantity_delta' => $item->quantity,
-                    'quantity_after' => $inventory->quantity_on_hand,
-                    'reference_type' => 'order',
-                    'reference_id' => $subOrder->id,
-                    'reason' => 'order_cancelled_vendor',
-                    'created_by_user_id' => $adminId,
-                ]);
-            }
-
-            OrderStatusHistory::create([
-                'order_id' => $subOrder->order_id,
-                'sub_order_id' => $subOrder->id,
-                'from_status' => $fromStatus,
-                'to_status' => 'cancelled',
-                'changed_by_admin_id' => null,
-                'reason' => $request->input('reason'),
-                'metadata' => json_encode([
-                    'vendor_id' => $vendorId,
-                    'vendor_admin' => $adminId,
-                    'reason' => $request->input('reason'),
-                    'notes' => $request->input('reason_notes'),
-                    'action' => 'cancelled',
-                ]),
-            ]);
-        });
+        // The single cancellation engine: state-machine transition + history, stock released from the
+        // reserved allocations, order roll-up and any payment/coupon/loyalty reversal.
+        app(OrderCancellationService::class)->cancel($subOrder, CancelActor::Vendor, $reason);
 
         return response()->json(['success' => true, 'message' => 'Order cancelled successfully.']);
     }

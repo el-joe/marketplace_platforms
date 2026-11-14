@@ -4,15 +4,19 @@ namespace Tests\Feature;
 
 use App\Enums\CancelActor;
 use App\Enums\ReturnRequestStatus;
+use App\Models\Admin;
 use App\Models\CartItem;
 use App\Models\InventoryMovement;
 use App\Models\Order;
+use App\Models\Refund;
 use App\Models\ReturnRequest;
 use App\Models\SubOrder;
 use App\Models\WarehouseInventory;
+use App\Services\Customer\CartService;
 use App\Services\OrderStateMachine;
 use App\Services\ReturnRequestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\MarketplaceScenario;
@@ -31,7 +35,7 @@ class ReturnRequestLifecycleTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        \Illuminate\Support\Facades\Notification::fake();
+        Notification::fake();
     }
 
     private function buildScenario(): MarketplaceScenario
@@ -46,7 +50,7 @@ class ReturnRequestLifecycleTest extends TestCase
     {
         $this->actingAs($scenario->customer, 'customer');
 
-        return app(\App\Services\Customer\CartService::class)
+        return app(CartService::class)
             ->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
     }
 
@@ -243,7 +247,7 @@ class ReturnRequestLifecycleTest extends TestCase
         $returnRequest = $returnRequests->first();
         $this->assertSame($subOrder->id, $returnRequest->sub_order_id);
 
-        $admin = \App\Models\Admin::factory()->create();
+        $admin = Admin::factory()->create();
 
         $service->approve($returnRequest, (string) $admin->id);
         $service->schedulePickup($returnRequest, null);
@@ -267,10 +271,59 @@ class ReturnRequestLifecycleTest extends TestCase
         // Refund equals exactly the ONE returned unit's share, not the
         // whole (2-unit) sub-order.
         $this->assertNotNull($returnRequest->refund_id);
-        $refund = \App\Models\Refund::find($returnRequest->refund_id);
+        $refund = Refund::find($returnRequest->refund_id);
         $lineUnitTotal = (int) $item->line_total / (int) $item->quantity;
         $this->assertEquals((int) round($lineUnitTotal), (int) $refund->amount);
         $this->assertLessThan((int) $item->line_total, (int) $refund->amount);
+    }
+
+    private function completeRefundReturn(MarketplaceScenario $scenario, $item, int $quantity): ReturnRequest
+    {
+        $service = app(ReturnRequestService::class);
+        $returnRequest = $service->create(
+            customer: $scenario->customer,
+            orderItemIds: [$item->id],
+            reason: 'changed_mind',
+            returnType: 'refund',
+            quantities: [$item->id => $quantity],
+        )->first();
+
+        $admin = Admin::factory()->create();
+        $service->approve($returnRequest, (string) $admin->id);
+        $service->schedulePickup($returnRequest, null);
+        $service->markReceived($returnRequest);
+        $service->inspect($returnRequest, 'good', [], null, (string) $admin->id);
+
+        return $returnRequest->refresh();
+    }
+
+    public function test_a_fully_returned_and_refunded_sub_order_closes_as_refunded(): void
+    {
+        $scenario = $this->buildScenario();
+        [$order, $subOrder, $item] = $this->deliveredVendorOrder($scenario, 2);
+
+        $returnRequest = $this->completeRefundReturn($scenario, $item, 2);
+
+        $this->assertSame('completed', Refund::find($returnRequest->refund_id)->status->value);
+        $this->assertSame('refunded', $subOrder->refresh()->status->value);
+        $this->assertSame('returned', $item->refresh()->fulfillment_status->value);
+        $this->assertSame('refunded', $order->refresh()->status->value);
+        $this->assertDatabaseHas('order_status_histories', [
+            'sub_order_id' => $subOrder->id,
+            'from_status' => 'returned',
+            'to_status' => 'refunded',
+        ]);
+    }
+
+    public function test_a_partly_returned_sub_order_stays_delivered(): void
+    {
+        $scenario = $this->buildScenario();
+        [$order, $subOrder, $item] = $this->deliveredVendorOrder($scenario, 2);
+
+        $this->completeRefundReturn($scenario, $item, 1);
+
+        $this->assertSame('delivered', $subOrder->refresh()->status->value);
+        $this->assertSame('delivered', $order->refresh()->status->value);
     }
 
     public function test_exchange_return_creates_replacement_sub_order_instead_of_refund(): void
@@ -287,7 +340,7 @@ class ReturnRequestLifecycleTest extends TestCase
         );
         $returnRequest = $returnRequests->first();
 
-        $admin = \App\Models\Admin::factory()->create();
+        $admin = Admin::factory()->create();
         $service->approve($returnRequest, (string) $admin->id);
         $service->schedulePickup($returnRequest, null);
         $service->markReceived($returnRequest);

@@ -469,6 +469,7 @@ return [
             'cart_empty' => 'Cart is empty.',
             'address_not_found' => 'Address not found.',
             'cod_unavailable' => 'Cash on delivery is not available for your location.',
+            'gateway_not_configured' => 'This payment method is temporarily unavailable. Please choose another one.',
             'cod_limit_exceeded' => 'Your cart total exceeds the maximum allowed for Cash on Delivery (:limit).',
             'cod_supermall_limit_exceeded' => 'Your Super Mall items exceed the maximum allowed for Cash on Delivery (:limit).',
             'cod_international_not_allowed' => 'Cash on delivery is not available for international items in your cart. Please choose a prepaid payment method.',

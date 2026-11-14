@@ -806,6 +806,8 @@ return [
         'items_cancelled_successfully' => 'Selected items cancelled and refund initiated.',
         'refund_queued' => 'Refund queued for processing.',
         'refund_creation_failed' => 'Refund creation failed.',
+        'refund_not_paid' => 'This order has no collected payment to refund yet.',
+        'refund_exceeds_paid' => 'The refund exceeds what is left to refund on this order (:available available).',
         'dispute_escalated' => 'Dispute escalated: :number',
         'dispute_creation_failed' => 'Dispute creation failed.',
         'fraud_flagged_successfully' => 'Order flagged as potential fraud.',

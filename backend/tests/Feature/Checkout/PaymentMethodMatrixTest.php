@@ -2,18 +2,24 @@
 
 namespace Tests\Feature\Checkout;
 
-use App\Models\CartItem;
 use App\Enums\WalletOwnerType;
-use App\Models\Wallet;
+use App\Models\Admin;
+use App\Models\CartItem;
 use App\Models\IdempotencyKey;
 use App\Models\LedgerEntry;
 use App\Models\Order;
 use App\Models\PaymentTransaction;
+use App\Models\Wallet;
+use App\Services\Customer\CartService;
+use App\Services\OrderInterventionService;
 use App\Services\Payments\PaymentGatewayFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
+use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Models\Permission;
 use Tests\Support\AssertsOrderMoney;
 use Tests\Support\FakePaymentGateway;
 use Tests\Support\MarketplaceScenario;
@@ -26,8 +32,8 @@ use Tests\TestCase;
  */
 class PaymentMethodMatrixTest extends TestCase
 {
-    use RefreshDatabase;
     use AssertsOrderMoney;
+    use RefreshDatabase;
 
     protected function tearDown(): void
     {
@@ -58,11 +64,11 @@ class PaymentMethodMatrixTest extends TestCase
     {
         $this->actingAs($scenario->customer, 'customer');
 
-        return app(\App\Services\Customer\CartService::class)
+        return app(CartService::class)
             ->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
     }
 
-    private function placeOrder(MarketplaceScenario $scenario, string $gatewayCode, array $extra = []): \Illuminate\Testing\TestResponse
+    private function placeOrder(MarketplaceScenario $scenario, string $gatewayCode, array $extra = []): TestResponse
     {
         $payload = array_merge([
             'address_id' => $scenario->customerAddress->id,
@@ -106,7 +112,7 @@ class PaymentMethodMatrixTest extends TestCase
     public function test_partial_wallet_plus_card_charges_gateway_only_for_remainder(): void
     {
         $scenario = $this->buildScenario();
-        $fake = new FakePaymentGateway();
+        $fake = new FakePaymentGateway;
         $fake->scriptDefaultInitiate(FakePaymentGateway::OUTCOME_SUCCESS);
         PaymentGatewayFactory::fake($fake);
 
@@ -136,7 +142,7 @@ class PaymentMethodMatrixTest extends TestCase
     public function test_partial_wallet_plus_card_decline_refunds_wallet_and_releases_stock(): void
     {
         $scenario = $this->buildScenario();
-        $fake = new FakePaymentGateway();
+        $fake = new FakePaymentGateway;
         $fake->scriptInitiate(FakePaymentGateway::OUTCOME_DECLINE);
         PaymentGatewayFactory::fake($fake);
 
@@ -161,10 +167,49 @@ class PaymentMethodMatrixTest extends TestCase
         $this->assertSame(0, $inventory->quantity_reserved);
     }
 
+    public function test_a_gateway_missing_its_credentials_is_neither_offered_nor_accepted(): void
+    {
+        $scenario = $this->buildScenario();
+        $scenario->paymentGateways['stripe']->update(['required_fields' => [['key' => 'secret_key', 'label' => 'Secret key']]]);
+        $cart = $this->cartFor($scenario);
+        $this->addVendorItem($scenario, $cart, $scenario->vendorListingFbp, 1);
+
+        $prepare = $this->postJson("/api/customer/v1/{$scenario->country->site_code}/checkout/prepare", [
+            'address_id' => $scenario->customerAddress->id,
+            'country_payment_gateway_id' => $scenario->countryPaymentGateways['cod']->id,
+        ])->assertOk();
+
+        $this->assertNotContains('stripe', array_column($prepare->json('data.available_payment_gateways'), 'gateway_code'));
+
+        $this->placeOrder($scenario, 'stripe')
+            ->assertUnprocessable()
+            ->assertJsonPath('message', __('common.exceptions.checkout.gateway_not_configured'));
+        $this->assertSame(0, Order::count());
+    }
+
+    public function test_card_decline_cancels_the_sub_orders_so_vendors_never_fulfil_them(): void
+    {
+        $scenario = $this->buildScenario();
+        $fake = new FakePaymentGateway;
+        $fake->scriptInitiate(FakePaymentGateway::OUTCOME_DECLINE);
+        PaymentGatewayFactory::fake($fake);
+
+        $cart = $this->cartFor($scenario);
+        $this->addVendorItem($scenario, $cart, $scenario->vendorListingFbp, 1);
+
+        $response = $this->placeOrder($scenario, 'stripe');
+        $response->assertStatus(201);
+
+        $order = Order::where('order_number', $response->json('data.order.order_number') ?? $response->json('data.order_number'))->firstOrFail();
+
+        $this->assertSame('cancelled', $order->refresh()->status->value);
+        $this->assertSame(['cancelled'], $order->subOrders()->pluck('status')->map(fn ($status) => $status->value)->unique()->values()->all());
+    }
+
     public function test_card_payment_exception_rolls_back_and_does_not_clear_cart(): void
     {
         $scenario = $this->buildScenario();
-        $fake = new FakePaymentGateway();
+        $fake = new FakePaymentGateway;
         $fake->scriptInitiate(FakePaymentGateway::OUTCOME_EXCEPTION);
         PaymentGatewayFactory::fake($fake);
 
@@ -220,7 +265,7 @@ class PaymentMethodMatrixTest extends TestCase
     public function test_bank_transfer_order_pending_until_admin_confirms(): void
     {
         $scenario = $this->buildScenario();
-        $fake = (new FakePaymentGateway())->withCode('bank_transfer');
+        $fake = (new FakePaymentGateway)->withCode('bank_transfer');
         $fake->scriptDefaultInitiate(FakePaymentGateway::OUTCOME_SUCCESS);
         PaymentGatewayFactory::fake($fake);
 
@@ -237,9 +282,9 @@ class PaymentMethodMatrixTest extends TestCase
         $transaction = PaymentTransaction::where('order_id', $order->id)->where('gateway', 'bank_transfer')->latest()->first();
         $this->assertNotNull($transaction);
 
-        $admin = \App\Models\Admin::factory()->create();
-        \Spatie\Permission\Models\Permission::findOrCreate('transactions.view', 'admin');
-        \Spatie\Permission\Models\Permission::findOrCreate('vendors.assigned_only', 'admin');
+        $admin = Admin::factory()->create();
+        Permission::findOrCreate('transactions.view', 'admin');
+        Permission::findOrCreate('vendors.assigned_only', 'admin');
         $admin->givePermissionTo('transactions.view');
         $this->actingAs($admin, 'admin');
 
@@ -253,7 +298,7 @@ class PaymentMethodMatrixTest extends TestCase
     public function test_bank_transfer_sub_order_cannot_leave_placed_until_admin_approves_payment(): void
     {
         $scenario = $this->buildScenario();
-        $fake = (new FakePaymentGateway())->withCode('bank_transfer');
+        $fake = (new FakePaymentGateway)->withCode('bank_transfer');
         $fake->scriptDefaultInitiate(FakePaymentGateway::OUTCOME_SUCCESS);
         PaymentGatewayFactory::fake($fake);
 
@@ -267,14 +312,14 @@ class PaymentMethodMatrixTest extends TestCase
         $order = Order::where('order_number', $orderNumber)->firstOrFail();
         $subOrder = $order->subOrders()->firstOrFail();
 
-        $intervention = app(\App\Services\OrderInterventionService::class);
+        $intervention = app(OrderInterventionService::class);
 
         // Payment is still pending admin approval: the sub-order must not
         // be allowed to move out of `placed` into fulfillment.
         try {
-            $intervention->updateSubOrderStatus($subOrder, 'confirmed', 'vendor accepted', (string) \App\Models\Admin::factory()->create()->id);
+            $intervention->updateSubOrderStatus($subOrder, 'confirmed', 'vendor accepted', (string) Admin::factory()->create()->id);
             $this->fail('Expected a ValidationException blocking the transition.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             $this->assertStringContainsString('pending admin approval', collect($e->errors())->flatten()->first());
         }
 
@@ -284,9 +329,9 @@ class PaymentMethodMatrixTest extends TestCase
         // Admin approves the offline payment.
         $transaction = PaymentTransaction::where('order_id', $order->id)->where('gateway', 'bank_transfer')->latest()->first();
 
-        $admin = \App\Models\Admin::factory()->create();
-        \Spatie\Permission\Models\Permission::findOrCreate('transactions.view', 'admin');
-        \Spatie\Permission\Models\Permission::findOrCreate('vendors.assigned_only', 'admin');
+        $admin = Admin::factory()->create();
+        Permission::findOrCreate('transactions.view', 'admin');
+        Permission::findOrCreate('vendors.assigned_only', 'admin');
         $admin->givePermissionTo('transactions.view');
         $this->actingAs($admin, 'admin');
 
@@ -319,8 +364,8 @@ class PaymentMethodMatrixTest extends TestCase
 
         $this->assertSame('pending', $order->payment_status->value);
 
-        $admin = \App\Models\Admin::factory()->create();
-        $intervention = app(\App\Services\OrderInterventionService::class);
+        $admin = Admin::factory()->create();
+        $intervention = app(OrderInterventionService::class);
 
         // COD is never gated on the offline-payment-approval flow.
         Notification::fake();
@@ -335,7 +380,7 @@ class PaymentMethodMatrixTest extends TestCase
     public function test_anonymous_cancel_without_signature_or_failed_gateway_state_is_forbidden(): void
     {
         $scenario = $this->buildScenario();
-        $fake = new FakePaymentGateway();
+        $fake = new FakePaymentGateway;
         $fake->scriptDefaultInitiate(FakePaymentGateway::OUTCOME_SUCCESS);
         PaymentGatewayFactory::fake($fake);
 
@@ -354,7 +399,7 @@ class PaymentMethodMatrixTest extends TestCase
     public function test_signed_cancel_url_is_accepted(): void
     {
         $scenario = $this->buildScenario();
-        $fake = new FakePaymentGateway();
+        $fake = new FakePaymentGateway;
         $fake->scriptDefaultInitiate(FakePaymentGateway::OUTCOME_SUCCESS);
         PaymentGatewayFactory::fake($fake);
 
@@ -383,7 +428,7 @@ class PaymentMethodMatrixTest extends TestCase
     public function test_webhook_arriving_before_callback_captures_the_order(): void
     {
         $scenario = $this->buildScenario();
-        $fake = new FakePaymentGateway();
+        $fake = new FakePaymentGateway;
         $fake->scriptDefaultInitiate(FakePaymentGateway::OUTCOME_SUCCESS);
         PaymentGatewayFactory::fake($fake);
 

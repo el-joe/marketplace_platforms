@@ -28,19 +28,19 @@ class OrderOutForDelivery extends BaseCustomerNotification
             : "طلبك رقم #{$this->subOrder->sub_order_number} في الطريق إليك اليوم.";
 
         return [
-            'title'            => 'Out for Delivery',
-            'title_ar'         => 'الطلب في الطريق إليك',
-            'message'          => $message,
-            'message_ar'       => $messageAr,
-            'url'              => route('customer.orders.show', $this->subOrder->order->order_number),
-            'sub_order_id'     => $this->subOrder->id,
+            'title' => 'Out for Delivery',
+            'title_ar' => 'الطلب في الطريق إليك',
+            'message' => $message,
+            'message_ar' => $messageAr,
+            'url' => route('customer.orders.show', ['country' => $this->subOrder->order->country?->site_code, 'order_number' => $this->subOrder->order->order_number]),
+            'sub_order_id' => $this->subOrder->id,
             'sub_order_number' => $this->subOrder->sub_order_number,
-            'delivery_otp'     => $this->deliveryOtp,
+            'delivery_otp' => $this->deliveryOtp,
         ];
     }
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('customer.' . $this->subOrder->order->customer_id)];
+        return [new PrivateChannel('customer.'.$this->subOrder->order->customer_id)];
     }
 }

@@ -10,6 +10,7 @@ use App\Events\SubOrderShipped;
 use App\Exceptions\InvalidOrderTransitionException;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
+use App\Models\ShipmentTrackingEvent;
 use App\Models\SubOrder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -29,10 +30,21 @@ class OrderStateMachine
 {
     /** Sub-order status => order_items.fulfillment_status it maps to. */
     private const ITEM_STATUS_MAP = [
-        'shipped'   => 'shipped',
+        'shipped' => 'shipped',
         'delivered' => 'delivered',
-        'returned'  => 'returned',
+        'returned' => 'returned',
         'cancelled' => 'cancelled',
+    ];
+
+    /**
+     * Sub-order status => shipment status + customer-facing tracking event, for moves made after
+     * the shipment exists (vendor/admin-driven delivery). Carrier and rider integrations post their
+     * own events; one already recorded for a status is never duplicated.
+     */
+    private const SHIPMENT_TRACKING_MAP = [
+        'out_for_delivery' => 'Your package is out for delivery.',
+        'delivered' => 'Your package was delivered.',
+        'returned' => 'Your package was returned to the seller.',
     ];
 
     /**
@@ -52,10 +64,10 @@ class OrderStateMachine
 
         DB::transaction(function () use ($subOrder, $from, $to, $actor, $meta) {
             $timestamps = match ($to) {
-                'shipped'   => ['shipped_at' => now()],
+                'shipped' => ['shipped_at' => now()],
                 'delivered' => ['delivered_at' => now()],
                 'cancelled' => ['cancelled_at' => now()],
-                default     => [],
+                default => [],
             };
 
             $subOrder->update(array_merge(['status' => $to], $timestamps));
@@ -65,13 +77,15 @@ class OrderStateMachine
             }
 
             OrderStatusHistory::create([
-                'order_id'     => $subOrder->order_id,
+                'order_id' => $subOrder->order_id,
                 'sub_order_id' => $subOrder->id,
-                'from_status'  => $from,
-                'to_status'    => $to,
-                'reason'       => $meta['reason'] ?? null,
-                'metadata'     => array_merge($meta, ['actor' => $actor->value]),
+                'from_status' => $from,
+                'to_status' => $to,
+                'reason' => $meta['reason'] ?? null,
+                'metadata' => array_merge($meta, ['actor' => $actor->value]),
             ]);
+
+            $this->recordShipmentTracking($subOrder, $to);
 
             $subOrder->refresh();
             $this->rollupOrder($subOrder->order ?? $subOrder->order()->first());
@@ -80,10 +94,10 @@ class OrderStateMachine
         $subOrder->refresh();
 
         match ($to) {
-            'shipped'   => Event::dispatch(new SubOrderShipped($subOrder)),
+            'shipped' => Event::dispatch(new SubOrderShipped($subOrder)),
             'delivered' => Event::dispatch(new SubOrderDelivered($subOrder)),
-            'returned'  => Event::dispatch(new SubOrderReturned($subOrder)),
-            default     => null,
+            'returned' => Event::dispatch(new SubOrderReturned($subOrder)),
+            default => null,
         };
 
         return $subOrder;
@@ -96,7 +110,8 @@ class OrderStateMachine
      *
      * Rules:
      *  - all sub-orders 'completed'                       -> completed
-     *  - all sub-orders in {cancelled, refunded}           -> cancelled
+     *  - all sub-orders in {cancelled, refunded}, at least one refunded -> refunded
+     *  - all sub-orders cancelled                          -> cancelled
      *  - all sub-orders in {delivered, completed}          -> delivered
      *  - some delivered, rest in {cancelled, refunded, delivered, completed}
      *    (i.e. every sub-order is terminal and at least one delivered)     -> delivered
@@ -119,14 +134,14 @@ class OrderStateMachine
         }
 
         $deliveredLike = ['delivered', 'completed'];
-        $terminal      = ['delivered', 'completed', 'cancelled', 'refunded'];
+        $terminal = ['delivered', 'completed', 'cancelled', 'refunded'];
 
         if ($statuses->every(fn ($s) => $s === 'completed')) {
             return 'completed';
         }
 
         if ($statuses->every(fn ($s) => in_array($s, ['cancelled', 'refunded'], true))) {
-            return 'cancelled';
+            return $statuses->contains('refunded') ? 'refunded' : 'cancelled';
         }
 
         if ($statuses->every(fn ($s) => in_array($s, $deliveredLike, true))) {
@@ -154,7 +169,7 @@ class OrderStateMachine
         // placed -> confirmed once every live sub-order is confirmed/processing/packed.
         // (Order has no processing/packed status; later states are handled above.)
         $currentStatus = $order->status instanceof \BackedEnum ? $order->status->value : $order->status;
-        $live          = $statuses->reject(fn ($s) => in_array($s, ['cancelled', 'refunded'], true));
+        $live = $statuses->reject(fn ($s) => in_array($s, ['cancelled', 'refunded'], true));
 
         if ($currentStatus === 'placed'
             && $live->isNotEmpty()
@@ -163,6 +178,36 @@ class OrderStateMachine
         }
 
         return null;
+    }
+
+    private function recordShipmentTracking(SubOrder $subOrder, string $to): void
+    {
+        if (! isset(self::SHIPMENT_TRACKING_MAP[$to])) {
+            return;
+        }
+
+        $shipment = $subOrder->shipments()->latest('created_at')->first();
+        if (! $shipment) {
+            return;
+        }
+
+        $shipment->update(array_merge(
+            ['status' => $to],
+            $to === 'delivered' ? ['delivered_at' => now()] : [],
+        ));
+
+        if ($shipment->trackingEvents()->where('status', $to)->exists()) {
+            return;
+        }
+
+        ShipmentTrackingEvent::create([
+            'shipment_id' => $shipment->id,
+            'carrier_id' => $shipment->carrier_id,
+            'external_tracking_number' => $shipment->tracking_number,
+            'status' => $to,
+            'description' => self::SHIPMENT_TRACKING_MAP[$to],
+            'occurred_at' => now(),
+        ]);
     }
 
     private function rollupOrder(?Order $order): void
@@ -181,17 +226,17 @@ class OrderStateMachine
         }
 
         $order->update([
-            'status'       => $newStatus,
+            'status' => $newStatus,
             'completed_at' => $newStatus === 'completed' ? now() : $order->completed_at,
             'cancelled_at' => $newStatus === 'cancelled' ? now() : $order->cancelled_at,
         ]);
 
         OrderStatusHistory::create([
-            'order_id'     => $order->id,
+            'order_id' => $order->id,
             'sub_order_id' => null,
-            'from_status'  => $currentStatus,
-            'to_status'    => $newStatus,
-            'reason'       => '[Auto] Order status rolled up from sub-order changes.',
+            'from_status' => $currentStatus,
+            'to_status' => $newStatus,
+            'reason' => '[Auto] Order status rolled up from sub-order changes.',
         ]);
 
         if ($newStatus === 'completed') {

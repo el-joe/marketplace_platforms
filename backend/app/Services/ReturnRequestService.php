@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\DTOs\Refund\RefundScope;
+use App\Enums\CancelActor;
 use App\Enums\InventoryMovementReferenceType;
 use App\Enums\InventoryMovementType;
+use App\Enums\RefundStatus;
 use App\Enums\ReturnRequestItemRestockDecision;
 use App\Enums\ReturnRequestLiability;
 use App\Enums\ReturnRequestStatus;
@@ -12,6 +14,7 @@ use App\Enums\ReturnRequestType;
 use App\Models\Customer;
 use App\Models\InventoryMovement;
 use App\Models\OrderItem;
+use App\Models\Refund;
 use App\Models\ReturnRequest;
 use App\Models\ReturnRequestItem;
 use App\Models\SubOrder;
@@ -42,7 +45,10 @@ use Illuminate\Validation\ValidationException;
  */
 class ReturnRequestService
 {
-    public function __construct(private readonly RefundService $refundService) {}
+    public function __construct(
+        private readonly RefundService $refundService,
+        private readonly OrderStateMachine $stateMachine = new OrderStateMachine,
+    ) {}
 
     /**
      * @param  string[]  $orderItemIds
@@ -405,6 +411,52 @@ class ReturnRequestService
         );
 
         $returnRequest->update(['refund_id' => $refund->id, 'refund_amount' => $refund->amount]);
+
+        $this->closeFullyReturnedSubOrder($returnRequest, $refund);
+    }
+
+    /**
+     * Once every unit of a sub-order has come back through completed, refunded returns, the
+     * sub-order moves delivered → returned → refunded so the order rolls up to refunded instead of
+     * staying delivered. A partly returned sub-order stays delivered; its order's payment status
+     * already shows the partial refund.
+     */
+    private function closeFullyReturnedSubOrder(ReturnRequest $returnRequest, Refund $refund): void
+    {
+        if ($refund->status !== RefundStatus::Completed) {
+            return;
+        }
+
+        $subOrder = SubOrder::with('items')->find($returnRequest->sub_order_id);
+        if (! $subOrder || ! $subOrder->canTransitionTo('returned')) {
+            return;
+        }
+
+        $returnedQuantities = ReturnRequestItem::query()
+            ->whereIn('order_item_id', $subOrder->items->pluck('id'))
+            ->whereHas('returnRequest', fn ($query) => $query
+                ->where('status', ReturnRequestStatus::Completed->value)
+                ->whereNotNull('refund_id'))
+            ->selectRaw('order_item_id, SUM(quantity) as returned_quantity')
+            ->groupBy('order_item_id')
+            ->pluck('returned_quantity', 'order_item_id');
+
+        $isFullyReturned = $subOrder->items->every(
+            fn ($item) => (int) ($returnedQuantities[$item->id] ?? 0) >= (int) $item->quantity
+        );
+
+        if (! $isFullyReturned) {
+            return;
+        }
+
+        $meta = [
+            'reason' => "Return {$returnRequest->return_number} refunded in full.",
+            'return_request_id' => $returnRequest->id,
+            'refund_id' => $refund->id,
+        ];
+
+        $this->stateMachine->transition($subOrder, 'returned', CancelActor::Admin, $meta);
+        $this->stateMachine->transition($subOrder, 'refunded', CancelActor::Admin, $meta);
     }
 
     /**

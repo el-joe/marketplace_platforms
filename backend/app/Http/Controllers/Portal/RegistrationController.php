@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Enums\RegistrationFlow;
+use App\Enums\VendorDocumentRequirementLevel;
 use App\Enums\VendorType;
 use App\Http\Controllers\Controller;
 use App\Mail\NewVendorApplicationAdminMail;
@@ -58,7 +59,7 @@ class RegistrationController extends Controller
                 'password_confirmation' => 'required',
             ],
             2 => [
-                'store_name' => 'required|string|max:255',
+                'store_name' => 'required|string|max:255|unique:vendors,store_name',
                 'store_slug' => 'required|string|max:120|alpha_dash|unique:vendors,store_slug',
                 'business_type' => 'required|in:individual,sole_prop,llc,corp',
                 'business_name' => 'required|string|max:255',
@@ -93,6 +94,7 @@ class RegistrationController extends Controller
         }
         if ($step === 2) {
             return [
+                'store_name.unique' => __('portal.registration.store_name_unique'),
                 'store_slug.unique' => __('portal.registration.store_slug_unique'),
                 'store_slug.alpha_dash' => __('portal.registration.store_slug_alpha_dash'),
             ];
@@ -376,7 +378,7 @@ class RegistrationController extends Controller
         $mandatoryMissing = [];
 
         foreach ($requiredDocs as $item) {
-            if ($item['requirement_level'] === 'mandatory' && empty($docs[$item['type']->code])) {
+            if ($item['requirement_level'] === VendorDocumentRequirementLevel::Mandatory && empty($docs[$item['type']->code])) {
                 $mandatoryMissing[] = $item['type']->name_ar;
             }
         }
