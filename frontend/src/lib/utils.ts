@@ -42,6 +42,46 @@ export class ApiRequestError extends Error {
   }
 }
 
+/** Socket-level failure codes where the request never got an HTTP response. */
+const TRANSIENT_NETWORK_CODES = new Set([
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_SOCKET",
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "ETIMEDOUT",
+  "EAI_AGAIN",
+]);
+const NETWORK_RETRY_ATTEMPTS = 2;
+
+function isTransientNetworkError(err: unknown): boolean {
+  const code = (err as { cause?: { code?: string } })?.cause?.code;
+  return !!code && TRANSIENT_NETWORK_CODES.has(code);
+}
+
+/**
+ * `fetch` that retries idempotent requests (GET/HEAD) when the connection
+ * itself fails (e.g. the API host drops a TCP handshake). A single dropped
+ * connection would otherwise blow up the whole RSC render. Non-idempotent
+ * requests and any HTTP response (incl. 4xx/5xx) are never retried here.
+ */
+async function fetchWithNetworkRetry(
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  const method = (init.method ?? "GET").toUpperCase();
+  const retries =
+    method === "GET" || method === "HEAD" ? NETWORK_RETRY_ATTEMPTS : 0;
+
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetch(url, init);
+    } catch (err) {
+      if (attempt >= retries || !isTransientNetworkError(err)) throw err;
+      await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
+    }
+  }
+}
+
 async function fetchWithAuth<T>(
   baseUrl: string,
   path: string,
@@ -78,7 +118,7 @@ async function fetchWithAuth<T>(
   const sessionId = getOrCreateSessionId();
   if (sessionId) headers.set("X-Session-Id", sessionId);
 
-  const res = await fetch(`${baseUrl}${path}`, {
+  const res = await fetchWithNetworkRetry(`${baseUrl}${path}`, {
     cache: "no-store",
     ...init,
     headers,
