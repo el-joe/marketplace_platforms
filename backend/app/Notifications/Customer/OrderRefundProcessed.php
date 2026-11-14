@@ -38,7 +38,7 @@ class OrderRefundProcessed extends BaseCustomerNotification
             'title_ar' => 'تمت معالجة المبلغ المسترد',
             'message' => $message,
             'message_ar' => $messageAr,
-            'url' => route('customer.orders.show', $order->order_number),
+            'url' => route('customer.orders.show', ['country' => $order->country?->site_code, 'order_number' => $order->order_number]),
             'refund_id' => $this->refund->id,
             'order_id' => $order->id,
         ];
@@ -46,6 +46,6 @@ class OrderRefundProcessed extends BaseCustomerNotification
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('customer.' . $this->refund->order->customer_id)];
+        return [new PrivateChannel('customer.'.$this->refund->order->customer_id)];
     }
 }

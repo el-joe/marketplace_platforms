@@ -40,7 +40,7 @@ class WarrantyClaimResolvedNotification extends BaseCustomerNotification
             'title_ar' => 'تم حل مطالبة الضمان',
             'message' => "Your warranty claim #{$this->warrantyClaim->claim_number} has been resolved: {$resolutionLabel}.",
             'message_ar' => "تم حل مطالبة الضمان رقم #{$this->warrantyClaim->claim_number}: {$resolutionLabelAr}.",
-            'url' => route('customer.warranty-claims.show', $this->warrantyClaim->id),
+            'url' => route('customer.warranty-claims.show', ['country' => $notifiable->country?->site_code, 'id' => $this->warrantyClaim->id]),
             'warranty_claim_id' => $this->warrantyClaim->id,
             'claim_number' => $this->warrantyClaim->claim_number,
             'resolution' => $this->warrantyClaim->resolution,
@@ -49,6 +49,6 @@ class WarrantyClaimResolvedNotification extends BaseCustomerNotification
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('customer.' . $this->warrantyClaim->customer_id)];
+        return [new PrivateChannel('customer.'.$this->warrantyClaim->customer_id)];
     }
 }

@@ -24,7 +24,7 @@ class PaymentFailed extends BaseCustomerNotification
             'title' => 'Payment Failed',
             'title_ar' => 'فشل الدفع',
             'message' => "Your payment for order #{$this->order->order_number} could not be processed. {$this->failureMessage}",
-            'url' => route('customer.orders.show', $this->order->order_number),
+            'url' => route('customer.orders.show', ['country' => $this->order->country?->site_code, 'order_number' => $this->order->order_number]),
             'order_id' => $this->order->id,
             'order_number' => $this->order->order_number,
             'failure_message' => $this->failureMessage,
@@ -37,7 +37,7 @@ class PaymentFailed extends BaseCustomerNotification
             ->subject('Payment Failed — Order #'.$this->order->order_number)
             ->line('Your payment could not be processed.')
             ->line($this->failureMessage)
-            ->action('Try Again', route('customer.orders.show', $this->order->order_number));
+            ->action('Try Again', route('customer.orders.show', ['country' => $this->order->country?->site_code, 'order_number' => $this->order->order_number]));
     }
 
     public function broadcastOn(): array

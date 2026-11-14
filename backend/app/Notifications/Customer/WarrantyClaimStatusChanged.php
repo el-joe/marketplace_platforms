@@ -43,7 +43,7 @@ class WarrantyClaimStatusChanged extends BaseCustomerNotification
             'title_ar' => 'تحديث مطالبة الضمان',
             'message' => "Your warranty claim #{$this->warrantyClaim->claim_number} status changed to: {$newLabel}.",
             'message_ar' => "تم تغيير حالة مطالبة الضمان رقم #{$this->warrantyClaim->claim_number} إلى: {$newLabelAr}.",
-            'url' => route('customer.warranty-claims.show', $this->warrantyClaim->id),
+            'url' => route('customer.warranty-claims.show', ['country' => $notifiable->country?->site_code, 'id' => $this->warrantyClaim->id]),
             'warranty_claim_id' => $this->warrantyClaim->id,
             'claim_number' => $this->warrantyClaim->claim_number,
             'status' => $this->warrantyClaim->status,
@@ -53,6 +53,6 @@ class WarrantyClaimStatusChanged extends BaseCustomerNotification
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('customer.' . $this->warrantyClaim->customer_id)];
+        return [new PrivateChannel('customer.'.$this->warrantyClaim->customer_id)];
     }
 }

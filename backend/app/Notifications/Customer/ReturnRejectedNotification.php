@@ -8,9 +8,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 
 class ReturnRejectedNotification extends BaseDatabaseBroadcastNotification
 {
-    public function __construct(private readonly ReturnRequest $returnRequest)
-    {
-    }
+    public function __construct(private readonly ReturnRequest $returnRequest) {}
 
     public function notificationType(): string
     {
@@ -22,14 +20,14 @@ class ReturnRejectedNotification extends BaseDatabaseBroadcastNotification
         return [
             'title' => 'Return Request Rejected',
             'message' => "Your return request ({$this->returnRequest->return_number}) was rejected: "
-                . ($this->returnRequest->rejection_reason ?? ''),
-            'url' => route('customer.returns.show', $this->returnRequest->id),
+                .($this->returnRequest->rejection_reason ?? ''),
+            'url' => route('customer.returns.show', ['country' => $this->returnRequest->order?->country?->site_code, 'return_number' => $this->returnRequest->return_number]),
             'return_request_id' => $this->returnRequest->id,
         ];
     }
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('customer.' . $this->returnRequest->customer_id)];
+        return [new PrivateChannel('customer.'.$this->returnRequest->customer_id)];
     }
 }
