@@ -15,10 +15,11 @@ use App\Models\PaymentTransaction;
 use App\Notifications\Admin\PaymentFailed as AdminPaymentFailed;
 use App\Notifications\Customer\PaymentFailed;
 use App\Notifications\Vendor\PaymentCapturedForOrder;
+use App\Services\Checkout\CheckoutRollbackService;
 use App\Services\Checkout\CouponUsageService;
 use App\Services\Payments\CurrencyConversionService;
-use App\Support\Money;
 use App\Services\Payments\PaymentGatewayFactory;
+use App\Support\Money;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -29,15 +30,16 @@ class PaymentService
         private readonly LedgerService $ledgerService = new LedgerService,
         private readonly CouponUsageService $couponUsageService = new CouponUsageService,
         private readonly CurrencyConversionService $currencyConversionService = new CurrencyConversionService,
+        private readonly ?CheckoutRollbackService $rollbackService = null,
     ) {}
 
     /**
      * @param  int|float|null  $amountCents  The amount to actually charge at the
-     *                                 gateway, in the ORDER's currency. Defaults to $order->total, but
-     *                                 enhancement.md P-05 task 2 requires callers to pass
-     *                                 total - wallet_used - gift_card_used for split payments, so the
-     *                                 customer is never charged twice for the wallet/gift-card
-     *                                 portion already settled internally.
+     *                                       gateway, in the ORDER's currency. Defaults to $order->total, but
+     *                                       enhancement.md P-05 task 2 requires callers to pass
+     *                                       total - wallet_used - gift_card_used for split payments, so the
+     *                                       customer is never charged twice for the wallet/gift-card
+     *                                       portion already settled internally.
      */
     public function initiatePayment(
         Order $order,
@@ -141,9 +143,11 @@ class PaymentService
                 Notification::send($subOrder->vendor->vendorAdmins, new PaymentCapturedForOrder($subOrder));
             });
         } elseif (in_array($result->status, ['failed', 'cancelled', 'declined'], true)) {
-            $transaction->order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
+            $transaction->order->update(['payment_status' => 'failed', 'status' => 'cancelled', 'cancelled_at' => now()]);
             $transaction->order->customer->notify(new PaymentFailed($transaction->order, $result->failureMessage ?? ''));
-            $this->couponUsageService->releaseForOrder($transaction->order);
+            // Undo everything place-order committed — reserved stock, coupon, loyalty, wallet
+            // portion, warranties — and cancel the sub-orders so vendors never fulfil them.
+            ($this->rollbackService ?? new CheckoutRollbackService)->rollback($transaction->order, 'Payment verification failed');
             Notification::send(Admin::permission('orders.view')->get(), new AdminPaymentFailed($transaction->order, $result->failureMessage ?? ''));
         }
 

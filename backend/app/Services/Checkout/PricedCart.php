@@ -2,6 +2,8 @@
 
 namespace App\Services\Checkout;
 
+use App\Support\Money;
+
 /**
  * Immutable output of CheckoutPricingEngine::priceCart(). Holds per-line,
  * per-sub-order-group and order-total figures, all reconciled bottom-up
@@ -42,10 +44,16 @@ final class PricedCart
     /**
      * A comparable "signature" of every customer-facing figure. Used to
      * detect price drift between `prepare` and `place-order` (P-01 task 5).
+     *
+     * Every figure is normalised through Money::number() so the same amount always has the same
+     * PHP type (int when whole, float otherwise): the two signatures are compared strictly, and
+     * `1` vs `1.0` must not read as a price change.
+     *
+     * @return array<string, int|float>
      */
     public function signature(): array
     {
-        return [
+        return array_map(Money::number(...), [
             'subtotal' => $this->subtotal,
             'discount' => $this->discount,
             'loyalty_discount' => $this->loyaltyDiscount,
@@ -56,7 +64,7 @@ final class PricedCart
             'gift_card_applied' => $this->giftCardApplied,
             'customs_duty' => $this->customsDuty,
             'total' => $this->total,
-        ];
+        ]);
     }
 
     public function toArray(): array

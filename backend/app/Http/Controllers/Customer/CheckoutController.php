@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Customer;
 
-use App\Support\Money;
 use App\Enums\AdminListingStatus;
 use App\Enums\CouponType;
 use App\Enums\DeliveryInstruction;
@@ -58,6 +57,7 @@ use App\Services\Checkout\CheckoutRollbackService;
 use App\Services\Checkout\CouponEligibilityService;
 use App\Services\Checkout\CouponNoLongerValidException;
 use App\Services\Checkout\CouponUsageService;
+use App\Services\Checkout\SellerSubOrderApportioner;
 use App\Services\CouponService;
 use App\Services\Customer\CartService;
 use App\Services\Customer\CheckoutCalculationService;
@@ -78,6 +78,7 @@ use App\Services\Shipping\CurrencyConversionService;
 use App\Services\Shipping\InternationalShippingRateService;
 use App\Services\ShippingSubsidyService;
 use App\Services\WarrantyPlanService;
+use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -109,6 +110,7 @@ class CheckoutController extends Controller
         private readonly CheckoutPricingEngine $pricingEngine,
         private readonly CouponEligibilityService $couponEligibilityService,
         private readonly CouponUsageService $couponUsageService,
+        private readonly SellerSubOrderApportioner $subOrderApportioner,
         private readonly LedgerService $ledgerService = new LedgerService,
         private readonly CheckoutRollbackService $rollbackService = new CheckoutRollbackService,
         private readonly InventoryService $inventoryService = new InventoryService,
@@ -544,6 +546,8 @@ class CheckoutController extends Controller
             ->orderBy('sort_order')
             ->get()
             ->reject(fn ($cpg) => $hasInternationalLine && $cpg->gateway?->code === 'cod')
+            // A gateway missing its required credentials cannot take a payment — never offer it.
+            ->filter(fn ($cpg) => $cpg->is_configured)
             ->filter(fn ($cpg) => $this->gatewayAllowedByFbm($cpg->gateway_id, $cart->items))
             ->map(fn ($cpg) => [
                 'id' => $cpg->id,
@@ -577,6 +581,8 @@ class CheckoutController extends Controller
             'applicable' => $walletApplicable,
         ];
 
+        $chargedShippingByMethod = $this->chargedShippingByMethodGroup($groupedForShipping, $cartLineSources, $vendorShipping['per_vendor']);
+
         $vendorDeliveryResponse = collect($vendorShipping['per_vendor'])->map(fn ($v, $vendorId) => [
             'vendor_id' => $vendorId,
             'delivery_fee' => $v['shipping'],
@@ -600,8 +606,8 @@ class CheckoutController extends Controller
                 'groups' => collect($shippingGroups)->map(fn ($g, $id) => [
                     'shipping_method_id' => $id,
                     'method_name' => $g['method']?->name,
-                    'fee' => $g['fee'],
-                    'is_free' => $g['is_free'],
+                    'fee' => $chargedShippingByMethod[$id] ?? 0,
+                    'is_free' => ($chargedShippingByMethod[$id] ?? 0) == 0,
                     'estimated_delivery_days_min' => $g['method']?->min_delivery_days,
                     'estimated_delivery_days_max' => $g['method']?->max_delivery_days,
                 ])->values(),
@@ -785,6 +791,10 @@ class CheckoutController extends Controller
             return ApiResponse::error('Selected payment gateway is not available.', [], 422);
         }
 
+        if (! $methodConfig->is_configured) {
+            return ApiResponse::error(__('common.exceptions.checkout.gateway_not_configured'), [], 422);
+        }
+
         if (! $this->gatewayAllowedByFbm($methodConfig->gateway_id, $cart->items)) {
             return ApiResponse::error('Selected payment gateway is not available for the FBM items in your cart.', [], 422);
         }
@@ -825,8 +835,8 @@ class CheckoutController extends Controller
                 $calc = $this->calculationService->calculateShipping(
                     $address, $country, $methodId, $groupItems->all(), $isCod
                 );
-                $totalShippingFee += $calc['fee'];
-                $codExtraFee += $calc['cod_extra_fee'];
+                $totalShippingFee = Money::number($totalShippingFee + $calc['fee']);
+                $codExtraFee = Money::number($codExtraFee + $calc['cod_extra_fee']);
             }
         }
 
@@ -1146,14 +1156,34 @@ class CheckoutController extends Controller
                 // marketer-listing lines group correctly instead of
                 // crashing on a null vendorListing (enhancement.md P-02).
                 // Grouped by seller_party + shipping_method only (not also
-                // warehouse): CheckoutPricingEngine's PricedSubOrder — whose
-                // tax/subtotal this transaction persists as-is per P-01 — is
-                // itself only keyed by vendor/platform, so splitting a
-                // sub-order further by warehouse here would duplicate that
-                // single priced-sub-order tax figure across multiple rows.
+                // warehouse). The engine prices and splits money per seller
+                // party, so when one seller ships in several sub-orders its
+                // tax, shipping, commission and payout are divided across
+                // them (SellerSubOrderApportioner) instead of being copied
+                // onto each one — Σ sub-orders always equals the order.
                 $grouped = collect($cartItems)->groupBy(
                     fn ($item) => $cartLineSources[$item->id]->groupKey($item->selected_shipping_method_id)
                 );
+
+                $lineIdsBySeller = [];
+                foreach ($grouped as $groupKey => $groupItems) {
+                    $sellerParty = $cartLineSources[$groupItems->first()->id]->sellerParty;
+                    $lineIdsBySeller[$sellerParty][$groupKey] = $groupItems->map(fn ($item) => (string) $item->id)->values()->all();
+                }
+
+                $apportionedByGroup = [];
+                foreach ($lineIdsBySeller as $sellerParty => $lineIdsByGroup) {
+                    $firstGroupItems = $grouped[array_key_first($lineIdsByGroup)];
+                    $engineKey = $cartLineSources[$firstGroupItems->first()->id]->isAdminSeller() ? 'platform' : $sellerParty;
+
+                    $apportionedByGroup += $this->subOrderApportioner->apportion(
+                        $lineIdsByGroup,
+                        $pricedLinesByItemId,
+                        $pricedSubOrdersByVendorId[$engineKey] ?? null,
+                        $moneySplitByGroup[$engineKey] ?? null,
+                        $vendorShippingMap[$sellerParty] ?? [],
+                    );
+                }
                 $subOrders = [];
                 $idx = 0;
 
@@ -1175,18 +1205,19 @@ class CheckoutController extends Controller
                     $vendorSubtotal = Money::number(round($items->sum(fn ($i) => $i->unit_price * $i->quantity), 2));
                     $fulfillmentModel = $firstSource->fulfillmentModel;
 
-                    $vendorShippingCents = $vendorShippingMap[$sellerParty]['shipping'] ?? 0;
-                    $vendorAdminSubsidyCents = $vendorShippingMap[$sellerParty]['platform_subsidy'] ?? 0;
-                    $vendorContributionCents = $vendorShippingMap[$sellerParty]['vendor_contribution'] ?? 0;
-                    $vendorBillableWeightGrams = $vendorShippingMap[$sellerParty]['billable_weight_grams'] ?? null;
+                    // This sub-order's share of its seller's figures (the whole
+                    // figure when the seller ships in a single sub-order).
+                    $apportioned = $apportionedByGroup[$groupKey];
+                    $vendorShippingCents = $apportioned['shipping'];
+                    $vendorAdminSubsidyCents = $apportioned['platform_subsidy'];
+                    $vendorContributionCents = $apportioned['vendor_contribution'];
+                    $vendorBillableWeightGrams = $apportioned['billable_weight_grams'];
 
                     // Sub-order tax is the engine's number, not recomputed here — it
                     // is by construction the sum of this group's line taxes
                     // (including warranty tax), so Σ sub_orders.tax == orders.tax
-                    // always holds (enhancement.md P-01 / D2). The engine groups
-                    // platform (admin-listing) lines under the 'platform' key.
-                    $pricedSubOrder = $pricedSubOrdersByVendorId[$isPlatformSubOrder ? 'platform' : $sellerParty] ?? null;
-                    $vendorTax = $pricedSubOrder?->tax ?? 0;
+                    // always holds (enhancement.md P-01 / D2).
+                    $vendorTax = $apportioned['tax'];
 
                     // enhancement.md P-03: the vendor/platform/marketer money
                     // split (commission, gateway fee, coupon funding,
@@ -1200,7 +1231,7 @@ class CheckoutController extends Controller
                     // commission_amount/vendor_coupon_cost/marketer_commission/
                     // platform_commission_after_discount below are the
                     // engine's numbers, the actual money.
-                    $groupSplit = $moneySplitByGroup[$isPlatformSubOrder ? 'platform' : $sellerParty] ?? null;
+                    $groupSplit = $apportioned['money_split'];
                     $totalCommission = $groupSplit['platform_commission'] ?? 0;
                     $totalCommissionAfterDiscount = $groupSplit['platform_commission_after_discount'] ?? 0;
                     $vendorCouponCostForSubOrder = $groupSplit['vendor_coupon_cost'] ?? 0;
@@ -1276,7 +1307,7 @@ class CheckoutController extends Controller
                     // one order-level fee (D4), not a per-sub-order
                     // recomputation.
                     $gatewayFeeRatePct = $isCod ? 0.0 : (float) $methodConfig->fee_pct;
-                    $warrantyRevenueForSubOrder = $pricedSubOrder?->warrantyTotal ?? 0;
+                    $warrantyRevenueForSubOrder = $apportioned['warranty_revenue'];
 
                     // docs/plans/international_product_shipping.md Phase 3 /
                     // design decision #3: the fx rate is snapshotted here, at
@@ -1908,6 +1939,43 @@ class CheckoutController extends Controller
         }
 
         return ['total' => $totalCents, 'per_vendor' => $perVendor];
+    }
+
+    /**
+     * Each shipping-method group's share of the shipping actually charged. Shipping is charged per
+     * seller (resolveVendorShipping), so a seller's fee is divided across the method groups its lines
+     * sit in, pro rata to line subtotal. The groups therefore always add up to the charged total —
+     * an FBN seller charged 0 shows 0 rather than the zone's rate-table price.
+     *
+     * @param  Collection<string, Collection<int, CartItem>>  $groupedForShipping  shipping method id => cart lines
+     * @param  array<string, CartLineSource>  $cartLineSources
+     * @param  array<string, array{shipping: int|float}>  $perVendorShipping
+     * @return array<string, int|float> shipping method id => charged fee
+     */
+    private function chargedShippingByMethodGroup(Collection $groupedForShipping, array $cartLineSources, array $perVendorShipping): array
+    {
+        $weightsBySeller = [];
+        foreach ($groupedForShipping as $methodId => $items) {
+            foreach ($items as $item) {
+                $sellerParty = ($cartLineSources[$item->id] ?? null)?->sellerParty;
+                if ($sellerParty === null) {
+                    continue;
+                }
+
+                $weightsBySeller[$sellerParty][$methodId] = ($weightsBySeller[$sellerParty][$methodId] ?? 0) + $item->unit_price * $item->quantity;
+            }
+        }
+
+        $charged = array_fill_keys($groupedForShipping->keys()->all(), 0);
+        foreach ($weightsBySeller as $sellerParty => $weights) {
+            $shares = $this->pricingEngine->allocateProRataDecimal($perVendorShipping[$sellerParty]['shipping'] ?? 0, $weights);
+
+            foreach ($shares as $methodId => $share) {
+                $charged[$methodId] = Money::number(($charged[$methodId] ?? 0) + $share);
+            }
+        }
+
+        return $charged;
     }
 
     /**

@@ -15,6 +15,12 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    /*
+    | Address sellers are pointed to from the partner panel (e.g. the account-status page).
+    | The "Contact support" button is hidden while it is unset.
+    */
+    'partner_support_email' => env('PARTNER_SUPPORT_EMAIL'),
+
     'domain' => env('APP_DOMAIN', 'localhost'),
 
     'subdomains' => [

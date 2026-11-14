@@ -2,13 +2,14 @@
 
 namespace App\Services\Checkout;
 
-use App\Enums\InventoryMovementType;
-use App\Models\InventoryMovement;
+use App\Enums\CancelActor;
 use App\Models\Order;
-use App\Models\WarehouseInventory;
 use App\Models\WarrantyPurchase;
 use App\Services\Customer\CheckoutWalletService;
 use App\Services\Customer\LoyaltyService;
+use App\Services\Inventory\InventoryService;
+use App\Services\OrderStateMachine;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -16,8 +17,9 @@ use Illuminate\Support\Facades\Log;
  * enhancement.md P-05 task 4: single place that undoes everything
  * place-order may have already committed for an order once we know the
  * payment did not (or will not) succeed — reserved stock, coupon usage,
- * loyalty points, wallet debit and warranty purchases. Reused by P-06's
- * cancellation engine.
+ * loyalty points, wallet debit and warranty purchases — and cancels the
+ * order's still-open sub-orders so no vendor fulfils an unpaid order.
+ * Reused by P-06's cancellation engine.
  *
  * Idempotent: safe to call more than once for the same order (e.g. once
  * from the callback path and again from the expiry job) — every step only
@@ -26,9 +28,10 @@ use Illuminate\Support\Facades\Log;
 class CheckoutRollbackService
 {
     public function __construct(
-        private readonly CouponUsageService $couponUsageService = new CouponUsageService(),
-        private readonly CheckoutWalletService $checkoutWalletService = new CheckoutWalletService(),
-        private readonly LoyaltyService $loyaltyService = new LoyaltyService(),
+        private readonly CouponUsageService $couponUsageService = new CouponUsageService,
+        private readonly CheckoutWalletService $checkoutWalletService = new CheckoutWalletService,
+        private readonly LoyaltyService $loyaltyService = new LoyaltyService,
+        private readonly OrderStateMachine $stateMachine = new OrderStateMachine,
     ) {}
 
     public function rollback(Order $order, string $reason = 'Checkout rollback'): void
@@ -38,6 +41,23 @@ class CheckoutRollbackService
         $this->releaseLoyaltyPoints($order);
         $this->refundWallet($order);
         $this->cancelWarrantyPurchases($order);
+        $this->cancelOpenSubOrders($order, $reason);
+    }
+
+    /**
+     * Sub-orders that never reached shipping are cancelled through the state machine (history,
+     * item statuses, order rollup). Already-cancelled sub-orders are skipped, so this stays idempotent.
+     */
+    private function cancelOpenSubOrders(Order $order, string $reason): void
+    {
+        $order->subOrders()->get()->each(function ($subOrder) use ($reason): void {
+            if (! $subOrder->canTransitionTo('cancelled')) {
+                return;
+            }
+
+            $this->stateMachine->transition($subOrder, 'cancelled', CancelActor::System, ['reason' => $reason]);
+            $subOrder->update(['cancellation_reason' => $reason]);
+        });
     }
 
     public function releaseReservedInventory(Order $order, string $reason = 'Checkout rollback'): void
@@ -45,7 +65,7 @@ class CheckoutRollbackService
         $order->loadMissing('subOrders.items.allocations');
 
         DB::transaction(function () use ($order, $reason) {
-            $inventoryService = app(\App\Services\Inventory\InventoryService::class);
+            $inventoryService = app(InventoryService::class);
 
             foreach ($order->subOrders as $subOrder) {
                 foreach ($subOrder->items as $item) {
@@ -89,7 +109,7 @@ class CheckoutRollbackService
         }
 
         try {
-            $this->checkoutWalletService->refundToWallet($order->customer, $order, \App\Support\Money::number($order->wallet_amount_used));
+            $this->checkoutWalletService->refundToWallet($order->customer, $order, Money::number($order->wallet_amount_used));
             $order->update(['wallet_amount_used' => 0]);
         } catch (\Throwable $e) {
             Log::error('Failed to refund wallet during rollback', [

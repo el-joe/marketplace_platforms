@@ -45,6 +45,7 @@ use App\Http\Controllers\Partner\VendorChangeRequestController;
 use App\Http\Controllers\Partner\WalletController;
 use App\Http\Controllers\Partner\WarehouseController;
 use App\Http\Controllers\Partner\WarrantyClaimController;
+use App\Http\Middleware\VendorActive;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -61,7 +62,9 @@ use Spatie\Permission\Models\Role;
 */
 
 // ── Suspended page (accessible without full auth) ────────────────────────
-Route::get('/suspended', fn () => view('partner.suspended'))->name('suspended');
+Route::get('/suspended', fn () => view('partner.suspended', [
+    'accountState' => VendorActive::accountState(auth('vendor')->user()?->vendor),
+]))->name('suspended');
 
 Route::redirect('/', '/dashboard')->name('home');
 

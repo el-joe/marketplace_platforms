@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
-use App\Support\Money;
 use App\Enums\CancelActor;
+use App\Enums\OrderPaymentStatus;
 use App\Enums\PaymentTransactionType;
+use App\Jobs\RefundProcessingJob;
 use App\Models\Admin;
 use App\Models\Dispute;
-use App\Models\InventoryMovement;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\Refund;
 use App\Models\SubOrder;
-use App\Models\WarehouseInventory;
 use App\Notifications\Admin\FraudPatternDetected;
 use App\Notifications\Customer\OrderCancelled as CustomerOrderCancelled;
 use App\Notifications\Customer\OrderConfirmed;
@@ -21,11 +21,14 @@ use App\Notifications\Customer\OrderOutForDelivery;
 use App\Notifications\Customer\OrderRefunded;
 use App\Notifications\Customer\OrderShipped as CustomerOrderShipped;
 use App\Notifications\Vendor\OrderCancelledByAdmin;
+use App\Services\Inventory\InventoryService;
 use App\Services\Payments\PaymentGatewayFactory;
+use App\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class OrderInterventionService
@@ -33,8 +36,10 @@ class OrderInterventionService
     // State machine constants are canonical on SubOrder (via HasStateMachine).
     // These aliases allow the service to be used as an authoritative reference
     // by controllers that already type-hint this class.
-    public const STATUS_TRANSITIONS    = SubOrder::STATUS_TRANSITIONS;
-    public const STATUS_LABELS         = SubOrder::STATUS_LABELS;
+    public const STATUS_TRANSITIONS = SubOrder::STATUS_TRANSITIONS;
+
+    public const STATUS_LABELS = SubOrder::STATUS_LABELS;
+
     public const BLOCK_CANCEL_STATUSES = SubOrder::BLOCK_CANCEL_STATUSES;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -56,16 +61,16 @@ class OrderInterventionService
     // ─────────────────────────────────────────────────────────────────────────
 
     public const ORDER_STATUS_TRANSITIONS = [
-        'placed'              => ['confirmed', 'cancelled', 'disputed'],
-        'confirmed'           => ['partially_shipped', 'shipped', 'cancelled', 'disputed'],
-        'partially_shipped'   => ['shipped', 'partially_delivered', 'cancelled', 'disputed'],
-        'shipped'             => ['partially_delivered', 'delivered', 'disputed'],
+        'placed' => ['confirmed', 'cancelled', 'disputed'],
+        'confirmed' => ['partially_shipped', 'shipped', 'cancelled', 'disputed'],
+        'partially_shipped' => ['shipped', 'partially_delivered', 'cancelled', 'disputed'],
+        'shipped' => ['partially_delivered', 'delivered', 'disputed'],
         'partially_delivered' => ['delivered', 'cancelled', 'disputed'],
-        'delivered'           => ['completed', 'refunded', 'disputed'],
-        'completed'           => ['refunded', 'disputed'],
-        'cancelled'           => ['refunded'],
-        'refunded'            => [],
-        'disputed'            => ['delivered', 'cancelled', 'refunded', 'completed'],
+        'delivered' => ['completed', 'refunded', 'disputed'],
+        'completed' => ['refunded', 'disputed'],
+        'cancelled' => ['refunded'],
+        'refunded' => [],
+        'disputed' => ['delivered', 'cancelled', 'refunded', 'completed'],
     ];
 
     /**
@@ -81,7 +86,7 @@ class OrderInterventionService
     ): void {
         $allowed = self::ORDER_STATUS_TRANSITIONS[$order->status->value] ?? [];
 
-        if (!in_array($newStatus, $allowed, true)) {
+        if (! in_array($newStatus, $allowed, true)) {
             throw ValidationException::withMessages([
                 'new_status' => ["Transition from '{$order->status->value}' to '{$newStatus}' is not allowed."],
             ]);
@@ -102,13 +107,13 @@ class OrderInterventionService
             $order->update($updates);
 
             OrderStatusHistory::create([
-                'order_id'            => $order->id,
-                'sub_order_id'        => null,
-                'from_status'         => $old,
-                'to_status'           => $newStatus,
+                'order_id' => $order->id,
+                'sub_order_id' => null,
+                'from_status' => $old,
+                'to_status' => $newStatus,
                 'changed_by_admin_id' => $adminId,
-                'reason'              => $reason ?: '[Admin] Status updated.',
-                'metadata'            => ['action' => 'admin_status_override'],
+                'reason' => $reason ?: '[Admin] Status updated.',
+                'metadata' => ['action' => 'admin_status_override'],
             ]);
         });
     }
@@ -139,7 +144,7 @@ class OrderInterventionService
 
         $gatewayCode = $order->payment_gateway_code ?? $order->payment_method;
 
-        if (!$gatewayCode || !PaymentGatewayFactory::requiresProofApproval((string) $gatewayCode)) {
+        if (! $gatewayCode || ! PaymentGatewayFactory::requiresProofApproval((string) $gatewayCode)) {
             return;
         }
 
@@ -171,7 +176,7 @@ class OrderInterventionService
         string $reason,
         string $adminId
     ): void {
-        if (!$subOrder->canTransitionTo($newStatus)) {
+        if (! $subOrder->canTransitionTo($newStatus)) {
             throw ValidationException::withMessages([
                 'new_status' => ["Status transition from '{$subOrder->status->value}' to '{$newStatus}' is not allowed."],
             ]);
@@ -219,16 +224,16 @@ class OrderInterventionService
 
         if ($customer) {
             $notification = match ($newStatus) {
-                'confirmed'        => new OrderConfirmed($subOrder),
-                'shipped'          => new CustomerOrderShipped($subOrder),
+                'confirmed' => new OrderConfirmed($subOrder),
+                'shipped' => new CustomerOrderShipped($subOrder),
                 'out_for_delivery' => new OrderOutForDelivery(
                     $subOrder,
                     $subOrder->deliveryAssignments()->whereNotNull('delivery_otp')->latest()->first()?->delivery_otp,
                 ),
-                'delivered'        => new OrderDelivered($subOrder),
-                'cancelled'        => new CustomerOrderCancelled($subOrder, $reason),
-                'refunded'         => new OrderRefunded($subOrder),
-                default            => null,
+                'delivered' => new OrderDelivered($subOrder),
+                'cancelled' => new CustomerOrderCancelled($subOrder, $reason),
+                'refunded' => new OrderRefunded($subOrder),
+                default => null,
             };
 
             if ($notification) {
@@ -245,6 +250,7 @@ class OrderInterventionService
      * Force-cancel an order and all its sub-orders.
      *
      * @param  bool  $force  Override block on shipped/delivered sub-orders
+     *
      * @throws \RuntimeException if blocked sub-orders exist and $force is false
      */
     public function forceCancel(
@@ -257,9 +263,9 @@ class OrderInterventionService
 
         $blocked = $order->subOrders->filter(fn ($so) => $so->blocksCancellation());
 
-        if ($blocked->isNotEmpty() && !$force) {
+        if ($blocked->isNotEmpty() && ! $force) {
             throw new \RuntimeException(
-                'blocked:' . $blocked->pluck('sub_order_number')->implode(',')
+                'blocked:'.$blocked->pluck('sub_order_number')->implode(',')
             );
         }
 
@@ -292,7 +298,7 @@ class OrderInterventionService
      * back to stock and issuing a partial refund for the cancelled value only.
      * Remaining (non-cancelled) items continue their normal fulfillment.
      *
-     * @param  Collection<int, \App\Models\OrderItem>  $items
+     * @param  Collection<int, OrderItem>  $items
      */
     public function cancelItems(
         Order $order,
@@ -301,7 +307,7 @@ class OrderInterventionService
         string $adminId
     ): Refund {
         return DB::transaction(function () use ($order, $items, $reason, $adminId) {
-            $inventoryService = app(\App\Services\Inventory\InventoryService::class);
+            $inventoryService = app(InventoryService::class);
 
             foreach ($items as $item) {
                 $item->update(['fulfillment_status' => 'cancelled']);
@@ -318,26 +324,30 @@ class OrderInterventionService
                 $committedAllocations = $item->allocations()->where('status', 'committed')->get();
 
                 if ($reservedAllocations->isNotEmpty()) {
-                    $inventoryService->release($reservedAllocations, 'order', $order->id, actorType: 'admin', actorId: $adminId, reason: '[Partial Cancel] ' . $reason);
+                    $inventoryService->release($reservedAllocations, 'order', $order->id, actorType: 'admin', actorId: $adminId, reason: '[Partial Cancel] '.$reason);
                 }
 
                 foreach ($committedAllocations as $allocation) {
-                    $inventoryService->restock($allocation->warehouse_inventory_id, (int) $allocation->quantity, 'order', $order->id, actorType: 'admin', actorId: $adminId, reason: '[Partial Cancel] ' . $reason, allocation: $allocation);
+                    $inventoryService->restock($allocation->warehouse_inventory_id, (int) $allocation->quantity, 'order', $order->id, actorType: 'admin', actorId: $adminId, reason: '[Partial Cancel] '.$reason, allocation: $allocation);
                 }
             }
 
-            $refundAmountCents = (int) $items->sum('line_total');
+            $refundAmountCents = Money::number($items->sum(fn ($item) => (float) $item->line_total));
 
-            $refund = $this->processRefund(
-                $order,
-                'partial',
-                $refundAmountCents,
-                'customer_request',
-                $reason,
-                $items->first()?->sub_order_id,
-                false,
-                $adminId
-            );
+            // Only money the customer actually paid is refunded: cancelling items on a
+            // not-yet-collected COD order just shrinks what is collected on delivery.
+            $refund = $this->hasRefundablePayment($order)
+                ? $this->processRefund(
+                    $order,
+                    'partial',
+                    $refundAmountCents,
+                    'customer_request',
+                    $reason,
+                    $items->first()?->sub_order_id,
+                    false,
+                    $adminId
+                )
+                : null;
 
             OrderStatusHistory::create([
                 'order_id' => $order->id,
@@ -345,11 +355,11 @@ class OrderInterventionService
                 'from_status' => $order->status->value,
                 'to_status' => $order->status->value,
                 'changed_by_admin_id' => $adminId,
-                'reason' => '[Partial Cancel] ' . $reason,
+                'reason' => '[Partial Cancel] '.$reason,
                 'metadata' => [
                     'action' => 'partial_item_cancellation',
                     'item_ids' => $items->pluck('id')->all(),
-                    'refund_id' => $refund->id,
+                    'refund_id' => $refund?->id,
                 ],
             ]);
 
@@ -378,6 +388,7 @@ class OrderInterventionService
      *
      * @param  string  $refundType  full|partial|shipping_only
      * @param  int|float|null  $amount  Required when $refundType === 'partial'
+     *
      * @throws ValidationException
      */
     public function processRefund(
@@ -398,16 +409,16 @@ class OrderInterventionService
         $capturedTx = $order->transactions->firstWhere('type', PaymentTransactionType::Capture)
             ?? $order->transactions->firstWhere('type', PaymentTransactionType::Sale);
 
-        if (!$capturedTx && !$isCod) {
+        if (! $capturedTx && ! $isCod) {
             throw ValidationException::withMessages([
                 'order_id' => ['No captured payment transaction found to refund against.'],
             ]);
         }
 
         $amountCents = match ($refundType) {
-            'full'          => Money::number($order->total),
+            'full' => Money::number($order->total),
             'shipping_only' => Money::number($order->shipping),
-            default         => Money::round($amount ?? 0),
+            default => Money::round($amount ?? 0),
         };
 
         if ($amountCents <= 0) {
@@ -416,47 +427,75 @@ class OrderInterventionService
             ]);
         }
 
+        if (! $this->hasRefundablePayment($order)) {
+            throw ValidationException::withMessages([
+                'order_id' => [__('admin.orders.refund_not_paid')],
+            ]);
+        }
+
         return DB::transaction(function () use (
             $order, $subOrderId, $capturedTx, $amountCents, $refundType,
             $reason, $reasonNotes, $vendorChargedBack, $adminId
         ) {
+            $order = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            $alreadyRefunded = (float) Refund::where('order_id', $order->id)
+                ->whereIn('status', ['pending', 'approved', 'processing', 'completed'])
+                ->sum('amount');
+
+            if ($alreadyRefunded + $amountCents > (float) $order->total + 0.00005) {
+                throw ValidationException::withMessages([
+                    'amount' => [__('admin.orders.refund_exceeds_paid', [
+                        'available' => Money::format(max(0, (float) $order->total - $alreadyRefunded)),
+                    ])],
+                ]);
+            }
+
             $refund = Refund::create([
-                'order_id'                 => $order->id,
-                'sub_order_id'             => $subOrderId,
-                'original_transaction_id'  => $capturedTx?->id,
-                'refund_transaction_id'    => null,
-                'amount'                   => $amountCents,
-                'currency'                 => $order->currency,
-                'reason'                   => $reason,
-                'reason_notes'             => $reasonNotes,
-                'refund_type'              => $refundType,
-                'initiated_by_customer_id' => $order->customer_id,
-                'approved_by_admin_id'     => $adminId,
-                'vendor_charged_back'      => $vendorChargedBack,
-                'status'                   => 'approved',
+                'order_id' => $order->id,
+                'sub_order_id' => $subOrderId,
+                'original_transaction_id' => $capturedTx?->id,
+                'refund_transaction_id' => null,
+                'amount' => $amountCents,
+                'currency' => $order->currency,
+                'reason' => $reason,
+                'reason_notes' => $reasonNotes,
+                'refund_type' => $refundType,
+                'initiated_by_customer_id' => null,
+                'initiated_by_type' => 'admin',
+                'initiated_by_id' => $adminId,
+                'approved_by_admin_id' => $adminId,
+                'vendor_charged_back' => $vendorChargedBack,
+                'status' => 'approved',
             ]);
 
-            // Update payment_status on the order to reflect the refund.
-            $newPayStatus = ($amountCents + 0.00005 >= (float) $order->total) ? 'refunded' : 'partially_refunded';
-            $order->update(['payment_status' => $newPayStatus]);
-
             OrderStatusHistory::create([
-                'order_id'            => $order->id,
-                'sub_order_id'        => $subOrderId,
-                'from_status'         => $order->status->value,
-                'to_status'           => $order->status->value,
+                'order_id' => $order->id,
+                'sub_order_id' => $subOrderId,
+                'from_status' => $order->status->value,
+                'to_status' => $order->status->value,
                 'changed_by_admin_id' => $adminId,
-                'reason'              => "[Refund] {$reason}" . ($reasonNotes ? " — {$reasonNotes}" : ''),
-                'metadata'            => [
-                    'action'       => 'refund_created',
-                    'refund_id'    => $refund->id,
+                'reason' => "[Refund] {$reason}".($reasonNotes ? " — {$reasonNotes}" : ''),
+                'metadata' => [
+                    'action' => 'refund_created',
+                    'refund_id' => $refund->id,
                     'amount' => $amountCents,
-                    'refund_type'  => $refundType,
+                    'refund_type' => $refundType,
                 ],
             ]);
 
+            // Settlement moves the money (gateway refund, or the wallet for COD/wallet orders),
+            // marks the refund completed and only then sets the order's payment status.
+            RefundProcessingJob::dispatch($refund)->afterCommit();
+
             return $refund;
         });
+    }
+
+    /** Whether the order holds collected money that a refund can be paid out of. */
+    private function hasRefundablePayment(Order $order): bool
+    {
+        return in_array($order->payment_status, [OrderPaymentStatus::Captured, OrderPaymentStatus::PartiallyRefunded], true);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -477,14 +516,14 @@ class OrderInterventionService
 
         return DB::transaction(function () use ($order, $subOrder, $reason, $description, $adminId) {
             $dispute = Dispute::create([
-                'dispute_number'       => 'DSP-' . strtoupper(substr(str_replace('-', '', (string) \Illuminate\Support\Str::uuid()), 0, 10)),
-                'order_id'             => $order->id,
-                'sub_order_id'         => $subOrder->id,
-                'customer_id'          => $order->customer_id,
-                'vendor_id'            => $subOrder->vendor_id,
-                'reason'               => $reason,
-                'description'          => $description,
-                'status'               => 'escalated',
+                'dispute_number' => 'DSP-'.strtoupper(substr(str_replace('-', '', (string) Str::uuid()), 0, 10)),
+                'order_id' => $order->id,
+                'sub_order_id' => $subOrder->id,
+                'customer_id' => $order->customer_id,
+                'vendor_id' => $subOrder->vendor_id,
+                'reason' => $reason,
+                'description' => $description,
+                'status' => 'escalated',
                 'assigned_to_admin_id' => $adminId,
             ]);
 
@@ -493,13 +532,13 @@ class OrderInterventionService
                 $order->update(['status' => 'disputed']);
 
                 OrderStatusHistory::create([
-                    'order_id'            => $order->id,
-                    'sub_order_id'        => null,
-                    'from_status'         => $previousStatus,
-                    'to_status'           => 'disputed',
+                    'order_id' => $order->id,
+                    'sub_order_id' => null,
+                    'from_status' => $previousStatus,
+                    'to_status' => 'disputed',
                     'changed_by_admin_id' => $adminId,
-                    'reason'              => "[Dispute] {$reason} — {$dispute->dispute_number}",
-                    'metadata'            => ['action' => 'dispute_escalated', 'dispute_id' => $dispute->id],
+                    'reason' => "[Dispute] {$reason} — {$dispute->dispute_number}",
+                    'metadata' => ['action' => 'dispute_escalated', 'dispute_id' => $dispute->id],
                 ]);
             }
 
@@ -525,7 +564,7 @@ class OrderInterventionService
                 'from_status' => $order->status->value,
                 'to_status' => $order->status->value,
                 'changed_by_admin_id' => $adminId,
-                'reason' => '[Fraud Flagged] ' . $reason,
+                'reason' => '[Fraud Flagged] '.$reason,
                 'metadata' => ['action' => 'fraud_flagged'],
             ]);
         });
@@ -535,5 +574,4 @@ class OrderInterventionService
             new FraudPatternDetected($order, $reason),
         );
     }
-
 }

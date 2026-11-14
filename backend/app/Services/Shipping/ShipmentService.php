@@ -5,6 +5,7 @@ namespace App\Services\Shipping;
 use App\Enums\CancelActor;
 use App\Models\ProductVariant;
 use App\Models\Shipment;
+use App\Models\ShipmentTrackingEvent;
 use App\Models\ShippingCompanySupervisor;
 use App\Models\SubOrder;
 use App\Notifications\Carrier\NewUnassignedShipmentArrived;
@@ -13,9 +14,7 @@ use Illuminate\Support\Facades\Notification;
 
 class ShipmentService
 {
-    public function __construct(private readonly OrderStateMachine $stateMachine)
-    {
-    }
+    public function __construct(private readonly OrderStateMachine $stateMachine) {}
 
     /**
      * Move the sub-order to `shipped` through the state machine, create its
@@ -32,9 +31,9 @@ class ShipmentService
         bool $advance = false,
     ): Shipment {
         if ($advance) {
-            $steps   = ['confirmed', 'processing', 'packed'];
+            $steps = ['confirmed', 'processing', 'packed'];
             $current = $subOrder->status instanceof \BackedEnum ? $subOrder->status->value : $subOrder->status;
-            $index   = array_search($current, $steps, true);
+            $index = array_search($current, $steps, true);
 
             foreach (array_slice($steps, $index === false ? 0 : $index + 1) as $step) {
                 $this->stateMachine->transition($subOrder, $step, $actor, ['action' => $step]);
@@ -65,6 +64,15 @@ class ShipmentService
             'weight_grams' => $weightGrams,
             'shipping_cost_actual' => $subOrder->shipping,
             'status' => 'label_created',
+        ]);
+
+        ShipmentTrackingEvent::create([
+            'shipment_id' => $shipment->id,
+            'carrier_id' => $shipment->carrier_id,
+            'external_tracking_number' => $trackingNumber,
+            'status' => 'label_created',
+            'description' => 'Shipment created and handed to the carrier.',
+            'occurred_at' => now(),
         ]);
 
         // No shipping_company_id on shipments yet, so any company's

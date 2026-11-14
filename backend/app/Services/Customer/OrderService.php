@@ -2,10 +2,11 @@
 
 namespace App\Services\Customer;
 
+use App\Enums\CancelActor;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\SubOrder;
-use App\Services\Checkout\CouponUsageService;
+use App\Services\OrderCancellationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class OrderService
@@ -13,7 +14,7 @@ class OrderService
     private const PRE_SHIPMENT_STATUSES = ['placed', 'confirmed'];
 
     public function __construct(
-        private readonly CouponUsageService $couponUsageService = new CouponUsageService(),
+        private readonly OrderCancellationService $cancellation,
     ) {}
 
     public function listForCustomer(Customer $customer, array $filters): LengthAwarePaginator
@@ -22,15 +23,15 @@ class OrderService
             ->with(['subOrders.items.vendorListing', 'subOrders.vendor'])
             ->orderByDesc('placed_at');
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->whereDate('placed_at', '>=', $filters['date_from']);
         }
 
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->whereDate('placed_at', '<=', $filters['date_to']);
         }
 
@@ -58,33 +59,16 @@ class OrderService
         return in_array($order->status->value, self::PRE_SHIPMENT_STATUSES, true);
     }
 
+    /**
+     * Customer self-service cancellation of a pre-shipment order, through the single cancellation engine:
+     * state-machine transitions and history, reserved stock released, wallet/gateway tenders refunded and
+     * coupon/loyalty usage reversed.
+     *
+     * @throws \DomainException when a sub-order is already past the customer cancellation boundary
+     */
     public function cancel(Order $order, string $reason): void
     {
-        $order->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
-        ]);
-
-        $order->subOrders()
-            ->whereIn('status', self::PRE_SHIPMENT_STATUSES)
-            ->each(function (SubOrder $subOrder) use ($reason): void {
-                $subOrder->update([
-                    'status' => 'cancelled',
-                    'cancelled_at' => now(),
-                    'cancellation_reason' => $reason,
-                ]);
-            });
-
-        $order->statusHistories()->create([
-            'from_status' => $order->getOriginal('status'),
-            'to_status' => 'cancelled',
-            'reason' => $reason,
-        ]);
-
-        // enhancement.md P-04 task 2: release any reserved/consumed coupon
-        // usage on customer cancellation, wired here (rather than blocked
-        // on P-06's not-yet-built cancellation engine) so it works today.
-        $this->couponUsageService->releaseForOrder($order);
+        $this->cancellation->cancel($order, CancelActor::Customer, $reason);
     }
 
     public function trackSubOrder(Customer $customer, string $subOrderId): ?SubOrder

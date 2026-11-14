@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\VendorDocumentRequirementLevel;
 use App\Enums\VendorDocumentStatus;
 use App\Jobs\VendorApprovedJob;
 use App\Models\Admin;
@@ -20,11 +21,15 @@ use App\Services\Vendor\OwnerEmailConflictException;
 use App\Services\Vendor\VendorOwnerService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 class VendorApprovalService
 {
-    /** Required document types that must be verified before approval */
-    public const REQUIRED_DOC_TYPES = ['business_license', 'tax_certificate', 'owner_id'];
+    /**
+     * Fallback approval documents, used only for a country that has no mandatory document
+     * configured in Admin → Vendor document types. Configured countries use their own list.
+     */
+    public const DEFAULT_REQUIRED_DOC_TYPES = ['business_license', 'tax_certificate', 'owner_id'];
 
     public function __construct(private readonly VendorOwnerService $owners) {}
 
@@ -42,14 +47,57 @@ class VendorApprovalService
             $blockers[] = 'Business info is incomplete.';
         }
 
-        foreach (self::REQUIRED_DOC_TYPES as $type) {
-            $doc = $vendor->documents()->whereHas('documentType', fn ($q) => $q->where('code', $type))->first();
-            if (!$doc || $doc->status !== VendorDocumentStatus::Approved) {
+        foreach (array_keys($this->requiredDocumentTypes($vendor)) as $type) {
+            $verified = $vendor->documents()
+                ->whereHas('documentType', fn ($q) => $q->where('code', $type))
+                ->where('status', VendorDocumentStatus::Approved)
+                ->exists();
+
+            if (! $verified) {
                 $blockers[] = "Required document not verified: {$type}.";
             }
         }
 
         return $blockers;
+    }
+
+    /**
+     * The document types that must be verified before the vendor can be approved: the mandatory
+     * documents configured for the vendor's country, or the platform default when none are configured.
+     *
+     * @return array<string, string> document type code => display label
+     */
+    public function requiredDocumentTypes(Vendor $vendor): array
+    {
+        $country = $vendor->country;
+
+        $configured = $country
+            ? $country->requiredDocumentTypesFor()
+                ->filter(fn (array $item) => $item['requirement_level'] === VendorDocumentRequirementLevel::Mandatory)
+                ->mapWithKeys(fn (array $item) => [$item['type']->code => $this->documentTypeLabel($item['type'])])
+                ->all()
+            : [];
+
+        if ($configured !== []) {
+            return $configured;
+        }
+
+        $defaults = VendorDocumentType::whereIn('code', self::DEFAULT_REQUIRED_DOC_TYPES)->get()->keyBy('code');
+
+        return collect(self::DEFAULT_REQUIRED_DOC_TYPES)
+            ->mapWithKeys(fn (string $code) => [
+                $code => $defaults->has($code)
+                    ? $this->documentTypeLabel($defaults->get($code))
+                    : ucwords(str_replace('_', ' ', $code)),
+            ])
+            ->all();
+    }
+
+    private function documentTypeLabel(VendorDocumentType $type): string
+    {
+        $localized = app()->getLocale() === 'ar' ? $type->name_ar : $type->name_en;
+
+        return $localized ?: ($type->name_en ?: ucwords(str_replace('_', ' ', $type->code)));
     }
 
     /**
@@ -60,11 +108,11 @@ class VendorApprovalService
     {
         $warnings = [];
 
-        if (!$vendor->bankAccounts()->exists()) {
+        if (! $vendor->bankAccounts()->exists()) {
             $warnings[] = 'No bank account on file — payouts will not be possible until one is added.';
         }
 
-        if (!$vendor->onboarding_completed_at) {
+        if (! $vendor->onboarding_completed_at) {
             $warnings[] = 'Vendor has not completed onboarding.';
         }
 
@@ -94,7 +142,7 @@ class VendorApprovalService
 
             $owner = $this->owners->ensureOwner($vendor);
 
-            Notification::send($vendor->vendorAdmins, new VendorApproved());
+            Notification::send($vendor->vendorAdmins, new VendorApproved);
 
             return $owner;
         });
@@ -167,7 +215,7 @@ class VendorApprovalService
             $autoSuspended = false;
 
             if ($data['severity'] === 'critical' || $activeCount >= 3) {
-                $this->suspend($vendor, 'Auto-suspended: ' . ($data['severity'] === 'critical' ? 'critical strike issued' : '3 active strikes'), $admin);
+                $this->suspend($vendor, 'Auto-suspended: '.($data['severity'] === 'critical' ? 'critical strike issued' : '3 active strikes'), $admin);
                 $autoSuspended = true;
             }
 
@@ -207,7 +255,7 @@ class VendorApprovalService
 
         $this->logActivity($vendor, $admin, 'reactivated', 'Vendor reactivated');
 
-        Notification::send($vendor->vendorAdmins, new AccountReactivated());
+        Notification::send($vendor->vendorAdmins, new AccountReactivated);
     }
 
     public function blacklist(Vendor $vendor, string $reason, Admin $admin): void
@@ -239,7 +287,7 @@ class VendorApprovalService
             'payout_hold_reason' => null,
         ]);
 
-        Notification::send($vendor->vendorAdmins, new PayoutHoldReleased());
+        Notification::send($vendor->vendorAdmins, new PayoutHoldReleased);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -247,7 +295,7 @@ class VendorApprovalService
     private function logActivity(Vendor $vendor, Admin $admin, string $event, string $description, array $properties = []): void
     {
         DB::table('activity_log')->insert([
-            'id' => \Illuminate\Support\Str::uuid(),
+            'id' => Str::uuid(),
             'log_name' => 'vendor',
             'description' => $description,
             'subject_type' => Vendor::class,

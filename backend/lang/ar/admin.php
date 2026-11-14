@@ -810,6 +810,8 @@ return [
         'items_cancelled_successfully' => 'تم إلغاء العناصر المحددة وبدء الاسترداد.',
         'refund_queued' => 'تم إدراج الاسترداد في قائمة المعالجة.',
         'refund_creation_failed' => 'فشل إنشاء الاسترداد.',
+        'refund_not_paid' => 'لا يوجد مبلغ محصّل لهذا الطلب لاسترداده بعد.',
+        'refund_exceeds_paid' => 'مبلغ الاسترداد يتجاوز المتبقي القابل للاسترداد في هذا الطلب (المتاح :available).',
         'dispute_escalated' => 'تم تصعيد النزاع: :number',
         'dispute_creation_failed' => 'فشل إنشاء النزاع.',
         'fraud_flagged_successfully' => 'تم الإبلاغ عن الطلب كاحتيال محتمل.',

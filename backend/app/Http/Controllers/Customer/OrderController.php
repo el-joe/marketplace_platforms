@@ -35,7 +35,7 @@ class OrderController extends Controller
         $customer = auth('customer')->user();
         $order = $this->orderService->findForCustomer($customer, $orderNumber);
 
-        if (!$order) {
+        if (! $order) {
             return ApiResponse::error(__('common.exceptions.order.not_found'), [], 404);
         }
 
@@ -47,15 +47,19 @@ class OrderController extends Controller
         $customer = auth('customer')->user();
         $order = $this->orderService->findForCustomer($customer, $orderNumber);
 
-        if (!$order) {
+        if (! $order) {
             return ApiResponse::error(__('common.exceptions.order.not_found'), [], 404);
         }
 
-        if (!$this->orderService->canCancel($order)) {
+        if (! $this->orderService->canCancel($order)) {
             return ApiResponse::error(__('common.exceptions.order.cannot_cancel'), [], 422);
         }
 
-        $this->orderService->cancel($order, $request->validated('reason'));
+        try {
+            $this->orderService->cancel($order, $request->validated('reason'));
+        } catch (\DomainException) {
+            return ApiResponse::error(__('common.exceptions.order.cannot_cancel'), [], 422);
+        }
 
         return ApiResponse::success(null, __('common.exceptions.order.cancelled'));
     }
@@ -65,11 +69,11 @@ class OrderController extends Controller
         $customer = auth('customer')->user();
         $order = $this->orderService->findForCustomer($customer, $orderNumber);
 
-        if (!$order) {
+        if (! $order) {
             return ApiResponse::error(__('common.exceptions.order.not_found'), [], 404);
         }
 
-        if (!$order->payment_gateway_code || !PaymentGatewayFactory::requiresProofApproval($order->payment_gateway_code)) {
+        if (! $order->payment_gateway_code || ! PaymentGatewayFactory::requiresProofApproval($order->payment_gateway_code)) {
             return ApiResponse::error(__('common.exceptions.order.not_bank_transfer'), [], 422);
         }
 
@@ -85,7 +89,7 @@ class OrderController extends Controller
         $customer = auth('customer')->user();
         $tracking = $this->orderTrackingService->getSubOrderTracking($subOrderId, $customer);
 
-        if (!$tracking) {
+        if (! $tracking) {
             return ApiResponse::error(__('common.exceptions.order.suborder_not_found'), [], 404);
         }
 

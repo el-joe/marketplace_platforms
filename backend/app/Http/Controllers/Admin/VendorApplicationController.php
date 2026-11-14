@@ -29,8 +29,6 @@ class VendorApplicationController extends Controller
     use HasExport;
 
     /** Required document types that must be verified before approval */
-    private const REQUIRED_DOC_TYPES = ['business_license', 'tax_certificate', 'owner_id'];
-
     public function __construct(
         private VendorApprovalService $approvalService,
         private VendorOwnerService $owners,
@@ -213,16 +211,17 @@ class VendorApplicationController extends Controller
         $daysWaiting = (int) now()->diffInDays($vendor->onboarding_completed_at ?? $vendor->created_at);
 
         // Required docs checklist
-        $requiredDocs = collect(self::REQUIRED_DOC_TYPES)->mapWithKeys(function ($type) use ($vendor) {
-            $doc = $vendor->documents->first(fn ($d) => $d->documentType?->code === $type);
+        $requiredDocs = collect($this->approvalService->requiredDocumentTypes($vendor))->map(function (string $label, string $type) use ($vendor) {
+            $doc = $vendor->documents
+                ->filter(fn ($d) => $d->documentType?->code === $type)
+                ->sortByDesc(fn ($d) => $d->status === VendorDocumentStatus::Approved)
+                ->first();
 
             return [
-                $type => [
-                    'label' => $this->docTypeLabel($type),
-                    'doc' => $doc,
-                    'uploaded' => (bool) $doc,
-                    'verified' => $doc ? $doc->status === VendorDocumentStatus::Approved : false,
-                ],
+                'label' => $label,
+                'doc' => $doc,
+                'uploaded' => (bool) $doc,
+                'verified' => $doc ? $doc->status === VendorDocumentStatus::Approved : false,
             ];
         });
 
@@ -432,19 +431,5 @@ class VendorApplicationController extends Controller
             'doc_id' => $document->id,
             'status' => VendorDocumentStatus::Rejected->value,
         ]);
-    }
-
-    // ─── Helpers ──────────────────────────────────────────────────────────────
-
-    private function docTypeLabel(string $type): string
-    {
-        return match ($type) {
-            'business_license' => 'Business License',
-            'tax_certificate' => 'Tax Certificate',
-            'owner_id' => 'Owner ID',
-            'bank_statement' => 'Bank Statement',
-            'trade_license' => 'Trade License',
-            default => ucwords(str_replace('_', ' ', $type)),
-        };
     }
 }

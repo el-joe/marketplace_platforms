@@ -180,6 +180,7 @@ return [
         'email_unique' => 'This email is already registered.',
         'password_min' => 'Password must be at least 8 characters.',
         'password_confirmed' => 'Password and confirmation do not match.',
+        'store_name_unique' => 'This store name is already in use, please try another.',
         'store_slug_unique' => 'This store slug is already in use, please try another.',
         'store_slug_alpha_dash' => 'The slug may only contain letters, numbers, and dashes.',
         'terms_agreed_accepted' => 'You must agree to the Terms and Conditions.',

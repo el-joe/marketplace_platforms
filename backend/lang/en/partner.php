@@ -2350,6 +2350,17 @@ return [
         'message_2' => 'Please contact our support team for details and to reactivate your account.',
         'contact_support' => 'Contact Support',
         'back_to_login' => 'Back to Login',
+        'suspended_api_message' => 'Your account has been suspended.',
+        'pending_page_title' => 'Application Under Review | Nawy Vendors',
+        'pending_heading' => 'Your Application Is Under Review',
+        'pending_message_1' => 'Thank you for registering your store on Nawy. Our team is reviewing your application and documents.',
+        'pending_message_2' => 'You will receive an email as soon as your account is approved, and you can then sign in to start selling.',
+        'pending_api_message' => 'Your seller application is still under review.',
+        'rejected_page_title' => 'Application Not Approved | Nawy Vendors',
+        'rejected_heading' => 'Your Application Was Not Approved',
+        'rejected_message_1' => 'After reviewing your application, we were unable to approve your store at this time.',
+        'rejected_message_2' => 'Please contact our support team for the reason and to find out how to apply again.',
+        'rejected_api_message' => 'Your seller application was not approved.',
     ],
 
     'performance' => [
