@@ -90,7 +90,10 @@ const SmallScreenCouponSlide = ({
         <div className="flex gap-2 items-center bg-[linear-gradient(90deg,#fff_35%,#effdf2_100%)] border border-dashed border-green-2 rounded-md p-2">
           <PercentCircleIcon className="size-5 text-white fill-green-2" />
           <p className="me-2 text-sm line-clamp-1">
-            {coupon.name}, CODE: {coupon.code}
+            {/* The promo title is customer-facing; `name` is the admin's
+                internal name and only a fallback when no title was set. */}
+            {coupon.title?.[locale] || coupon.title?.en || coupon.name}, CODE:{" "}
+            {coupon.code}
           </p>
           {locale === "ar" ? (
             <ChevronLeftIcon className="size-4" />

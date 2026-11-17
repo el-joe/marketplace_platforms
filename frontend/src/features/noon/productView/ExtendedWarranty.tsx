@@ -1,7 +1,12 @@
 "use client";
 import Price from "@/src/components/shared/Price";
 import { Button } from "@/src/components/ui/button";
-import { ArrowBigRight, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ArrowBigRight,
+  ChevronLeft,
+  ChevronRight,
+  ShoppingCartIcon,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import React, { useState } from "react";
@@ -10,28 +15,31 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import useLocale from "@/src/hooks/use-locale";
 import { IProductDetails } from "./types";
 import { Warranty } from "./types/product-details";
-import { useWarrantySelection } from "./warranty-selection-context";
 import ExtendedWarrantySheet from "./dialogs/extended-warranty-sheet";
+import { useExtendedWarrantyActions } from "./helpers/use-extended-warranty-actions";
+import { Spinner } from "@/src/components/ui/spinner";
 
 const FALLBACK_WARRANTY_IMAGE =
   "https://f.nooncdn.com/noon-cdn/s/app/com/noon/images/external-warranty/images/extended_warranty_v4.png";
 
 export default function ExtendedWarranty({
   warrantiesData,
+  listingId,
 }: {
   warrantiesData: IProductDetails["warranty_plans"];
   listingId: string;
 }) {
   const t = useTranslations("productView");
   const locale = useLocale();
-  const { selectedPlanId, selectPlan: setSelectedPlan } =
-    useWarrantySelection();
+  const {
+    activePlanId: selectedPlanId,
+    togglePlan: selectPlan,
+    isPlanPending,
+    isMutating,
+    isInCart,
+  } = useExtendedWarrantyActions(listingId);
   const [activeWarrantyForSheet, setActiveWarrantyForSheet] =
     useState<Warranty | null>(null);
-
-  const selectPlan = (planId: string) => {
-    setSelectedPlan(selectedPlanId === planId ? null : planId);
-  };
 
 
   return (
@@ -89,7 +97,13 @@ export default function ExtendedWarranty({
                   </li>
                 ))}
               </ul>
-              <div className="flex justify-between items-center mt-auto">
+              {isInCart && selectedPlanId === warranty.id && (
+                <p className="mt-3 flex items-center gap-1.5 rounded-lg bg-light-green px-2.5 py-1.5 text-xs font-semibold text-green">
+                  <ShoppingCartIcon size={14} />
+                  {t("warrantyAddedToCart")}
+                </p>
+              )}
+              <div className="flex justify-between items-center mt-auto pt-3">
                 <Price
                   currentPrice={warranty.price}
                   currency={warranty.currency}
@@ -98,6 +112,7 @@ export default function ExtendedWarranty({
                   variant={
                     selectedPlanId === warranty.id ? "default" : "outline"
                   }
+                  disabled={isMutating}
                   onClick={(e) => {
                     e.stopPropagation();
                     selectPlan(warranty.id);
@@ -108,7 +123,13 @@ export default function ExtendedWarranty({
                       : "bg-transparent! px-12 py-2 text-lg text-blue font-bold border-blue"
                   }
                 >
-                  {selectedPlanId === warranty.id ? t("selected") : t("select")}
+                  {isPlanPending(warranty.id) ? (
+                    <Spinner />
+                  ) : selectedPlanId === warranty.id ? (
+                    t("selected")
+                  ) : (
+                    t("select")
+                  )}
                 </Button>
               </div>
             </div>

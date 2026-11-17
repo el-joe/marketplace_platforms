@@ -264,7 +264,8 @@
     "customize": "خصّص منتجك",
     "inclusiveOfVat": "شامل ضريبة القيمة المضافة",
     "sizeGuide": "دليل المقاسات",
-    "cancel": "إلغاء"
+    "cancel": "إلغاء",
+    "warrantyAddedToCart": "تمت الإضافة إلى المنتج في سلتك"
   },
   "profile": {
     "disputes": "النزاعات",
@@ -746,7 +747,14 @@
     "couponCopied": "تم نسخ الكوبون",
     "availableOffers": "العروض المتاحة",
     "couponOffers": "عروض الكوبونات",
-    "suggestedProducts": "قد يعجبك أيضاً"
+    "suggestedProducts": "قد يعجبك أيضاً",
+    "noOffersTitle": "لا توجد عروض متاحة حالياً",
+    "noOffersDescription": "لا توجد كوبونات للمنتجات في سلتك حتى الآن. يمكنك إدخال أي كود لديك في خانة الكوبون.",
+    "gotIt": "حسناً",
+    "offersCount": "{count, plural, one {كوبون واحد} two {كوبونان} few {# كوبونات} many {# كوبوناً} other {# كوبون}} لمنتجات سلتك",
+    "validUntil": "صالح حتى {date}",
+    "saveAmount": "وفّر <amount></amount>",
+    "couponOffer": "عرض كوبون"
   },
   "wishlist": {
     "wishlist": "المفضلة",
@@ -1414,7 +1422,8 @@
   },
   "pageBuilder": {
     "announcement": "إعلان",
-    "logo": "الشعار"
+    "logo": "الشعار",
+    "goToSlide": "الانتقال إلى الشريحة {number}"
   },
   "helpSheet": {
     "back": "رجوع",

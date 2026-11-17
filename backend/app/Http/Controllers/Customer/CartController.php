@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Customer;
 
-use App\Support\Money;
 use App\Enums\WalletOwnerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\AddCartItemRequest;
@@ -23,6 +22,7 @@ use App\Services\Customer\ListingIdentifierService;
 use App\Services\Customer\SponsoredProductService;
 use App\Services\SavingsBenefitsService;
 use App\Services\WarrantyPlanService;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -438,6 +438,7 @@ class CartController extends Controller
     {
         if ($warrantyPlanId === null) {
             $item->update(['warranty_plan_id' => null]);
+            $this->cartService->refreshTotals($item->cart);
 
             return null;
         }
@@ -462,6 +463,9 @@ class CartController extends Controller
         }
 
         $item->update(['warranty_plan_id' => $plan->id]);
+        // The warranty is part of the cart total (checkout charges it), and guest
+        // carts are not recalculated on load — refresh the totals now.
+        $this->cartService->refreshTotals($item->cart);
 
         return null;
     }

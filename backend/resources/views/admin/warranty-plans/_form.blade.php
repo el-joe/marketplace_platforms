@@ -219,6 +219,7 @@
                                 {{ __('admin.warranty_plans.price') }} <span class="text-red-500">*</span>
                             </label>
                             <input type="number" id="price" name="price" x-model.number="priceAmount"
+                                :disabled="priceType !== 'flat'"
                                 min="1" step="0.01" class="input w-full @error('price') border-red-400 @enderror">
                             <p class="text-xs text-gray-500 mt-1">
                                 ≈ <span x-text="(priceAmount).toFixed(2)"></span> <span x-text="currency"></span>
@@ -231,6 +232,7 @@
                                 {{ __('admin.warranty_plans.price_pct') }} <span class="text-red-500">*</span>
                             </label>
                             <input type="number" id="price_pct" name="price_pct" x-model.number="pricePct"
+                                :disabled="priceType !== 'percentage'"
                                 min="0.01" max="100" step="0.01" class="input w-full @error('price_pct') border-red-400 @enderror">
                             <p class="text-xs text-gray-400 mt-1">{{ __('admin.warranty_plans.price_pct_hint') }}</p>
                             @error('price_pct') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Cart extends Model
 {
     use HasUuids;
+
     protected $fillable = [
         'country_id',
         'user_id',
@@ -27,11 +30,11 @@ class Cart extends Model
     ];
 
     protected $casts = [
-        'subtotal' => \App\Casts\DecimalMoney::class,
-        'estimated_shipping' => \App\Casts\DecimalMoney::class,
-        'estimated_tax' => \App\Casts\DecimalMoney::class,
-        'estimated_total' => \App\Casts\DecimalMoney::class,
-        'wallet_amount_to_use' => \App\Casts\DecimalMoney::class,
+        'subtotal' => DecimalMoney::class,
+        'estimated_shipping' => DecimalMoney::class,
+        'estimated_tax' => DecimalMoney::class,
+        'estimated_total' => DecimalMoney::class,
+        'wallet_amount_to_use' => DecimalMoney::class,
     ];
 
     public function country(): BelongsTo
@@ -62,5 +65,23 @@ class Cart extends Model
     public function inventoryLocks(): HasMany
     {
         return $this->hasMany(CartInventoryLock::class);
+    }
+
+    /**
+     * Extended-warranty amount for the cart, priced the way checkout charges it
+     * (CheckoutPricingEngine): one plan price per cart line, not per unit, and
+     * only for plans that are still active.
+     */
+    public function warrantyTotal(): int|float
+    {
+        $this->loadMissing('items.warrantyPlan');
+
+        $total = $this->items->sum(
+            fn (CartItem $item): int|float => $item->warrantyPlan?->is_active
+                ? $item->warrantyPlan->resolvePrice($item->unit_price)
+                : 0,
+        );
+
+        return Money::number(round($total, 2));
     }
 }

@@ -264,7 +264,8 @@
     "close": "Close",
     "customize": "Customize your item",
     "sizeGuide": "Size guide",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "warrantyAddedToCart": "Added to your cart item"
   },
   "profile": {
     "disputes": "Disputes",
@@ -746,7 +747,14 @@
     "couponCopied": "Coupon Copied",
     "availableOffers": "Available offers",
     "couponOffers": "Coupon offers",
-    "suggestedProducts": "Recommended for you"
+    "suggestedProducts": "Recommended for you",
+    "noOffersTitle": "No offers available right now",
+    "noOffersDescription": "There are no coupons for the items in your cart yet. You can still enter a code you have in the coupon field.",
+    "gotIt": "Got it",
+    "offersCount": "{count, plural, one {# coupon} other {# coupons}} for items in your cart",
+    "validUntil": "Valid until {date}",
+    "saveAmount": "Save <amount></amount>",
+    "couponOffer": "Coupon offer"
   },
   "wishlist": {
     "wishlist": "Wishlist",
@@ -1414,7 +1422,8 @@
   },
   "pageBuilder": {
     "announcement": "Announcement",
-    "logo": "Logo"
+    "logo": "Logo",
+    "goToSlide": "Go to slide {number}"
   },
   "helpSheet": {
     "back": "Back",

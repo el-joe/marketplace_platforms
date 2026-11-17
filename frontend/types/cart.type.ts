@@ -91,6 +91,8 @@ export interface Summary {
   estimated_shipping: number;
   estimated_tax: number;
   estimated_total: number;
+  /** Selected extended warranties (one plan price per line), included in estimated_total. */
+  warranty_total?: number;
   item_count: number;
 }
 
