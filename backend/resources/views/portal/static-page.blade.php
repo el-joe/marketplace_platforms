@@ -7,7 +7,7 @@
     $seoTitle = $page->{'seo_title_'.($isAr ? 'ar' : 'en')} ?: $pageTitle;
     $seoDescription = $page->localizedSeoDescription();
     // Stored HTML is sanitized on save (Admin\StaticPageController); re-cleaned here as defense in depth.
-    $content = \App\Support\HtmlSanitizer::clean($page->localizedContent());
+    $content = \App\Support\BusinessInfo::fill(\App\Support\HtmlSanitizer::clean($page->localizedContent()), app()->getLocale() === 'ar' ? 'ar' : 'en');
 @endphp
 
 @section('title', $seoTitle)

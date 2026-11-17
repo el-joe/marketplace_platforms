@@ -7138,6 +7138,10 @@ return [
 
     // ─── Settings ────────────────────────────────────────────────────────────
     'settings_section' => [
+        'business_tab' => 'Business Info',
+        'business_desc' => 'Company and contact details shown to customers on the Contact Us and policy pages.',
+        'business_placeholders' => 'Using these details in pages',
+        'business_placeholders_desc' => 'Type a placeholder into any static page; it is replaced with the value saved above when the page is shown.',
         'categories_nav' => 'Settings categories',
         'title' => 'System Settings',
         'general' => 'General',
@@ -10625,6 +10629,8 @@ return [
     ],
 
     'static_pages' => [
+        'placeholders' => 'Business placeholders',
+        'placeholders_hint' => 'Replaced with the values saved in Settings → :link when the page is shown.',
         'country' => 'Country',
         'all_countries' => 'All countries (global)',
         'any_country' => 'Any',

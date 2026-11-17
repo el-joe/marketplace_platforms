@@ -102,6 +102,12 @@
 
         {{-- SIDE COLUMN --}}
         <div class="w-full lg:w-80 flex-shrink-0 space-y-4">
+            <x-card title="{{ __('admin.static_pages.placeholders') }}">
+                <div class="p-4 space-y-3">
+                    <p class="text-xs text-gray-500">{!! __('admin.static_pages.placeholders_hint', ['link' => '<a href="'.route('admin.settings.index', ['tab' => 'business']).'" class="text-primary-600 underline">'.e(__('admin.settings_section.business_tab')).'</a>']) !!}</p>
+                    @include('admin.static-pages._placeholders')
+                </div>
+            </x-card>
             <x-card title="{{ __('admin.static_pages.settings') }}">
                 <div class="p-4 space-y-4">
                     @if($copyFrom)

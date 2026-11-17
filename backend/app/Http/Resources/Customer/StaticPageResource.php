@@ -4,6 +4,7 @@ namespace App\Http\Resources\Customer;
 
 use App\Models\StaticPage;
 use App\Support\Bilingual;
+use App\Support\BusinessInfo;
 use App\Support\HtmlSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -22,9 +23,10 @@ class StaticPageResource extends JsonResource
             'slug' => $this->slug,
             'title' => Bilingual::pair($this->resource, 'title'),
             // Sanitized on save in the admin; re-cleaned here as defense in depth.
+            // {{business_*}} placeholders are filled from Admin → Settings → Business Info (escaped values).
             'content' => [
-                'ar' => HtmlSanitizer::clean($content['ar']),
-                'en' => HtmlSanitizer::clean($content['en']),
+                'ar' => BusinessInfo::fill(HtmlSanitizer::clean($content['ar']), 'ar'),
+                'en' => BusinessInfo::fill(HtmlSanitizer::clean($content['en']), 'en'),
             ],
             // Raw per-language values (null when not set); clients fall back to `title`.
             'seo' => [

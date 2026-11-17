@@ -11,11 +11,23 @@ class SettingsSeeder extends Seeder
     {
         $settings = [
 
+            // ─── business (Admin → Settings → Business Info) ─────────────────
+            // Filled into static pages via {{key}} placeholders (App\Support\BusinessInfo).
+            ['key' => 'business_trade_name', 'value' => 'Nawy', 'category' => 'business', 'description' => 'Brand / trade name shown to customers', 'is_public' => 1],
+            ['key' => 'business_legal_name', 'value' => '', 'category' => 'business', 'description' => 'Legal company name exactly as on the Commercial Registration', 'is_public' => 1],
+            ['key' => 'business_cr_number', 'value' => '', 'category' => 'business', 'description' => 'Commercial Registration (CR) number', 'is_public' => 1],
+            ['key' => 'business_vat_number', 'value' => '', 'category' => 'business', 'description' => 'VAT registration number (leave empty if not registered)', 'is_public' => 1],
+            ['key' => 'business_address_en', 'value' => '', 'category' => 'business', 'description' => 'Registered business address (English)', 'is_public' => 1],
+            ['key' => 'business_address_ar', 'value' => '', 'category' => 'business', 'description' => 'Registered business address (Arabic)', 'is_public' => 1],
+            ['key' => 'support_email', 'value' => '', 'category' => 'business', 'description' => 'Customer-facing support email', 'is_public' => 1],
+            ['key' => 'support_phone', 'value' => '', 'category' => 'business', 'description' => 'Customer-facing support phone, with country code (e.g. +968 9123 4567)', 'is_public' => 1],
+            ['key' => 'business_whatsapp', 'value' => '', 'category' => 'business', 'description' => 'Customer support WhatsApp number, with country code', 'is_public' => 1],
+            ['key' => 'business_support_hours_en', 'value' => '', 'category' => 'business', 'description' => 'Support working hours (English), e.g. Sunday–Thursday, 9:00 AM – 6:00 PM (Oman time)', 'is_public' => 1],
+            ['key' => 'business_support_hours_ar', 'value' => '', 'category' => 'business', 'description' => 'Support working hours (Arabic)', 'is_public' => 1],
+
             // ─── general ──────────────────────────────────────────────────────
             ['key' => 'site_name', 'value' => 'Nawy', 'category' => 'general', 'description' => 'Platform display name', 'is_public' => 1],
             ['key' => 'site_tagline', 'value' => 'Anything you need, Nawy delivers', 'category' => 'general', 'description' => 'Short tagline shown on homepage', 'is_public' => 1],
-            ['key' => 'support_email', 'value' => 'support@platform.com', 'category' => 'general', 'description' => 'Customer-facing support email', 'is_public' => 1],
-            ['key' => 'support_phone', 'value' => '+20 2 12345678', 'category' => 'general', 'description' => 'Customer-facing support phone', 'is_public' => 1],
             ['key' => 'default_locale', 'value' => 'ar', 'category' => 'general', 'description' => 'Default language (en or ar)', 'is_public' => 1],
             ['key' => 'join_option_product_vendor_enabled', 'value' => true, 'category' => 'general', 'description' => 'Show "Product Seller" on the /join page', 'is_public' => 0],
             ['key' => 'join_option_open_souq_enabled', 'value' => true, 'category' => 'general', 'description' => 'Show "Open Souq" (classifieds) on the /join page', 'is_public' => 0],
@@ -88,6 +100,13 @@ class SettingsSeeder extends Seeder
 
         foreach ($settings as $data) {
             // Admin-toggled visibility flags must survive a re-seed.
+            // So must the business details an admin entered (only the category is kept in sync).
+            if ($data['category'] === 'business' && ($existing = Setting::where('key', $data['key'])->first())) {
+                $existing->update(['category' => 'business', 'description' => $data['description'], 'is_public' => $data['is_public']]);
+
+                continue;
+            }
+
             if (str_starts_with($data['key'], 'join_option_') && Setting::where('key', $data['key'])->exists()) {
                 continue;
             }

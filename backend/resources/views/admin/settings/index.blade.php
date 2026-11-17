@@ -49,6 +49,7 @@
             @php
                 $tabIcons = [
                     'appearance' => 'adjustments-horizontal',
+                    'business' => 'building-office',
                     'customers' => 'users',
                     'general' => 'cog-6-tooth',
                     'integrations' => 'cube',
@@ -59,6 +60,7 @@
                 ];
                 $tabLabels = [
                     'appearance' => __('admin.settings_section.appearance'),
+                    'business' => __('admin.settings_section.business_tab'),
                     'customers' => __('admin.settings_section.customers_tab'),
                     'general' => __('admin.settings_section.general'),
                     'integrations' => __('admin.settings_section.integrations'),

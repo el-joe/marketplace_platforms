@@ -9,6 +9,7 @@ enum SettingCategory: string
     use EnumHelpers;
 
     case Appearance = 'appearance';
+    case Business = 'business';
     case Customers = 'customers';
     case General = 'general';
     case Integrations = 'integrations';

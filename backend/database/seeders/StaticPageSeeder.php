@@ -56,10 +56,21 @@ class StaticPageSeeder extends Seeder
             $this->page('refund-policy', StaticPage::FOOTER_GROUP_POLICIES, 'Refund Policy', 'سياسة الاسترداد',
                 'When and how refunds are issued for cancelled or returned orders, including card payments.',
                 'متى وكيف يتم استرداد المبالغ للطلبات الملغاة أو المرتجعة، بما في ذلك المدفوعات بالبطاقة.'),
-            $this->page('shipping-policy', StaticPage::FOOTER_GROUP_POLICIES, 'Shipping Policy', 'سياسة الشحن',
+            $this->page('shipping-policy', StaticPage::FOOTER_GROUP_POLICIES, 'Shipping & Delivery Policy', 'سياسة الشحن والتوصيل',
                 'Delivery areas, timelines and shipping fees on Nawy.',
                 'مناطق التوصيل والمدد الزمنية ورسوم الشحن على ناوي.'),
         ];
+    }
+
+    /**
+     * Ready-written page body from database/seeders/static-pages/{slug}.{lang}.html, if one exists.
+     * Business details are {{business_*}} placeholders (App\Support\BusinessInfo), filled when shown.
+     */
+    public static function content(string $slug, string $lang): ?string
+    {
+        $path = __DIR__."/static-pages/{$slug}.{$lang}.html";
+
+        return is_file($path) ? trim((string) file_get_contents($path)) : null;
     }
 
     /**
@@ -72,8 +83,8 @@ class StaticPageSeeder extends Seeder
             'footer_group' => $group,
             'title_en' => $titleEn,
             'title_ar' => $titleAr,
-            'content_en' => "<h2>{$titleEn}</h2>\n<p>{$summaryEn}</p>\n<p>This is placeholder content. Please update it from the admin panel.</p>",
-            'content_ar' => "<h2>{$titleAr}</h2>\n<p>{$summaryAr}</p>\n<p>هذا محتوى مؤقت. يرجى تحديثه من لوحة التحكم.</p>",
+            'content_en' => self::content($slug, 'en') ?? "<h2>{$titleEn}</h2>\n<p>{$summaryEn}</p>\n<p>This is placeholder content. Please update it from the admin panel.</p>",
+            'content_ar' => self::content($slug, 'ar') ?? "<h2>{$titleAr}</h2>\n<p>{$summaryAr}</p>\n<p>هذا محتوى مؤقت. يرجى تحديثه من لوحة التحكم.</p>",
             'seo_title_en' => "{$titleEn} | Nawy",
             'seo_title_ar' => "{$titleAr} | ناوي",
             'seo_description_en' => $summaryEn,
