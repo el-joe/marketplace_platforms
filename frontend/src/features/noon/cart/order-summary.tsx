@@ -45,6 +45,18 @@ export default function OrderSummary() {
           />
         </div>
       )}
+      {/* extended warranty — charged at checkout, so it belongs in the total */}
+      {!!cart?.cart?.summary?.warranty_total && (
+        <div className="flex justify-between mb-3">
+          <p className=" text-light">{t("warrantyExtended")}</p>
+          <Price
+            currentPrice={cart.cart.summary.warranty_total}
+            size="xs"
+            currency={cart?.cart?.currency}
+            className="font-normal text-light"
+          />
+        </div>
+      )}
       {/* tax */}
       <div className="flex justify-between pb-4 border-b border-border border-dashed mb-4">
         <p className=" text-light">{t("tax")}</p>

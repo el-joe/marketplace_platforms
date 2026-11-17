@@ -556,6 +556,15 @@ class CartService
      * `price_changed` attribute so the API response can flag "price updated"
      * items to the client.
      */
+    /**
+     * Refresh the stored totals after a change made outside this service
+     * (e.g. a warranty plan attached to or removed from a cart item).
+     */
+    public function refreshTotals(Cart $cart): void
+    {
+        $this->recalculateCart($cart);
+    }
+
     private function recalculateCart(Cart $cart): void
     {
         $cart->load(array_merge(self::itemEagerLoads(), ['coupon', 'customer']));
@@ -648,14 +657,22 @@ class CartService
 
         $country = Country::find($cart->country_id);
         $taxable = max(0, $subtotal - $discount);
-        $estimatedTax = $country ? $this->calculationService->calculateTax($taxable, $country) : 0;
+        // Checkout charges a selected extended warranty (plus its VAT) on top of
+        // the products, so the cart total has to include it too.
+        $warrantyTotal = $cart->warrantyTotal();
+        $estimatedTax = $country
+            ? Money::number(
+                $this->calculationService->calculateTax($taxable, $country)
+                + $this->calculationService->calculateTax($warrantyTotal, $country)
+            )
+            : 0;
 
         $cart->update([
             'subtotal' => $subtotal,
             'discount' => $discount,
             'estimated_shipping' => 0,
             'estimated_tax' => $estimatedTax,
-            'estimated_total' => Money::number(max(0, $subtotal - $discount + $estimatedTax)),
+            'estimated_total' => Money::number(max(0, $subtotal - $discount + $warrantyTotal + $estimatedTax)),
             'affiliate_promo_code_id' => $cart->affiliate_promo_code_id,
             'expires_at' => now()->addDays(30),
         ]);
