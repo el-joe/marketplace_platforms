@@ -12,6 +12,7 @@ use App\Models\CountryShippingSetting;
 use App\Models\Currency;
 use App\Models\ShippingMethod;
 use App\Services\CountryService;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Http\JsonResponse;
@@ -57,6 +58,7 @@ class CountryController extends Controller
                 'countries.vat_rate',
                 'countries.is_active',
                 'countries.is_launched',
+                'countries.accepts_vendors_before_launch',
                 'countries.cod_available',
                 'countries.cod_max_amount',
                 'countries.cod_supermall_max_amount',
@@ -75,8 +77,18 @@ class CountryController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'is_launched' => fn ($q, $v) => $q->where('countries.is_launched', (bool) $v),
-            'is_active' => fn ($q, $v) => $q->where('countries.is_active', (bool) $v),
+            'visibility' => fn ($q, $v) => match ($v) {
+                Country::STATUS_DRAFT => $q->whereNull('countries.deleted_at')->where('countries.is_launched', false),
+                Country::STATUS_LIVE => $q->whereNull('countries.deleted_at')->where('countries.is_launched', true)->where('countries.is_active', true),
+                Country::STATUS_HIDDEN => $q->whereNull('countries.deleted_at')->where('countries.is_launched', true)->where('countries.is_active', false),
+                Country::STATUS_DELETED => $q->whereNotNull('countries.deleted_at'),
+                default => $q,
+            },
+            'vendors_open' => function ($q, $v) {
+                $open = fn ($w) => $w->whereNull('countries.deleted_at')->availableForVendors();
+
+                return (bool) $v ? $q->where($open) : $q->whereNot($open);
+            },
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
@@ -91,6 +103,8 @@ class CountryController extends Controller
                 'active_payment_gateways' => (int) $row->active_payment_gateways,
                 'is_launched' => (bool) $row->is_launched,
                 'is_active' => (bool) $row->is_active,
+                'status' => $row->visibilityStatus(),
+                'vendors_open' => $row->isAvailableForVendors(),
                 'cod_available' => (bool) $row->cod_available,
                 'cod_max_amount' => $row->cod_max_amount,
                 'cod_supermall_max_amount' => $row->cod_supermall_max_amount,
@@ -110,7 +124,7 @@ class CountryController extends Controller
             'currencies' => Currency::where('is_active', true)->orderBy('code')->pluck('name', 'code'),
             'timezones' => $this->timezoneList(),
             'locales' => $this->localeList(),
-            'categories' => Category::where('is_active', true)->pluck('name_en', 'id'),
+            'categories' => Bilingual::options(Category::where('is_active', true)),
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => 'Countries', 'url' => route('admin.countries.index')],
@@ -138,7 +152,12 @@ class CountryController extends Controller
             'cod_max_amount' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'cod_supermall_max_amount' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'cod_supermall_category_id' => ['nullable', 'uuid', 'exists:categories,id'],
+            'accepts_vendors_before_launch' => ['boolean'],
         ]);
+
+        // Unchecked toggles are not submitted, so booleans are read explicitly.
+        $data['cod_available'] = $request->boolean('cod_available');
+        $data['accepts_vendors_before_launch'] = $request->boolean('accepts_vendors_before_launch');
 
         $country = Country::create(array_merge(
             ['id' => (string) Str::uuid()],
@@ -170,7 +189,7 @@ class CountryController extends Controller
             'currencies' => Currency::where('is_active', true)->orderBy('code')->pluck('name', 'code'),
             'timezones' => $this->timezoneList(),
             'locales' => $this->localeList(),
-            'categories' => Category::where('is_active', true)->pluck('name_en', 'id'),
+            'categories' => Bilingual::options(Category::where('is_active', true)),
             'allShippingMethods' => $allShippingMethods,
             'launchErrors' => $this->countryService->validateForLaunch($country),
             'canDelete' => $this->countryService->canDelete($country),
@@ -187,6 +206,7 @@ class CountryController extends Controller
         $country = Country::findOrFail($id);
 
         $oldVatRate = (float) $country->vat_rate;
+        $oldAcceptsVendors = (bool) $country->accepts_vendors_before_launch;
 
         $data = $request->validate([
             'iso_code_2' => ['required', 'regex:/^[A-Z]{2}$/', "unique:countries,iso_code_2,{$id}"],
@@ -205,9 +225,21 @@ class CountryController extends Controller
             'cod_max_amount' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'cod_supermall_max_amount' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'cod_supermall_category_id' => ['nullable', 'uuid', 'exists:categories,id'],
+            'accepts_vendors_before_launch' => ['boolean'],
         ]);
 
+        // Unchecked toggles are not submitted, so booleans are read explicitly.
+        $data['cod_available'] = $request->boolean('cod_available');
+        $data['accepts_vendors_before_launch'] = $request->boolean('accepts_vendors_before_launch');
+
         $country->update($data);
+
+        $this->countryService->logVendorAccessChange(
+            $country,
+            $oldAcceptsVendors,
+            $data['accepts_vendors_before_launch'],
+            auth('admin')->id()
+        );
 
         // Log VAT rate change if it changed
         $this->countryService->logVatRateChange(
@@ -254,6 +286,18 @@ class CountryController extends Controller
         $this->countryService->reactivate($country, auth('admin')->id());
 
         return response()->json(['success' => true, 'message' => "{$country->name_en} reactivated."]);
+    }
+
+    public function revertToDraft(string $id): JsonResponse
+    {
+        $country = Country::findOrFail($id);
+        $name = localized($country);
+
+        if (! $this->countryService->revertToDraft($country, auth('admin')->id())) {
+            return response()->json(['message' => __('admin.geography.already_draft', ['name' => $name])], 422);
+        }
+
+        return response()->json(['success' => true, 'message' => __('admin.geography.reverted_to_draft', ['name' => $name])]);
     }
 
     public function destroy(string $id): JsonResponse
@@ -391,6 +435,7 @@ class CountryController extends Controller
         return $this->dataTableResponse($request, $query, $columns, fn ($row) => [
             'id' => $row->id,
             'override_id' => $row->override_id,
+            'name' => localized($row),
             'name_en' => $row->name_en,
             'name_ar' => $row->name_ar,
             'is_available' => (bool) $row->is_available,
@@ -483,7 +528,7 @@ class CountryController extends Controller
                 'title' => 'Country',
                 'data' => 'name',
                 'name' => 'name',
-                'orderable_column' => 'countries.name_en',
+                'orderable_column' => Bilingual::column('countries.name'),
                 'searchable_columns' => ['countries.name_en', 'countries.name_ar', 'countries.iso_code_2'],
             ],
             [
@@ -544,14 +589,17 @@ class CountryController extends Controller
             ],
             [
                 'title' => 'Status',
-                'data' => 'is_launched',
+                'data' => 'status',
                 'name' => 'is_launched',
                 'orderable_column' => 'countries.is_launched',
                 'searchable' => false,
-                'render' => 'Renderers.badge({
-                    true:  { label: "Launched",  color: "success" },
-                    false: { label: "Draft",     color: "gray"    }
-                })',
+            ],
+            [
+                'title' => 'Sellers',
+                'data' => 'vendors_open',
+                'name' => 'vendors_open',
+                'orderable' => false,
+                'searchable' => false,
             ],
             [
                 'title' => '',

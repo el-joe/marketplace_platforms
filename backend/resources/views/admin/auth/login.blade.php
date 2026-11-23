@@ -78,11 +78,14 @@
                     @enderror
                 </div>
 
-                {{-- Remember me --}}
-                <div class="flex items-center mb-6">
-                    <input id="remember" name="remember" type="checkbox" value="1"
-                        class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
-                    <label for="remember" class="ms-2 block text-sm text-gray-700">{{ __('admin.auth.remember_me') }}</label>
+                {{-- Remember me + forgot password --}}
+                <div class="flex items-center justify-between gap-3 mb-6">
+                    <div class="flex items-center">
+                        <input id="remember" name="remember" type="checkbox" value="1"
+                            class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                        <label for="remember" class="ms-2 block text-sm text-gray-700">{{ __('admin.auth.remember_me') }}</label>
+                    </div>
+                    <a href="{{ route('admin.password.request') }}" class="text-sm font-medium text-primary-600 hover:text-primary-700">{{ __('admin.auth.forgot_password') }}</a>
                 </div>
 
                 {{-- Submit --}}

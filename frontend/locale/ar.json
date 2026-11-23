@@ -48,11 +48,15 @@
       "addPickupPoint": "إضافة خزانة/نقطة استلام جديدة",
       "getPickupPoint": "احصل على طلبك في خزانة/نقطة استلام",
       "getPickupPointMessage": "احصل عليه مجانًا في الوقت والمكان الذي تفضله. بدون حد أدنى لقيمة الطلب.",
-      "savedAddresses": "العناوين المحفوظة"
+      "savedAddresses": "العناوين المحفوظة",
+      "changeCountry": "تغيير الدولة",
+      "countries": "الدول",
+      "guestAddressHint": "يمكنك تغيير الدولة من الأعلى بدون حساب. سجّل الدخول لإضافة عناوين التوصيل المحفوظة واستخدامها.",
+      "loginToAddAddress": "سجّل الدخول لإضافة عنوان"
     },
     "categoriesNav": {
       "topBrands": "أفضل الماركات",
-      "openSouq": "المتجر المفتوح",
+      "openSouq": "الإعلانات المبوبة",
       "travel": "السفر",
       "marketers": "الماركترز"
     },
@@ -84,7 +88,25 @@
     "phoneMaxLengthErr": "يجب أن يقل رقم الهاتف عن {value} حرف",
     "passwordMinLengthErr": "يجب أن تتكون كلمة المرور من {value} أرقام على الأقل",
     "marketingCommunicationConfirmErr": "يجب الموافقة على تلقي الرسائل التسويقية",
-    "passwordDontMatchErr": "كلمة المرور وتأكيدها غير متطابقتين"
+    "passwordDontMatchErr": "كلمة المرور وتأكيدها غير متطابقتين",
+    "forgotPassword": {
+      "link": "نسيت كلمة المرور؟",
+      "title": "إعادة تعيين كلمة المرور",
+      "description": "أدخل البريد الإلكتروني لحسابك وسنرسل لك رابطاً لاختيار كلمة مرور جديدة.",
+      "emailPlaceholder": "البريد الإلكتروني",
+      "submit": "إرسال رابط إعادة التعيين",
+      "backToLogin": "العودة لتسجيل الدخول",
+      "sentTitle": "تحقق من بريدك الإلكتروني",
+      "sentMessage": "إذا كان هناك حساب مرتبط بـ {email}، فقد أرسلنا إليه رابطاً لإعادة تعيين كلمة المرور.",
+      "sentHint": "تنتهي صلاحية الرابط خلال 60 دقيقة. لم يصلك؟ تحقق من مجلد الرسائل غير المرغوب فيها أو حاول مجدداً بعد دقيقة.",
+      "invalidEmail": "أدخل بريداً إلكترونياً صحيحاً",
+      "tooManyRequests": "محاولات كثيرة. يرجى الانتظار دقيقة ثم المحاولة مجدداً.",
+      "genericError": "حدث خطأ ما. يرجى المحاولة مجدداً."
+    },
+    "genderLabel": "الجنس (اختياري)",
+    "genderMale": "ذكر",
+    "genderFemale": "أنثى",
+    "genderUnspecified": "أفضّل عدم التحديد"
   },
   "mobileNav": {
     "home": "الرئيسية",
@@ -649,7 +671,8 @@
       "cancelled": "ملغى"
     },
     "specialRequests": "الطلبات الخاصة",
-    "chats": "المحادثات"
+    "chats": "المحادثات",
+    "genderUnspecified": "غير محدد"
   },
   "giftCards": {
     "home": "الرئيسية",
@@ -739,6 +762,7 @@
     "applied": "تم التطبيق",
     "couponCode": "رمز الكوبون",
     "bestsellersForYou": "الأكثر مبيعًا لك",
+    "emptyCartBannerAlt": "ابدأ التسوق — شاهد العروض الحالية",
     "couponDetails": "تفاصيل الكوبون",
     "discountCouponDescription": "خصم إضافي {value}% مع {paymentMethod}",
     "copyCode": "نسخ الرمز",
@@ -963,7 +987,7 @@
       },
       "categoriesNav": {
         "topBrands": "أفضل العلامات التجارية",
-        "openSouq": "المتجر المفتوح",
+        "openSouq": "الإعلانات المبوبة",
         "travel": "السفر",
         "marketers": "الماركترز"
       }
@@ -1482,7 +1506,7 @@
   },
   "marketerProfile": {
     "contractType": "نوع التعاقد:",
-    "classifiedListings": "إعلانات السوق المفتوح",
+    "classifiedListings": "الإعلانات المبوبة",
     "activeExclusiveContracts": "عقود حصرية نشطة",
     "priceNegotiable": "قابل للتفاوض",
     "pageTitleFallback": "ماركتر | ناوي",
@@ -1553,7 +1577,7 @@
     "resultsCount": "{count, plural, one {# عنصر} other {# عناصر}}",
     "noResults": "لا توجد عناصر مطابقة للتصفية",
     "tabProducts": "المنتجات",
-    "tabClassified": "السوق المفتوح",
+    "tabClassified": "الإعلانات المبوبة",
     "tabTravel": "السفر",
     "destinations": "الوجهات",
     "sortPopular": "الأكثر رواجًا",
@@ -1784,5 +1808,35 @@
     "fieldRequired": "حقل {field} مطلوب",
     "yes": "نعم",
     "no": "لا"
+  },
+  "resetPassword": {
+    "title": "اختر كلمة مرور جديدة",
+    "description": "عيّن كلمة مرور جديدة لحسابك، وستستخدمها في تسجيل الدخول القادم.",
+    "forAccount": "الحساب:",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirmPassword": "تأكيد كلمة المرور الجديدة",
+    "passwordHint": "استخدم 8 أحرف على الأقل.",
+    "submit": "حفظ كلمة المرور الجديدة",
+    "passwordTooShort": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+    "confirmRequired": "يرجى تأكيد كلمة المرور الجديدة",
+    "passwordsDontMatch": "كلمتا المرور غير متطابقتين",
+    "tooManyRequests": "محاولات كثيرة. يرجى الانتظار دقيقة ثم المحاولة مجدداً.",
+    "genericError": "حدث خطأ ما. يرجى المحاولة مجدداً.",
+    "invalidTitle": "هذا الرابط غير صالح أو منتهي الصلاحية",
+    "invalidMessage": "تعمل روابط إعادة التعيين مرة واحدة وتنتهي صلاحيتها بعد 60 دقيقة. اطلب رابطاً جديداً من نافذة تسجيل الدخول (\"نسيت كلمة المرور؟\").",
+    "requestNewLink": "طلب رابط جديد",
+    "successTitle": "تم تغيير كلمة المرور",
+    "successMessage": "يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.",
+    "login": "تسجيل الدخول"
+  },
+  "deliveryEstimate": {
+    "orderWithin": "اطلب خلال {hours} ساعة و{minutes} دقيقة",
+    "orderWithinMinutes": "اطلب خلال {minutes} دقيقة"
+  },
+  "distanceDelivery": {
+    "freeWithinRadius": "توصيل مجاني ضمن {radius} كم · على بُعد {distance} كم",
+    "freeByOrderAmount": "توصيل مجاني · على بُعد {distance} كم",
+    "tier": "{distance} كم · رسوم التوصيل",
+    "unavailable": "غير متاح لعنوانك: على بُعد {distance} كم، والحد الأقصى {max} كم"
   }
 }

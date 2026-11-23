@@ -58,11 +58,11 @@
                                 <x-heroicon name="bars-3" class="w-4 h-4" />
                             </td>
                             <td class="px-4 py-3">
-                                <span class="font-semibold text-gray-900">{{ $root->name_en }}</span>
+                                <span class="font-semibold text-gray-900">{{ localized($root) }}</span>
                                 <span class="block text-xs text-gray-400" dir="rtl">{{ $root->name_ar }}</span>
                             </td>
                             <td class="px-4 py-3 text-xs text-gray-400 font-mono">{{ $root->slug }}</td>
-                            <td class="px-4 py-3 text-xs text-gray-400">{{ $root->parent ? $root->parent->name_en : __('admin.blog.data_table.top_level') }}</td>
+                            <td class="px-4 py-3 text-xs text-gray-400">{{ $root->parent ? localized($root->parent) : __('admin.blog.data_table.top_level') }}</td>
                             <td class="px-4 py-3 text-center">
                                 @if($root->color_hex)
                                     <span class="inline-block w-5 h-5 rounded-full border border-gray-200" style="background:{{ $root->color_hex }}" title="{{ $root->color_hex }}"></span>
@@ -87,7 +87,7 @@
                                     {{ __('common.edit') }}
                                 </button>
                                 <button type="button" class="btn-delete-category ms-2 text-xs text-red-500 hover:underline"
-                                        data-id="{{ $root->id }}" data-name="{{ $root->name_en }}">
+                                        data-id="{{ $root->id }}" data-name="{{ localized($root) }}">
                                     {{ __('common.delete') }}
                                 </button>
                             </td>
@@ -97,11 +97,11 @@
                             <td class="px-3 py-3 text-gray-200"></td>
                             <td class="px-4 py-3 ps-10">
                                 <span class="text-gray-400 me-1">↳</span>
-                                <span class="font-medium text-gray-800">{{ $child->name_en }}</span>
+                                <span class="font-medium text-gray-800">{{ localized($child) }}</span>
                                 <span class="block text-xs text-gray-400 ps-4" dir="rtl">{{ $child->name_ar }}</span>
                             </td>
                             <td class="px-4 py-3 text-xs text-gray-400 font-mono">{{ $child->slug }}</td>
-                            <td class="px-4 py-3 text-xs text-gray-400">{{ $root->name_en }}</td>
+                            <td class="px-4 py-3 text-xs text-gray-400">{{ localized($root) }}</td>
                             <td class="px-4 py-3 text-center">
                                 @if($child->color_hex)
                                     <span class="inline-block w-5 h-5 rounded-full border border-gray-200" style="background:{{ $child->color_hex }}" title="{{ $child->color_hex }}"></span>
@@ -126,7 +126,7 @@
                                     {{ __('common.edit') }}
                                 </button>
                                 <button type="button" class="btn-delete-category ms-2 text-xs text-red-500 hover:underline"
-                                        data-id="{{ $child->id }}" data-name="{{ $child->name_en }}">
+                                        data-id="{{ $child->id }}" data-name="{{ localized($child) }}">
                                     {{ __('common.delete') }}
                                 </button>
                             </td>
@@ -173,7 +173,7 @@
                 <select name="parent_id" id="f-parent-id" class="form-input w-full text-sm">
                     <option value="">{{ __('admin.blog.data_table.top_level') }}</option>
                     @foreach($roots as $root)
-                        <option value="{{ $root->id }}">{{ $root->name_en }}</option>
+                        <option value="{{ $root->id }}">{{ localized($root) }}</option>
                     @endforeach
                 </select>
             </div>

@@ -13,7 +13,7 @@
 @section('content')
     @php
         $columns = [
-            ['title' => __('common.name'), 'data' => 'name_en', 'name' => 'name_en'],
+            ['title' => __('common.name'), 'data' => 'name', 'name' => 'name'],
             ['title' => __('admin.attributes_section.code'), 'data' => 'code', 'name' => 'code'],
             [
                 'title' => __('admin.attributes_section.type'),

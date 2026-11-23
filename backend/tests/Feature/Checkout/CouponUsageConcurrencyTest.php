@@ -2,9 +2,10 @@
 
 namespace Tests\Feature\Checkout;
 
+use App\Models\Admin;
+use App\Models\Country;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
-use App\Models\Country;
 use App\Models\Customer;
 use App\Models\Order;
 use Illuminate\Support\Facades\Hash;
@@ -35,14 +36,14 @@ class CouponUsageConcurrencyTest extends TestCase
 
     private ?Customer $customer = null;
 
-    private ?\App\Models\Admin $admin = null;
+    private ?Admin $admin = null;
 
     private ?Country $country = null;
 
     protected function tearDown(): void
     {
         CouponUsage::whereIn('order_id', $this->orderIds)->delete();
-        Order::whereIn('id', $this->orderIds)->delete();
+        Order::withTrashed()->whereIn('id', $this->orderIds)->forceDelete();
         $this->coupon?->delete();
         $this->customer?->delete();
         $this->admin?->delete();
@@ -52,9 +53,33 @@ class CouponUsageConcurrencyTest extends TestCase
         // iso_code_2 constraint. This test is the only one that persists
         // real rows (see class docblock), so it alone is responsible for
         // deleting the country it created.
-        $this->country?->delete();
+        // Country (like Order) soft-deletes; a soft-deleted row still holds the
+        // unique iso/name keys, and under --parallel this base test database is
+        // never migrate:fresh'ed between runs, so it must be removed for real.
+        $this->country?->forceDelete();
 
         parent::tearDown();
+    }
+
+    /**
+     * This test commits real rows, so a crashed earlier run (or another process
+     * sharing this database) can leave a race-test country behind. Pick a
+     * user-assigned ISO code (XA..XZ / XAA..XZZ) that is not taken yet instead
+     * of a fixed 'ZZ', so leftovers can never collide on the unique index.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function unusedTestIsoCodes(): array
+    {
+        foreach (range('A', 'Z') as $letter) {
+            $iso2 = 'X'.$letter;
+            $iso3 = 'X'.$letter.$letter;
+            if (! Country::withTrashed()->where('iso_code_2', $iso2)->orWhere('iso_code_3', $iso3)->orWhere('name_en', 'Race Test Country '.$iso2)->exists()) {
+                return [$iso2, $iso3];
+            }
+        }
+
+        $this->fail('No free user-assigned ISO code (XA..XZ) left for the race-test country.');
     }
 
     private function dummyOrder(Country $country, Customer $customer, string $number): Order
@@ -76,29 +101,31 @@ class CouponUsageConcurrencyTest extends TestCase
 
     public function test_two_concurrent_reservations_against_usage_limit_one_result_in_exactly_one_success(): void
     {
-        // Uses a throwaway ISO code distinct from 'AE' (used pervasively by
+        // Uses a throwaway (unused, user-assigned) ISO code distinct from 'AE' (used pervasively by
         // MarketplaceScenario under RefreshDatabase elsewhere in the suite)
         // so this test's committed, non-rolled-back row can't collide with
         // anything else on the unique iso_code_2 constraint.
+        [$iso2, $iso3] = $this->unusedTestIsoCodes();
+
         $this->country = $country = Country::create([
             'id' => (string) Str::uuid(),
-            'iso_code_2' => 'ZZ', 'iso_code_3' => 'ZZZ', 'name_ar' => 'اختبار', 'name_en' => 'Race Test Country',
+            'iso_code_2' => $iso2, 'iso_code_3' => $iso3, 'name_ar' => 'اختبار '.$iso2, 'name_en' => 'Race Test Country '.$iso2,
             'currency_code' => 'AED', 'vat_rate' => 5, 'is_active' => true, 'is_launched' => true,
             'cod_available' => true, 'timezone' => 'Asia/Dubai',
         ]);
 
         $this->customer = $customer = Customer::create([
             'name' => 'Race Test Customer',
-            'email' => 'race-' . Str::lower(Str::random(10)) . '@example.test',
-            'phone' => '+9715' . random_int(10000000, 99999999),
+            'email' => 'race-'.Str::lower(Str::random(10)).'@example.test',
+            'phone' => '+9715'.random_int(10000000, 99999999),
             'password' => Hash::make('password'),
             'country_id' => $country->id,
         ]);
 
-        $this->admin = $admin = \App\Models\Admin::factory()->create();
+        $this->admin = $admin = Admin::factory()->create();
 
         $this->coupon = $coupon = Coupon::create([
-            'code' => 'RACE-' . Str::upper(Str::random(8)),
+            'code' => 'RACE-'.Str::upper(Str::random(8)),
             'created_by_user_id' => $admin->id,
             'name' => 'Race test coupon',
             'type' => 'percentage',
@@ -115,8 +142,8 @@ class CouponUsageConcurrencyTest extends TestCase
             'is_active' => true,
         ]);
 
-        $orderA = $this->dummyOrder($country, $customer, 'RACE-A-' . substr(uniqid(), -8));
-        $orderB = $this->dummyOrder($country, $customer, 'RACE-B-' . substr(uniqid(), -8));
+        $orderA = $this->dummyOrder($country, $customer, 'RACE-A-'.substr(uniqid(), -8));
+        $orderB = $this->dummyOrder($country, $customer, 'RACE-B-'.substr(uniqid(), -8));
         $this->orderIds = [$orderA->id, $orderB->id];
 
         $php = PHP_BINARY;
@@ -126,8 +153,15 @@ class CouponUsageConcurrencyTest extends TestCase
         // execution windows are guaranteed to overlap regardless of process
         // start jitter — this is what makes the test prove serialization
         // rather than accidentally passing due to fast sequential timing.
-        $procA = Process::start("{$php} {$artisan} test:reserve-coupon-usage {$coupon->id} {$customer->id} {$orderA->id} 10 2");
-        $procB = Process::start("{$php} {$artisan} test:reserve-coupon-usage {$coupon->id} {$customer->id} {$orderB->id} 10 2");
+        // Under `php artisan test --parallel` each worker is re-pointed at its
+        // own marketplace_test_test_N database via runtime config only, so the
+        // subprocesses must be told explicitly which database this worker uses
+        // (they would otherwise read DB_DATABASE from phpunit.xml).
+        $database = config('database.connections.'.config('database.default').'.database');
+        $env = ['DB_DATABASE' => $database];
+
+        $procA = Process::env($env)->start("{$php} {$artisan} test:reserve-coupon-usage {$coupon->id} {$customer->id} {$orderA->id} 10 2");
+        $procB = Process::env($env)->start("{$php} {$artisan} test:reserve-coupon-usage {$coupon->id} {$customer->id} {$orderB->id} 10 2");
 
         $resultA = $procA->wait();
         $resultB = $procB->wait();
@@ -136,7 +170,7 @@ class CouponUsageConcurrencyTest extends TestCase
         $successes = count(array_filter($outputs, fn ($o) => str_contains($o, 'OK')));
         $failures = count(array_filter($outputs, fn ($o) => str_contains($o, 'FAILED')));
 
-        $this->assertSame(1, $successes, 'Expected exactly one of the two concurrent reservations to succeed. Outputs: ' . implode(' | ', $outputs));
+        $this->assertSame(1, $successes, 'Expected exactly one of the two concurrent reservations to succeed. Outputs: '.implode(' | ', $outputs));
         $this->assertSame(1, $failures);
 
         $this->assertSame(1, $coupon->refresh()->times_used);

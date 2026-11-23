@@ -74,7 +74,7 @@
                         @forelse($rules as $rule)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-3 font-medium text-gray-900">
-                                {{ $rule->unservedCity?->name_en ?? '—' }}
+                                {{ localized($rule->unservedCity) ?: '—' }}
                                 @if($rule->unservedCity?->name_ar)
                                 <span class="text-xs text-gray-400 mr-1">({{ $rule->unservedCity->name_ar }})</span>
                                 @endif

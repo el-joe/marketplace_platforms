@@ -1,10 +1,13 @@
 import $ from 'jquery';
 
+const I18N = () => window.FREE_PERIOD_RULES_I18N ?? {};
+const ROUTES = () => window.FREE_PERIOD_RULES_ROUTES;
+
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 }
 
-async function sendJson(url, method, data = {}) {
+async function sendJson(url, method, data = null) {
     const res = await fetch(url, {
         method,
         headers: {
@@ -12,7 +15,7 @@ async function sendJson(url, method, data = {}) {
             Accept: 'application/json',
             'X-CSRF-TOKEN': csrfToken(),
         },
-        body: JSON.stringify(data),
+        body: data === null ? undefined : JSON.stringify(data),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw json;
@@ -27,48 +30,102 @@ function toast(message, type = 'success') {
     }
 }
 
+function errorMessage(err) {
+    const first = err?.errors ? Object.values(err.errors)[0]?.[0] : null;
+    return first ?? err?.message ?? I18N().error ?? 'Error';
+}
+
 function updateUrl(template, id) {
     return template.replace('__ID__', id);
+}
+
+/** Sends what the admin typed (incl. Arabic-Indic digits); the server normalizes and validates. */
+function rawValue(selector) {
+    const value = String($(selector).val() ?? '').trim();
+    return value === '' ? null : value;
+}
+
+function setOpenEnded(isOpenEnded) {
+    $('#rule-open-ended').prop('checked', isOpenEnded);
+    $('#rule-max-weight').prop('disabled', isOpenEnded);
+    if (isOpenEnded) $('#rule-max-weight').val('');
+}
+
+function setEffectiveMode(mode, date = '') {
+    $(`input[name="effective_mode"][value="${mode}"]`).prop('checked', true);
+    $('#rule-effective-date-wrap').toggleClass('hidden', mode !== 'from_date');
+    $('#rule-effective-from').val(date);
+}
+
+/** After a rule change: offer an explicit, previewed recalculation of pending fees. */
+function showPendingImpact(impact) {
+    if (!impact || !impact.count) {
+        window.location.reload();
+        return;
+    }
+
+    $('#pending-impact-text').text(I18N().impactText.replace(':count', impact.count));
+    const $totals = $('#pending-impact-totals').empty();
+    Object.entries(impact.totals ?? {}).forEach(([currency, t]) => {
+        $('<li>').text(I18N().impactTotals
+            .replace(':currency', currency)
+            .replace(':current', Number(t.current).toFixed(2))
+            .replace(':recalculated', Number(t.recalculated).toFixed(2))).appendTo($totals);
+    });
+    $('#pending-impact-modal').modal('open');
 }
 
 function initModal() {
     const $modal = $('#free-period-rule-modal');
     const $form = $('#free-period-rule-form');
 
+    $('#rule-open-ended').on('change', function () {
+        setOpenEnded(this.checked);
+    });
+    $('input[name="effective_mode"]').on('change', function () {
+        setEffectiveMode(this.value, $('#rule-effective-from').val());
+    });
+
     $('#btn-add-rule').on('click', function () {
         $form[0].reset();
         $('#rule-id').val('');
-        $('#rule-open-ended').prop('checked', false);
-        $('#rule-max-weight').prop('disabled', false);
+        setOpenEnded(false);
+        setEffectiveMode('from_creation');
         $modal.modal('open');
     });
 
     $(document).on('click', '.btn-edit-rule', function () {
         const $btn = $(this);
-        const max = $btn.data('max');
+        const max = $btn.attr('data-max') ?? '';
+        const effectiveFrom = $btn.attr('data-effective-from') ?? '';
+        const created = $btn.attr('data-created') ?? '';
 
         $form[0].reset();
         $('#rule-id').val($btn.data('id'));
-        $('#rule-min-weight').val($btn.data('min'));
-        $('#rule-free-days').val($btn.data('days'));
+        $('#rule-min-weight').val($btn.attr('data-min'));
+        $('#rule-free-days').val($btn.attr('data-days'));
+        $('#rule-max-weight').val(max);
+        setOpenEnded(max === '');
 
-        const isOpenEnded = max === null || max === undefined || max === '';
-        $('#rule-open-ended').prop('checked', isOpenEnded);
-        $('#rule-max-weight').prop('disabled', isOpenEnded).val(isOpenEnded ? '' : max);
+        if (effectiveFrom !== '' && effectiveFrom === created) {
+            setEffectiveMode('from_creation');
+        } else {
+            setEffectiveMode('from_date', effectiveFrom);
+        }
 
         $modal.modal('open');
     });
 
     $(document).on('click', '.btn-delete-rule', async function () {
         const id = $(this).data('id');
-        if (!confirm(window.FREE_PERIOD_RULES_I18N?.deleteConfirm ?? 'Delete this rule?')) return;
+        if (!confirm(I18N().deleteConfirm ?? 'Delete this rule?')) return;
 
         try {
-            await sendJson(updateUrl(window.FREE_PERIOD_RULES_ROUTES.destroy, id), 'DELETE');
-            toast(window.FREE_PERIOD_RULES_I18N?.ruleDeleted ?? 'Rule deleted.');
-            window.location.reload();
+            const res = await sendJson(updateUrl(ROUTES().destroy, id), 'DELETE');
+            toast(I18N().ruleDeleted ?? res.message);
+            showPendingImpact(res.pending_impact);
         } catch (err) {
-            toast(err.message ?? 'Delete failed.', 'error');
+            toast(errorMessage(err), 'error');
         }
     });
 
@@ -76,30 +133,55 @@ function initModal() {
         e.preventDefault();
 
         const id = $('#rule-id').val();
-        const routes = window.FREE_PERIOD_RULES_ROUTES;
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? updateUrl(routes.update, id) : routes.store;
         const openEnded = $('#rule-open-ended').is(':checked');
+        const effectiveMode = $('input[name="effective_mode"]:checked').val() ?? 'from_creation';
 
         const payload = {
-            min_weight_grams: parseInt($('#rule-min-weight').val(), 10) || 0,
-            max_weight_grams: openEnded ? null : (parseInt($('#rule-max-weight').val(), 10) || null),
-            free_days: parseInt($('#rule-free-days').val(), 10) || 0,
+            min_weight_grams: rawValue('#rule-min-weight'),
+            max_weight_grams: openEnded ? null : rawValue('#rule-max-weight'),
+            open_ended: openEnded,
+            free_days: rawValue('#rule-free-days'),
+            effective_mode: effectiveMode,
+            effective_from: effectiveMode === 'from_date' ? rawValue('#rule-effective-from') : null,
         };
 
         try {
-            await sendJson(url, method, payload);
-            toast(window.FREE_PERIOD_RULES_I18N?.ruleSaved ?? 'Rule saved.');
+            const res = await sendJson(id ? updateUrl(ROUTES().update, id) : ROUTES().store, id ? 'PUT' : 'POST', payload);
+            toast(I18N().ruleSaved ?? res.message);
             $modal.modal('close');
+            showPendingImpact(res.pending_impact);
+        } catch (err) {
+            if (err.errors) window.injectValidationErrors?.($form, err.errors);
+            toast(errorMessage(err), 'error');
+        }
+    });
+}
+
+function initRecalculation() {
+    $('#btn-recalculate-pending').on('click', async function () {
+        try {
+            const res = await sendJson(ROUTES().pendingImpact, 'GET');
+            if (!res.pending_impact?.count) {
+                toast(I18N().noImpact);
+                return;
+            }
+            showPendingImpact(res.pending_impact);
+        } catch (err) {
+            toast(errorMessage(err), 'error');
+        }
+    });
+
+    $('#btn-impact-skip').on('click', () => window.location.reload());
+
+    $('#btn-impact-confirm').on('click', async function () {
+        const $btn = $(this).prop('disabled', true);
+        try {
+            const res = await sendJson(ROUTES().recalculatePending, 'POST', { confirm: true });
+            toast(res.message);
             window.location.reload();
         } catch (err) {
-            if (err.errors) {
-                window.injectValidationErrors?.($form, err.errors);
-                const firstError = Object.values(err.errors)[0]?.[0];
-                if (firstError) toast(firstError, 'error');
-            } else {
-                toast(err.message ?? 'Save failed.', 'error');
-            }
+            toast(errorMessage(err), 'error');
+            $btn.prop('disabled', false);
         }
     });
 }
@@ -107,4 +189,5 @@ function initModal() {
 $(function () {
     if (!document.getElementById('free-period-rules-table')) return;
     initModal();
+    initRecalculation();
 });

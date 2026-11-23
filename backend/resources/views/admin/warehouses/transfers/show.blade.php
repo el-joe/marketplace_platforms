@@ -86,7 +86,7 @@
                                 <tr>
                                     <td class="py-2.5 pr-4">
                                         <span class="text-xs font-medium text-gray-800">
-                                            {{ $item->vendorListing?->productVariant?->product?->name_en ?? '—' }}
+                                            {{ localized($item->vendorListing?->productVariant?->product) ?: '—' }}
                                         </span>
                                         <span class="block text-xs text-gray-400 font-mono">
                                             {{ $item->vendor_listing_id }}
@@ -155,7 +155,7 @@
                         @foreach($transfer->items as $item)
                             <div class="border border-gray-100 rounded-lg p-4">
                                 <p class="text-sm font-medium text-gray-800 mb-3">
-                                    {{ $item->vendorListing?->productVariant?->product?->name_en ?? $item->vendor_listing_id }}
+                                    {{ localized($item->vendorListing?->productVariant?->product) ?: $item->vendor_listing_id }}
                                     <span class="text-xs text-gray-400 ml-2">{{ __('admin.warehouses_section.requested_qty_hint', ['qty' => $item->quantity_requested]) }}</span>
                                 </p>
                                 <input type="hidden" name="items[{{ $loop->index }}][inventory_transfer_item_id]"

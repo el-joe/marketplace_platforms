@@ -172,12 +172,8 @@ $warehouse — Warehouse model (edit mode only)
                     </p>
                 </div>
                 <div class="px-5 py-5">
-                    <div class="grid grid-cols-2 gap-4">
-                        <x-form-input name="latitude" label="{{ __('admin.warehouses_section.latitude') }}" type="number" :value="$val('latitude')"
-                            placeholder="30.0444" step="0.0000001" min="-90" max="90" />
-                        <x-form-input name="longitude" label="{{ __('admin.warehouses_section.longitude') }}" type="number" :value="$val('longitude')"
-                            placeholder="31.2357" step="0.0000001" min="-180" max="180" />
-                    </div>
+                    {{-- Same picker as the vendor store location (map pin when a Google Maps key is set). --}}
+                    <x-location-picker :latitude="$isEdit ? $warehouse->latitude : null" :longitude="$isEdit ? $warehouse->longitude : null" />
                 </div>
             </div>
 

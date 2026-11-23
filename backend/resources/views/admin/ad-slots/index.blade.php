@@ -63,7 +63,7 @@
                 <select id="slots-filter-country" class="form-input w-full text-sm">
                     <option value="">{{ __('admin.ad_slots.all_countries') }}</option>
                     @foreach($countries as $c)
-                        <option value="{{ $c->id }}">{{ $c->name_en }}</option>
+                        <option value="{{ $c->id }}">{{ localized($c) }}</option>
                     @endforeach
                 </select>
             </div>

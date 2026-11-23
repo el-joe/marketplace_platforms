@@ -3,8 +3,10 @@
 namespace App\Services\Customer;
 
 use App\Enums\AdminListingStatus;
+use App\Enums\DistanceDeliveryStatus;
 use App\Enums\MarketerListingStatus;
 use App\Enums\VendorListingStatus;
+use App\Models\Address;
 use App\Models\AdminListing;
 use App\Models\Cart;
 use App\Models\CartInventoryLock;
@@ -15,11 +17,13 @@ use App\Models\Coupon;
 use App\Models\Customer;
 use App\Models\MarketerListing;
 use App\Models\Product;
+use App\Models\ShippingMethod;
 use App\Models\VendorListing;
 use App\Services\AppContextService;
 use App\Services\Media\ListingImageResolver;
 use App\Services\ShippingMethodResolverService;
 use App\Support\Money;
+use Carbon\Carbon;
 
 class CartService
 {
@@ -691,14 +695,32 @@ class CartService
     }
 
     /**
+     * Today's order cutoff for $method as an ISO-8601 instant, or null when none applies.
+     */
+    private function orderCutoffAt(ShippingMethod $method, string $timezone): ?string
+    {
+        if (! $method->order_cutoff_time) {
+            return null;
+        }
+
+        $now = Carbon::now($timezone);
+        $cutoff = Carbon::parse($now->toDateString().' '.$method->order_cutoff_time, $timezone);
+
+        return $now->lessThan($cutoff) ? $cutoff->toIso8601String() : null;
+    }
+
+    /**
      * Groups cart items by their selected_shipping_method_id so the app can
      * render a Noon-style cart with items grouped under their delivery
      * method. Items with no selection yet fall into a shared "unassigned"
      * group (null method).
      *
+     * With a delivery address, each group also carries `distance_pricing` (client item #19): the distance-based
+     * delivery outcome for that address (null when the zone/method has no distance rule).
+     *
      * @return array<int, array<string, mixed>>
      */
-    public function buildShippingGroups(Cart $cart, ?string $countryId): array
+    public function buildShippingGroups(Cart $cart, ?string $countryId, ?Address $address = null): array
     {
         $items = CartItem::where('cart_id', $cart->id)
             ->with([
@@ -734,7 +756,10 @@ class CartService
 
         $imagesByVariant = $this->imageResolver->forVariants($variantIds);
 
-        return $groups->map(function ($groupItems) use ($countryId, $imagesByVariant) {
+        $country = $countryId ? Country::find($countryId) : null;
+        $timezone = $country?->timezone ?: 'Asia/Dubai';
+
+        return $groups->map(function ($groupItems) use ($countryId, $country, $address, $imagesByVariant, $timezone) {
             $method = $groupItems->first()->selectedShippingMethod;
 
             $groupSubtotal = Money::number(round($groupItems->sum(fn (CartItem $item) => $item->unit_price * $item->quantity), 2));
@@ -747,6 +772,14 @@ class CartService
 
             $isFreeShipping = $threshold !== null && $groupSubtotal >= $threshold;
 
+            $distancePricing = ($method && $country && $address)
+                ? $this->calculationService->calculateShipping($address, $country, $method->id, $groupItems->all())['distance']
+                : null;
+
+            if ($distancePricing && in_array($distancePricing['status'], [DistanceDeliveryStatus::FreeByOrderAmount->value, DistanceDeliveryStatus::FreeWithinRadius->value], true)) {
+                $isFreeShipping = true;
+            }
+
             return [
                 'shipping_method' => $method ? [
                     'id' => $method->id,
@@ -756,8 +789,14 @@ class CartService
                     'badge_label_ar' => $method->badge_label_ar,
                     'badge_color_hex' => $method->badge_color_hex,
                     'is_express_type' => (bool) $method->is_express_type,
+                    // Latest promised delivery day (Y-m-d, country timezone) for "Get it by …".
+                    'estimated_delivery_date' => $method->computeEstimatedDeliveryDate($timezone)->toDateString(),
+                    // Absolute end of today's order window (ISO-8601) for "Order within …"; null when the
+                    // method has no cutoff or it has already passed.
+                    'order_cutoff_at' => $this->orderCutoffAt($method, $timezone),
                 ] : null,
                 'is_free_shipping' => $isFreeShipping,
+                'distance_pricing' => $distancePricing,
                 'group_subtotal' => $groupSubtotal,
                 'items_count' => $groupItems->count(),
                 'items' => $groupItems->map(function (CartItem $item) use ($method, $imagesByVariant) {

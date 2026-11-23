@@ -6,23 +6,29 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Vendor\Profile\DocumentReuploadRequest;
 use App\Http\Requests\Vendor\Profile\UpdatePasswordRequest;
 use App\Http\Requests\Vendor\Profile\UpdateProfileRequest;
+use App\Http\Requests\Vendor\UpdateStoreLocationRequest;
 use App\Http\Resources\Vendor\SellerDocumentResource;
 use App\Http\Resources\Vendor\VendorProfileResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Vendor;
 use App\Models\VendorAdmin;
 use App\Services\Vendor\DocumentService;
+use App\Services\Vendor\VendorStoreLocationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
-    public function __construct(private readonly DocumentService $documents) {}
+    public function __construct(
+        private readonly DocumentService $documents,
+        private readonly VendorStoreLocationService $storeLocations,
+    ) {}
 
     private function vendor(): Vendor
     {
         /** @var VendorAdmin $admin */
         $admin = auth('vendor')->user();
+
         return $admin->vendor;
     }
 
@@ -38,12 +44,34 @@ class ProfileController extends Controller
         /** @var VendorAdmin $admin */
         $admin = auth('vendor')->user();
 
-        if (!$admin->can('settings.edit')) {
+        if (! $admin->can('settings.edit')) {
             return ApiResponse::error('You do not have permission to edit store settings.', [], 403);
         }
 
         $this->vendor()->update($request->validated());
+
         return ApiResponse::success(new VendorProfileResource($this->vendor()->fresh()), 'Profile updated.');
+    }
+
+    // GET /profile/location — store location (distance-based delivery origin)
+    public function location(): JsonResponse
+    {
+        return ApiResponse::success($this->storeLocations->present($this->vendor()));
+    }
+
+    // PUT /profile/location
+    public function updateLocation(UpdateStoreLocationRequest $request): JsonResponse
+    {
+        /** @var VendorAdmin $admin */
+        $admin = auth('vendor')->user();
+
+        if (! $admin->can('settings.edit')) {
+            return ApiResponse::error(__('store_location.owner_only'), [], 403);
+        }
+
+        $location = $this->storeLocations->update($this->vendor(), $request->validated(), $admin);
+
+        return ApiResponse::success($location, __('store_location.saved'));
     }
 
     // PUT /profile/password
@@ -52,7 +80,7 @@ class ProfileController extends Controller
         /** @var VendorAdmin $admin */
         $admin = auth('vendor')->user();
 
-        if (!Hash::check($request->current_password, $admin->password)) {
+        if (! Hash::check($request->current_password, $admin->password)) {
             return ApiResponse::error('Current password is incorrect.', [], 422);
         }
 
@@ -65,6 +93,7 @@ class ProfileController extends Controller
     public function documents(): JsonResponse
     {
         $docs = $this->vendor()->documents()->latest()->get();
+
         return ApiResponse::success(SellerDocumentResource::collection($docs));
     }
 
@@ -73,7 +102,7 @@ class ProfileController extends Controller
     {
         $allowedTypes = ['business_license', 'tax_certificate', 'owner_id', 'bank_proof', 'vat_registration'];
 
-        if (!in_array($type, $allowedTypes, true)) {
+        if (! in_array($type, $allowedTypes, true)) {
             return ApiResponse::error('Invalid document type.', [], 422);
         }
 

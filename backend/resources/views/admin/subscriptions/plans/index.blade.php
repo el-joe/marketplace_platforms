@@ -15,8 +15,10 @@
             <h1 class="text-2xl font-bold text-gray-900">{{ __('admin.subscriptions.subscription_plans_title') }}</h1>
             <p class="text-sm text-gray-500 mt-0.5">{{ __('admin.subscriptions.subscription_plans_subtitle') }}</p>
         </div>
-        <button type="button" id="btn-create-plan"
-            class="btn btn-primary btn-sm">{{ __('admin.subscriptions.new_plan') }}</button>
+        @can('subscriptions.manage')
+            <button type="button" id="btn-create-plan"
+                class="btn btn-primary btn-sm">{{ __('admin.subscriptions.new_plan') }}</button>
+        @endcan
     </div>
 
     {{-- ─── Plans Grid ──────────────────────────────────────────────────────────── --}}
@@ -36,7 +38,7 @@
                 <div class="flex items-start justify-between mb-3">
                     <div>
                         <span
-                            class="text-xs font-bold rounded-full px-2.5 py-0.5 {{ $tc['badge'] }}">{{ $plan->name_en }}</span>
+                            class="text-xs font-bold rounded-full px-2.5 py-0.5 {{ $tc['badge'] }}">{{ localized($plan) }}</span>
                         <p class="text-xs text-gray-400 mt-1">{{ $plan->name_ar }}</p>
                     </div>
                     <span
@@ -69,6 +71,7 @@
                     @endforeach
                 </ul>
 
+                @can('subscriptions.manage')
                 <div class="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
                     <button type="button" class="flex-1 btn btn-ghost btn-xs btn-edit-plan"
                         data-plan="{{ json_encode($plan) }}">{{ __('admin.subscriptions.edit') }}</button>
@@ -80,6 +83,7 @@
                     <button type="button" class="btn btn-xs btn-danger btn-delete-plan"
                         data-id="{{ $plan->id }}">{{ __('admin.subscriptions.delete_short') }}</button>
                 </div>
+                @endcan
             </div>
         @empty
             <div class="col-span-4 bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-400">

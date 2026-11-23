@@ -75,7 +75,7 @@
                     @php
                         $tv = $couponModel->vendors->map(fn ($v) => $v->store_name ?: $v->name)->all();
                         $tm = $couponModel->marketers->pluck('name')->all();
-                        $tp = $couponModel->products->map(fn ($p) => $p->name_en ?: $p->name_ar)->all();
+                        $tp = $couponModel->products->map(fn ($p) => localized($p))->all();
                     @endphp
                     @if(! $tv && ! $tm && ! $tp)
                         <p class="text-gray-400">{{ __('admin.coupons_section.targeting_all') }}</p>

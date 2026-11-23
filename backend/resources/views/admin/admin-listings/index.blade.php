@@ -34,7 +34,7 @@
             <div class="bg-white rounded-xl border border-gray-200 p-4">
                 <p class="text-xs font-medium text-gray-500">{{ __('admin.admin_listings.top_selling_admin_product') }}</p>
                 @if($stats['top_selling'])
-                    <p class="mt-1 text-sm font-bold text-gray-900 truncate" title="{{ $stats['top_selling']->name_en }}">{{ $stats['top_selling']->name_en }}</p>
+                    <p class="mt-1 text-sm font-bold text-gray-900 truncate" title="{{ localized($stats['top_selling']) }}">{{ localized($stats['top_selling']) }}</p>
                     <p class="text-xs text-gray-500">{{ __('admin.admin_listings.units_sold', ['count' => number_format($stats['top_selling']->units_sold)]) }}</p>
                 @else
                     <p class="mt-1 text-2xl font-bold text-gray-900">—</p>
@@ -117,7 +117,7 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3">
                                     @if($thumbnail)
-                                        <img src="{{ $thumbnail->url }}" alt="{{ $product->name_en }}"
+                                        <img src="{{ $thumbnail->url }}" alt="{{ localized($product) }}"
                                             class="w-[50px] h-[50px] object-cover rounded-lg border border-gray-100">
                                     @else
                                         <div class="w-[50px] h-[50px] rounded-lg bg-gray-100"></div>
@@ -125,7 +125,7 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <a href="{{ route('admin.admin-listings.edit', $listing) }}" class="block">
-                                        <p class="font-bold text-gray-900">{{ $product->name_en ?? __('admin.admin_listings.product_missing') }}</p>
+                                        <p class="font-bold text-gray-900">{{ localized($product) ?: __('admin.admin_listings.product_missing') }}</p>
                                         @if($product)
                                             <p class="text-xs text-gray-500">{{ $product->name_ar }}</p>
                                         @endif
@@ -135,7 +135,7 @@
                                     </a>
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
-                                    {{ $listing->country->flag_emoji }} {{ $listing->country->name_en }}
+                                    {{ $listing->country->flag_emoji }} {{ localized($listing->country) }}
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     {{ \App\Support\Money::format($listing->price) }} {{ $listing->currency }}

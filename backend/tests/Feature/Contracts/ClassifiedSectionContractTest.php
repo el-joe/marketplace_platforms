@@ -56,7 +56,7 @@ class ClassifiedSectionContractTest extends TestCase
         $this->scenario->vendor->update(['global_status' => 'active', 'onboarding_completed_at' => now()]);
 
         $this->admin = Admin::factory()->create();
-        $this->admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only', 'categories.view', 'categories.edit']);
+        $this->admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only', 'categories.view', 'categories.edit', 'contracts.view', 'contracts.manage']);
     }
 
     private function resolver(): ContractResolver

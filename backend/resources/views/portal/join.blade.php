@@ -12,9 +12,9 @@
         ],
         [
             'value' => 'open_souq',
-            'title' => portal_content('join', 'card_open_souq', 'title', 'Open Souq', 'السوق المفتوح'),
-            'description' => portal_content('join', 'card_open_souq', 'description', 'List across our classified categories — real estate, cars, chalets and more.', 'أدرج إعلاناتك في فئات السوق المفتوح — العقارات والسيارات والشاليهات وغيرها.'),
-            'image' => portal_image('join', 'card_open_souq', 'image', asset('images/join/open-souq.jpg'), 'Open Souq', 'السوق المفتوح'),
+            'title' => portal_content('join', 'card_open_souq', 'title', 'Classifieds', 'الإعلانات المبوبة'),
+            'description' => portal_content('join', 'card_open_souq', 'description', 'List in our classified sections — real estate, cars, travel & tourism and more.', 'انشر إعلاناتك في أقسام الإعلانات المبوبة — العقارات والسيارات والسفر والسياحة وغيرها.'),
+            'image' => portal_image('join', 'card_open_souq', 'image', asset('images/join/open-souq.jpg'), 'Classifieds', 'الإعلانات المبوبة'),
         ],
         [
             'value' => 'travel_agency',
@@ -38,6 +38,15 @@
     if ($selectedSection !== null && ! in_array($selectedSection, array_column($cards, 'value'), true)) {
         $selectedSection = null;
     }
+
+    // Classifieds sub-options (active classified categories + travel agencies), revealed under its card.
+    $classifiedOptions = $classifiedOptions ?? [];
+    $selectedClassifiedOption = old('classified_option', $selection['classified_category_id'] ?? null);
+    if (! in_array($selectedClassifiedOption, array_column($classifiedOptions, 'value'), true)) {
+        $selectedClassifiedOption = null;
+    }
+    $hasClassifiedOptions = $classifiedOptions !== [] && array_key_exists('open_souq', $sections);
+    $canContinue = $hasClassifiedOptions ? "selected && (selected !== 'open_souq' || classifiedOption)" : 'selected';
 @endphp
 
 @section('title', portal_content('join', 'meta', 'title', 'Join Nawy', 'انضم إلى ناوي'))
@@ -57,5 +66,37 @@
         :logo-aria="portal_content('join', 'logo', 'aria_label', 'Nawy', 'ناوي')"
         :countries="$countries"
         :current-country="$currentCountry"
-        :no-scroll="true" />
+        :no-scroll="true"
+        :alpine="['classifiedOption' => $selectedClassifiedOption]"
+        :can-continue="$canContinue"
+        :reveal-value="$hasClassifiedOptions ? 'open_souq' : null"
+        :reveal-title="__('portal.join.classified_options_title')">
+        @if ($hasClassifiedOptions)
+            <input type="hidden" name="classified_option" :value="selected === 'open_souq' ? (classifiedOption || '') : ''">
+            <div data-testid="classified-options" role="radiogroup" aria-label="{{ __('portal.join.classified_options_title') }}"
+                class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($classifiedOptions as $option)
+                    <button type="button" role="radio" data-classified-option="{{ $option['value'] }}"
+                        @click="classifiedOption = @js($option['value'])"
+                        :aria-checked="classifiedOption === @js($option['value']) ? 'true' : 'false'"
+                        class="flex items-center gap-3 rounded-2xl border bg-gray-900 p-3 text-start transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#feee00] focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950"
+                        :class="classifiedOption === @js($option['value']) ? 'border-[#feee00]' : 'border-gray-800 hover:border-gray-600'">
+                        @if ($option['image'])
+                            <img src="{{ $option['image'] }}" alt="" loading="lazy" class="h-12 w-12 shrink-0 rounded-xl object-cover">
+                        @else
+                            <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gray-800 text-lg font-extrabold text-[#feee00]" aria-hidden="true">{{ mb_substr($option['title'], 0, 1) }}</span>
+                        @endif
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-extrabold text-white">{{ $option['title'] }}</span>
+                            <span class="mt-0.5 block text-xs leading-snug text-gray-400">{{ $option['description'] }}</span>
+                        </span>
+                        <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+                            :class="classifiedOption === @js($option['value']) ? 'border-[#feee00] bg-[#feee00]' : 'border-gray-600'" aria-hidden="true">
+                            <span x-show="classifiedOption === @js($option['value'])" x-cloak class="h-2 w-2 rounded-full bg-gray-950"></span>
+                        </span>
+                    </button>
+                @endforeach
+            </div>
+        @endif
+    </x-portal.choice-screen>
 @endsection

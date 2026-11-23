@@ -1,0 +1,70 @@
+- generic [active] [ref=f6e1]:
+  - main [ref=f6e2]:
+    - generic [ref=f6e3]:
+      - generic [ref=f6e5]:
+        - link "ناوي" [ref=f6e6] [cursor=pointer]:
+          - /url: http://portal.noon.loc
+          - img "ناوي" [ref=f6e7]
+        - generic [ref=f6e8]:
+          - button "اختر الدولة" [ref=f6e10]:
+            - img "عُمان" [ref=f6e11]
+            - generic [ref=f6e12]: عُمان
+          - button [ref=f6e14]
+      - generic [ref=f6e17]:
+        - generic [ref=f6e18]:
+          - heading "انضم إلى ناوي" [level=1] [ref=f6e19]
+          - paragraph [ref=f6e20]: اختر نوع الحساب المناسب لك، ثم تابع إلى تجربة التسجيل المخصصة له.
+        - generic [ref=f6e21]:
+          - group "انضم إلى ناوي" [ref=f6e22]:
+            - button [ref=f6e23]:
+              - img "بائع منتجات" [ref=f6e25]
+              - generic [ref=f6e26]:
+                - heading "بائع منتجات" [level=2] [ref=f6e27]
+                - paragraph [ref=f6e28]: بِع منتجاتك المادية أو الرقمية وأدر متجرك الخاص على ناوي.
+            - button [ref=f6e29]:
+              - img "الإعلانات المبوبة" [ref=f6e31]
+              - generic [ref=f6e32]:
+                - heading "الإعلانات المبوبة" [level=2] [ref=f6e33]
+                - paragraph [ref=f6e34]: انشر إعلاناتك في أقسام الإعلانات المبوبة — العقارات والسيارات والسفر والسياحة وغيرها.
+            - button [ref=f6e35]:
+              - img "مشاهير ومؤثرون ومسوقون بالعمولة" [ref=f6e37]
+              - generic [ref=f6e38]:
+                - heading "مشاهير ومؤثرون ومسوقون بالعمولة" [level=2] [ref=f6e39]
+                - paragraph [ref=f6e40]: روّج للمنتجات والإعلانات كمشهور أو مؤثر أو مسوق بالعمولة.
+          - generic [ref=f6e41]:
+            - button "متابعة" [disabled] [ref=f6e42]
+            - paragraph [ref=f6e45]: اختر أحد الخيارات للمتابعة
+      - generic [ref=f6e46]:
+        - generic [ref=f6e48]:
+          - generic [ref=f6e49]:
+            - heading "الشركة" [level=3] [ref=f6e50]
+            - list [ref=f6e51]:
+              - listitem [ref=f6e52]:
+                - link "من نحن" [ref=f6e53] [cursor=pointer]:
+                  - /url: http://portal.noon.loc/pages/about-us
+          - generic [ref=f6e54]:
+            - heading "السياسات" [level=3] [ref=f6e55]
+            - list [ref=f6e56]:
+              - listitem [ref=f6e57]:
+                - link "الشروط والأحكام" [ref=f6e58] [cursor=pointer]:
+                  - /url: http://portal.noon.loc/pages/terms-and-conditions
+              - listitem [ref=f6e59]:
+                - link "سياسة الخصوصية" [ref=f6e60] [cursor=pointer]:
+                  - /url: http://portal.noon.loc/pages/privacy-policy
+              - listitem [ref=f6e61]:
+                - link "سياسة الإرجاع" [ref=f6e62] [cursor=pointer]:
+                  - /url: http://portal.noon.loc/pages/return-policy
+              - listitem [ref=f6e63]:
+                - link "سياسة الشحن والتوصيل" [ref=f6e64] [cursor=pointer]:
+                  - /url: http://portal.noon.loc/pages/shipping-policy
+              - listitem [ref=f6e65]:
+                - link "سياسة الاسترداد" [ref=f6e66] [cursor=pointer]:
+                  - /url: http://portal.noon.loc/pages/refund-policy
+          - generic [ref=f6e67]:
+            - heading "المساعدة" [level=3] [ref=f6e68]
+            - list [ref=f6e69]:
+              - listitem [ref=f6e70]:
+                - link "تواصل معنا" [ref=f6e71] [cursor=pointer]:
+                  - /url: http://portal.noon.loc/pages/contact-us
+        - paragraph [ref=f6e73]: منصة ناوي - نمكّن أعمالك الرقمية. © 2026 جميع الحقوق محفوظة.
+  - button

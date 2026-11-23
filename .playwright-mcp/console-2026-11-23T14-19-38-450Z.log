@@ -1,0 +1,2 @@
+[     396ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://portal.noon.loc/_boost/browser-logs @ http://portal.noon.loc/join:152
+[     469ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://portal.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6

@@ -1,7 +1,7 @@
 @php
     /** @var \App\Services\NavigationService $nav */
     $nav = app(\App\Services\NavigationService::class);
-    $navGroups = $nav->adminNavigation();
+    $navGroups = $nav->adminNavigationWithSearchTerms();
 @endphp
 
 <!DOCTYPE html>

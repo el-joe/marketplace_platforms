@@ -103,11 +103,153 @@ $(function () {
             });
     });
 
-    /* ---------- Global search shortcut (⌘K / Ctrl+K) ---------- */
+    /* ---------- Sidebar menu search ---------- */
+    // Filters the menu by label (current + other language) or route name and opens the
+    // groups that contain matches. Ctrl/⌘+K or "/" focuses it, Esc clears, Enter opens the
+    // first match, ↓ moves into the results.
+    const $sidebarSearch = $('#sidebar-search');
+    const $sidebarNav = $('#sidebar-nav');
+
+    function normalizeSearch(value) {
+        return String(value || '')
+            .toLowerCase()
+            .replace(/[\u064B-\u0652\u0640]/g, '')
+            .replace(/[أإآ]/g, 'ا')
+            .replace(/ى/g, 'ي')
+            .replace(/ة/g, 'ه')
+            .replace(/[_.\-—]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    $sidebarNav.find('.nav-group').each(function () {
+        $(this).attr('data-initial-open', $(this).hasClass('is-open') ? '1' : '0');
+    });
+
+    function setGroupOpen($group, open) {
+        $group.toggleClass('is-open', open);
+        $group.children('.nav-group-header').attr('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function filterSidebar(rawQuery) {
+        const query = normalizeSearch(rawQuery);
+        const terms = query === '' ? [] : query.split(' ');
+        const matches = (el) => {
+            const haystack = normalizeSearch($(el).attr('data-nav-search'));
+            return terms.every((term) => haystack.includes(term));
+        };
+        let visibleCount = 0;
+
+        $sidebarNav.children('.nav-item').each(function () {
+            const show = terms.length === 0 || matches(this);
+            $(this).toggle(show);
+            visibleCount += show ? 1 : 0;
+        });
+
+        $sidebarNav.children('.nav-group').each(function () {
+            const $group = $(this);
+            const $items = $group.find('.nav-subitem');
+
+            if (terms.length === 0) {
+                $items.toggle(true);
+                $group.toggle(true);
+                setGroupOpen($group, $group.attr('data-initial-open') === '1');
+                return;
+            }
+
+            const groupMatches = matches(this);
+            let shown = 0;
+            $items.each(function () {
+                const show = groupMatches || matches(this);
+                $(this).toggle(show);
+                shown += show ? 1 : 0;
+            });
+
+            $group.toggle(shown > 0);
+            setGroupOpen($group, shown > 0);
+            visibleCount += shown;
+        });
+
+        $('#sidebar-search-empty').toggleClass('hidden', terms.length === 0 || visibleCount > 0);
+    }
+
+    function visibleSidebarLinks() {
+        return $sidebarNav.find('a.nav-item').filter(function () {
+            if (this.style.display === 'none') return false;
+            const $group = $(this).closest('.nav-group');
+            return !$group.length || ($group[0].style.display !== 'none' && $group.hasClass('is-open'));
+        });
+    }
+
+    function focusSidebarSearch() {
+        if (!$sidebarSearch.length) return false;
+        if (window.matchMedia('(max-width: 767.98px)').matches) {
+            openMobileSidebar();
+        } else if ($('body').hasClass('sidebar-collapsed')) {
+            // Expand for this session only; the saved collapse preference is untouched.
+            $('body').removeClass('sidebar-collapsed');
+        }
+        $sidebarSearch.trigger('focus').trigger('select');
+        return true;
+    }
+
+    $sidebarSearch.off('.navsearch')
+        .on('input.navsearch', function () { filterSidebar(this.value); })
+        .on('keydown.navsearch', function (e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (this.value !== '') {
+                    this.value = '';
+                    filterSidebar('');
+                } else {
+                    this.blur();
+                    closeMobileSidebar();
+                }
+            } else if (e.key === 'Enter') {
+                const first = visibleSidebarLinks().first();
+                if (this.value !== '' && first.length) {
+                    e.preventDefault();
+                    window.location.href = first.attr('href');
+                }
+            } else if (e.key === 'ArrowDown') {
+                const first = visibleSidebarLinks().first();
+                if (first.length) {
+                    e.preventDefault();
+                    first.trigger('focus');
+                }
+            }
+        });
+
+    // Arrow keys move between visible results; Esc returns to the search box.
+    $sidebarNav.off('keydown.navsearch').on('keydown.navsearch', 'a.nav-item', function (e) {
+        if (!['ArrowDown', 'ArrowUp', 'Escape'].includes(e.key)) return;
+        e.preventDefault();
+        if (e.key === 'Escape') {
+            e.stopPropagation();
+            $sidebarSearch.trigger('focus');
+            return;
+        }
+        const $links = visibleSidebarLinks();
+        const index = $links.index(this);
+        const next = e.key === 'ArrowDown' ? $links.eq(index + 1) : (index > 0 ? $links.eq(index - 1) : $sidebarSearch);
+        if (next.length) next.trigger('focus');
+    });
+
+    /* ---------- Search shortcuts (⌘K / Ctrl+K, "/") ---------- */
     $(document).off('keydown.search').on('keydown.search', function (e) {
+        const target = e.target;
+        const isTyping = target && (target.isContentEditable || /^(input|textarea|select)$/i.test(target.tagName));
+
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
             e.preventDefault();
-            $('#global-search-modal').modal('open');
+            if ($('#global-search-modal').length) {
+                $('#global-search-modal').modal('open');
+            } else {
+                focusSidebarSearch();
+            }
+        } else if (e.key === '/' && !isTyping && !e.metaKey && !e.ctrlKey && !e.altKey) {
+            if (focusSidebarSearch()) e.preventDefault();
         }
     });
     $('#global-search-btn').off('click.search').on('click.search', function () {

@@ -69,7 +69,7 @@
 
                 <x-form.select name="shipping_zone_id" label="{{ __('admin.shipping_subsidies_section.zone_label') }}" :select2="true" required>
                     <option value="">{{ __('admin.shipping_subsidies_section.select_zone_placeholder') }}</option>
-                    @foreach($exceptionalZones->groupBy(fn($z) => $z->country?->name_en ?? __('admin.shipping_subsidies_section.other_country')) as $countryName => $zonesInCountry)
+                    @foreach($exceptionalZones->groupBy(fn($z) => localized($z->country) ?: __('admin.shipping_subsidies_section.other_country')) as $countryName => $zonesInCountry)
                         <optgroup label="{{ $countryName }}">
                             @foreach($zonesInCountry as $zone)
                                 <option value="{{ $zone->id }}">{{ $zone->name }}</option>

@@ -37,21 +37,8 @@
             <x-form.lang-tabs id="sd-lang-tabs">
                 <x-slot:en>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Name (English)</label>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.page_builder.cf.name_en') }}</label>
                         <input type="text" id="sd-name-en" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="{{ __('admin.static_text.admin_page_builder_partials_section_drawer.e_g_featured_deals') }}">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Background image (English)</label>
-                        <input type="hidden" id="sd-background-image-url-en" name="background_image_url_en">
-                        <div id="sd-background-image-preview-en" class="hidden mb-2">
-                            <img id="sd-background-image-img-en" src="" alt="{{ __('admin.static_text.admin_page_builder_partials_section_drawer.background_image') }}" class="w-full h-28 object-cover rounded border border-gray-200">
-                            <button type="button" data-clear-section-bg-image data-locale="en" class="mt-1 text-xs text-rose-500 hover:text-rose-700">Remove</button>
-                        </div>
-                        <label class="flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition text-sm text-gray-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-                            <span>{{ __('admin.page_builder.upload_background_image') }}</span>
-                            <input type="file" accept="image/*" class="sr-only" data-section-bg-upload data-locale="en">
-                        </label>
                     </div>
                 </x-slot:en>
                 <x-slot:ar>
@@ -59,44 +46,36 @@
                         <label class="block text-xs font-medium text-gray-600 mb-1">الاسم (عربي)</label>
                         <input type="text" id="sd-name-ar" dir="rtl" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="{{ __('admin.static_text.admin_page_builder_partials_section_drawer.e_g_featured_deals_2') }}">
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">صورة الخلفية (عربي)</label>
-                        <input type="hidden" id="sd-background-image-url-ar" name="background_image_url_ar">
-                        <div id="sd-background-image-preview-ar" class="hidden mb-2">
-                            <img id="sd-background-image-img-ar" src="" alt="{{ __('admin.static_text.admin_page_builder_partials_section_drawer.background_image') }}" class="w-full h-28 object-cover rounded border border-gray-200">
-                            <button type="button" data-clear-section-bg-image data-locale="ar" class="mt-1 text-xs text-rose-500 hover:text-rose-700">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.remove') }}</button>
-                        </div>
-                        <label class="flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition text-sm text-gray-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-                            <span>{{ __('admin.static_text.admin_page_builder_partials_section_drawer.upload_background_image') }}</span>
-                            <input type="file" accept="image/*" class="sr-only" data-section-bg-upload data-locale="ar">
-                        </label>
-                    </div>
                 </x-slot:ar>
             </x-form.lang-tabs>
+
+            <x-form.media-field context="section-backgrounds" id="sd-background-media-field"
+                :label="__('admin.static_text.admin_page_builder_partials_section_drawer.background_image')"
+                :locales="['en', 'ar']" name-pattern="background_image_url_{locale}" id-pattern="sd-background-image-url-{locale}"
+                aspect="aspect-[16/6]" />
 
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.section_layout') }}</label>
                 <select id="sd-layout" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
-                    <option value="stack">Stack (blocks on top of each other)</option>
-                    <option value="columns">Columns (blocks side by side)</option>
+                    <option value="stack">{{ __('admin.page_builder.cf.layout_stack') }}</option>
+                    <option value="columns">{{ __('admin.page_builder.cf.layout_columns') }}</option>
                 </select>
             </div>
 
             <div id="sd-columns-config-row" class="hidden">
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.column_widths') }}</label>
                 <select id="sd-columns-config" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
-                    <option value='{"columns":2,"widths":"1/2 1/2"}'>2 columns — equal (50/50)</option>
-                    <option value='{"columns":2,"widths":"1/3 2/3"}'>2 columns — narrow/wide (33/67)</option>
-                    <option value='{"columns":2,"widths":"2/3 1/3"}'>2 columns — wide/narrow (67/33)</option>
-                    <option value='{"columns":3,"widths":"1/3 1/3 1/3"}'>3 columns — equal (33/33/33)</option>
-                    <option value='{"columns":3,"widths":"1/4 1/2 1/4"}'>3 columns — narrow/wide/narrow</option>
+                    <option value='{"columns":2,"widths":"1/2 1/2"}'>{{ __('admin.page_builder.cf.cols_equal_2') }}</option>
+                    <option value='{"columns":2,"widths":"1/3 2/3"}'>{{ __('admin.page_builder.cf.cols_narrow_wide') }}</option>
+                    <option value='{"columns":2,"widths":"2/3 1/3"}'>{{ __('admin.page_builder.cf.cols_wide_narrow') }}</option>
+                    <option value='{"columns":3,"widths":"1/3 1/3 1/3"}'>{{ __('admin.page_builder.cf.cols_equal_3') }}</option>
+                    <option value='{"columns":3,"widths":"1/4 1/2 1/4"}'>{{ __('admin.page_builder.cf.cols_nwn') }}</option>
                 </select>
             </div>
 
             <div class="flex items-center gap-2">
                 <input type="checkbox" id="sd-is-visible" class="rounded border-gray-300" checked>
-                <label for="sd-is-visible" class="text-xs font-medium text-gray-600">Visible</label>
+                <label for="sd-is-visible" class="text-xs font-medium text-gray-600">{{ __('admin.page_builder.cf.visible') }}</label>
             </div>
 
             <div>
@@ -117,7 +96,7 @@
 
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.max_width') }}</label>
-                <input type="text" id="sd-max-width" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g. 1200px">
+                <input type="text" id="sd-max-width" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="{{ __('admin.page_builder.cf.max_width_example') }}">
             </div>
         </div>
 

@@ -6,4 +6,5 @@ return [
     'picked_up' => 'Picked Up',
     'delivered' => 'Delivered',
     'failed' => 'Failed',
+    'cancelled' => 'Cancelled',
 ];

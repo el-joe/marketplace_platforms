@@ -166,7 +166,7 @@
             <select name="country_id" id="f-country-id" class="form-input w-full text-sm">
                 <option value="">{{ __('admin.helpcenter.modal.all_countries') }}</option>
                 @foreach($countries as $c)
-                    <option value="{{ $c->site_code }}">{{ $c->flag_emoji }} {{ $c->name_en }}</option>
+                    <option value="{{ $c->site_code }}">{{ $c->flag_emoji }} {{ localized($c) }}</option>
                 @endforeach
             </select>
         </div>

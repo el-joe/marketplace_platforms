@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Country;
 use App\Models\VendorProductCertification;
 use App\Notifications\Vendor\ProductCertificationApproved;
 use App\Notifications\Vendor\ProductCertificationRejected;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\View\View;
 
@@ -29,8 +31,8 @@ class VendorProductCertificationController extends Controller
 
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
-                $q->whereHas('vendor', fn($v) => $v->where('store_name', 'like', "%{$search}%"))
-                    ->orWhereHas('product', fn($p) => $p->where('name_en', 'like', "%{$search}%"));
+                $q->whereHas('vendor', fn ($v) => $v->where('store_name', 'like', "%{$search}%"))
+                    ->orWhereHas('product', fn ($p) => $p->where('name_en', 'like', "%{$search}%"));
             });
         }
 
@@ -43,7 +45,7 @@ class VendorProductCertificationController extends Controller
         return view('admin.vendor_product_certifications.index', [
             'certifications' => $certifications,
             'pendingCount' => VendorProductCertification::where('status', 'pending')->count(),
-            'countries' => \App\Models\Country::orderBy('name_en')->get(['id', 'name_en']),
+            'countries' => Country::orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
         ]);
     }
 
@@ -71,9 +73,9 @@ class VendorProductCertificationController extends Controller
 
         $certification = VendorProductCertification::findOrFail($id);
 
-        abort_unless(\Illuminate\Support\Facades\Storage::disk('local')->exists($certification->file_path), 404);
+        abort_unless(Storage::disk('local')->exists($certification->file_path), 404);
 
-        return \Illuminate\Support\Facades\Storage::disk('local')->download(
+        return Storage::disk('local')->download(
             $certification->file_path,
             $certification->original_filename ?? basename($certification->file_path)
         );

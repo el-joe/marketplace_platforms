@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Partner;
 
 use App\Enums\Gender;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Vendor\UpdateStoreLocationRequest;
 use App\Models\VendorBankAccount;
 use App\Models\VendorDocument;
 use App\Models\VendorDocumentCountryRequirement;
 use App\Models\VendorSectionLock;
+use App\Services\Vendor\VendorStoreLocationService;
 use App\Services\VendorChangeRequestService;
 use App\Services\VendorSectionLockService;
 use App\Traits\ChecksVendorSectionLock;
@@ -27,6 +29,7 @@ class ProfileController extends Controller
     public function __construct(
         private readonly VendorSectionLockService $sectionLocks,
         private readonly VendorChangeRequestService $changeRequests,
+        private readonly VendorStoreLocationService $storeLocations,
     ) {}
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -49,7 +52,7 @@ class ProfileController extends Controller
     public function index(): View
     {
         $admin = $this->vendorAdmin();
-        $vendor = $admin->vendor()->with('country')->firstOrFail();
+        $vendor = $admin->vendor()->with(['country', 'businessAddress'])->firstOrFail();
 
         // Dynamic, country-aware list — same shared helper as registration.
         // Re-fetched on every page load so admin matrix changes reflect immediately.
@@ -81,9 +84,11 @@ class ProfileController extends Controller
             ->get()
             ->keyBy('section');
 
+        $storeLocation = $this->storeLocations->present($vendor);
+
         return view('partner.profile.index', compact(
             'admin', 'vendor', 'requiredDocs', 'latestDocByType', 'bankAccounts',
-            'sectionLocks', 'lockStatus', 'pendingChangeRequests'
+            'sectionLocks', 'lockStatus', 'pendingChangeRequests', 'storeLocation'
         ));
     }
 
@@ -176,6 +181,19 @@ class ProfileController extends Controller
         }
 
         return response()->json(['message' => 'تم تحديث بيانات المتجر بنجاح']);
+    }
+
+    /**
+     * Store location (business address + pin): the distance-pricing origin when no warehouse with coordinates
+     * fulfils the order. Gated by settings.edit on the route.
+     */
+    public function updateLocation(UpdateStoreLocationRequest $request): JsonResponse
+    {
+        $vendor = $this->vendorAdmin()->vendor()->with('businessAddress')->firstOrFail();
+
+        $location = $this->storeLocations->update($vendor, $request->validated(), $this->vendorAdmin());
+
+        return response()->json(['message' => __('store_location.saved'), 'data' => $location]);
     }
 
     /**

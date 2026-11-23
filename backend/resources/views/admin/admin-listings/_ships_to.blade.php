@@ -16,7 +16,7 @@
                     <input type="checkbox" name="destination_country_ids[]" value="{{ $country->id }}"
                            class="rounded border-gray-300 text-primary-600 focus:ring-primary-200"
                            {{ in_array($country->id, $selectedDestinationIds, true) ? 'checked' : '' }}>
-                    {{ $country->name_en }}
+                    {{ localized($country) }}
                 </label>
             @empty
                 <p class="text-xs text-gray-400 col-span-full">{{ __('admin.international_shipping.no_other_countries') }}</p>

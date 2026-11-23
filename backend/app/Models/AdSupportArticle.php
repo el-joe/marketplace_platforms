@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AdSupportArticleStatus;
+use App\Support\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -60,11 +61,12 @@ class AdSupportArticle extends Model
             : ($this->excerpt_en ?: $this->getRawOriginal('excerpt'));
     }
 
+    /** Body HTML for the current portal locale, re-sanitized on output (bodies are also cleaned on save). */
     public function localizedBody(): ?string
     {
-        return session('locale', 'ar') === 'ar'
+        return HtmlSanitizer::clean(session('locale', 'ar') === 'ar'
             ? ($this->body_ar ?: $this->getRawOriginal('body'))
-            : ($this->body_en ?: $this->getRawOriginal('body'));
+            : ($this->body_en ?: $this->getRawOriginal('body')));
     }
 
     public function collection(): BelongsTo

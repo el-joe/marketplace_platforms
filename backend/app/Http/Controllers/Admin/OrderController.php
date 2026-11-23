@@ -6,6 +6,7 @@ use App\Enums\CancelActor;
 use App\Enums\DisputeReason;
 use App\Enums\RefundReason;
 use App\Enums\RefundType;
+use App\Exceptions\OrderNotCancellableException;
 use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Country;
@@ -16,8 +17,10 @@ use App\Models\ShippingCarrier;
 use App\Models\ShippingRate;
 use App\Models\ShippingZone;
 use App\Models\SubOrder;
+use App\Models\Warehouse;
 use App\Services\OrderInterventionService;
 use App\Services\Shipping\ShipmentService;
+use App\Support\Bilingual;
 use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
@@ -49,10 +52,8 @@ class OrderController extends Controller
             return $this->exportOrders($request);
         }
 
-        $countries = Country::query()
-            ->where('is_active', true)
-            ->orderBy('name_en')
-            ->pluck('name_en', 'id');
+        $countries = Bilingual::options(Country::query()
+            ->where('is_active', true));
 
         return view('admin.orders.index', [
             'breadcrumbs' => [
@@ -202,8 +203,20 @@ class OrderController extends Controller
             'country',
         ])->whereNull('deleted_at')->findOrFail($id);
 
+        // Names of the warehouses that were the distance-pricing origin of a sub-order (snapshot ids only).
+        $distanceOriginWarehouseIds = $order->subOrders
+            ->map(fn ($subOrder) => $subOrder->distance_pricing ?? null)
+            ->filter(fn ($snapshot) => in_array($snapshot['origin_type'] ?? null, ['fulfilling_warehouse', 'vendor_warehouse'], true))
+            ->pluck('origin_id')
+            ->unique()
+            ->values();
+        $distanceOriginWarehouses = $distanceOriginWarehouseIds->isEmpty()
+            ? collect()
+            : Warehouse::whereIn('id', $distanceOriginWarehouseIds)->pluck('name', 'id');
+
         return view('admin.orders.show', [
             'order' => $order,
+            'distanceOriginWarehouses' => $distanceOriginWarehouses,
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.orders.title'), 'url' => route('admin.orders.index')],
@@ -275,6 +288,8 @@ class OrderController extends Controller
                 'message' => __('admin.orders.sub_order_status_updated_to', ['status' => $this->statusLabel($request->new_status)]),
                 'new_status' => $request->new_status,
             ]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => collect($e->errors())->flatten()->first()], 422);
         } catch (\Throwable $e) {
             Log::error('SubOrder status update failed', ['error' => $e->getMessage()]);
 
@@ -314,6 +329,8 @@ class OrderController extends Controller
             );
 
             return response()->json(['success' => true, 'message' => __('admin.orders.force_cancelled_successfully')]);
+        } catch (OrderNotCancellableException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\RuntimeException $e) {
             if (str_starts_with($e->getMessage(), 'blocked:')) {
                 return response()->json([
@@ -355,14 +372,21 @@ class OrderController extends Controller
         }
 
         try {
-            $this->interventionService->cancelItems(
+            $refundIssued = $this->interventionService->cancelItems(
                 $order,
                 $items,
                 $request->cancel_reason,
                 auth('admin')->id()
             );
 
-            return response()->json(['success' => true, 'message' => __('admin.orders.items_cancelled_successfully')]);
+            return response()->json([
+                'success' => true,
+                'message' => $refundIssued
+                    ? __('admin.orders.items_cancelled_successfully')
+                    : __('admin.orders.items_cancelled_no_refund'),
+            ]);
+        } catch (OrderNotCancellableException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (ValidationException $e) {
             return response()->json(['message' => collect($e->errors())->flatten()->first()], 422);
         } catch (\Throwable $e) {

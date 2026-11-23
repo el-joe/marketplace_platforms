@@ -35,15 +35,29 @@
             ],
             [
                 'title' => __('admin.geography.status_col'),
-                'data' => 'is_launched',
+                'data' => 'status',
                 'name' => 'is_launched',
                 'orderable_column' => 'countries.is_launched',
                 'searchable' => false,
                 'className' => 'text-center',
-                'render' => 'Renderers.badge({
-                                                  true:  { label: "' . __('admin.geography.launched') . '", color: "success" },
-                                                  false: { label: "' . __('admin.geography.draft') . '",    color: "gray"    }
-                                              })',
+                'render' => 'Renderers.badge(' . json_encode([
+                    \App\Models\Country::STATUS_LIVE => ['label' => __('admin.geography.status_live'), 'color' => 'success'],
+                    \App\Models\Country::STATUS_DRAFT => ['label' => __('admin.geography.status_draft'), 'color' => 'gray'],
+                    \App\Models\Country::STATUS_HIDDEN => ['label' => __('admin.geography.status_hidden'), 'color' => 'warning'],
+                    \App\Models\Country::STATUS_DELETED => ['label' => __('admin.geography.status_deleted'), 'color' => 'danger'],
+                ], JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT) . ')',
+            ],
+            [
+                'title' => __('admin.geography.vendors_col'),
+                'data' => 'vendors_open',
+                'name' => 'vendors_open',
+                'orderable' => false,
+                'searchable' => false,
+                'className' => 'text-center',
+                'render' => 'Renderers.badge(' . json_encode([
+                    'true' => ['label' => __('admin.geography.vendors_open'), 'color' => 'primary'],
+                    'false' => ['label' => __('admin.geography.vendors_closed'), 'color' => 'gray'],
+                ], JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT) . ')',
             ],
             [
                 'title' => '',
@@ -62,18 +76,34 @@
             ['type' => 'text', 'name' => 'search', 'label' => __('common.search'), 'placeholder' => __('admin.geography.search_placeholder_countries')],
             [
                 'type' => 'select',
-                'name' => 'is_launched',
-                'label' => __('admin.geography.launch_status'),
-                'options' => ['' => __('common.all'), '1' => __('admin.geography.launched'), '0' => __('admin.geography.draft')]
+                'name' => 'visibility',
+                'label' => __('admin.geography.visibility_filter'),
+                'options' => [
+                    '' => __('common.all'),
+                    \App\Models\Country::STATUS_LIVE => __('admin.geography.status_live'),
+                    \App\Models\Country::STATUS_DRAFT => __('admin.geography.status_draft'),
+                    \App\Models\Country::STATUS_HIDDEN => __('admin.geography.status_hidden'),
+                    \App\Models\Country::STATUS_DELETED => __('admin.geography.status_deleted'),
+                ],
             ],
             [
                 'type' => 'select',
-                'name' => 'is_active',
-                'label' => __('admin.geography.is_active'),
-                'options' => ['' => __('common.all'), '1' => __('common.active'), '0' => __('admin.geography.inactive')]
+                'name' => 'vendors_open',
+                'label' => __('admin.geography.vendors_col'),
+                'options' => ['' => __('common.all'), '1' => __('admin.geography.vendors_open'), '0' => __('admin.geography.vendors_closed')],
             ],
         ];
     @endphp
+
+    <div class="mb-4 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600" data-testid="country-status-legend">
+        <p class="mb-2 font-semibold text-gray-800">{{ __('admin.geography.status_legend_title') }}</p>
+        <ul class="space-y-1.5">
+            <li class="flex items-start gap-2"><x-badge color="success">{{ __('admin.geography.status_live') }}</x-badge><span>{{ __('admin.geography.status_legend_live') }}</span></li>
+            <li class="flex items-start gap-2"><x-badge color="gray">{{ __('admin.geography.status_draft') }}</x-badge><span>{{ __('admin.geography.status_legend_draft') }}</span></li>
+            <li class="flex items-start gap-2"><x-badge color="warning">{{ __('admin.geography.status_hidden') }}</x-badge><span>{{ __('admin.geography.status_legend_hidden') }}</span></li>
+            <li class="flex items-start gap-2"><x-badge color="primary">{{ __('admin.geography.vendors_open') }}</x-badge><span>{{ __('admin.geography.status_legend_vendors') }}</span></li>
+        </ul>
+    </div>
 
     <x-table.datatable id="countries-table" url="{{ route('admin.countries.datatable') }}" :columns="$columns"
         :filters="$filters" :create-action="['url' => route('admin.countries.create'), 'label' => __('admin.geography.add_country')]"

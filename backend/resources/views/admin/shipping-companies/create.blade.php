@@ -71,7 +71,7 @@
                         <select name="country_id" class="form-input w-full">
                             <option value="">— {{ __('admin.shipping_section.select_country') }} —</option>
                             @foreach($countries as $country)
-                                <option value="{{ $country->id }}">{{ $country->name_en }}</option>
+                                <option value="{{ $country->id }}">{{ localized($country) }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -92,7 +92,7 @@
                         <select name="served_countries[]" multiple class="form-input w-full" style="min-height: 100px;">
                             @foreach($countries as $country)
                                 <option value="{{ $country->id }}">
-                                    {{ $country->name_en }} ({{ $country->currency_code }})
+                                    {{ localized($country) }} ({{ $country->currency_code }})
                                 </option>
                             @endforeach
                         </select>

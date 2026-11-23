@@ -15,7 +15,7 @@
 
     {{-- ─── Zone Cards ──────────────────────────────────────────────────────────── --}}
     @php
-        $byCountry = $zones->groupBy(fn($z) => $z->country?->name_en ?? __('admin.delivery_section.unknown_country'));
+        $byCountry = $zones->groupBy(fn($z) => localized($z->country) ?: __('admin.delivery_section.unknown_country'));
     @endphp
 
     @forelse($byCountry as $countryName => $countryZones)
@@ -130,7 +130,7 @@
                         <select name="country_id" id="zone-country" class="form-input w-full" required>
                             <option value="">{{ __('admin.delivery_section.select_country_option') }}</option>
                             @foreach($countries as $c)
-                                <option value="{{ $c->id }}">{{ $c->name_en }}</option>
+                                <option value="{{ $c->id }}">{{ localized($c) }}</option>
                             @endforeach
                         </select>
                     </div>

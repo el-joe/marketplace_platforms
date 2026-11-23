@@ -55,7 +55,7 @@
                         type="button"
                         id="btn-launch"
                         data-country-id="{{ $country->id }}"
-                        data-country-name="{{ $country->name_en }}"
+                        data-country-name="{{ localized($country) }}"
                         data-url="{{ route('admin.countries.launch', $country->id) }}"
                         @if (count($launchErrors ?? []) > 0) disabled title="{{ implode(' | ', $launchErrors ?? []) }}" @endif
                         class="btn btn-success {{ count($launchErrors ?? []) > 0 ? 'opacity-50 cursor-not-allowed' : '' }}"
@@ -85,12 +85,25 @@
                     </button>
                 @endif
 
+                @if ($country->is_launched && auth('admin')->user()?->can('countries.launch'))
+                    <button
+                        type="button"
+                        id="btn-revert-to-draft"
+                        data-country-name="{{ localized($country) }}"
+                        data-url="{{ route('admin.countries.revert-to-draft', $country->id) }}"
+                        class="btn btn-ghost"
+                    >
+                        <x-heroicon name="arrow-uturn-left" class="w-4 h-4" />
+                        {{ __('admin.geography.revert_to_draft') }}
+                    </button>
+                @endif
+
                 @if ($canDelete ?? false)
                     <button
                         type="button"
                         id="btn-delete-country"
                         data-country-id="{{ $country->id }}"
-                        data-country-name="{{ $country->name_en }}"
+                        data-country-name="{{ localized($country) }}"
                         data-url="{{ route('admin.countries.destroy', $country->id) }}"
                         class="btn btn-danger-ghost"
                     >
@@ -131,15 +144,21 @@
     {{-- ══════════════════════════════════════════════════════════════════════ --}}
     @if ($isEdit)
         <div class="flex items-center gap-3 text-sm text-gray-600">
-            @if ($country->is_launched)
-                <x-badge color="success">{{ __('admin.geography.launched') }}</x-badge>
-                <span class="text-gray-400">{{ __('admin.geography.since') }} {{ admin_tz($country->launched_at)?->format('d M Y') ?? '—' }}</span>
-            @else
-                <x-badge color="gray">{{ __('admin.geography.draft') }}</x-badge>
-            @endif
+            @switch($country->visibilityStatus())
+                @case(\App\Models\Country::STATUS_LIVE)
+                    <x-badge color="success">{{ __('admin.geography.status_live') }}</x-badge>
+                    <span class="text-gray-400">{{ __('admin.geography.since') }} {{ admin_tz($country->launched_at)?->format('d M Y') ?? '—' }}</span>
+                    @break
+                @case(\App\Models\Country::STATUS_HIDDEN)
+                    <x-badge color="warning">{{ __('admin.geography.status_hidden') }}</x-badge>
+                    <span class="text-gray-400">{{ __('admin.geography.status_legend_hidden') }}</span>
+                    @break
+                @default
+                    <x-badge color="gray">{{ __('admin.geography.status_draft') }}</x-badge>
+            @endswitch
 
-            @if (!$country->is_active)
-                <x-badge color="warning">{{ __('admin.geography.inactive') }}</x-badge>
+            @if ($country->isAvailableForVendors())
+                <x-badge color="primary">{{ __('admin.geography.vendors_open') }}</x-badge>
             @endif
         </div>
     @endif
@@ -295,9 +314,10 @@
                 :checked="$bool('cod_available')"
             />
             <x-form.toggle
-                name="is_active"
-                label="{{ __('admin.geography.is_active') }}"
-                :checked="$bool('is_active', true)"
+                name="accepts_vendors_before_launch"
+                label="{{ __('admin.geography.accepts_vendors_before_launch') }}"
+                :checked="$bool('accepts_vendors_before_launch')"
+                :help-text="__('admin.geography.accepts_vendors_before_launch_hint')"
             />
         </div>
 
@@ -347,7 +367,7 @@
         <div class="flex items-center justify-between mb-4">
             <div>
                 <h3 class="text-sm font-semibold text-gray-700">
-                    {{ __('admin.geography.payment_gateways_for', ['name' => $country->name_en]) }}
+                    {{ __('admin.geography.payment_gateways_for', ['name' => localized($country)]) }}
                 </h3>
                 <p class="text-xs text-gray-400 mt-0.5">
                     {{ __('admin.geography.manage_gateways_hint') }}
@@ -406,7 +426,7 @@
         class="bg-white rounded-b-xl border border-t-0 border-gray-200 p-6 shadow-sm"
     >
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-gray-700">{{ __('admin.geography.shipping_methods_for', ['name' => $country->name_en]) }}</h3>
+            <h3 class="text-sm font-semibold text-gray-700">{{ __('admin.geography.shipping_methods_for', ['name' => localized($country)]) }}</h3>
             <button
                 type="button"
                 id="btn-save-shipping"
@@ -465,12 +485,13 @@
         class="bg-white rounded-b-xl border border-t-0 border-gray-200 p-6 shadow-sm"
     >
         <p class="text-sm text-gray-500 mb-4">
-            {{ __('admin.geography.category_overrides_desc', ['name' => $country->name_en]) }}
+            {{ __('admin.geography.category_overrides_desc', ['name' => localized($country)]) }}
         </p>
+        <p class="text-xs text-gray-400 -mt-3 mb-4">{{ __('category_form.availability.country_page_hint') }}</p>
 
         @php
             $catColumns = [
-                ['title' => __('admin.geography.category_col'),          'data' => 'name_en',         'name' => 'name_en'],
+                ['title' => __('admin.geography.category_col'),          'data' => 'name',            'name' => 'name'],
                 ['title' => __('admin.geography.available_col'),          'data' => 'is_available',    'name' => 'is_available',   'searchable' => false, 'render' => 'Renderers.badge({true:{label:"' . __('common.yes') . '",color:"success"},false:{label:"' . __('common.no') . '",color:"danger"}})'],
                 ['title' => __('admin.geography.commission_fbp_pct_col'), 'data' => 'commission_fbp_pct', 'name' => 'commission_fbp_pct','searchable' => false],
                 ['title' => __('admin.geography.commission_fbp_fixed_col'), 'data' => 'commission_fbp_fixed', 'name' => 'commission_fbp_fixed','searchable' => false],

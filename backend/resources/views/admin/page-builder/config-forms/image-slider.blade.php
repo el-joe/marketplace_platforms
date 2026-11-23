@@ -5,10 +5,10 @@
 
     <x-form.lang-tabs id="image-slider-lang-tabs">
         <x-slot:en>
-            <x-form.input name="title_en" label="Title (EN)" :value="$config['title_en'] ?? ''" dir="ltr" />
+            <x-form.input name="title_en" :label="__('admin.page_builder.cf.title_en')" :value="$config['title_en'] ?? ''" dir="ltr" />
         </x-slot:en>
         <x-slot:ar>
-            <x-form.input name="title_ar" label="Title (AR)" :value="$config['title_ar'] ?? ''" dir="rtl" />
+            <x-form.input name="title_ar" :label="__('admin.page_builder.cf.title_ar')" :value="$config['title_ar'] ?? ''" dir="rtl" />
         </x-slot:ar>
     </x-form.lang-tabs>
 
@@ -27,9 +27,9 @@
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_text.admin_page_builder_config_forms_image_slider.rows_visible') }}</label>
             <select name="rows" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
-                <option value="1" {{ ($config['rows'] ?? 1) == 1 ? 'selected' : '' }}>1 row</option>
-                <option value="2" {{ ($config['rows'] ?? 1) == 2 ? 'selected' : '' }}>2 rows</option>
-                <option value="3" {{ ($config['rows'] ?? 1) == 3 ? 'selected' : '' }}>3 rows</option>
+                <option value="1" {{ ($config['rows'] ?? 1) == 1 ? 'selected' : '' }}>{{ trans_choice('admin.page_builder.cf.rows_count_option', 1) }}</option>
+                <option value="2" {{ ($config['rows'] ?? 1) == 2 ? 'selected' : '' }}>{{ trans_choice('admin.page_builder.cf.rows_count_option', 2) }}</option>
+                <option value="3" {{ ($config['rows'] ?? 1) == 3 ? 'selected' : '' }}>{{ trans_choice('admin.page_builder.cf.rows_count_option', 3) }}</option>
             </select>
         </div>
     </div>
@@ -40,14 +40,14 @@
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_text.admin_page_builder_config_forms_image_slider.image_shape') }}</label>
             <select name="image_shape" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
                 <option value="rounded" {{ ($config['image_shape'] ?? 'rounded') === 'rounded' ? 'selected' : '' }}>{{ __('admin.static_text.admin_page_builder_config_forms_image_slider.rounded_rectangle') }}</option>
-                <option value="circle"  {{ ($config['image_shape'] ?? 'rounded') === 'circle'  ? 'selected' : '' }}>Circle</option>
-                <option value="square"  {{ ($config['image_shape'] ?? 'rounded') === 'square'  ? 'selected' : '' }}>Square (equal sides)</option>
+                <option value="circle"  {{ ($config['image_shape'] ?? 'rounded') === 'circle'  ? 'selected' : '' }}>{{ __('admin.page_builder.cf.shape_circle') }}</option>
+                <option value="square"  {{ ($config['image_shape'] ?? 'rounded') === 'square'  ? 'selected' : '' }}>{{ __('admin.page_builder.cf.shape_square') }}</option>
             </select>
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_text.admin_page_builder_config_forms_image_slider.card_height_size') }}</label>
             <select name="size_preset" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
-                <option value="small"   {{ ($config['size_preset'] ?? 'medium') === 'small'   ? 'selected' : '' }}>Small — compact icons (like category pills)</option>
+                <option value="small"   {{ ($config['size_preset'] ?? 'medium') === 'small'   ? 'selected' : '' }}>{{ __('admin.page_builder.cf.size_small') }}</option>
                 <option value="medium"  {{ ($config['size_preset'] ?? 'medium') === 'medium'  ? 'selected' : '' }}>{{ __('admin.static_text.admin_page_builder_config_forms_image_slider.medium_standard_cards') }}</option>
                 <option value="large"   {{ ($config['size_preset'] ?? 'medium') === 'large'   ? 'selected' : '' }}>{{ __('admin.static_text.admin_page_builder_config_forms_image_slider.large_tall_offer_coupon_cards') }}</option>
             </select>
@@ -64,10 +64,10 @@
             <span class="text-gray-400 font-normal ml-1">(overrides size preset for fixed proportions)</span>
         </label>
         <select name="aspect_ratio" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
-            <option value=""    {{ ($config['aspect_ratio'] ?? '') === ''    ? 'selected' : '' }}>Auto (use size preset)</option>
-            <option value="1:1" {{ ($config['aspect_ratio'] ?? '') === '1:1' ? 'selected' : '' }}>1:1 — Square</option>
-            <option value="4:3" {{ ($config['aspect_ratio'] ?? '') === '4:3' ? 'selected' : '' }}>4:3 — Landscape</option>
-            <option value="3:4" {{ ($config['aspect_ratio'] ?? '') === '3:4' ? 'selected' : '' }}>3:4 — Portrait (tall offer cards)</option>
+            <option value=""    {{ ($config['aspect_ratio'] ?? '') === ''    ? 'selected' : '' }}>{{ __('admin.page_builder.cf.aspect_auto') }}</option>
+            <option value="1:1" {{ ($config['aspect_ratio'] ?? '') === '1:1' ? 'selected' : '' }}>{{ __('admin.page_builder.cf.aspect_square') }}</option>
+            <option value="4:3" {{ ($config['aspect_ratio'] ?? '') === '4:3' ? 'selected' : '' }}>{{ __('admin.page_builder.cf.aspect_landscape') }}</option>
+            <option value="3:4" {{ ($config['aspect_ratio'] ?? '') === '3:4' ? 'selected' : '' }}>{{ __('admin.page_builder.cf.aspect_portrait') }}</option>
             <option value="2:3" {{ ($config['aspect_ratio'] ?? '') === '2:3' ? 'selected' : '' }}>{{ __('admin.static_text.admin_page_builder_config_forms_image_slider.2_3_very_tall') }}</option>
             <option value="16:9"{{ ($config['aspect_ratio'] ?? '') === '16:9'? 'selected' : '' }}>{{ __('admin.static_text.admin_page_builder_config_forms_image_slider.16_9_wide_banner') }}</option>
             <option value="3:2" {{ ($config['aspect_ratio'] ?? '') === '3:2' ? 'selected' : '' }}>{{ __('admin.static_text.admin_page_builder_config_forms_image_slider.3_2_landscape_wide') }}</option>

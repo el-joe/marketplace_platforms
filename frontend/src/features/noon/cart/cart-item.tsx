@@ -16,6 +16,7 @@ import { getListingImage } from "@/src/types/media";
 import AnimatedBadge from "@/src/components/shared/animated-badge";
 import { mapPromoBadges } from "@/src/lib/promo-badges";
 import CustomAttributeValues from "@/src/components/shared/custom-attribute-values";
+import OrderCutoffCountdown from "@/src/components/shared/order-cutoff-countdown";
 
 type Props = {
   item: ShippingGroupItem;
@@ -134,10 +135,8 @@ export default function CartItem({
                   : shippingMethod?.badge_label_en || shippingMethod?.badge_label_ar}
               </p>
             )}
-          <p className="text-sm text-gray">
-            {t("orderIn")}
-            18 hrs 12 mins (dummy data)
-          </p>
+          {/* real order cutoff from the API; hidden when none / elapsed */}
+          <OrderCutoffCountdown cutoffAt={shippingMethod?.order_cutoff_at} />
           {/* coupons slides */}
           <Swiper slidesPerView={"auto"} spaceBetween={8} className="w-full">
             {cart?.cart.items

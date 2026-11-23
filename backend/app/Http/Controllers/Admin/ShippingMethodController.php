@@ -8,14 +8,23 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ShippingMethodController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $search = trim((string) $request->query('search', ''));
+        $like = '%'.addcslashes($search, '%_\\').'%';
+
         $shippingMethods = ShippingMethod::withCount('categoryShippingMethods')
+            ->when($search !== '', fn ($query) => $query->where(fn ($q) => $q->where('name', 'like', $like)
+                ->orWhere('code', 'like', $like)
+                ->orWhere('badge_label_en', 'like', $like)
+                ->orWhere('badge_label_ar', 'like', $like)))
+            ->when($request->query('status') === 'active', fn ($query) => $query->where('is_active', true))
+            ->when($request->query('status') === 'inactive', fn ($query) => $query->where('is_active', false))
             ->orderBy('display_priority')
             ->orderBy('name')
             ->get();
@@ -84,24 +93,24 @@ class ShippingMethodController extends Controller
         }
 
         $file = $request->file('image');
-        $ext  = $file->getClientOriginalExtension() ?: $file->guessExtension();
+        $ext = $file->getClientOriginalExtension() ?: $file->guessExtension();
         $path = $file->storeAs(
-            'shipping-methods/' . $shippingMethod->id,
-            'badge_' . Str::random(8) . '.' . $ext,
+            'shipping-methods/'.$shippingMethod->id,
+            'badge_'.Str::random(8).'.'.$ext,
             'public'
         );
 
         $shippingMethod->update(['badge_image_path' => $path]);
 
         return response()->json([
-            'message'         => 'Badge image uploaded.',
+            'message' => 'Badge image uploaded.',
             'badge_image_url' => Storage::disk('public')->url($path),
         ]);
     }
 
     public function deleteBadgeImage(ShippingMethod $shippingMethod): JsonResponse
     {
-        if (!$shippingMethod->badge_image_path) {
+        if (! $shippingMethod->badge_image_path) {
             return response()->json(['message' => 'No image to remove.'], 404);
         }
 
@@ -117,7 +126,7 @@ class ShippingMethodController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'code' => [
                 'required', 'string', 'max:50', 'regex:/^[a-z_]+$/',
-                'unique:shipping_methods,code' . ($shippingMethod ? ',' . $shippingMethod->id : ''),
+                'unique:shipping_methods,code'.($shippingMethod ? ','.$shippingMethod->id : ''),
             ],
             'description' => ['nullable', 'string'],
             'min_delivery_days' => ['nullable', 'integer', 'min:0'],

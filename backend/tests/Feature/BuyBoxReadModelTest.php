@@ -3,9 +3,10 @@
 namespace Tests\Feature;
 
 use App\Events\ListingStockChanged;
-use App\Models\AdminListing;
 use App\Models\Admin;
-use App\Models\VendorListing;
+use App\Models\AdminListing;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\WarehouseInventory;
 use App\Services\Customer\BuyBoxRebuildService;
 use App\Services\Customer\ProductQueryService;
@@ -71,7 +72,7 @@ class BuyBoxReadModelTest extends TestCase
         $scenario = MarketplaceScenario::make()->build();
 
         // Remove the admin listing so the vendor tier decides the winner.
-        \App\Models\WarehouseInventory::where('admin_listing_id', $scenario->adminListing->id)->delete();
+        WarehouseInventory::where('admin_listing_id', $scenario->adminListing->id)->delete();
         $scenario->adminListing->forceDelete();
 
         // vendorListingFbp (fbm, price 1000) and vendorListingFbn (fbn, price
@@ -95,7 +96,7 @@ class BuyBoxReadModelTest extends TestCase
     public function test_vendor_tie_break_falls_back_to_price_then_id_when_fulfillment_ties(): void
     {
         $scenario = MarketplaceScenario::make()->build();
-        \App\Models\WarehouseInventory::where('admin_listing_id', $scenario->adminListing->id)->delete();
+        WarehouseInventory::where('admin_listing_id', $scenario->adminListing->id)->delete();
         $scenario->adminListing->forceDelete();
 
         // Make both vendor listings FBM so fulfillment can't break the tie,
@@ -212,7 +213,7 @@ class BuyBoxReadModelTest extends TestCase
     public function test_browse_endpoint_query_count_is_bounded(): void
     {
         $scenario = MarketplaceScenario::make()->build();
-        $scenario->country->update(['site_code' => 'ae-' . Str::lower(Str::random(6))]);
+        $scenario->country->update(['site_code' => 'ae-'.Str::lower(Str::random(6))]);
 
         app(BuyBoxRebuildService::class)->rebuildCountry($scenario->country);
 
@@ -242,10 +243,13 @@ class BuyBoxReadModelTest extends TestCase
         // Task H adds the equivalent batched flash-sale check
         // (FlashSaleService::activeFlashSaleEndsAtByProduct(), one query per
         // listing type — vendor_listings/admin_listings — never per-row).
+        // 22 -> 23: client feedback 2026-11-22 #7/#8 adds one fixed query that
+        // 404s an inactive / country-excluded category (its ancestor chain +
+        // this country's exceptions, CategoryCountryAvailabilityService::isAccessibleIn()).
         $this->assertLessThanOrEqual(
-            22,
+            23,
             $queries,
-            "Expected <=22 queries for products?category=, got {$queries}."
+            "Expected <=23 queries for products?category=, got {$queries}."
         );
     }
 
@@ -259,17 +263,17 @@ class BuyBoxReadModelTest extends TestCase
         // not grow with it (the whole point of moving LIMIT before hydration).
         $admin = Admin::factory()->create();
         for ($i = 0; $i < 25; $i++) {
-            $product = \App\Models\Product::create([
+            $product = Product::create([
                 'category_id' => $scenario->category->id,
                 'brand_id' => $scenario->brand->id,
                 'name_en' => "Extra Product {$i}",
                 'name_ar' => "منتج {$i}",
-                'slug' => 'extra-product-' . $i . '-' . Str::lower(Str::random(6)),
+                'slug' => 'extra-product-'.$i.'-'.Str::lower(Str::random(6)),
                 'status' => 'active',
             ]);
-            $variant = \App\Models\ProductVariant::create([
+            $variant = ProductVariant::create([
                 'product_id' => $product->id,
-                'sku' => 'SKU-EXTRA-' . Str::upper(Str::random(10)),
+                'sku' => 'SKU-EXTRA-'.Str::upper(Str::random(10)),
                 'is_default' => true,
                 'is_active' => true,
                 'position' => 0,

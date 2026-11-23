@@ -222,6 +222,7 @@ return [
 
     'exceptions' => [
         'unauthorized' => 'You are not authorized to perform this action.',
+        'server_error' => 'Something went wrong while processing your request. Please try again or contact support.',
         'warehouse' => [
             'not_authorised_inventory_adjustment' => 'You are not authorised to adjust this inventory.',
             'source_warehouse_not_owned' => 'Source warehouse does not belong to your account.',
@@ -415,6 +416,9 @@ return [
             'not_found' => 'Order not found.',
             'cannot_cancel' => 'This order cannot be cancelled in its current status.',
             'cancelled' => 'Order cancelled successfully.',
+            'already_cancelled' => 'This order is already cancelled.',
+            'cancel_failed' => 'The order could not be cancelled. Please try again or contact support.',
+            'cancel_blocked_shipped' => 'This order can no longer be cancelled because it has already been shipped.',
             'suborder_not_found' => 'Sub-order not found.',
             'not_bank_transfer' => 'This order was not placed with bank transfer.',
             'proof_uploaded' => 'Payment proof uploaded successfully.',

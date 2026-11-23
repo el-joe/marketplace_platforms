@@ -69,6 +69,7 @@ export default async function ProfileFormFields() {
             label={t("gender")}
             maleLabel={t("male")}
             femaleLabel={t("female")}
+            unspecifiedLabel={t("genderUnspecified")}
           />
         </div>
 

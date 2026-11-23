@@ -86,7 +86,7 @@
                                 <div class="text-gray-900">{{ $productRequest->requesterName() }}</div>
                                 <div class="text-xs text-gray-500">{{ __('product_requests.requester_types.' . $productRequest->requester_type) }}</div>
                             </td>
-                            <td class="px-4 py-3 text-gray-600">{{ app()->getLocale() === 'ar' ? ($productRequest->category?->name_ar ?: $productRequest->category?->name_en) : $productRequest->category?->name_en }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ app()->getLocale() === 'ar' ? (localized($productRequest->category)) : $productRequest->category?->name_en }}</td>
                             <td class="px-4 py-3">
                                 <span class="px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap {{ $productRequest->status->color() }}">
                                     {{ $productRequest->status->label() }}

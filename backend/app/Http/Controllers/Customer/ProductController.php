@@ -17,6 +17,7 @@ use App\Models\Slug;
 use App\Models\VendorListing;
 use App\Services\Ads\PlacementAdService;
 use App\Services\BannerService;
+use App\Services\CategoryCountryAvailabilityService;
 use App\Services\Customer\BuyBoxService;
 use App\Services\Customer\CategoryService;
 use App\Services\Customer\ListingIdentifierService;
@@ -68,7 +69,8 @@ class ProductController extends Controller
         $category = $resolvedSlug && $resolvedSlug['type'] === 'category' ? $resolvedSlug['model'] : null;
         $customPage = $resolvedSlug && $resolvedSlug['type'] === 'custom_page' ? $resolvedSlug['model'] : null;
 
-        $categoryIds = ! empty($filters['category'])
+        // A category's scope is computed below, after its storefront gate.
+        $categoryIds = ! empty($filters['category']) && ! $category
             ? $categoryService->getCategoryScopeForFilter($filters['category'])
             : null;
 
@@ -80,6 +82,14 @@ class ProductController extends Controller
         // Inactive custom pages 404 (soft-deleted already fail resolveSlug).
         if ($customPage && ! $customPage->is_active) {
             abort(404);
+        }
+        // Inactive category (or one under an inactive parent, or excluded for this
+        // country) has no storefront page: 404 instead of an empty/filled grid.
+        if ($category) {
+            if (! app(CategoryCountryAvailabilityService::class)->isAccessibleIn($category, $country)) {
+                abort(404);
+            }
+            $categoryIds = $categoryService->getDescendantIds($category, $country);
         }
         if ($customPage) {
             return $this->customPageIndex($request, $country, $filters, $customPage, $perPage, $page);

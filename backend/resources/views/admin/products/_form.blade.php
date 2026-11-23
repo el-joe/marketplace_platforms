@@ -264,25 +264,25 @@
                         <div class="flex gap-3 items-start specification-row">
                             <input type="hidden" name="specifications[{{ $i }}][id]" value="{{ $spec->id }}">
                             <div class="flex-1">
-                                <label class="block text-xs text-gray-500 mb-1">Key (EN)</label>
+                                <label class="block text-xs text-gray-500 mb-1">{{ __('admin.products.spec_key_en') }}</label>
                                 <input type="text" name="specifications[{{ $i }}][key_en]" value="{{ old("specifications.$i.key_en", $spec->key_en) }}"
                                     dir="ltr" maxlength="255" placeholder="e.g. Material"
                                     class="w-full border-gray-300 rounded-md text-sm" />
                             </div>
                             <div class="flex-1">
-                                <label class="block text-xs text-gray-500 mb-1">Key (AR)</label>
+                                <label class="block text-xs text-gray-500 mb-1">{{ __('admin.products.spec_key_ar') }}</label>
                                 <input type="text" name="specifications[{{ $i }}][key_ar]" value="{{ old("specifications.$i.key_ar", $spec->key_ar) }}"
                                     dir="rtl" maxlength="255" placeholder="مثال: المادة"
                                     class="w-full border-gray-300 rounded-md text-sm" />
                             </div>
                             <div class="flex-1">
-                                <label class="block text-xs text-gray-500 mb-1">Value (EN)</label>
+                                <label class="block text-xs text-gray-500 mb-1">{{ __('admin.products.spec_value_en') }}</label>
                                 <input type="text" name="specifications[{{ $i }}][value_en]" value="{{ old("specifications.$i.value_en", $spec->value_en) }}"
                                     dir="ltr" maxlength="500" placeholder="e.g. 100% Cotton"
                                     class="w-full border-gray-300 rounded-md text-sm" />
                             </div>
                             <div class="flex-1">
-                                <label class="block text-xs text-gray-500 mb-1">Value (AR)</label>
+                                <label class="block text-xs text-gray-500 mb-1">{{ __('admin.products.spec_value_ar') }}</label>
                                 <input type="text" name="specifications[{{ $i }}][value_ar]" value="{{ old("specifications.$i.value_ar", $spec->value_ar) }}"
                                     dir="rtl" maxlength="500" placeholder="مثال: قطن 100%"
                                     class="w-full border-gray-300 rounded-md text-sm" />
@@ -321,10 +321,10 @@
                         <div id="variant-attributes-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             @foreach($categoryAttributes ?? [] as $attr)
                             <div class="variant-attr-group" data-attr-id="{{ $attr->id }}">
-                                <label class="block text-xs font-medium text-gray-500 mb-1">{{ $attr->name_en }}</label>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">{{ localized($attr) }}</label>
                                 <select multiple data-select2-init class="variant-attr-values w-full" data-attr-id="{{ $attr->id }}">
                                     @foreach($attr->values ?? [] as $attrValue)
-                                    <option value="{{ $attrValue->id }}" {{ in_array($attrValue->id, $existingAttrValues ?? []) ? 'selected' : '' }}>{{ $attrValue->value_en }}</option>
+                                    <option value="{{ $attrValue->id }}" {{ in_array($attrValue->id, $existingAttrValues ?? []) ? 'selected' : '' }}>{{ localized($attrValue, 'value') }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -850,7 +850,7 @@
                             <tr class="hover:bg-gray-50 country-row" x-data="{ avail: {{ $cAvailable ? 'true' : 'false' }} }">
                                 <td class="px-6 py-3 font-medium text-gray-900">
                                     <input type="hidden" name="countries[{{ $country->id }}][country_id]" value="{{ $country->id }}">
-                                    {{ $country->name_en }}
+                                    {{ localized($country) }}
                                     <span class="text-xs text-gray-400 font-normal ml-1">
                                         ({{ $country->iso_code_2 ?? $country->iso_code_3 ?? '' }})
                                     </span>
@@ -1106,6 +1106,10 @@
         window.TRANSLATIONS = window.TRANSLATIONS || {};
         Object.assign(window.TRANSLATIONS, {
             duplicateBarcodePrefix: @json(__('admin.products.duplicate_barcode_prefix')),
+            specKeyEn: @json(__('admin.products.spec_key_en')),
+            specKeyAr: @json(__('admin.products.spec_key_ar')),
+            specValueEn: @json(__('admin.products.spec_value_en')),
+            specValueAr: @json(__('admin.products.spec_value_ar')),
             viewProduct: @json(__('admin.products.view_product')),
             noVariantAttrsForCategory: @json(__('admin.products.no_variant_attrs_for_category')),
             selectVariantAttributeFirst: @json(__('admin.products.select_variant_attribute_first')),

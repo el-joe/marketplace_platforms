@@ -369,7 +369,7 @@
                             <option value="">{{ __('admin.coupons_section.select_category') }}</option>
                             @foreach($categories as $cat)
                                 <option value="{{ $cat->id }}" {{ $val('category_id') === $cat->id ? 'selected' : '' }}>
-                                    {{ $cat->name_en }}
+                                    {{ localized($cat) }}
                                 </option>
                             @endforeach
                         </select>
@@ -554,7 +554,7 @@
                             placeholder="{{ __('admin.coupons_section.select_products') }}"
                         >
                             @foreach($selectedProducts as $product)
-                                <option value="{{ $product->id }}" selected>{{ $product->name_en ?: $product->name_ar }}</option>
+                                <option value="{{ $product->id }}" selected>{{ localized($product) }}</option>
                             @endforeach
                         </select>
                         <p class="text-xs text-gray-400 mt-1">{{ __('admin.coupons_section.targeted_products_hint') }}</p>
@@ -582,7 +582,7 @@
                         <option value=""></option>
                         @foreach($countries as $country)
                             <option value="{{ $country->id }}" {{ in_array($country->id, $selectedCountryIds, true) ? 'selected' : '' }}>
-                                {{ $country->name_en }}
+                                {{ localized($country) }}
                             </option>
                         @endforeach
                     </select>

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\BannerDeviceTarget;
 use App\Models\Banner;
 use App\Models\File;
 use App\Models\Marketer;
@@ -12,6 +13,8 @@ use Illuminate\Support\Str;
 class BannerService
 {
     private const DISK = 'public';
+
+    private const IMAGE_FILE_TYPES = ['banner_desktop_en', 'banner_desktop_ar', 'banner_mobile_en', 'banner_mobile_ar'];
 
     /**
      * Store a banner image and create a files record.
@@ -109,6 +112,114 @@ class BannerService
             ->orderByRaw('product_id is null asc')
             ->orderByDesc('priority')
             ->first();
+    }
+
+    /**
+     * Resolve the live banner for each web device of a customer-facing placement in one query.
+     * A banner only competes for the devices it targets (all → both, desktop → desktop, mobile → mobile,
+     * app → none) and only when it has at least one image. Ordered by product scope, priority, then newest.
+     *
+     * @return array{desktop: ?Banner, mobile: ?Banner}
+     */
+    public function getActivePlacementByDevice(string $placementCode, ?string $countryId, string $audience = 'guest', ?string $productId = null): array
+    {
+        $candidates = Banner::with('files')
+            ->where('placement_code', $placementCode)
+            ->live($countryId)
+            ->whereIn('audience', ['all', $audience])
+            ->whereIn('device_target', [BannerDeviceTarget::All->value, BannerDeviceTarget::Desktop->value, BannerDeviceTarget::Mobile->value])
+            ->where(function ($q) use ($productId) {
+                $q->whereNull('product_id');
+                if ($productId) {
+                    $q->orWhere('product_id', $productId);
+                }
+            })
+            ->orderByRaw('product_id is null asc')
+            ->orderByDesc('priority')
+            ->orderByDesc('created_at')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (Banner $banner) => $banner->files->contains(fn (File $f) => in_array($f->file_type, self::IMAGE_FILE_TYPES, true)));
+
+        $pick = fn (string $device) => $candidates->first(
+            fn (Banner $banner) => in_array($device, $this->targetedWebDevices($banner), true)
+        );
+
+        return ['desktop' => $pick('desktop'), 'mobile' => $pick('mobile')];
+    }
+
+    /**
+     * Web devices a banner is shown on.
+     *
+     * @return list<'desktop'|'mobile'>
+     */
+    public function targetedWebDevices(Banner $banner): array
+    {
+        return match ($banner->device_target) {
+            BannerDeviceTarget::Desktop => ['desktop'],
+            BannerDeviceTarget::Mobile => ['mobile'],
+            BannerDeviceTarget::App => [],
+            default => ['desktop', 'mobile'],
+        };
+    }
+
+    /**
+     * Storefront image URLs of a banner per (device, locale), already resolved with fallbacks and device
+     * targeting. Uses the loaded `files` relation.
+     *
+     * @param  list<'desktop'|'mobile'>|null  $devices  restrict to these devices (default: the banner's targeted devices)
+     * @return array{desktop_image_url: ?string, mobile_image_url: ?string, desktop_image_url_ar: ?string, mobile_image_url_ar: ?string}
+     */
+    public function resolvedImageUrls(Banner $banner, ?array $devices = null): array
+    {
+        $slots = [];
+        foreach (['desktop_en', 'desktop_ar', 'mobile_en', 'mobile_ar'] as $slot) {
+            $slots[$slot] = $banner->files->firstWhere('file_type', 'banner_'.$slot)?->full_path;
+        }
+
+        $targeted = $this->targetedWebDevices($banner);
+        $devices = $devices === null ? $targeted : array_values(array_intersect($devices, $targeted));
+
+        return self::resolveImageGrid($slots, $devices);
+    }
+
+    /**
+     * Pick the image for every (device, locale) pair. Fallback order for device D and locale L:
+     *   1. exact (D, L)
+     *   2. same device, other locale
+     *   3. other device, same locale
+     *   4. other device, other locale
+     * A device the banner does not target always gets null, so the storefront hides the banner there.
+     *
+     * @param  array<string, ?string>  $slots  keys desktop_en, desktop_ar, mobile_en, mobile_ar
+     * @param  list<string>  $devices  devices the banner is shown on
+     * @return array{desktop_image_url: ?string, mobile_image_url: ?string, desktop_image_url_ar: ?string, mobile_image_url_ar: ?string}
+     */
+    public static function resolveImageGrid(array $slots, array $devices): array
+    {
+        $pick = function (string $device, string $locale) use ($slots, $devices): ?string {
+            if (! in_array($device, $devices, true)) {
+                return null;
+            }
+
+            $otherDevice = $device === 'desktop' ? 'mobile' : 'desktop';
+            $otherLocale = $locale === 'en' ? 'ar' : 'en';
+
+            foreach ([[$device, $locale], [$device, $otherLocale], [$otherDevice, $locale], [$otherDevice, $otherLocale]] as [$d, $l]) {
+                if (! empty($slots["{$d}_{$l}"])) {
+                    return $slots["{$d}_{$l}"];
+                }
+            }
+
+            return null;
+        };
+
+        return [
+            'desktop_image_url' => $pick('desktop', 'en'),
+            'mobile_image_url' => $pick('mobile', 'en'),
+            'desktop_image_url_ar' => $pick('desktop', 'ar'),
+            'mobile_image_url_ar' => $pick('mobile', 'ar'),
+        ];
     }
 
     /**

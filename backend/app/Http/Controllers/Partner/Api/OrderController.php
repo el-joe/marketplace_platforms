@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Partner\Api;
 
 use App\Enums\CancelActor;
 use App\Enums\SubOrderStatus;
+use App\Exceptions\OrderNotCancellableException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Vendor\SubOrderDetailResource;
 use App\Http\Resources\Vendor\SubOrderListResource;
@@ -233,17 +234,14 @@ class OrderController extends Controller
 
         $subOrder = $this->vendorSubOrder($subOrderNumber);
 
-        $nonCancellableStatuses = ['shipped', 'delivered', 'completed', 'cancelled', 'return_requested', 'returned'];
-        if (in_array($subOrder->status->value, $nonCancellableStatuses)) {
-            return response()->json(['success' => false, 'message' => 'Order cannot be cancelled in its current state.'], 422);
-        }
-
         $reason = trim($request->input('reason').' '.($request->input('reason_notes') ?? ''));
 
-        // The single cancellation engine: state-machine transition + history, stock released from the
-        // reserved allocations, order roll-up and any payment/coupon/loyalty reversal.
-        app(OrderCancellationService::class)->cancel($subOrder, CancelActor::Vendor, $reason);
+        try {
+            app(OrderCancellationService::class)->cancelSubOrder($subOrder, CancelActor::Vendor, $reason);
+        } catch (OrderNotCancellableException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
 
-        return response()->json(['success' => true, 'message' => 'Order cancelled successfully.']);
+        return response()->json(['success' => true, 'message' => __('common.exceptions.order.cancelled')]);
     }
 }

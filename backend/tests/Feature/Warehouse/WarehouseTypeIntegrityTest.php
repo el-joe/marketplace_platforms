@@ -7,6 +7,7 @@ use App\Models\Admin;
 use App\Models\Warehouse;
 use App\Services\Vendor\OnboardingService;
 use App\Services\VendorWarehouseService;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -23,7 +24,10 @@ class WarehouseTypeIntegrityTest extends TestCase
         Permission::firstOrCreate(['name' => 'warehouses.view', 'guard_name' => 'admin']);
         Permission::firstOrCreate(['name' => 'vendors.assigned_only', 'guard_name' => 'admin']);
         $admin = Admin::factory()->create();
-        $admin->givePermissionTo('warehouses.view');
+        foreach (['warehouses.view', 'warehouses.manage'] as $permission) {
+            Permission::findOrCreate($permission, 'admin');
+        }
+        $admin->givePermissionTo(['warehouses.view', 'warehouses.manage']);
 
         return $admin;
     }
@@ -31,7 +35,7 @@ class WarehouseTypeIntegrityTest extends TestCase
     private function payload(array $o = []): array
     {
         return array_merge([
-            'name' => 'WH', 'code' => 'T' . Str::upper(Str::random(6)),
+            'name' => 'WH', 'code' => 'T'.Str::upper(Str::random(6)),
             'type' => 'platform_fbn', 'country_id' => $this->s->country->id, 'is_active' => 1,
         ], $o);
     }
@@ -49,8 +53,8 @@ class WarehouseTypeIntegrityTest extends TestCase
     {
         try {
             (new VendorApprovedJob($id))->handle();
-        } catch (\Illuminate\Database\QueryException $e) {
-            if (!str_contains($e->getMessage(), 'activity_log')) {
+        } catch (QueryException $e) {
+            if (! str_contains($e->getMessage(), 'activity_log')) {
                 throw $e;
             }
         }
@@ -141,7 +145,7 @@ class WarehouseTypeIntegrityTest extends TestCase
         foreach ($bad as $i => $b) {
             try {
                 Warehouse::create($base + $b + ['code' => "BAD$i"]);
-                $this->fail('Expected exception for ' . json_encode($b));
+                $this->fail('Expected exception for '.json_encode($b));
             } catch (\InvalidArgumentException $e) {
                 $this->assertTrue(true);
             }

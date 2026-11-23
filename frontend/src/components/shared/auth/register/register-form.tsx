@@ -9,6 +9,7 @@ import { useAuthContext } from "@/src/providers/auth-provider";
 import { Spinner } from "@/src/components/ui/spinner";
 import FormCheckbox from "@/src/components/ui/form-inputs/form-checkbox";
 import { getRegisterSchema, registerFormValues } from "./schema";
+import GenderRadioGroup from "./gender-radio-group";
 
 export default function RegisterForm() {
   const t = useTranslations("authDialog");
@@ -68,6 +69,14 @@ export default function RegisterForm() {
             placeholder={t("confirmPasswordInputPlaceholder")}
           />
         </div>
+        <GenderRadioGroup
+          legend={t("genderLabel")}
+          options={[
+            { value: "male", label: t("genderMale") },
+            { value: "female", label: t("genderFemale") },
+            { value: "", label: t("genderUnspecified") },
+          ]}
+        />
         <FormCheckbox
           id="terms-checkbox-basic"
           name="marketingCommunicationsConfirm"

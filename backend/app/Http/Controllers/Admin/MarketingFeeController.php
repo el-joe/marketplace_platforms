@@ -13,6 +13,7 @@ use App\Models\MarketingFeeCountrySetting;
 use App\Models\MarketingFeeVerticalSetting;
 use App\Services\MarketingFeeReportService;
 use App\Services\MarketingFeeService;
+use App\Support\Bilingual;
 use App\Traits\HasExport;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -206,8 +207,8 @@ class MarketingFeeController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         $rows = Category::query()
-            ->when($q !== '', fn ($query) => $query->where(fn ($w) => $w->where('name_en', 'like', "%{$q}%")->orWhere('name_ar', 'like', "%{$q}%")))
-            ->orderBy('name_en')
+            ->when($q !== '', fn ($query) => Bilingual::whereLike($query, 'name', $q))
+            ->orderBy(Bilingual::column('name'))
             ->limit(30)
             ->get();
 

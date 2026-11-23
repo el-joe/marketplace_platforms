@@ -12,7 +12,6 @@ use App\Models\Admin;
 use App\Models\DeliveryAgent;
 use App\Models\DeliveryAgentCodSettlement;
 use App\Models\DeliveryAgentEarning;
-use App\Models\Order;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use App\Models\WalletWithdrawalRequest;
@@ -28,19 +27,23 @@ class WalletService
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $attributes  Extra wallet_transactions columns (customer_id, direction, currency_code, note…).
+     */
     public function credit(
         Wallet $wallet,
         int|float|string $amountCents,
         string $sourceType,
         ?string $sourceId,
         string $description,
-        ?string $performedByAdminId = null
+        ?string $performedByAdminId = null,
+        array $attributes = [],
     ): WalletTransaction {
         if ($wallet->is_frozen) {
             throw new \RuntimeException(__('common.exceptions.wallet.frozen', ['reason' => $wallet->frozen_reason ?? 'no reason given']));
         }
 
-        return DB::transaction(function () use ($wallet, $amountCents, $sourceType, $sourceId, $description, $performedByAdminId) {
+        return DB::transaction(function () use ($wallet, $amountCents, $sourceType, $sourceId, $description, $performedByAdminId, $attributes) {
             $wallet = Wallet::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
             $newBalance = round((float) $wallet->balance + (float) $amountCents, 4);
             $wallet->update(['balance' => $newBalance]);
@@ -55,23 +58,27 @@ class WalletService
                 'description' => $description,
                 'performed_by_admin_id' => $performedByAdminId,
                 'created_at' => now(),
-            ]);
+            ] + $attributes);
         });
     }
 
+    /**
+     * @param  array<string, mixed>  $attributes  Extra wallet_transactions columns (customer_id, direction, currency_code, note…).
+     */
     public function debit(
         Wallet $wallet,
         int|float|string $amountCents,
         string $sourceType,
         ?string $sourceId,
         string $description,
-        ?string $performedByAdminId = null
+        ?string $performedByAdminId = null,
+        array $attributes = [],
     ): WalletTransaction {
         if ($wallet->is_frozen) {
             throw new \RuntimeException(__('common.exceptions.wallet.frozen', ['reason' => $wallet->frozen_reason ?? 'no reason given']));
         }
 
-        return DB::transaction(function () use ($wallet, $amountCents, $sourceType, $sourceId, $description, $performedByAdminId) {
+        return DB::transaction(function () use ($wallet, $amountCents, $sourceType, $sourceId, $description, $performedByAdminId, $attributes) {
             $wallet = Wallet::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
 
             if ((float) $wallet->balance < (float) $amountCents) {
@@ -91,7 +98,7 @@ class WalletService
                 'description' => $description,
                 'performed_by_admin_id' => $performedByAdminId,
                 'created_at' => now(),
-            ]);
+            ] + $attributes);
         });
     }
 

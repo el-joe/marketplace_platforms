@@ -17,7 +17,7 @@
                 'searchable' => false,
                 'render' => 'Renderers.image("40px")',
             ],
-            ['title' => __('admin.cart_card_offers_section.card_name'), 'data' => 'card_name_en', 'name' => 'card_name_en'],
+            ['title' => __('admin.cart_card_offers_section.card_name'), 'data' => 'card_name', 'name' => 'card_name'],
             ['title' => __('admin.cart_card_offers_section.country'), 'data' => 'country_name', 'name' => 'country_name'],
             [
                 'title' => __('admin.cart_card_offers_section.cashback_type'),
@@ -99,7 +99,7 @@
         window.tableActions = window.tableActions || {};
 
         window.tableActions.delete = async function (id, row) {
-            const name = row.card_name_en || window.TRANSLATIONS.defaultOfferLabel;
+            const name = row.card_name || window.TRANSLATIONS.defaultOfferLabel;
             const message = @json(__('admin.cart_card_offers_section.delete_offer_confirm', ['name' => '%NAME%'])).replace('%NAME%', name);
             const confirmed = window.confirmDelete
                 ? await window.confirmDelete(message, { title: window.TRANSLATIONS.deleteOfferTitle })

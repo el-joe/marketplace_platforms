@@ -39,7 +39,7 @@ Route::prefix('v1')->group(function (): void {
     // ── Auth (public) ─────────────────────────────────────────────────────────
     Route::prefix('auth')->name('vendor.auth.')->group(function (): void {
         Route::post('login', [AuthController::class, 'login'])->name('login');
-        Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot-password');
+        Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1')->name('forgot-password');
         Route::post('reset-password', [AuthController::class, 'resetPassword'])->name('reset-password');
     });
 
@@ -73,6 +73,8 @@ Route::prefix('v1')->group(function (): void {
                 Route::get('/', [ProfileController::class, 'show'])->name('show');
                 Route::put('/', [ProfileController::class, 'update'])->name('update');
                 Route::put('password', [ProfileController::class, 'updatePassword'])->name('password');
+                Route::get('location', [ProfileController::class, 'location'])->name('location');
+                Route::put('location', [ProfileController::class, 'updateLocation'])->name('location.update');
                 Route::get('documents', [ProfileController::class, 'documents'])->name('documents');
                 Route::post('documents/{type}/reupload', [ProfileController::class, 'reuploadDocument'])->name('documents.reupload');
             });

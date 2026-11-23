@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', $listing->productVariant->product->name_en)
+@section('title', localized($listing->productVariant->product))
 
 @push('styles')
     @vite(['resources/js/components/flatpickr.js'])
@@ -24,11 +24,11 @@
 
         <div class="flex items-start justify-between gap-4">
             <div>
-                <h1 class="text-xl font-bold text-gray-900">{{ $listing->productVariant->product->name_en }}</h1>
+                <h1 class="text-xl font-bold text-gray-900">{{ localized($listing->productVariant->product) }}</h1>
                 <p class="text-sm text-gray-500 mt-0.5 font-mono">
                     {{ $listing->productVariant->sku }}
                     @if($listing->productVariant->variant_name) · {{ $listing->productVariant->variant_name }} @endif
-                    · {{ $listing->country->name_en }}
+                    · {{ localized($listing->country) }}
                 </p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
@@ -92,7 +92,7 @@
                             <dl class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm flex-1">
                                 <div>
                                     <dt class="text-gray-400 text-xs uppercase tracking-wide">{{ __('admin.admin_listings.product_dt') }}</dt>
-                                    <dd class="mt-1 font-medium text-gray-900">{{ $listing->productVariant->product->name_en }}</dd>
+                                    <dd class="mt-1 font-medium text-gray-900">{{ localized($listing->productVariant->product) }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-gray-400 text-xs uppercase tracking-wide">{{ __('admin.admin_listings.variant_col') }}</dt>
@@ -104,11 +104,11 @@
                                 </div>
                                 <div>
                                     <dt class="text-gray-400 text-xs uppercase tracking-wide">{{ __('admin.brand') }}</dt>
-                                    <dd class="mt-1 text-gray-800">{{ $listing->productVariant->product->brand?->name_en ?? '—' }}</dd>
+                                    <dd class="mt-1 text-gray-800">{{ localized($listing->productVariant->product->brand) ?: '—' }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-gray-400 text-xs uppercase tracking-wide">{{ __('admin.category') }}</dt>
-                                    <dd class="mt-1 text-gray-800">{{ $listing->productVariant->product->category?->name_en ?? '—' }}</dd>
+                                    <dd class="mt-1 text-gray-800">{{ localized($listing->productVariant->product->category) ?: '—' }}</dd>
                                 </div>
                             </dl>
                         </div>
@@ -263,7 +263,7 @@
                                 <tr class="border-b border-gray-100">
                                     <td>
                                         @if($sub->flashSale)
-                                            <a href="{{ route('admin.flash-sales.show', $sub->flashSale) }}" class="text-primary-600 hover:underline">{{ $sub->flashSale->name_en }}</a>
+                                            <a href="{{ route('admin.flash-sales.show', $sub->flashSale) }}" class="text-primary-600 hover:underline">{{ localized($sub->flashSale) }}</a>
                                         @else
                                             —
                                         @endif

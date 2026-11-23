@@ -6,8 +6,8 @@
 <div class="p-6 space-y-5">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-xl font-bold text-gray-900">{{ $listing->productVariant->product->name_en }}</h1>
-            <p class="text-sm text-gray-500 mt-0.5">{{ $listing->vendor->business_name }} · {{ $listing->country->name_en }}</p>
+            <h1 class="text-xl font-bold text-gray-900">{{ localized($listing->productVariant->product) }}</h1>
+            <p class="text-sm text-gray-500 mt-0.5">{{ $listing->vendor->business_name }} · {{ localized($listing->country) }}</p>
         </div>
         <div class="flex items-center gap-2">
             <button type="button"

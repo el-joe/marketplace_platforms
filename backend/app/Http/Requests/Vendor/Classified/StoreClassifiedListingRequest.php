@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Vendor\Classified;
 
+use App\Models\Country;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreClassifiedListingRequest extends FormRequest
@@ -15,7 +16,7 @@ class StoreClassifiedListingRequest extends FormRequest
     {
         return [
             'classified_category_id' => 'required|exists:classified_categories,id',
-            'country_id' => 'required|exists:countries,id',
+            'country_id' => ['required', Country::availableForVendorsRule()],
             'city_id' => 'nullable|exists:cities,id',
             'listing_purpose' => 'required|in:sale,rent',
             'title_en' => 'required|string|max:255',

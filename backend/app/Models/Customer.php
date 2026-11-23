@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CustomerStatus;
+use App\Enums\Gender;
 use App\Enums\WalletOwnerType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -57,6 +58,7 @@ class Customer extends Authenticatable implements JWTSubject
             'total_spent' => 'decimal:2',
             'password' => 'hashed',
             'status' => CustomerStatus::class,
+            'gender' => Gender::class,
             'marketing_email_enabled' => 'boolean',
             'marketing_sms_enabled' => 'boolean',
             'marketing_whatsapp_enabled' => 'boolean',

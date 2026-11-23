@@ -21,7 +21,7 @@
         'marketer' => __('admin.custom_pages.type_marketer'),
     ];
     $selectedTypes = old('listing_types', $isEdit ? ($customPage->listing_types ?? []) : []);
-    $selectedCategories = $isEdit ? $customPage->categories->map(fn ($c) => ['id' => $c->id, 'text' => $c->name_en])->values() : collect();
+    $selectedCategories = $isEdit ? $customPage->categories->map(fn ($c) => ['id' => $c->id, 'text' => localized($c)])->values() : collect();
 @endphp
 
 <div class="space-y-6">
@@ -57,6 +57,11 @@
                 <x-form.textarea name="description_en" label="{{ __('admin.description_en') }}" :value="$val('description_en')" rows="3" />
                 <x-form.textarea name="description_ar" label="{{ __('admin.description_ar') }}" :value="$val('description_ar')" rows="3" dir="rtl" />
             </div>
+
+            @php($pageImage = $isEdit ? $customPage->primaryImage : null)
+            <x-form.media-field context="custom-pages" store="id" name="image_file_id"
+                :label="__('media_library.image')" :hint="__('media_library.image_help')"
+                :value="$pageImage?->id" :url="$pageImage?->full_path" aspect="aspect-[16/5]" />
 
             <div class="grid grid-cols-2 gap-4">
                 <x-form.input name="sort_order" type="number" label="{{ __('admin.sort_order') }}" :value="$val('sort_order', 0)" />
@@ -124,7 +129,7 @@
                         <div class="text-xs text-gray-500 px-2 py-3 text-center">{{ __('admin.custom_pages.all_categories_filters') }}</div>
                     @else
                     @forelse($filterableAttributes as $attribute)
-                        <div class="px-2 py-1 rounded bg-gray-50">{{ $attribute->name_en }}</div>
+                        <div class="px-2 py-1 rounded bg-gray-50">{{ localized($attribute) }}</div>
                     @empty
                         <div class="text-xs text-gray-400 px-2 py-3 text-center">{{ __('admin.custom_pages.no_filters_yet') }}</div>
                     @endforelse

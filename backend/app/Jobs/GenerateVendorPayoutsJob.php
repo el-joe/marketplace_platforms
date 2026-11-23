@@ -174,7 +174,7 @@ class GenerateVendorPayoutsJob implements ShouldQueue
 
                             if (! empty($calc['storage_fee_ids'])) {
                                 FbnStorageFee::whereIn('id', $calc['storage_fee_ids'])
-                                    ->update(['status' => FbnStorageFeeStatus::Invoiced]);
+                                    ->update(['status' => FbnStorageFeeStatus::Invoiced, 'payout_id' => $payout->id, 'invoiced_at' => now()]);
                             }
                             if (! empty($calc['overage_fee_ids'])) {
                                 FbnDailyOverageFee::whereIn('id', $calc['overage_fee_ids'])

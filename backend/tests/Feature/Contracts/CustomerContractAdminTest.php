@@ -51,7 +51,7 @@ class CustomerContractAdminTest extends TestCase
         $this->scenario = MarketplaceScenario::make()->build();
         $this->home = $this->scenario->country;
         $this->admin = Admin::factory()->create();
-        $this->admin->givePermissionTo('classifieds.view');
+        $this->admin->givePermissionTo(['classifieds.view', 'contracts.view', 'contracts.manage']);
     }
 
     /**

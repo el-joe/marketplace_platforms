@@ -1,5 +1,14 @@
 <?php
 
+use App\Models\Admin;
+use App\Models\Customer;
+use App\Models\DeliveryAgent;
+use App\Models\MarketerAdmin;
+use App\Models\ShippingCompanySupervisor;
+use App\Models\TravelAgency;
+use App\Models\TravelAgencyMember;
+use App\Models\VendorAdmin;
+
 return [
 
     /*
@@ -55,17 +64,17 @@ return [
         ],
         // Partner app mobile (JWT)
         'vendor_api' => [
-            'driver'   => 'jwt',
+            'driver' => 'jwt',
             'provider' => 'vendor_admins',
         ],
         // Marketer portal (session)
         'marketer' => [
-            'driver'   => 'session',
+            'driver' => 'session',
             'provider' => 'marketer_admins',
         ],
         // Marketer Flutter app (JWT)
         'marketer_api' => [
-            'driver'   => 'jwt',
+            'driver' => 'jwt',
             'provider' => 'marketer_admins',
         ],
         // Delivery agent app: pure token auth via Sanctum. The 'session'
@@ -121,41 +130,41 @@ return [
     'providers' => [
         'customers' => [
             'driver' => 'eloquent',
-            'model' => \App\Models\Customer::class,
+            'model' => Customer::class,
         ],
         'admins' => [
             'driver' => 'eloquent',
-            'model' => \App\Models\Admin::class,
+            'model' => Admin::class,
         ],
         'vendor_admins' => [
             'driver' => 'eloquent',
-            'model' => \App\Models\VendorAdmin::class,
+            'model' => VendorAdmin::class,
         ],
         'delivery_agents' => [
             'driver' => 'eloquent',
-            'model' => \App\Models\DeliveryAgent::class,
+            'model' => DeliveryAgent::class,
         ],
         'travel_agencies' => [
             'driver' => 'eloquent',
-            'model' => \App\Models\TravelAgency::class,
+            'model' => TravelAgency::class,
         ],
         'travel_agency_members' => [
             'driver' => 'eloquent',
-            'model' => \App\Models\TravelAgencyMember::class,
+            'model' => TravelAgencyMember::class,
         ],
         // Backs the 'travel_agency' session guard: resolves the owner
         // (travel_agencies) or a staff member (travel_agency_members) by email.
         'travel_agency_users' => [
             'driver' => 'travel_agency_provider',
-            'model' => \App\Models\TravelAgency::class,
+            'model' => TravelAgency::class,
         ],
         'shipping_supervisors' => [
             'driver' => 'eloquent',
-            'model' => \App\Models\ShippingCompanySupervisor::class,
+            'model' => ShippingCompanySupervisor::class,
         ],
         'marketer_admins' => [
             'driver' => 'eloquent',
-            'model' => \App\Models\MarketerAdmin::class,
+            'model' => MarketerAdmin::class,
         ],
 
         // 'users' => [
@@ -206,9 +215,10 @@ return [
             'expire' => 1440,
             'throttle' => 60,
         ],
+        // Storefront customers: self-service "forgot password" (link to /{country}-{lang}/reset-password).
         'customers' => [
             'provider' => 'customers',
-            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'table' => 'customer_password_resets',
             'expire' => 60,
             'throttle' => 60,
         ],
@@ -226,8 +236,8 @@ return [
         ],
         'marketer_admins' => [
             'provider' => 'marketer_admins',
-            'table'    => 'marketer_admin_password_resets',
-            'expire'   => 60,
+            'table' => 'marketer_admin_password_resets',
+            'expire' => 60,
             'throttle' => 60,
         ],
     ],

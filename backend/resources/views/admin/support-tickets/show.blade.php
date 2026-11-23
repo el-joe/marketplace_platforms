@@ -267,7 +267,7 @@ Object.assign(window.TRANSLATIONS, {
                             <dd>
                                 <a href="{{ route('admin.products.show', $ticket->related_product_id) }}"
                                     class="text-sm text-primary-600 hover:underline">
-                                    {{ $ticket->relatedProduct->name_en }}
+                                    {{ localized($ticket->relatedProduct) }}
                                 </a>
                             </dd>
                         </div>

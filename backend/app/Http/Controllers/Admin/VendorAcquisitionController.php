@@ -38,15 +38,28 @@ class VendorAcquisitionController extends Controller
                 ->get();
         }
 
-        $adminCandidates = Admin::orderBy('name')->get(['id', 'name', 'email']);
+        $adminCandidates = Admin::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'email']);
 
         return view('admin.vendors.acquisition-agent', compact('vendor', 'commission', 'adminCandidates', 'monthlyEarnings'));
     }
 
     public function store(StoreVendorAcquisitionCommissionRequest $request, Vendor $vendor): JsonResponse
     {
-        $validFrom = $vendor->approved_at?->toDateString() ?? now()->toDateString();
-        $validUntil = Carbon::parse($validFrom)->addMonths((int) $request->input('duration_months'))->toDateString();
+        if ($vendor->acquisitionCommissions()->where('status', 'active')->exists()) {
+            return response()->json(['message' => __('acquisition.errors.active_exists')], 422);
+        }
+
+        // The deal runs from the chosen start date; by default from the vendor's approval (the day the agent
+        // "brought" the vendor), or today for a vendor that has not been approved yet.
+        $validFrom = $request->date('valid_from') ?? $vendor->approved_at ?? now();
+        $validUntil = Carbon::parse($validFrom)->addMonths((int) $request->input('duration_months'));
+
+        if ($validUntil->toDateString() < now()->toDateString()) {
+            return response()->json([
+                'message' => __('acquisition.errors.already_expired', ['date' => $validUntil->toDateString()]),
+                'errors' => ['valid_from' => [__('acquisition.errors.already_expired', ['date' => $validUntil->toDateString()])]],
+            ], 422);
+        }
 
         $commission = VendorAcquisitionCommission::create([
             'vendor_id' => $vendor->id,
@@ -54,8 +67,8 @@ class VendorAcquisitionController extends Controller
             'commission_rate' => $request->input('commission_rate'),
             'monthly_min_sales' => $request->input('monthly_min_sales'),
             'monthly_max_sales' => $request->input('monthly_max_sales'),
-            'valid_from' => $validFrom,
-            'valid_until' => $validUntil,
+            'valid_from' => Carbon::parse($validFrom)->toDateString(),
+            'valid_until' => $validUntil->toDateString(),
             'status' => 'active',
             'currency' => $vendor->country?->currency_code ?? 'USD',
             'created_by_admin_id' => auth('admin')->id(),
@@ -71,7 +84,27 @@ class VendorAcquisitionController extends Controller
             event: 'acquisition_agent_assigned',
         );
 
-        return response()->json(['message' => 'Acquisition agent assigned.', 'commission' => $commission]);
+        return response()->json(['message' => __('acquisition.messages.assigned'), 'commission' => $commission]);
+    }
+
+    /** Vendor picker for the "Assign agent" dialog of the acquisition-commissions page. */
+    public function searchVendors(Request $request): JsonResponse
+    {
+        $term = trim((string) $request->input('q', ''));
+
+        $vendors = Vendor::query()
+            ->when($term !== '', fn ($q) => $q->where(fn ($q) => $q->where('store_name', 'like', "%{$term}%")->orWhere('name', 'like', "%{$term}%")))
+            ->orderBy('store_name')
+            ->limit(30)
+            ->get(['id', 'store_name', 'name', 'approved_at']);
+
+        return response()->json([
+            'results' => $vendors->map(fn (Vendor $v) => [
+                'id' => $v->id,
+                'text' => $v->store_name ?: $v->name,
+                'approved_at' => $v->approved_at?->toDateString(),
+            ]),
+        ]);
     }
 
     public function update(UpdateVendorAcquisitionCommissionRequest $request, Vendor $vendor, VendorAcquisitionCommission $commission): JsonResponse
@@ -94,12 +127,14 @@ class VendorAcquisitionController extends Controller
             event: 'acquisition_agent_updated',
         );
 
-        return response()->json(['message' => 'Acquisition commission updated.', 'commission' => $commission]);
+        return response()->json(['message' => __('acquisition.messages.updated'), 'commission' => $commission]);
     }
 
     public function revoke(Request $request, Vendor $vendor, VendorAcquisitionCommission $commission): JsonResponse
     {
         abort_if($commission->vendor_id !== $vendor->id, 404);
+
+        abort_if($commission->status !== 'active', 422, __('acquisition.errors.not_active'));
 
         $commission->update(['status' => 'revoked']);
 
@@ -112,7 +147,7 @@ class VendorAcquisitionController extends Controller
             event: 'acquisition_agent_revoked',
         );
 
-        return response()->json(['message' => 'Acquisition agent revoked.']);
+        return response()->json(['message' => __('acquisition.messages.revoked')]);
     }
 
     public function datatable(Request $request): JsonResponse
@@ -145,7 +180,9 @@ class VendorAcquisitionController extends Controller
             ->latest('created_at')
             ->paginate(25);
 
-        return view('admin.vendor-acquisition.index', compact('commissions'));
+        $agentCandidates = Admin::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'email']);
+
+        return view('admin.vendor-acquisition.index', compact('commissions', 'agentCandidates'));
     }
 
     // ── Agent-facing views ──────────────────────────────────────────────────────
@@ -154,31 +191,34 @@ class VendorAcquisitionController extends Controller
     {
         $adminId = auth('admin')->id();
 
+        // ProcessAcquisitionCommissionsJob runs on the 1st and books the PREVIOUS month, so the current month
+        // never has earnings yet: show the latest processed month, named in the column header.
+        $processedMonth = now()->subMonthNoOverflow()->startOfMonth();
+
         $commissions = VendorAcquisitionCommission::query()
-            ->with('vendor')
+            ->with([
+                'vendor',
+                'earnings' => fn ($query) => $query->where('month', $processedMonth->toDateString()),
+            ])
             ->where('admin_id', $adminId)
             ->where('status', 'active')
             ->get();
 
-        $monthStart = now()->startOfMonth();
-
-        $rows = $commissions->map(function (VendorAcquisitionCommission $commission) use ($monthStart) {
-            $earningsThisMonth = $commission->earnings()
-                ->where('month', $monthStart->toDateString())
-                ->get();
-
+        $rows = $commissions->map(function (VendorAcquisitionCommission $commission) {
             return [
                 'vendor_name' => $commission->vendor?->store_name,
                 'commission_rate' => $commission->commission_rate,
-                'sales_this_month' => $earningsThisMonth->count(),
-                'earned_this_month' => $earningsThisMonth->sum('amount'),
+                'sales_processed_month' => $commission->earnings->count(),
+                'earned_processed_month' => $commission->earnings->sum('amount'),
                 'total_earned' => $commission->total_earned,
                 'currency' => $commission->currency,
                 'expires_on' => $commission->valid_until,
             ];
         });
 
-        return view('admin.vendor-acquisition.my-commissions', compact('rows'));
+        $processedMonthLabel = $processedMonth->locale(app()->getLocale())->translatedFormat('F Y');
+
+        return view('admin.vendor-acquisition.my-commissions', compact('rows', 'processedMonthLabel'));
     }
 
     public function myDatatable(Request $request): JsonResponse

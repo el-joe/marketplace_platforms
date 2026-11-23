@@ -21,15 +21,20 @@ class CustomPageAdminFormTest extends TestCase
         }
         $a = Admin::factory()->create();
         if ($perm) {
-            $a->givePermissionTo('categories.view');
+            foreach (['categories.view', 'categories.create', 'categories.edit', 'categories.delete'] as $permission) {
+                Permission::findOrCreate($permission, 'admin');
+            }
+            $a->givePermissionTo(['categories.view', 'categories.create', 'categories.edit', 'categories.delete']);
         }
+
         return $a;
     }
 
     private function cat(string $n = 'Cat'): Category
     {
-        $c = new Category(['id' => (string) Str::uuid(), 'slug' => Str::slug($n) . '-' . uniqid(), 'name_en' => $n, 'name_ar' => $n, 'is_active' => true]);
+        $c = new Category(['id' => (string) Str::uuid(), 'slug' => Str::slug($n).'-'.uniqid(), 'name_en' => $n, 'name_ar' => $n, 'is_active' => true]);
         $c->save();
+
         return $c;
     }
 

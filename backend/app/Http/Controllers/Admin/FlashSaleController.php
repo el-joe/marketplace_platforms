@@ -22,6 +22,7 @@ use App\Models\VendorListing;
 use App\Notifications\Marketer\FlashSaleInvitationNotification;
 use App\Services\FakeDiscountDetectionService;
 use App\Services\FlashSaleService;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Carbon\Carbon;
@@ -55,7 +56,7 @@ class FlashSaleController extends Controller
 
         $countries = Country::orderBy('name_en')
             // ->where('is_launched', true)
-            ->get(['id', 'name_en']);
+            ->get(['id', 'name_en', 'name_ar']);
 
         $stats = [
             'live_count' => FlashSale::where('status', 'live')->count(),
@@ -96,7 +97,8 @@ class FlashSaleController extends Controller
                 'flash_sales.min_discount_pct',
                 'flash_sales.approved_slots_count',
                 'flash_sales.max_total_slots',
-                'c.name_en as country_name',
+                'c.name_en as country_name_en',
+                'c.name_ar as country_name_ar',
                 DB::raw('COALESCE(fsa.total_units, 0) as units_sold'),
             ]);
 
@@ -155,8 +157,9 @@ class FlashSaleController extends Controller
 
             return [
                 'id' => $row->id,
+                'name' => e(localized($row)),
                 'name_en' => e($row->name_en),
-                'country_name' => e($row->country_name ?? 'All'),
+                'country_name' => e(localized($row, 'country_name') ?: __('common.all')),
                 'status' => $row->status?->value,
                 'submission_period' => $submissionPeriod,
                 'sale_period' => $salePeriod,
@@ -588,10 +591,10 @@ class FlashSaleController extends Controller
             ->join('products as p', 'p.id', '=', 'pv.product_id')
             ->when($vendorId, fn ($q) => $q->where('vendor_listings.vendor_id', $vendorId))
             ->where(function ($q) use ($term) {
-                $q->where('p.name_en', 'like', "%{$term}%")
+                Bilingual::whereLike($q, 'p.name', $term)
                     ->orWhere('pv.sku', 'like', "%{$term}%");
             })
-            ->orderBy('p.name_en')
+            ->orderBy(Bilingual::column('p.name'))
             ->limit(30)
             ->get([
                 'vendor_listings.id',
@@ -599,12 +602,13 @@ class FlashSaleController extends Controller
                 'vendor_listings.currency',
                 'pv.sku',
                 'p.name_en',
+                'p.name_ar',
             ]);
 
         return response()->json([
             'results' => $listings->map(fn ($l) => [
                 'id' => $l->id,
-                'text' => "{$l->name_en} — {$l->sku}",
+                'text' => localized($l).' — '.$l->sku,
                 'price' => $l->price,
                 'currency' => $l->currency,
             ]),
@@ -711,20 +715,21 @@ class FlashSaleController extends Controller
             ->join('product_variants as pv', 'pv.id', '=', 'admin_listings.product_variant_id')
             ->join('products as p', 'p.id', '=', 'pv.product_id')
             ->whereNull('admin_listings.deleted_at')
-            ->where('p.name_en', 'like', "%{$term}%")
-            ->orderBy('p.name_en')
+            ->where(fn ($q) => Bilingual::whereLike($q, 'p.name', $term))
+            ->orderBy(Bilingual::column('p.name'))
             ->limit(30)
             ->get([
                 'admin_listings.id',
                 'admin_listings.price',
                 'admin_listings.currency',
                 'p.name_en',
+                'p.name_ar',
             ]);
 
         return response()->json([
             'results' => $listings->map(fn ($l) => [
                 'id' => $l->id,
-                'text' => $l->name_en,
+                'text' => localized($l),
                 'price' => $l->price,
                 'currency' => $l->currency,
             ]),

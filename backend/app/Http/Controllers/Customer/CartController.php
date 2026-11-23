@@ -11,6 +11,7 @@ use App\Http\Requests\Customer\UpdateCartItemRequest;
 use App\Http\Resources\Customer\CartItemResource;
 use App\Http\Resources\Customer\CartResource;
 use App\Http\Responses\ApiResponse;
+use App\Models\Address;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Wallet;
@@ -144,7 +145,7 @@ class CartController extends Controller
         $country = $request->attributes->get('country');
 
         return $this->cartResponse($cart, [
-            'shipping_groups' => $this->cartService->buildShippingGroups($cart, $country?->id),
+            'shipping_groups' => $this->cartService->buildShippingGroups($cart, $country?->id, $this->resolveDeliveryAddress($request)),
             'cart_banner' => $this->resolveCartBanner($request),
             'savings_and_benefits' => $this->savingsBenefitsService->get(
                 $cart->estimated_total,
@@ -294,6 +295,28 @@ class CartController extends Controller
             'amount_applied' => $applied,
             'remaining_after_wallet' => Money::number(round($cart->estimated_total - $applied, 4)),
         ];
+    }
+
+    /**
+     * Address used to preview distance-based delivery in the cart: the requested one (?address_id, own
+     * addresses only) or the customer's default (non-billing) address. Guests have none.
+     */
+    private function resolveDeliveryAddress(Request $request): ?Address
+    {
+        $customer = auth('customer')->user();
+        if (! $customer) {
+            return null;
+        }
+
+        $addressId = $request->query('address_id');
+
+        return $customer->addresses()
+            ->when(
+                $addressId,
+                fn ($query) => $query->whereKey($addressId),
+                fn ($query) => $query->where('is_default', 1)->where('address_type', '!=', 'billing'),
+            )
+            ->first();
     }
 
     private function resolveCartBanner(Request $request): ?array

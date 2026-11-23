@@ -70,7 +70,10 @@ class ContractTemplateController extends Controller
         $kindFilter = ContractKind::tryFrom((string) $request->query('kind'))?->value;
         $destinationFilter = ContractDisplayDestination::query()->where('key', (string) $request->query('destination'))->value('id');
 
+        $search = trim((string) $request->query('search', ''));
+
         $templates = ClassifiedContractTemplate::query()
+            ->when($search !== '', fn (Builder $query) => $query->where('name', 'like', '%'.addcslashes($search, '%_\\').'%'))
             ->when($kindFilter, fn (Builder $query) => $query->where('contract_kind', $kindFilter))
             ->when($destinationFilter, fn (Builder $query) => $query->whereHas('displayDestinations', fn (Builder $d) => $d->whereKey($destinationFilter)))
             ->when($sectionFilter, fn (Builder $query) => $this->limitToSection($query, $sectionFilter))
@@ -81,7 +84,7 @@ class ContractTemplateController extends Controller
             ->when($status === 'retired', fn (Builder $query) => $query->where('is_published', false)->where('is_active', false))
             ->when($status === 'published', fn (Builder $query) => $query->where('is_published', true)->where(fn (Builder $q) => $q->whereNull('effective_at')->orWhere('effective_at', '<=', now())))
             ->when($status === 'scheduled', fn (Builder $query) => $query->where('is_published', true)->where('effective_at', '>', now()))
-            ->with(['category:id,name_en,name_ar', 'productCategory:id,name_en', 'country:id,name_en,name_ar,iso_code_2', 'displayDestinations'])
+            ->with(['category:id,name_en,name_ar', 'productCategory:id,name_en,name_ar', 'country:id,name_en,name_ar,iso_code_2', 'displayDestinations'])
             ->withCount(['assignments', 'marketers'])
             ->orderBy('name')
             ->orderBy('country_id')

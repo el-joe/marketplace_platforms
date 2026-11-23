@@ -61,7 +61,16 @@
             failedToSave: @json(__('admin.shipping_section.failed_to_save')),
         });
     </script>
+    <script>
+        window.DISTANCE_PRICING = {
+            i18n: @json(__('distance_delivery.admin')),
+            currency: @json($countries->firstWhere('id', $activeCountryId)?->currency_code),
+            mapsKey: @json(config('services.google.maps_key') ?: null),
+            canEdit: @json((bool) auth('admin')->user()?->can('settings.edit')),
+        };
+    </script>
     @vite('resources/js/admin/shipping-zones.js')
+    @vite('resources/js/admin/shipping-distance-pricing.js')
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 @endpush
 
@@ -107,7 +116,7 @@
                 ? 'border-primary-600 text-primary-700'
                 : 'border-transparent text-gray-500 hover:text-gray-700' }}">
                 <span>{{ $country->flag_emoji ?? '🌍' }}</span>
-                {{ $country->name_en }}
+                {{ localized($country) }}
                 <span class="ml-1 text-xs px-1.5 py-0.5 rounded-full
                                          {{ $activeCountryId === $country->id
                 ? 'bg-primary-100 text-primary-700'
@@ -227,7 +236,7 @@
                         <div class="flex flex-wrap gap-1">
                             @foreach($unassignedCities->take(6) as $city)
                                 <span class="text-xs bg-white border border-yellow-200 text-yellow-700 px-2 py-0.5 rounded-full">
-                                    {{ $city->name_en }}
+                                    {{ localized($city) }}
                                 </span>
                             @endforeach
                             @if($unassignedCities->count() > 6)
@@ -265,6 +274,11 @@
                                 :class="activeTab === 'cities' ? 'border-primary-600 text-primary-700' : 'border-transparent text-gray-500'"
                                 class="px-4 py-3 text-sm font-medium border-b-2 transition whitespace-nowrap">
                                 {{ __('admin.shipping_section.assigned_cities_tab') }}
+                            </button>
+                            <button @click="activeTab = 'distance'" id="distance-pricing-tab-btn"
+                                :class="activeTab === 'distance' ? 'border-primary-600 text-primary-700' : 'border-transparent text-gray-500'"
+                                class="px-4 py-3 text-sm font-medium border-b-2 transition whitespace-nowrap">
+                                {{ __('distance_delivery.admin.tab') }}
                             </button>
                         </div>
                         <div class="{{ app()->getLocale() == 'ar' ? 'mr' : 'ml' }}-auto flex items-center gap-2 py-2">
@@ -363,6 +377,9 @@
                         </div>
                     </div>
 
+                    {{-- ── Distance pricing tab (client item #19) ── --}}
+                    @include('admin.shipping-zones._distance-pricing')
+
                 </div>
             </div>
         </div>
@@ -450,7 +467,7 @@
                         <select name="country_id" id="zone-country-id" class="form-input w-full text-sm" required>
                             <option value="">{{ __('admin.shipping_section.select_country_placeholder') }}</option>
                             @foreach($countries as $c)
-                                <option value="{{ $c->id }}">{{ $c->name_en }}</option>
+                                <option value="{{ $c->id }}">{{ localized($c) }}</option>
                             @endforeach
                         </select>
                     </div>

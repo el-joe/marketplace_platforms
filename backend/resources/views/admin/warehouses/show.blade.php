@@ -66,7 +66,7 @@
                 </div>
                 <div>
                     <dt class="text-xs text-gray-500">{{ __('common.country') }}</dt>
-                    <dd class="mt-0.5">{{ $warehouse->country->name_en ?? '—' }}</dd>
+                    <dd class="mt-0.5">{{ localized($warehouse->country) ?: '—' }}</dd>
                 </div>
                 <div>
                     <dt class="text-xs text-gray-500">{{ __('admin.warehouses_section.owner_vendor') }}</dt>
@@ -249,7 +249,7 @@
                                         </span>
                                     </td>
                                     <td class="py-2.5 pr-4 text-xs text-gray-700">
-                                        {{ $mv->warehouseInventory?->vendorListing?->productVariant?->product?->name_en ?? '—' }}
+                                        {{ localized($mv->warehouseInventory?->vendorListing?->productVariant?->product) ?: '—' }}
                                     </td>
                                     <td class="py-2.5 pr-4 text-end tabular-nums font-medium {{ $mv->quantity_delta > 0 ? 'text-green-600' : 'text-red-600' }}">
                                         {{ $mv->quantity_delta > 0 ? '+' : '' }}{{ number_format($mv->quantity_delta) }}

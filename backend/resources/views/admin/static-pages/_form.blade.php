@@ -51,6 +51,7 @@
                         name="content_en"
                         label="{{ __('admin.static_pages.content') }} ({{ __('common.english') }})"
                         profile="full"
+                        :upload-url="route('admin.media.upload', ['context' => 'static-pages'])"
                         :minHeight="360"
                         :value="old('content_en', $source?->content_en ?? '')"
                     />
@@ -60,6 +61,7 @@
                             name="content_ar"
                             label="{{ __('admin.static_pages.content') }} ({{ __('common.arabic') }})"
                             profile="full"
+                            :upload-url="route('admin.media.upload', ['context' => 'static-pages'])"
                             :minHeight="360"
                             :value="old('content_ar', $source?->content_ar ?? '')"
                         />
@@ -187,6 +189,13 @@
 </form>
 
 @push('scripts')
+<script>
+window.TRANSLATIONS = Object.assign(window.TRANSLATIONS || {}, {
+    mediaErrorType: {{ \Illuminate\Support\Js::from(__('media_library.error_type', ['types' => 'JPG, PNG, WEBP, GIF, AVIF'])) }},
+    mediaErrorSize: {{ \Illuminate\Support\Js::from(__('media_library.error_size', ['max' => '8 MB'])) }},
+    mediaErrorUpload: {{ \Illuminate\Support\Js::from(__('media_library.error_upload')) }},
+});
+</script>
 <script>
 (function () {
     const titleInput = document.getElementById('title-en-input');

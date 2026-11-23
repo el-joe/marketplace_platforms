@@ -185,12 +185,12 @@ function initCategoryAttributes() {
 
             attrs.forEach(function (attr) {
                 const options = (attr.values || []).map(function (v) {
-                    return '<option value="' + esc(v.id) + '">' + esc(v.value_en) + '</option>';
+                    return '<option value="' + esc(v.id) + '">' + esc(v.value || v.value_en) + '</option>';
                 }).join('');
 
                 $container.append(
                     '<div class="variant-attr-group" data-attr-id="' + esc(attr.id) + '">' +
-                    '<label class="block text-xs font-medium text-gray-500 mb-1">' + esc(attr.name_en) + '</label>' +
+                    '<label class="block text-xs font-medium text-gray-500 mb-1">' + esc(attr.name || attr.name_en) + '</label>' +
                     '<select multiple data-select2-init class="variant-attr-values w-full" data-attr-id="' + esc(attr.id) + '">' +
                     options +
                     '</select>' +
@@ -738,6 +738,7 @@ function initHighlightRows() {
     $(document).on('click', '#add-highlight-row', function () {
         const i = $('#highlights-rows .highlight-row').length;
         const removeLabel = esc((window.TRANSLATIONS || {}).removeLabel || 'Remove');
+        const specT = window.TRANSLATIONS || {};
         const enLabel = esc((window.TRANSLATIONS || {}).highlightEnLabel || 'Highlight (EN)');
         const arLabel = esc((window.TRANSLATIONS || {}).highlightArLabel || 'Highlight (AR)');
         const enPlaceholder = esc((window.TRANSLATIONS || {}).highlightEnPlaceholder || 'e.g. Water resistant up to 50 meters');
@@ -778,19 +779,19 @@ function initSpecificationRows() {
 <div class="flex gap-3 items-start specification-row">
   <input type="hidden" name="specifications[${i}][id]" value="">
   <div class="flex-1">
-    <label class="block text-xs text-gray-500 mb-1">Key (EN)</label>
+    <label class="block text-xs text-gray-500 mb-1">${esc(specT.specKeyEn || 'Key (EN)')}</label>
     <input type="text" name="specifications[${i}][key_en]" dir="ltr" maxlength="255" placeholder="e.g. Material" class="w-full border-gray-300 rounded-md text-sm" />
   </div>
   <div class="flex-1">
-    <label class="block text-xs text-gray-500 mb-1">Key (AR)</label>
+    <label class="block text-xs text-gray-500 mb-1">${esc(specT.specKeyAr || 'Key (AR)')}</label>
     <input type="text" name="specifications[${i}][key_ar]" dir="rtl" maxlength="255" placeholder="مثال: المادة" class="w-full border-gray-300 rounded-md text-sm" />
   </div>
   <div class="flex-1">
-    <label class="block text-xs text-gray-500 mb-1">Value (EN)</label>
+    <label class="block text-xs text-gray-500 mb-1">${esc(specT.specValueEn || 'Value (EN)')}</label>
     <input type="text" name="specifications[${i}][value_en]" dir="ltr" maxlength="500" placeholder="e.g. 100% Cotton" class="w-full border-gray-300 rounded-md text-sm" />
   </div>
   <div class="flex-1">
-    <label class="block text-xs text-gray-500 mb-1">Value (AR)</label>
+    <label class="block text-xs text-gray-500 mb-1">${esc(specT.specValueAr || 'Value (AR)')}</label>
     <input type="text" name="specifications[${i}][value_ar]" dir="rtl" maxlength="500" placeholder="مثال: قطن 100%" class="w-full border-gray-300 rounded-md text-sm" />
   </div>
   <button type="button" class="remove-specification-row mt-5 shrink-0 text-gray-400 hover:text-red-600 transition-colors p-2" title="${removeLabel}">

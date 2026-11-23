@@ -5,24 +5,22 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCategoryRequest;
 use App\Http\Requests\Admin\UpdateCategoryRequest;
-use App\Models\Activity;
-use App\Models\Admin;
 use App\Models\Attribute;
 use App\Models\Category;
+use App\Models\CategoryShippingMethod;
 use App\Models\Country;
 use App\Models\CountryCategory;
-use App\Models\File;
-use App\Models\Slug;
+use App\Models\ShippingMethod;
+use App\Services\CategoryCountryAvailabilityService;
+use App\Services\CategoryFormService;
 use App\Services\CategoryService;
-use App\Services\Vendor\ContractAssignmentService;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
@@ -34,6 +32,68 @@ class CategoryController extends Controller
     // ─────────────────────────────────────────────────────────────────────────
     // Index / Tree
     // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Async category picker (product form and other admin selects). Matches the
+     * term in both languages and labels each result in the panel locale, with
+     * the parent name for context ("Parent › Child").
+     */
+    public function search(Request $request): JsonResponse
+    {
+        $term = trim((string) $request->input('q', ''));
+
+        $categories = Category::query()
+            ->where('is_active', true)
+            ->when($term !== '', fn ($query) => Bilingual::whereLike($query, 'name', $term))
+            ->with('parent:id,name_en,name_ar')
+            ->orderBy(Bilingual::column('name'))
+            ->limit(30)
+            ->get(['id', 'parent_id', 'name_en', 'name_ar']);
+
+        return response()->json([
+            'results' => $categories->map(fn (Category $category) => [
+                'id' => $category->id,
+                'text' => $category->parent
+                    ? localized($category->parent).' › '.localized($category)
+                    : localized($category),
+            ])->values(),
+        ]);
+    }
+
+    /**
+     * Variant attributes (with values) of a category, labelled in the panel locale.
+     */
+    public function variantAttributes(string $id): JsonResponse
+    {
+        $attributes = DB::table('category_attributes as ca')
+            ->join('attributes as a', 'a.id', '=', 'ca.attribute_id')
+            ->where('ca.category_id', $id)
+            ->where('a.is_variant_attribute', true)
+            ->select('a.id', 'a.name_en', 'a.name_ar')
+            ->orderBy('a.sort_order')
+            ->get();
+
+        $valuesByAttribute = DB::table('attribute_values')
+            ->whereIn('attribute_id', $attributes->pluck('id'))
+            ->orderBy('sort_order')
+            ->get(['id', 'attribute_id', 'value_en', 'value_ar'])
+            ->groupBy('attribute_id');
+
+        $data = $attributes->map(fn ($attribute) => [
+            'id' => $attribute->id,
+            'name' => localized($attribute),
+            'name_en' => $attribute->name_en,
+            'values' => ($valuesByAttribute->get($attribute->id) ?? collect())
+                ->map(fn ($value) => [
+                    'id' => $value->id,
+                    'value' => localized($value, 'value'),
+                    'value_en' => $value->value_en,
+                ])
+                ->values(),
+        ]);
+
+        return response()->json(['data' => $data]);
+    }
 
     public function index(): View
     {
@@ -73,121 +133,37 @@ class CategoryController extends Controller
 
     public function create(): View
     {
-        return view('admin.categories.create', $this->formData());
+        return view('admin.categories.create', array_merge($this->formData(null), [
+            'breadcrumbs' => [
+                ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
+                ['label' => __('admin.nav.categories'), 'url' => route('admin.categories.index')],
+                ['label' => __('admin.categories.new_category')],
+            ],
+        ]));
     }
 
-    public function store(StoreCategoryRequest $request): JsonResponse|RedirectResponse
+    /**
+     * Creates the category with every section of the form (attributes, shipping,
+     * commissions, tiers, countries, image…) in one transaction.
+     */
+    public function store(StoreCategoryRequest $request, CategoryFormService $form): JsonResponse|RedirectResponse
     {
-        app(ContractAssignmentService::class)->assertConfigurable('product', $request->all());
+        $result = $form->save(null, $this->formInput($request), $request->file('image'), auth('admin')->id());
 
-        DB::beginTransaction();
-        // try {
-        $id = (string) Str::uuid();
-        $slug = $request->slug ?: Str::slug($request->name_en).'-'.Str::lower(Str::random(5));
-
-        // Ensure slug uniqueness against categories AND custom pages (shared `slugs` table)
-        $i = 1;
-        $baseSlug = $slug;
-        while (Slug::isTaken($slug)) {
-            $slug = $baseSlug.'-'.$i++;
-        }
-
-        // Insert the node; NestedSet will set lft/rgt after fixTree() or via parent
-        if ($request->filled('parent_id')) {
-            $parent = Category::findOrFail($request->parent_id);
-            $category = new Category([
-                'id' => $id,
-                'name_en' => $request->name_en,
-                'name_ar' => $request->name_ar,
-                'slug' => $slug,
-                'description_en' => $request->description_en ?: null,
-                'description_ar' => $request->description_ar ?: null,
-                'commission_rate' => $request->commission_rate ?? $parent->commission_rate ?? 0,
-                'commission_fbp_pct' => (float) ($parent->commission_fbp_pct ?? 0),
-                'commission_fbp_fixed' => (float) ($parent->commission_fbp_fixed ?? 0),
-                'commission_fbn_pct' => (float) ($parent->commission_fbn_pct ?? 0),
-                'commission_fbn_fixed' => (float) ($parent->commission_fbn_fixed ?? 0),
-                'sort_order' => (int) ($request->sort_order ?? 0),
-                'is_active' => $request->boolean('is_active', true),
-                'is_visible' => $request->boolean('is_visible', true),
-                'contract_template_id' => $request->input('contract_template_id') ?: null,
-                'is_featured' => $request->boolean('is_featured'),
-                'has_filters' => $request->boolean('has_filters'),
-                'seo_title_en' => $request->seo_title_en ?: null,
-                'seo_title_ar' => $request->seo_title_ar ?: null,
-                'seo_description_en' => $request->seo_description_en ?: null,
-                'seo_description_ar' => $request->seo_description_ar ?: null,
-            ]);
-            if (! $parent->getLft() || ! $parent->getRgt()) {
-                Category::fixTree();
-                $parent->refresh();
-            }
-            $category->appendToNode($parent)->save();
-        } else {
-            $category = Category::create([
-                'id' => $id,
-                'name_en' => $request->name_en,
-                'name_ar' => $request->name_ar,
-                'slug' => $slug,
-                'description_en' => $request->description_en ?: null,
-                'description_ar' => $request->description_ar ?: null,
-                'commission_rate' => $request->commission_rate ?? 0,
-                'commission_fbp_pct' => 0,
-                'commission_fbp_fixed' => 0,
-                'commission_fbn_pct' => 0,
-                'commission_fbn_fixed' => 0,
-                'sort_order' => (int) ($request->sort_order ?? 0),
-                'is_active' => $request->boolean('is_active', true),
-                'is_visible' => $request->boolean('is_visible', true),
-                'contract_template_id' => $request->input('contract_template_id') ?: null,
-                'is_featured' => $request->boolean('is_featured'),
-                'has_filters' => $request->boolean('has_filters'),
-                'seo_title_en' => $request->seo_title_en ?: null,
-                'seo_title_ar' => $request->seo_title_ar ?: null,
-                'seo_description_en' => $request->seo_description_en ?: null,
-                'seo_description_ar' => $request->seo_description_ar ?: null,
-            ]);
-            Category::fixTree();
-            $category->refresh();
-        }
-
-        Slug::upsertFor($category, $category->slug);
-
-        $contractAssignments = app(ContractAssignmentService::class);
-        $contractGaps = $contractAssignments->apply($category, 'product', $request->all());
-
-        // Sync attribute assignments if provided
-        if ($request->filled('attributes')) {
-            $attributes = array_filter($request->input('attributes', []), fn ($a) => isset($a['attribute_id']));
-            $this->service->syncAttributes($category, $attributes);
-        }
-
-        DB::commit();
-
-        $warning = $contractGaps->isNotEmpty() ? __('contracts.admin.gap_warning', ['countries' => $contractGaps->pluck('name_en')->implode(', ')]) : null;
+        $warning = $this->contractGapWarning($result['contract_gaps']);
 
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'redirect' => route('admin.categories.index'),
+                'message' => __('admin.categories.category_created'),
+                'redirect' => route('admin.categories.edit', $result['category']->id),
                 'warning' => $warning,
             ]);
         }
 
-        return redirect()->route('admin.categories.index')
+        return redirect()->route('admin.categories.edit', $result['category']->id)
             ->with('success', __('admin.categories.category_created'))
             ->with('warning', $warning);
-
-        // } catch (\Throwable $e) {
-        //     DB::rollBack();
-        //     Log::error('Category creation failed', ['error' => $e->getMessage()]);
-
-        //     if ($request->expectsJson()) {
-        //         return response()->json(['message' => 'Failed to create category.'], 500);
-        //     }
-
-        //     return back()->withInput()->withErrors(['error' => 'Failed to create category. Please try again.']);
-        // }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -200,131 +176,59 @@ class CategoryController extends Controller
             ->whereNull('deleted_at')
             ->findOrFail($category);
 
-        $activeCountries = Country::where('is_active', true)->orderBy('name_en')->get();
-        $countryCommissions = CountryCategory::where('category_id', $categoryModel->id)
-            ->get()
-            ->keyBy('country_id');
-
-        return view('admin.categories.edit', array_merge($this->formData(), [
+        return view('admin.categories.edit', array_merge($this->formData($categoryModel), [
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.categories'), 'url' => route('admin.categories.index')],
-                ['label' => $categoryModel->name_en],
+                ['label' => localized($categoryModel)],
             ],
             'category' => $categoryModel,
-            'activeCountries' => $activeCountries,
-            'countryCommissions' => $countryCommissions,
         ]));
     }
 
-    public function update(UpdateCategoryRequest $request, string $category): JsonResponse
+    /**
+     * "Save all": stores every section of the edit form in one transaction.
+     */
+    public function update(UpdateCategoryRequest $request, string $category, CategoryFormService $form): JsonResponse
     {
         $categoryModel = Category::whereNull('deleted_at')->findOrFail($category);
 
-        app(ContractAssignmentService::class)->assertConfigurable('product', $request->all(), $categoryModel);
-
-        DB::beginTransaction();
-        // try {
-        $data = [
-            'name_en' => $request->name_en,
-            'name_ar' => $request->name_ar,
-            'description_en' => $request->description_en ?: null,
-            'description_ar' => $request->description_ar ?: null,
-            'commission_rate' => $request->commission_rate ?? $categoryModel->commission_rate,
-            'sort_order' => (int) ($request->sort_order ?? 0),
-            'is_active' => $request->boolean('is_active'),
-            'is_visible' => $request->boolean('is_visible'),
-            'contract_template_id' => $request->input('contract_template_id') ?: null,
-            'is_featured' => $request->boolean('is_featured'),
-            'has_filters' => $request->boolean('has_filters'),
-            'seo_title_en' => $request->seo_title_en ?: null,
-            'seo_title_ar' => $request->seo_title_ar ?: null,
-            'seo_description_en' => $request->seo_description_en ?: null,
-            'seo_description_ar' => $request->seo_description_ar ?: null,
-            'updated_at' => now(),
-        ];
-
-        if ($request->filled('slug') && $request->slug !== $categoryModel->slug) {
-            if (Slug::isTaken($request->slug, Category::class, $categoryModel->id)) {
-                DB::rollBack();
-
-                return response()->json(['message' => 'This slug is already in use.'], 422);
-            }
-            $data['slug'] = $request->slug;
-        }
-
-        // Handle parent change via NestedSet
-        if ($request->filled('parent_id') && $request->parent_id !== $categoryModel->parent_id) {
-            $parent = Category::findOrFail($request->parent_id);
-            if (! $parent->getLft() || ! $parent->getRgt()) {
-                Category::fixTree();
-                $parent->refresh();
-            }
-            $categoryModel->appendToNode($parent);
-        } elseif (! $request->filled('parent_id') && $categoryModel->parent_id) {
-            $categoryModel->makeRoot();
-        }
-
-        $categoryModel->update($data);
-
-        Slug::upsertFor($categoryModel, $categoryModel->slug);
-
-        $contractGaps = app(ContractAssignmentService::class)->apply($categoryModel, 'product', $request->all());
-
-        $categoryModel->update($request->only([
-            'influencer_sample_qty',
-            'affiliate_sample_qty',
-            'platform_sample_qty',
-            'min_stock_for_campaign',
-        ]));
-
-        // Commission rate logging via service
-        if ($request->filled('commission_rate')) {
-            $oldRate = (float) $categoryModel->getOriginal('commission_rate');
-            $newRate = (float) $request->commission_rate;
-            if (abs($oldRate - $newRate) > 0.001) {
-                Activity::query()->insert([
-                    'id' => (string) Str::uuid(),
-                    'log_name' => 'categories',
-                    'description' => 'commission_changed',
-                    'subject_type' => Category::class,
-                    'subject_id' => $categoryModel->id,
-                    'causer_type' => Admin::class,
-                    'causer_id' => auth('admin')->id(),
-                    'properties' => json_encode(['old' => $oldRate, 'new' => $newRate]),
-                    'event' => 'commission_changed',
-                    'created_at' => now(),
-                ]);
-            }
-        }
-
-        // Sync attribute assignments if provided
-        if ($request->has('attributes')) {
-            // get attributes which have attribute_id
-            $attributes = array_filter($request->input('attributes', []), fn ($a) => isset($a['attribute_id']));
-            $this->service->syncAttributes($categoryModel, $attributes);
-        }
-
-        DB::commit();
+        $result = $form->save($categoryModel, $this->formInput($request), $request->file('image'), auth('admin')->id());
 
         return response()->json([
             'success' => true,
             'message' => __('admin.categories.category_updated'),
-            'warning' => $contractGaps->isNotEmpty() ? __('contracts.admin.gap_warning', ['countries' => $contractGaps->pluck('name_en')->implode(', ')]) : null,
+            'warning' => $this->contractGapWarning($result['contract_gaps']),
+            'image_url' => $result['category']->image_url,
         ]);
+    }
 
-        // } catch (\Throwable $e) {
-        //     DB::rollBack();
-        //     Log::error('Category update failed', ['id' => $category, 'error' => $e->getMessage()]);
-        //     return response()->json(['message' => 'Failed to update category.'], 500);
-        // }
+    /**
+     * Validated fields plus the raw contract-partial fields (their rules come
+     * from ContractAssignmentService and it reads them from the raw input).
+     *
+     * @return array<string, mixed>
+     */
+    private function formInput(Request $request): array
+    {
+        return array_merge(
+            $request->except(['image', '_token', '_method']),
+            $request->safe()->except(['image']),
+        );
+    }
+
+    private function contractGapWarning(Collection $gaps): ?string
+    {
+        return $gaps->isNotEmpty()
+            ? __('contracts.admin.gap_warning', ['countries' => $gaps->map(fn ($country) => localized($country))->implode(', ')])
+            : null;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Image Upload
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function uploadImage(Request $request, string $category): JsonResponse
+    public function uploadImage(Request $request, string $category, CategoryFormService $form): JsonResponse
     {
         abort_unless(auth('admin')->user()->can('categories.edit'), 403);
 
@@ -334,37 +238,7 @@ class CategoryController extends Controller
             'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
         ]);
 
-        DB::beginTransaction();
-
-        $existing = $categoryModel->primaryImage()->first();
-        if ($existing) {
-            Storage::disk($existing->storage_type ?: 'public')->delete($existing->path);
-            $existing->delete();
-        }
-
-        $uploadedFile = $request->file('image');
-        $ext = $uploadedFile->getClientOriginalExtension() ?: $uploadedFile->guessExtension();
-        $path = $uploadedFile->storeAs(
-            'categories/'.$categoryModel->id,
-            'image_'.Str::random(8).'.'.$ext,
-            'public'
-        );
-
-        $file = File::create([
-            'key' => 'categories/'.$categoryModel->id.'/image',
-            'path' => $path,
-            'storage_type' => 'public',
-            'file_type' => 'category_image',
-            'mime_type' => $uploadedFile->getMimeType(),
-            'extension' => $ext,
-            'size' => $uploadedFile->getSize(),
-            'model_type' => Category::class,
-            'model_id' => $categoryModel->id,
-            'is_primary' => 1,
-            'position' => 0,
-        ]);
-
-        DB::commit();
+        $file = DB::transaction(fn () => $form->storeImage($categoryModel, $request->file('image')));
 
         return response()->json([
             'message' => __('admin.categories.image_uploaded'),
@@ -373,25 +247,15 @@ class CategoryController extends Controller
         ]);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Image Delete
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public function deleteImage(Request $request, string $category): JsonResponse
+    public function deleteImage(Request $request, string $category, CategoryFormService $form): JsonResponse
     {
         abort_unless(auth('admin')->user()->can('categories.edit'), 403);
 
         $categoryModel = Category::whereNull('deleted_at')->findOrFail($category);
 
-        $file = $categoryModel->primaryImage()->first()
-            ?? $categoryModel->files()->orderBy('position')->first();
-
-        if (! $file) {
+        if (! $form->deleteImage($categoryModel)) {
             return response()->json(['message' => __('admin.categories.image_not_found')], 404);
         }
-
-        Storage::disk($file->storage_type ?: 'public')->delete($file->path);
-        $file->delete();
 
         return response()->json(['message' => __('admin.categories.image_deleted')]);
     }
@@ -507,23 +371,59 @@ class CategoryController extends Controller
     // Private Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function formData(): array
+    /**
+     * Everything the single category form needs, for create ($category = null) and edit.
+     *
+     * @return array<string, mixed>
+     */
+    private function formData(?Category $category): array
     {
         $parents = Category::whereNull('deleted_at')
-            ->orderBy('name_en')
-            ->get(['id', 'name_en', 'depth'])
+            ->when($category, fn ($q) => $q->whereNotIn('id', $category->descendants()->pluck('id')->push($category->id)))
+            ->orderBy('lft')
+            ->get(['id', 'name_en', 'name_ar', 'depth'])
             ->map(fn ($c) => [
                 'id' => $c->id,
-                'name' => str_repeat('— ', $c->depth ?? 0).$c->name_en,
+                'name' => str_repeat('— ', $c->depth ?? 0).localized($c),
             ]);
 
         $allAttributes = Attribute::query()
-            ->orderBy('name_en')
-            ->get(['id', 'name_en', 'code', 'type']);
+            ->orderBy(Bilingual::column('name'))
+            ->get(['id', 'name_en', 'name_ar', 'code', 'type']);
+
+        $countries = Country::query()->orderBy(Bilingual::column('name'))->get();
+        $activeCountries = $countries->where('is_active', true)->values();
+
+        $availability = app(CategoryCountryAvailabilityService::class);
+
+        $shippingMethods = ShippingMethod::query()
+            ->where('is_active', true)
+            ->orderBy('display_priority')
+            ->get(['id', 'name', 'code']);
+
+        $assignedShipping = $category
+            ? CategoryShippingMethod::query()
+                ->where('category_id', $category->id)
+                ->orderBy('display_priority')
+                ->orderBy('created_at')
+                ->get()
+            : collect();
 
         return [
             'parents' => $parents,
             'allAttributes' => $allAttributes,
+            'countries' => $countries,
+            'activeCountries' => $activeCountries,
+            'countryCommissions' => $category
+                ? CountryCategory::where('category_id', $category->id)->get()->keyBy('country_id')
+                : collect(),
+            'commissionTiers' => $category
+                ? $category->commissionTiers()->orderBy('country_id')->orderBy('sort_order')->get()
+                : collect(),
+            'shippingMethods' => $shippingMethods,
+            'assignedShipping' => $assignedShipping,
+            'availability' => $availability->describe($category),
+            'inheritedUnavailable' => $category ? $availability->inheritedUnavailableCountryIds($category)->all() : [],
         ];
     }
 }

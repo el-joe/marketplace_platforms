@@ -75,6 +75,9 @@
             if (!p || !p.width_px || !p.height_px) return '16/9';
             return p.width_px + '/' + p.height_px;
         },
+        get showDesktopUpload() {
+            return this.deviceTarget !== 'mobile';
+        },
         get showMobileUpload() {
             return this.deviceTarget === 'all' || this.deviceTarget === 'mobile' || this.deviceTarget === 'app';
         },
@@ -194,7 +197,7 @@
                 <x-form.lang-tabs id="banner-image-lang-tabs">
                     <x-slot:en>
                         @foreach ([$imageBlock('desktop', 'en', $desktopImageEn, __('admin.banners.desktop_image')), $imageBlock('mobile', 'en', $mobileImageEn, __('admin.banners.mobile_image'))] as $img)
-                            <div class="mb-6" @if($img['device'] === 'mobile') x-show="showMobileUpload" x-transition @endif>
+                            <div class="mb-6" @if($img['device'] === 'mobile') x-show="showMobileUpload" x-transition @else x-show="showDesktopUpload" x-transition @endif>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     {{ $img['label'] }}
                                     @if($img['device'] === 'desktop')
@@ -223,7 +226,7 @@
                     </x-slot:en>
                     <x-slot:ar>
                         @foreach ([$imageBlock('desktop', 'ar', $desktopImageAr, __('admin.banners.desktop_image')), $imageBlock('mobile', 'ar', $mobileImageAr, __('admin.banners.mobile_image'))] as $img)
-                            <div class="mb-6" @if($img['device'] === 'mobile') x-show="showMobileUpload" x-transition @endif>
+                            <div class="mb-6" @if($img['device'] === 'mobile') x-show="showMobileUpload" x-transition @else x-show="showDesktopUpload" x-transition @endif>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     {{ $img['label'] }}
                                     @if($img['device'] === 'desktop')
@@ -305,7 +308,7 @@
                             <option value="">{{ __('admin.banners.no_specific_product_option') }}</option>
                             @foreach($products as $p)
                                 <option value="{{ $p->id }}" @selected($val('product_id') === $p->id)>
-                                    {{ $p->name_en }}
+                                    {{ localized($p) }}
                                 </option>
                             @endforeach
                         </select>
@@ -329,7 +332,7 @@
                             <option value="">{{ __('admin.banners.all_countries_option') }}</option>
                             @foreach($countries as $c)
                                 <option value="{{ $c->id }}" @selected($val('country_id') === $c->id)>
-                                    {{ $c->flag_emoji ? $c->flag_emoji . ' ' : '' }}{{ $c->name_en }}
+                                    {{ $c->flag_emoji ? $c->flag_emoji . ' ' : '' }}{{ localized($c) }}
                                 </option>
                             @endforeach
                         </select>
@@ -379,7 +382,7 @@
                             name="starts_at"
                             label="{{ __('admin.banners.starts_at') }} *"
                             type="datetime-local"
-                            :value="$val('starts_at', $isEdit ? admin_input_value($banner->starts_at, 'Y-m-d\TH:i') : '')"
+                            :value="old('starts_at', $isEdit ? admin_input_value($banner->starts_at, 'Y-m-d\TH:i') : '')"
                             required />
                     </div>
 
@@ -388,10 +391,12 @@
                             name="ends_at"
                             label="{{ __('admin.banners.ends_at') }} *"
                             type="datetime-local"
-                            :value="$val('ends_at', $isEdit ? admin_input_value($banner->ends_at, 'Y-m-d\TH:i') : '')"
+                            :value="old('ends_at', $isEdit ? admin_input_value($banner->ends_at, 'Y-m-d\TH:i') : '')"
                             required />
                         <p class="text-xs text-red-500 mt-1 hidden" id="date-error">{{ __('admin.banners.end_after_start_error') }}</p>
                     </div>
+
+                    <p class="text-xs text-gray-500">{{ __('admin.banners.schedule_timezone_hint', ['tz' => tz_label(admin_tz(now()))]) }}</p>
 
                     <div class="rounded bg-gray-50 px-3 py-2 text-xs text-gray-600" id="duration-preview">
                         —

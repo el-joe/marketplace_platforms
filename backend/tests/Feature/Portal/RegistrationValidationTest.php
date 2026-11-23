@@ -95,4 +95,63 @@ class RegistrationValidationTest extends TestCase
 
         $this->assertTrue(Vendor::where('email', self::EMAIL)->exists());
     }
+
+    public function test_account_step_rejects_a_phone_already_registered_with_a_new_email(): void
+    {
+        Vendor::factory()->create(['phone' => '+96890000001']);
+
+        $this->postJson(route('portal.register.step', ['step' => 1]), [
+            'name' => 'Docs Seller',
+            'email' => self::EMAIL,
+            'phone' => '+96890000001',
+            'gender' => 'male',
+            'country_id' => $this->scenario->country->id,
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['phone' => __('portal.registration.phone_unique')]);
+    }
+
+    public function test_submit_rejects_a_phone_taken_after_the_account_step_without_leaking_internals(): void
+    {
+        Vendor::factory()->create(['phone' => '+96890000001']);
+
+        $response = $this->withSession($this->registrationSession([]))
+            ->postJson(route('portal.register.complete'), ['terms_agreed' => '1', 'privacy_agreed' => '1'])
+            ->assertUnprocessable()
+            ->assertJsonPath('step', 1)
+            ->assertJsonValidationErrors(['phone' => __('portal.registration.phone_unique')]);
+
+        $this->assertResponseHidesInternals($response->getContent());
+        $this->assertDatabaseMissing('vendors', ['email' => self::EMAIL]);
+    }
+
+    public function test_a_unique_constraint_race_on_submit_becomes_a_localized_validation_error(): void
+    {
+        // Another registration takes the phone between the pre-check and the INSERT.
+        $raced = false;
+        Vendor::creating(function (Vendor $vendor) use (&$raced): void {
+            if ($vendor->email === self::EMAIL && ! $raced) {
+                $raced = true;
+                Vendor::factory()->create(['phone' => $vendor->phone]);
+            }
+        });
+
+        $response = $this->withSession($this->registrationSession([]))
+            ->postJson(route('portal.register.complete'), ['terms_agreed' => '1', 'privacy_agreed' => '1'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['phone' => __('portal.registration.phone_unique')]);
+
+        $this->assertTrue($raced);
+        $this->assertResponseHidesInternals($response->getContent());
+        $this->assertDatabaseMissing('vendors', ['email' => self::EMAIL]);
+        $this->assertDatabaseMissing('vendor_admins', ['email' => self::EMAIL]);
+    }
+
+    private function assertResponseHidesInternals(string $body): void
+    {
+        foreach (['SQLSTATE', 'insert into', 'password123', '$2y$', 'Docs Store'] as $leak) {
+            $this->assertStringNotContainsString($leak, $body);
+        }
+    }
 }

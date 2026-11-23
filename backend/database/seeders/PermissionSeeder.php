@@ -17,6 +17,9 @@ class PermissionSeeder extends Seeder
         $permissions = [
             // Dashboard
             'dashboard.view',
+            // AI features dashboard — Admin\AiDashboardController
+            'ai.view',
+            'ai.manage',
             // Catalog – Products
             'products.view',
             'products.create',
@@ -64,8 +67,15 @@ class PermissionSeeder extends Seeder
             'vendors.payouts.hold',
             'vendors.assigned_only',
             'vendors.edit',
+            // Vendor acquisition commissions — Admin\VendorAcquisitionController
+            'acquisition_commissions.view',
+            'acquisition_commissions.manage',
+            // Platform-commission discount for sales through a vendor's own product link / QR — Admin\ProductLinkCommissionRuleController
+            'product_link_commission.view',
+            'product_link_commission.manage',
             // Orders
             'orders.view',
+            'orders.edit',
             'orders.cancel',
             'orders.refund',
             'orders.dispute',
@@ -81,6 +91,12 @@ class PermissionSeeder extends Seeder
             'analytics.view',
             'transactions.view',
             'transactions.edit',
+            // Vendor subscriptions & plans — Admin\SubscriptionController
+            'subscriptions.view',
+            'subscriptions.manage',
+            // Wallets, withdrawals, COD settlements — Admin\WalletController
+            'wallets.view',
+            'wallets.manage',
             // Marketing
             'banners.view',
             'banners.create',
@@ -171,6 +187,18 @@ class PermissionSeeder extends Seeder
             'countries.launch',
             'warehouses.view',
             'warehouses.manage',
+            // Revert FBN storage fee status (Paid -> Invoiced -> Pending) — Admin\FbnController
+            'fbn_storage_fees.revert_status',
+            // FBN inbound / marketplace rules and storage fees — Admin\FbnController
+            'fbn.view',
+            'fbn.manage',
+            'fbn_storage_fees.view',
+            'fbn_storage_fees.manage',
+            // Delivery riders, zones, assignments — Admin\Delivery*Controller
+            'delivery.view',
+            'delivery.manage',
+            // Shipping companies (carrier portal accounts); edits use settings.edit
+            'shipping_companies.view',
             'packaging.manage',
             'settings.view',
             'settings.edit',
@@ -210,6 +238,10 @@ class PermissionSeeder extends Seeder
             'travel.geography.manage',
             // Classifieds
             'classifieds.view',
+            'classifieds.manage',
+            // Contract templates + signed customer contracts — Admin\ContractTemplateController
+            'contracts.view',
+            'contracts.manage',
             // Marketer accounts (admin)
             'marketers.view',
             'marketers.manage',

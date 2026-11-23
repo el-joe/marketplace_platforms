@@ -74,7 +74,7 @@ Route::middleware('guest:vendor')->group(function () {
     Route::post('/login', [PartnerAuthController::class, 'login'])->name('login.submit');
 
     Route::get('/forgot-password', [PartnerAuthController::class, 'forgotPassword'])->name('auth.forgot');
-    Route::post('/forgot-password', [PartnerAuthController::class, 'sendResetLink'])->name('auth.forgot.send');
+    Route::post('/forgot-password', [PartnerAuthController::class, 'sendResetLink'])->middleware('throttle:5,1')->name('auth.forgot.send');
 
     Route::get('/reset-password/{token}', [PartnerAuthController::class, 'resetPassword'])->name('auth.reset');
     Route::post('/reset-password', [PartnerAuthController::class, 'updatePassword'])->name('auth.reset.update');
@@ -289,6 +289,7 @@ Route::middleware(['vendor.auth', 'vendor.active', 'vendor.agreement.enforce'])-
     Route::prefix('profile')->name('profile.')->controller(ProfileController::class)->group(function () {
         Route::get('/', 'index')->name('index')->middleware('vendor.can:settings.view');
         Route::post('/update-store', 'updateStore')->name('update-store')->middleware('vendor.can:settings.edit');
+        Route::put('/location', 'updateLocation')->name('location.update')->middleware('vendor.can:settings.edit');
         Route::post('/update-password', 'updatePassword')->name('update-password')->middleware('vendor.can:settings.edit');
     });
 

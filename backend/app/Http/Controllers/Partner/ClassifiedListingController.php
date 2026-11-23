@@ -56,7 +56,7 @@ class ClassifiedListingController extends Controller
             return $this->exportClassifieds($request);
         }
 
-        $countries = Country::where('is_active', true)
+        $countries = Country::availableForVendors()
             ->orderBy('name_en')
             ->get(['id', 'name_en', 'name_ar', 'currency_code']);
 
@@ -159,7 +159,7 @@ class ClassifiedListingController extends Controller
             'created_at' => $l->created_at?->toISOString(),
             'expires_at' => $l->expires_at?->toISOString(),
             'primary_image' => $l->primary_image_url,
-            'category_name' => $l->classifiedCategory?->name_ar ?? $l->classifiedCategory?->name_en,
+            'category_name' => localized($l->classifiedCategory),
         ]);
     }
 
@@ -220,7 +220,7 @@ class ClassifiedListingController extends Controller
 
         $data = $request->validate([
             'classified_category_id' => 'required|uuid|exists:classified_categories,id',
-            'country_id' => 'required|exists:countries,id',
+            'country_id' => ['required', Country::availableForVendorsRule()],
             'city_id' => 'nullable|exists:cities,id',
             'listing_purpose' => 'required|in:sale,rent',
             'title_ar' => 'required|string|max:255',

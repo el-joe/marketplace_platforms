@@ -8,6 +8,7 @@
 
 import $ from 'jquery';
 import Sortable from 'sortablejs';
+import MediaField from '../components/media-field';
 
 const csrfToken = () => $('meta[name="csrf-token"]').attr('content');
 
@@ -55,17 +56,13 @@ const ROUTES = {
     slideSave: (id) => `/page-builder/blocks/${id}/slides`,
     slideDelete: (id) => `/page-builder/slides/${id}`,
     slideReorder: (id) => `/page-builder/blocks/${id}/slides/reorder`,
-    slideUploadImage: '/page-builder/slides/upload-image',
 
     adImagesManagerPartial: (id) => `/page-builder/blocks/${id}/ad-images/panel`,
     adImages: (id) => `/page-builder/blocks/${id}/ad-images`,
     adImageSave: (id) => `/page-builder/blocks/${id}/ad-images`,
     adImageDelete: (id) => `/page-builder/ad-images/${id}`,
     adImageReorder: (id) => `/page-builder/blocks/${id}/ad-images/reorder`,
-    adImageUploadImage: '/page-builder/ad-images/upload-image',
 
-    sectionBackgroundUploadImage: '/page-builder/sections/upload-background-image',
-    promoTileUploadImage: '/page-builder/promo-tiles/upload-image',
 
     pageUpdate: (id) => `/page-builder/pages/${id}`,
     pageDelete: (id) => `/page-builder/pages/${id}`,
@@ -138,7 +135,7 @@ function renderBlockCard(block) {
                 ${heroiconSvg(icon)}
             </div>
             <div class="flex-1 min-w-0">
-                <div class="text-sm font-medium text-gray-900 truncate">${escapeHtml(block.label_en || block.block_type)}</div>
+                <div class="text-sm font-medium text-gray-900 truncate">${escapeHtml(block.label || block.label_en || block.block_type)}</div>
                 <div class="text-xs text-gray-500 truncate" data-preview>${escapeHtml(block.preview_text || '')}</div>
             </div>
             <div class="flex items-center gap-1.5">${badges.join('')}</div>
@@ -417,7 +414,7 @@ function handlePaletteDrop(evt) {
             ...(colIndex !== undefined ? { column_index: colIndex } : {}),
         },
     }).done((res) => {
-        Toast.success(`${res.label_en || res.block_type} added.`);
+        Toast.success((window.TRANSLATIONS?.blockAdded || ':name added.').replace(':name', res.label || res.label_en || res.block_type));
         loadPage(state.currentPageId);
     }).fail((xhr) => {
         const msg = xhr.responseJSON?.message || xhr.responseJSON?.errors?.block_type_code?.[0] || window.TRANSLATIONS?.couldNotAddBlock || 'Could not add block.';
@@ -496,7 +493,7 @@ $(document).on('click', '.palette-btn', function () {
         data: { page_id: state.currentPageId, block_type_code: code, position },
     }).done((res) => {
         const block = {
-            id: res.block_id, block_type: res.block_type, label_en: res.label_en,
+            id: res.block_id, block_type: res.block_type, label: res.label, label_en: res.label_en,
             icon: res.icon, preview_text: res.preview_text, is_visible: true,
         };
         $('#canvas-empty').addClass('hidden');
@@ -504,7 +501,7 @@ $(document).on('click', '.palette-btn', function () {
         if (state.sections.length) $('#ungrouped-title').removeClass('hidden');
         initSortable();
         selectBlock(res.block_id);
-        Toast.success(`${res.label_en || res.block_type} added.`);
+        Toast.success((window.TRANSLATIONS?.blockAdded || ':name added.').replace(':name', res.label || res.label_en || res.block_type));
     }).fail((xhr) => {
         const msg = xhr.responseJSON?.message || xhr.responseJSON?.errors?.block_type_code?.[0] || window.TRANSLATIONS?.couldNotAddBlock || 'Could not add block.';
         Toast.error(msg);
@@ -756,6 +753,7 @@ function openConfigPanel(blockId) {
         // Apply saved config values after both Alpine and Select2 have initialized
         Promise.resolve().then(() => {
             applyConfigToForm(cfg);
+            MediaField.refresh(document.getElementById('config-form-body'));
 
             // Rich-text (Summernote) fields must be initialized AFTER the saved value
             // is applied to the underlying textarea — Summernote reads its initial
@@ -1126,136 +1124,34 @@ $(document).on('click', '[data-action="delete-slide"]', async function () {
         .fail(() => Toast.error(window.TRANSLATIONS?.couldNotDeleteSlide || 'Could not delete slide.'));
 });
 
-function setSlideImagePreview(slot, locale, fileId, url) {
-    const $hidden = $(`#slide-${slot}-file-id-${locale}`);
-    const $preview = $(`#slide-${slot}-preview-${locale}`);
-    const $img = $(`#slide-${slot}-img-${locale}`);
-    $hidden.val(fileId || '');
-    if (url) {
-        $img.attr('src', url);
-        $preview.removeClass('hidden');
-    } else {
-        $preview.addClass('hidden');
-        $img.attr('src', '');
-    }
-}
-
 function openSlideModal(blockId, slideId, slide) {
     $('#slide-block-id').val(blockId);
     $('#slide-id').val(slideId || '');
     const $form = $('#slide-form');
     $form[0].reset();
 
-    // Reset image previews
-    ['en', 'ar'].forEach((locale) => {
-        setSlideImagePreview('desktop', locale, '', '');
-        setSlideImagePreview('mobile', locale, '', '');
-    });
-
     Object.entries(slide || {}).forEach(([k, v]) => {
         const $f = $form.find(`[name="${k}"]`);
-        if (!$f.length) return;
+        if (!$f.length || $f.is('[data-media-value]')) return;
         if ($f.is(':checkbox')) $f.prop('checked', !!v);
         else if ($f[0]?._flatpickr) $f[0]._flatpickr.setDate(v || '', true);
         else $f.val(v ?? '');
     });
 
-    // Populate image previews when editing existing slide
-    if (slide.desktop_url_en) setSlideImagePreview('desktop', 'en', slide.desktop_file_id_en, slide.desktop_url_en);
-    if (slide.desktop_url_ar) setSlideImagePreview('desktop', 'ar', slide.desktop_file_id_ar, slide.desktop_url_ar);
-    if (slide.mobile_url_en) setSlideImagePreview('mobile', 'en', slide.mobile_file_id_en, slide.mobile_url_en);
-    if (slide.mobile_url_ar) setSlideImagePreview('mobile', 'ar', slide.mobile_file_id_ar, slide.mobile_url_ar);
+    // Desktop/Mobile × EN/AR images (shared media field, "same for all" recomputed from the slide).
+    const media = {};
+    ['desktop', 'mobile'].forEach((device) => ['en', 'ar'].forEach((locale) => {
+        const url = slide?.[`${device}_url_${locale}`];
+        media[`${device}_${locale}`] = url ? { value: slide[`${device}_file_id_${locale}`], url } : {};
+    }));
+    MediaField.load('#slide-media-field', media);
 
     $('#slide-modal').modal('open');
 }
 
-$(document).on('change', '[data-slide-upload]', function () {
-    const slot = $(this).data('slide-upload');
-    const locale = $(this).data('locale') || 'en';
-    const file = this.files[0];
-    if (!file) return;
-
-    const fd = new FormData();
-    fd.append('image', file);
-    fd.append('slot', slot);
-    fd.append('locale', locale);
-    fd.append('_token', csrfToken());
-
-    const $label = $(this).closest('label');
-    $label.addClass('opacity-50 pointer-events-none');
-
-    $.ajax({
-        url: ROUTES.slideUploadImage,
-        method: 'POST',
-        data: fd,
-        processData: false,
-        contentType: false,
-        headers: { 'X-CSRF-TOKEN': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
-    }).done((res) => {
-        setSlideImagePreview(slot, locale, res.file_id, res.url);
-        Toast.success(window.TRANSLATIONS?.imageUploaded || 'Image uploaded.');
-    }).fail((xhr) => {
-        Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS?.uploadFailed || 'Upload failed.');
-    }).always(() => {
-        $label.removeClass('opacity-50 pointer-events-none');
-        this.value = '';
-    });
-});
-
-$(document).on('click', '[data-clear-image]', function (e) {
-    e.preventDefault();
-    const slot = $(this).data('clear-image');
-    const locale = $(this).data('locale') || 'en';
-    setSlideImagePreview(slot, locale, '', '');
-});
-
-function setSectionBackgroundImagePreview(locale, url) {
-    $('#sd-background-image-url-' + locale).val(url || '');
-    if (url) {
-        $('#sd-background-image-img-' + locale).attr('src', url);
-        $('#sd-background-image-preview-' + locale).removeClass('hidden');
-    } else {
-        $('#sd-background-image-preview-' + locale).addClass('hidden');
-        $('#sd-background-image-img-' + locale).attr('src', '');
-    }
+function setSectionBackgroundImages(en, ar) {
+    MediaField.load('#sd-background-media-field', { en: { value: en || '', url: en || '' }, ar: { value: ar || '', url: ar || '' } });
 }
-
-$(document).on('change', '[data-section-bg-upload]', function () {
-    const file = this.files[0];
-    if (!file) return;
-
-    const locale = $(this).data('locale') || 'en';
-    const fd = new FormData();
-    fd.append('image', file);
-    fd.append('locale', locale);
-    fd.append('_token', csrfToken());
-
-    const $label = $(this).closest('label');
-    $label.addClass('opacity-50 pointer-events-none');
-
-    $.ajax({
-        url: ROUTES.sectionBackgroundUploadImage,
-        method: 'POST',
-        data: fd,
-        processData: false,
-        contentType: false,
-        headers: { 'X-CSRF-TOKEN': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
-    }).done((res) => {
-        setSectionBackgroundImagePreview(locale, res.url);
-        Toast.success(window.TRANSLATIONS?.imageUploaded || 'Image uploaded.');
-    }).fail((xhr) => {
-        Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS?.uploadFailed || 'Upload failed.');
-    }).always(() => {
-        $label.removeClass('opacity-50 pointer-events-none');
-        this.value = '';
-    });
-});
-
-$(document).on('click', '[data-clear-section-bg-image]', function (e) {
-    e.preventDefault();
-    const locale = $(this).data('locale') || 'en';
-    setSectionBackgroundImagePreview(locale, '');
-});
 
 // Generic EN/AR tab switcher — delegated because tab groups (section drawer,
 // slide modal, config forms) are injected dynamically via AJAX.
@@ -1270,98 +1166,6 @@ $(document).on('click', '[data-lang-tab]', function () {
 
     $group.find('[data-lang-panel]').addClass('hidden');
     $group.find('[data-lang-panel="' + lang + '"][data-tabs-id="' + tabsId + '"]').removeClass('hidden');
-});
-
-function setPromoTileImagePreview($row, url) {
-    $row.find('[data-tile-image-url]').val(url || '');
-    if (url) {
-        $row.find('[data-tile-image-img]').attr('src', url);
-        $row.find('[data-tile-image-preview]').removeClass('hidden');
-    } else {
-        $row.find('[data-tile-image-preview]').addClass('hidden');
-        $row.find('[data-tile-image-img]').attr('src', '');
-    }
-}
-
-$(document).on('change', '[data-tile-image-upload]', function () {
-    const file = this.files[0];
-    if (!file) return;
-
-    const $row = $(this).closest('.tile-row');
-    const fd = new FormData();
-    fd.append('image', file);
-    fd.append('_token', csrfToken());
-
-    const $label = $(this).closest('label');
-    $label.addClass('opacity-50 pointer-events-none');
-
-    $.ajax({
-        url: ROUTES.promoTileUploadImage,
-        method: 'POST',
-        data: fd,
-        processData: false,
-        contentType: false,
-        headers: { 'X-CSRF-TOKEN': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
-    }).done((res) => {
-        setPromoTileImagePreview($row, res.url);
-        Toast.success(window.TRANSLATIONS?.imageUploaded || 'Image uploaded.');
-    }).fail((xhr) => {
-        Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS?.uploadFailed || 'Upload failed.');
-    }).always(() => {
-        $label.removeClass('opacity-50 pointer-events-none');
-        this.value = '';
-    });
-});
-
-$(document).on('click', '[data-clear-tile-image]', function (e) {
-    e.preventDefault();
-    setPromoTileImagePreview($(this).closest('.tile-row'), '');
-});
-
-function setPromoTileImageArPreview($row, url) {
-    $row.find('[data-tile-image-ar-url]').val(url || '');
-    if (url) {
-        $row.find('[data-tile-image-ar-img]').attr('src', url);
-        $row.find('[data-tile-image-ar-preview]').removeClass('hidden');
-    } else {
-        $row.find('[data-tile-image-ar-preview]').addClass('hidden');
-        $row.find('[data-tile-image-ar-img]').attr('src', '');
-    }
-}
-
-$(document).on('change', '[data-tile-image-ar-upload]', function () {
-    const file = this.files[0];
-    if (!file) return;
-
-    const $row = $(this).closest('.tile-row');
-    const fd = new FormData();
-    fd.append('image', file);
-    fd.append('_token', csrfToken());
-
-    const $label = $(this).closest('label');
-    $label.addClass('opacity-50 pointer-events-none');
-
-    $.ajax({
-        url: ROUTES.promoTileUploadImage,
-        method: 'POST',
-        data: fd,
-        processData: false,
-        contentType: false,
-        headers: { 'X-CSRF-TOKEN': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
-    }).done((res) => {
-        setPromoTileImageArPreview($row, res.url);
-        Toast.success(window.TRANSLATIONS?.imageUploaded || 'Image uploaded.');
-    }).fail((xhr) => {
-        Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS?.uploadFailed || 'Upload failed.');
-    }).always(() => {
-        $label.removeClass('opacity-50 pointer-events-none');
-        this.value = '';
-    });
-});
-
-$(document).on('click', '[data-clear-tile-image-ar]', function (e) {
-    e.preventDefault();
-    setPromoTileImageArPreview($(this).closest('.tile-row'), '');
 });
 
 $('#slide-form').on('submit', function (e) {
@@ -1458,77 +1262,28 @@ $(document).on('click', '[data-action="delete-ad-image"]', async function () {
     if (!ok) return;
     ajax({ url: ROUTES.adImageDelete(imageId), method: 'DELETE' })
         .done(() => { Toast.success(window.TRANSLATIONS?.imageUploaded ? '' : 'Image deleted.'); loadAdImagesList(blockId); })
-        .fail(() => Toast.error('Could not delete image.'));
+        .fail(() => Toast.error(window.TRANSLATIONS?.pbImageDeleteFailed || 'Could not delete image.'));
 });
-
-function setAdImagePreview(locale, fileId, url) {
-    $('#ad-image-file-id-' + locale).val(fileId || '');
-    if (url) {
-        $('#ad-image-preview-img-' + locale).attr('src', url);
-        $('#ad-image-preview-' + locale).removeClass('hidden');
-    } else {
-        $('#ad-image-preview-' + locale).addClass('hidden');
-        $('#ad-image-preview-img-' + locale).attr('src', '');
-    }
-}
 
 function openAdImageModal(blockId, imageId, img) {
     $('#ad-image-block-id').val(blockId);
     $('#ad-image-id').val(imageId || '');
     const $form = $('#ad-image-form');
     $form[0].reset();
-    setAdImagePreview('en', '', '');
-    setAdImagePreview('ar', '', '');
-
     Object.entries(img || {}).forEach(([k, v]) => {
         const $f = $form.find(`[name="${k}"]`);
-        if (!$f.length) return;
+        if (!$f.length || $f.is('[data-media-value]')) return;
         if ($f.is(':checkbox')) $f.prop('checked', !!v);
         else $f.val(v ?? '');
     });
 
-    if (img?.file_url_en) setAdImagePreview('en', img.file_id_en, img.file_url_en);
-    if (img?.file_url_ar) setAdImagePreview('ar', img.file_id_ar, img.file_url_ar);
+    MediaField.load('#ad-image-media-field', {
+        en: img?.file_url_en ? { value: img.file_id_en, url: img.file_url_en } : {},
+        ar: img?.file_url_ar ? { value: img.file_id_ar, url: img.file_url_ar } : {},
+    });
 
     $('#ad-image-modal').modal('open');
 }
-
-$(document).on('change', '[data-ad-image-upload]', function () {
-    const file = this.files[0];
-    if (!file) return;
-
-    const locale = $(this).data('locale') || 'en';
-    const fd = new FormData();
-    fd.append('image', file);
-    fd.append('locale', locale);
-    fd.append('_token', csrfToken());
-
-    const $label = $(this).closest('label');
-    $label.addClass('opacity-50 pointer-events-none');
-
-    $.ajax({
-        url: ROUTES.adImageUploadImage,
-        method: 'POST',
-        data: fd,
-        processData: false,
-        contentType: false,
-        headers: { 'X-CSRF-TOKEN': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
-    }).done((res) => {
-        setAdImagePreview(locale, res.file_id, res.url);
-        Toast.success(window.TRANSLATIONS?.imageUploaded || 'Image uploaded.');
-    }).fail((xhr) => {
-        Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS?.uploadFailed || 'Upload failed.');
-    }).always(() => {
-        $label.removeClass('opacity-50 pointer-events-none');
-        this.value = '';
-    });
-});
-
-$(document).on('click', '[data-clear-ad-image]', function (e) {
-    e.preventDefault();
-    const locale = $(this).data('locale') || 'en';
-    setAdImagePreview(locale, '', '');
-});
 
 $('#ad-image-form').on('submit', function (e) {
     e.preventDefault();
@@ -1546,10 +1301,10 @@ $('#ad-image-form').on('submit', function (e) {
 
     ajax({ url: ROUTES.adImageSave(blockId), method: 'POST', data })
         .done(() => {
-            Toast.success('Image saved.');
+            Toast.success(window.TRANSLATIONS?.pbImageSaved || 'Image saved.');
             $('#ad-image-modal').modal('close');
             loadAdImagesList(blockId);
-            $(`.block-card[data-block-id="${blockId}"] [data-preview]`).text('Ad images — updated');
+            $(`.block-card[data-block-id="${blockId}"] [data-preview]`).text(window.TRANSLATIONS?.pbAdImagesUpdated || 'Ad images — updated');
         })
         .fail((xhr) => Toast.error(xhr.responseJSON?.message || 'Could not save image.'));
 });
@@ -1568,8 +1323,7 @@ function resetSectionForm() {
     $('#sd-is-visible').prop('checked', true);
     $('#sd-background-color').val('');
     $('#sd-background-image-type').val('section');
-    setSectionBackgroundImagePreview('en', '');
-    setSectionBackgroundImagePreview('ar', '');
+    setSectionBackgroundImages('', '');
     $('#sd-max-width').val('');
     $('#sd-delete').addClass('hidden');
 }
@@ -1579,7 +1333,7 @@ function openSectionDrawer(section) {
     state.editingSectionId = section ? section.id : null;
 
     if (section) {
-        $('#sd-title').text('Edit section');
+        $('#sd-title').text(window.TRANSLATIONS?.pbEditSection || 'Edit section');
         $('#sd-section-id').val(section.id);
         $('#sd-name-en').val(section.name_en || section.name || '');
         $('#sd-name-ar').val(section.name_ar || '');
@@ -1610,12 +1364,11 @@ function openSectionDrawer(section) {
         $('#sd-is-visible').prop('checked', section.is_visible !== false);
         $('#sd-background-color').val(section.background_color || '');
         $('#sd-background-image-type').val(section.background_image_type || 'section');
-        setSectionBackgroundImagePreview('en', section.background_image_url_en || section.background_image_url || '');
-        setSectionBackgroundImagePreview('ar', section.background_image_url_ar || '');
+        setSectionBackgroundImages(section.background_image_url_en || section.background_image_url || '', section.background_image_url_ar || '');
         $('#sd-max-width').val(section.max_width || '');
         $('#sd-delete').removeClass('hidden');
     } else {
-        $('#sd-title').text('Add section');
+        $('#sd-title').text(window.TRANSLATIONS?.pbAddSection || 'Add section');
         $('#sd-name-en').val('New Section');
     }
 
@@ -1648,7 +1401,7 @@ $(document).on('click', '[data-action="delete-section"]', async function () {
 
     ajax({ url: ROUTES.sectionDelete(sectionId), method: 'DELETE' })
         .done(() => {
-            Toast.success('Section deleted.');
+            Toast.success(window.TRANSLATIONS?.pbSectionDeleted || 'Section deleted.');
             loadPage(state.currentPageId);
         })
         .fail((xhr) => Toast.error(xhr.responseJSON?.message || 'Could not delete section.'));
@@ -1667,7 +1420,7 @@ $('#sd-delete').on('click', async function () {
 
     ajax({ url: ROUTES.sectionDelete(sectionId), method: 'DELETE' })
         .done(() => {
-            Toast.success('Section deleted.');
+            Toast.success(window.TRANSLATIONS?.pbSectionDeleted || 'Section deleted.');
             window.dispatchEvent(new CustomEvent('close-section-drawer'));
             loadPage(state.currentPageId);
         })
@@ -1702,7 +1455,7 @@ $('#sd-save').on('click', function () {
     }
 
     withLoading($btn, request).then(() => {
-        Toast.success(sectionId ? 'Section updated.' : 'Section added.');
+        Toast.success(sectionId ? (window.TRANSLATIONS?.pbSectionUpdated || 'Section updated.') : (window.TRANSLATIONS?.pbSectionAdded || 'Section added.'));
         window.dispatchEvent(new CustomEvent('close-section-drawer'));
         loadPage(state.currentPageId);
     }).catch((xhr) => {
@@ -1898,8 +1651,8 @@ $('#clear-page-cache-btn').on('click', function () {
         url: ROUTES.clearPageCache(state.currentPageId),
         method: 'POST',
     })
-        .done(() => Toast.success('Cache cleared — changes are live.'))
-        .fail(() => Toast.error('Failed to clear cache.'));
+        .done(() => Toast.success(window.TRANSLATIONS?.pbCacheCleared || 'Cache cleared — changes are live.'))
+        .fail(() => Toast.error(window.TRANSLATIONS?.pbCacheClearFailed || 'Failed to clear cache.'));
 });
 
 $('#version-history-btn').on('click', function () {

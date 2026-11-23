@@ -34,6 +34,7 @@ use App\Http\Middleware\VendorOnboarded;
 use App\Http\Middleware\VendorPermissionMiddleware;
 use App\Http\Middleware\VendorTokenAuth;
 use App\Http\Middleware\VendorTypeMiddleware;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -150,5 +151,25 @@ return Application::configure(basePath: dirname(__DIR__))
             if (str_starts_with((string) $request->route()?->getName(), 'marketer.invitations.whatsapp.')) {
                 return response()->view('marketer.invitations.whatsapp', ['expiredLink' => true], 403);
             }
+        });
+
+        // Database errors carry the SQL, bound values (e.g. password hashes) and schema names. JSON/AJAX
+        // callers (admin, portal, partner, marketer, APIs) get a generic localized message instead; the
+        // exception is still reported to the log by the default reporter. Only a local debug box sees details.
+        $exceptions->render(function (Throwable $e, Request $request) {
+            if (! $request->expectsJson() || (config('app.debug') && app()->isLocal())) {
+                return null;
+            }
+
+            for ($cause = $e; $cause !== null; $cause = $cause->getPrevious()) {
+                if ($cause instanceof QueryException || $cause instanceof PDOException) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => __('common.exceptions.server_error'),
+                    ], 500);
+                }
+            }
+
+            return null;
         });
     })->create();

@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\MediaContext;
 use App\Http\Controllers\Controller;
 use App\Models\CustomPage;
 use App\Models\File;
 use App\Models\Slug;
+use App\Services\Admin\MediaLibraryService;
 use App\Services\CustomPageService;
+use App\Support\Bilingual;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,11 +21,19 @@ use Illuminate\View\View;
 
 class CustomPageController extends Controller
 {
-    public function __construct(private CustomPageService $service) {}
+    public function __construct(
+        private CustomPageService $service,
+        private MediaLibraryService $media,
+    ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $search = trim((string) $request->query('search', ''));
+
         $customPages = CustomPage::withoutTrashed()
+            ->when($search !== '', fn ($query) => Bilingual::whereLike($query, 'name', $search))
+            ->when($request->query('status') === 'active', fn ($query) => $query->where('is_active', true))
+            ->when($request->query('status') === 'inactive', fn ($query) => $query->where('is_active', false))
             ->with(['slugRecord', 'primaryImage'])
             ->orderBy('sort_order')
             ->orderBy('name_en')
@@ -68,6 +79,7 @@ class CustomPageController extends Controller
             'all_categories' => 'nullable|boolean',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'string|exists:categories,id',
+            'image_file_id' => ['nullable', 'integer', Rule::exists('files', 'id')->where('file_type', MediaContext::CustomPages->fileType())],
         ], $this->categoryMessages());
         $this->assertCategoryScope($request);
 
@@ -98,6 +110,7 @@ class CustomPageController extends Controller
 
             return $customPage;
         });
+        $this->syncImage($customPage, $request);
 
         return response()->json([
             'success' => true,
@@ -145,6 +158,7 @@ class CustomPageController extends Controller
             'all_categories' => 'nullable|boolean',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'string|exists:categories,id',
+            'image_file_id' => ['nullable', 'integer', Rule::exists('files', 'id')->where('file_type', MediaContext::CustomPages->fileType())],
         ], $this->categoryMessages());
         $this->assertCategoryScope($request);
 
@@ -176,8 +190,33 @@ class CustomPageController extends Controller
                 $request->boolean('all_categories') ? [] : ($data['category_ids'] ?? [])
             );
         });
+        $this->syncImage($customPageModel, $request);
 
         return response()->json(['success' => true, 'message' => __('admin.custom_pages.updated')]);
+    }
+
+    /**
+     * Apply the media field's `image_file_id` (only when the form sent it, so older clients are untouched):
+     * empty → remove the current image; another id → that library image becomes the page image.
+     */
+    private function syncImage(CustomPage $customPage, Request $request): void
+    {
+        if (! $request->has('image_file_id')) {
+            return;
+        }
+
+        $current = $customPage->primaryImage()->first();
+        $selectedId = $request->integer('image_file_id') ?: null;
+
+        if ($current && $current->id === $selectedId) {
+            return;
+        }
+
+        $current?->delete();
+
+        if ($selectedId) {
+            $this->media->attachAsPrimary(File::findOrFail($selectedId), $customPage, 'custom-pages/'.$customPage->id);
+        }
     }
 
     private function categoryMessages(): array

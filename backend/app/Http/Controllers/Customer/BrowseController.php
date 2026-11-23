@@ -10,10 +10,10 @@ use App\Http\Resources\Customer\TravelBrowseCategoryResource;
 use App\Http\Resources\Customer\TravelCategorySummaryResource;
 use App\Http\Resources\Public\MarketerBannerResource;
 use App\Models\Category;
-use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
 use App\Models\Country;
 use App\Models\TravelCategory;
+use App\Services\CategoryCountryAvailabilityService;
 use App\Services\Customer\CategoryService;
 use App\Services\Customer\ClassifiedSectionService;
 use App\Services\Customer\ListingQueryService;
@@ -162,7 +162,11 @@ class BrowseController extends Controller
     {
         $country = $request->attributes->get('country');
 
-        $category = Category::where('id', $id)->where('is_active', true)->firstOrFail();
+        $category = Category::where('id', $id)->where('is_active', true)->first();
+
+        if (! $category || ! app(CategoryCountryAvailabilityService::class)->isAccessibleIn($category, $country)) {
+            return response()->json(['success' => false, 'message' => __('common.exceptions.browse.category_not_found')], 404);
+        }
 
         $catVersion = Cache::get("category_v:{$category->id}", 0);
         $categoryResource = Cache::remember(
@@ -177,7 +181,7 @@ class BrowseController extends Controller
         ]);
         $perPage = $request->integer('per_page', 20);
         $page = $request->integer('page', 1);
-        $categoryIds = $this->categories->getDescendantIds($category);
+        $categoryIds = $this->categories->getDescendantIds($category, $country);
 
         $categoryNode = $this->unifiedCategories->findById($id, 'product');
 

@@ -32,7 +32,7 @@ class WantedListingController extends Controller
     {
         return view('marketer.wanted-listings.create', [
             'categories' => ClassifiedCategory::where('is_active', true)->orderBy('sort_order')->get(),
-            'countries'  => Country::where('is_active', true)->get(),
+            'countries' => Country::availableForVendors()->get(),
         ]);
     }
 
@@ -40,22 +40,22 @@ class WantedListingController extends Controller
     {
         $data = $request->validate([
             'classified_category_id' => ['required', 'uuid', 'exists:classified_categories,id'],
-            'country_id'             => ['required', 'uuid', 'exists:countries,id'],
-            'title_ar'               => ['required', 'string', 'max:255'],
-            'title_en'               => ['nullable', 'string', 'max:255'],
-            'description_ar'         => ['nullable', 'string'],
-            'budget_min'             => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
-            'budget_max'             => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'gte:budget_min'],
-            'expires_at'             => ['nullable', 'date', 'after:now'],
+            'country_id' => ['required', 'uuid', Country::availableForVendorsRule()],
+            'title_ar' => ['required', 'string', 'max:255'],
+            'title_en' => ['nullable', 'string', 'max:255'],
+            'description_ar' => ['nullable', 'string'],
+            'budget_min' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'budget_max' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'gte:budget_min'],
+            'expires_at' => ['nullable', 'date', 'after:now'],
         ]);
 
         $country = Country::findOrFail($data['country_id']);
 
         ClassifiedWantedListing::create($data + [
-            'listing_number' => 'WL-' . strtoupper(Str::random(8)),
-            'marketer_id'    => $this->marketer()->id,
-            'currency'       => $country->currency_code,
-            'status'         => 'active',
+            'listing_number' => 'WL-'.strtoupper(Str::random(8)),
+            'marketer_id' => $this->marketer()->id,
+            'currency' => $country->currency_code,
+            'status' => 'active',
         ]);
 
         return redirect()->route('marketer.wanted-listings.index')->with('success', __('marketer.wanted_created'));

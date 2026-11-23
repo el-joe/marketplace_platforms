@@ -38,7 +38,9 @@
             'other'      => __('admin.carriers_section.claim_type_other'),
         ];
     @endphp
-    <form method="GET" class="flex flex-wrap gap-3 mb-5">
+    <form method="GET" class="flex flex-wrap gap-3 mb-5" role="search">
+        <input type="search" name="search" value="{{ request('search') }}" class="input-sm min-w-[12rem]"
+            placeholder="{{ __('admin.list_search.carrier_claims') }}" aria-label="{{ __('common.search') }}">
         <select name="status" class="input-sm">
             <option value="">{{ __('admin.carriers_section.all_statuses') }}</option>
             @foreach($statusLabels as $s => $label)

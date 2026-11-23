@@ -59,7 +59,7 @@ class MarketerContractController extends Controller
         $version = $contract->activeVersion;
         abort_if(! $version || ! $version->file_url || $version->content_type !== 'pdf', 404);
 
-        return Storage::disk('local')->response($version->file_url);
+        return Storage::disk('private')->response($version->file_url);
     }
 
     public function accept(Request $request, $country): JsonResponse

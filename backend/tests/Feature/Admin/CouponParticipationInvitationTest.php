@@ -61,7 +61,10 @@ class CouponParticipationInvitationTest extends TestCase
         Permission::firstOrCreate(['name' => 'vendors.assigned_only', 'guard_name' => 'admin']);
         Permission::firstOrCreate(['name' => 'coupons.view', 'guard_name' => 'admin']);
         $a = Admin::factory()->create();
-        $a->givePermissionTo('coupons.view');
+        foreach (['coupons.view', 'coupons.edit'] as $permission) {
+            Permission::findOrCreate($permission, 'admin');
+        }
+        $a->givePermissionTo(['coupons.view', 'coupons.edit']);
 
         return $a;
     }

@@ -29,7 +29,7 @@
 
     @if($existingGtinProduct)
         <div class="rounded-lg bg-warning-50 border border-warning-200 text-warning-800 text-sm px-4 py-3">
-            {{ __('admin.product_requests.gtin_exists_warning', ['name' => $isAr ? ($existingGtinProduct->name_ar ?: $existingGtinProduct->name_en) : $existingGtinProduct->name_en]) }}
+            {{ __('admin.product_requests.gtin_exists_warning', ['name' => $isAr ? (localized($existingGtinProduct)) : $existingGtinProduct->name_en]) }}
             <a href="{{ route('admin.products.edit', $existingGtinProduct->id) }}" class="font-medium underline ms-1">{{ __('admin.product_requests.open_product') }}</a>
         </div>
     @endif
@@ -49,13 +49,13 @@
                     </div>
                     <div>
                         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('product_requests.fields.category') }}</dt>
-                        <dd class="mt-1 text-gray-700">{{ $isAr ? ($productRequest->category?->name_ar ?: $productRequest->category?->name_en) : ($productRequest->category?->name_en ?? '—') }}</dd>
+                        <dd class="mt-1 text-gray-700">{{ $isAr ? (localized($productRequest->category)) : ($productRequest->category?->name_en ?? '—') }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('product_requests.fields.brand') }}</dt>
                         <dd class="mt-1 text-gray-700">
                             @if($productRequest->brand)
-                                {{ $isAr ? ($productRequest->brand->name_ar ?: $productRequest->brand->name_en) : $productRequest->brand->name_en }}
+                                {{ $isAr ? (localized($productRequest->brand)) : $productRequest->brand->name_en }}
                             @elseif($productRequest->brand_name)
                                 {{ $productRequest->brand_name }}
                                 <span class="text-xs text-amber-600">({{ __('admin.product_requests.brand_not_listed') }})</span>
@@ -74,7 +74,7 @@
                     </div>
                     <div>
                         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('product_requests.fields.country') }}</dt>
-                        <dd class="mt-1 text-gray-700">{{ $productRequest->country ? ($isAr ? ($productRequest->country->name_ar ?: $productRequest->country->name_en) : $productRequest->country->name_en) : '—' }}</dd>
+                        <dd class="mt-1 text-gray-700">{{ $productRequest->country ? ($isAr ? (localized($productRequest->country)) : $productRequest->country->name_en) : '—' }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('product_requests.fields.reference_url') }}</dt>
@@ -122,7 +122,7 @@
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         @foreach($imageUrls as $imageUrl)
                             <a href="{{ $imageUrl }}" target="_blank" rel="noopener" class="block aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                                <img src="{{ $imageUrl }}" alt="{{ $productRequest->name_en }}" class="w-full h-full object-contain" loading="lazy">
+                                <img src="{{ $imageUrl }}" alt="{{ localized($productRequest) }}" class="w-full h-full object-contain" loading="lazy">
                             </a>
                         @endforeach
                     </div>
@@ -178,7 +178,7 @@
                             <dt class="text-gray-500">{{ __('admin.product_requests.created_product') }}</dt>
                             <dd class="text-end">
                                 <a href="{{ route('admin.products.edit', $productRequest->product->id) }}" class="text-primary-600 font-medium hover:underline">
-                                    {{ $isAr ? ($productRequest->product->name_ar ?: $productRequest->product->name_en) : $productRequest->product->name_en }}
+                                    {{ $isAr ? (localized($productRequest->product)) : $productRequest->product->name_en }}
                                 </a>
                             </dd>
                         </div>

@@ -47,7 +47,7 @@
             <option value="">{{ __('admin.vendor_product_certifications.any_country') }}</option>
             @foreach($countries as $country)
                 <option value="{{ $country->id }}" {{ (string) request('country_id') === (string) $country->id ? 'selected' : '' }}>
-                    {{ $country->name_en }}
+                    {{ localized($country) }}
                 </option>
             @endforeach
         </select>
@@ -93,8 +93,8 @@
                                 </td>
                             @endif
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $cert->vendor?->store_name ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-700">{{ $cert->product?->name_en ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $cert->country?->name_en ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-700">{{ localized($cert->product) ?: '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ localized($cert->country) ?: '—' }}</td>
                             <td class="px-4 py-3">
                                 <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$cert->status] ?? '' }}">
                                     {{ __('admin.vendor_product_certifications.' . $cert->status) }}

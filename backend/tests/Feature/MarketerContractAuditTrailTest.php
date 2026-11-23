@@ -8,6 +8,8 @@ use App\Models\MarketerContract;
 use App\Models\MarketerContractAcceptance;
 use App\Models\MarketerContractVersion;
 use App\Models\Order;
+use App\Services\Customer\CartService;
+use App\Services\MarketerContractGateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
@@ -63,7 +65,7 @@ class MarketerContractAuditTrailTest extends TestCase
     private function fillCart(MarketplaceScenario $s): void
     {
         $this->actingAs($s->customer, 'customer');
-        $cart = app(\App\Services\Customer\CartService::class)
+        $cart = app(CartService::class)
             ->getOrCreateCart($s->customer, $s->country->id, $s->country->currency_code);
         CartItem::create([
             'cart_id' => $cart->id, 'marketer_listing_id' => $s->marketerListing->id,
@@ -196,9 +198,9 @@ class MarketerContractAuditTrailTest extends TestCase
     {
         $s = $this->scenario();
         $this->contractWithV1($s);
-        $svc = app(\App\Services\MarketerContractGateService::class);
+        $svc = app(MarketerContractGateService::class);
         $this->fillCart($s);
-        $cart = app(\App\Services\Customer\CartService::class)
+        $cart = app(CartService::class)
             ->getOrCreateCart($s->customer, $s->country->id, $s->country->currency_code)->load('items');
 
         $this->assertSame([$s->marketer->id], $svc->requiredMarketerIds($cart));
@@ -231,7 +233,7 @@ class MarketerContractAuditTrailTest extends TestCase
 
     public function test_upload_rejects_non_pdf_oversize_and_download_authz(): void
     {
-        Storage::fake('local');
+        Storage::fake('private');
         $s = $this->scenario();
         $admin = $this->admin();
         $url = route('admin.marketers.contract.upload', $s->marketer->id);

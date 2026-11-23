@@ -18,7 +18,7 @@
     </td>
     <td class="px-4 py-3 {{ $isChild ? 'ps-10' : '' }}">
         @if ($isChild)<span class="text-gray-400 me-1">↳</span>@endif
-        <span class="{{ $isChild ? 'font-medium text-gray-800' : 'font-semibold text-gray-900' }}">{{ $cat->name_en }}</span>
+        <span class="{{ $isChild ? 'font-medium text-gray-800' : 'font-semibold text-gray-900' }}">{{ localized($cat) }}</span>
         @unless ($cat->is_active)
             <span class="ms-1 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">{{ __('classified.admin.hidden_badge') }}</span>
         @endunless
@@ -136,8 +136,9 @@
         <button type="button" class="btn-edit-category text-xs text-primary-600 font-medium hover:underline" data-category="{{ json_encode($payload) }}">
             {{ __('common.edit') }}
         </button>
+        <a href="{{ route('admin.classifieds.categories.commission.edit', $cat) }}" class="ms-2 text-xs text-primary-600 hover:underline">{{ __('classified_commission.link') }}</a>
         <button type="button" class="btn-delete-category ms-2 text-xs text-red-500 hover:underline"
-                data-id="{{ $cat->id }}" data-name="{{ $cat->name_en }}">
+                data-id="{{ $cat->id }}" data-name="{{ localized($cat) }}">
             {{ __('common.delete') }}
         </button>
     </td>

@@ -170,7 +170,13 @@ return [
 
     'registration' => [
         'signature_name_required' => 'اكتب اسمك الكامل للتوقيع على اتفاقية البائع.',
-        'classified_account_notice' => 'أنت تسجّل حساب «السوق المفتوح» لنشر الإعلانات المبوّبة (عقارات، سيارات، خدمات…).',
+        'classified_account_notice' => 'أنت تسجّل حساب «الإعلانات المبوبة» لنشر الإعلانات المبوّبة (عقارات، سيارات، سفر وسياحة…).',
+        'classified_category_notice' => 'أنت تسجّل حساب «الإعلانات المبوبة» في قسم :category.',
+        'category_contract_title' => 'عقد قسم :category',
+        'category_contract_intro' => 'النشر في هذا القسم يتطلب عقدًا خاصًا به. اسمك الكامل أدناه يُعدّ توقيعًا عليه مع اتفاقية البائع.',
+        'category_contract_agree' => 'قرأت عقد قسم :category وأوافق عليه.',
+        'category_contract_required' => 'يرجى قراءة عقد القسم والموافقة عليه.',
+        'category_contract_changed' => 'تم تحديث عقد القسم أثناء التسجيل. أعد تحميل الصفحة وراجعه مرة أخرى.',
         'switch_to_product_account' => 'تريد بيع منتجات بدلًا من ذلك؟',
         'agreement_changed' => 'تم تحديث اتفاقية البائع أثناء التسجيل. أعد تحميل الصفحة وراجعها مرة أخرى.',
         'agreement_download' => 'تحميل الاتفاقية',
@@ -178,6 +184,8 @@ return [
         'signature_name_placeholder' => 'الاسم الكامل كما في السجل التجاري',
         'signature_name_help' => 'كتابة اسمك وإرسال الطلب يُعدّان توقيعاً إلكترونياً له نفس القوة القانونية للتوقيع الخطي. ستصلك نسخة على بريدك الإلكتروني.',
         'email_unique' => 'هذا البريد الإلكتروني مسجل مسبقاً.',
+        'phone_unique' => 'رقم الهاتف هذا مسجل مسبقاً. استخدم رقماً آخر أو سجّل الدخول إلى حسابك الحالي.',
+        'account_conflict' => 'بعض بياناتك مسجلة مسبقاً. راجع الخطوة المحددة وحاول مرة أخرى.',
         'password_min' => 'كلمة المرور يجب أن تكون ٨ أحرف على الأقل.',
         'password_confirmed' => 'كلمة المرور وتأكيدها غير متطابقتين.',
         'store_name_unique' => 'اسم المتجر مستخدم مسبقاً، جرب اسماً آخر.',
@@ -191,6 +199,12 @@ return [
     ],
 
     'join' => [
+        'classified_option_invalid' => 'قسم الإعلانات المبوبة المحدد غير متاح.',
+        'classified_option_required' => 'اختر قسمًا من الإعلانات المبوبة للمتابعة.',
+        'classified_options_title' => 'في أي قسم تريد النشر؟',
+        'travel_option_title' => 'وكالات السفر والسياحة',
+        'travel_option_description' => 'سجّل وكالتك لنشر الرحلات والباقات والحجوزات.',
+        'classified_option_fallback_description' => 'انشر إعلاناتك في قسم :category.',
         'country_unavailable' => 'الدولة المحددة غير متاحة للانضمام حالياً.',
         'section_unavailable' => 'هذا الخيار غير متاح حالياً.',
         'section_invalid' => 'القسم المحدد غير صالح.',

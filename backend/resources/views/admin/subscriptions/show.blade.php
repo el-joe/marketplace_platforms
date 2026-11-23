@@ -29,7 +29,7 @@
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">{{ __('admin.subscriptions.plan') }}</dt>
-                        <dd class="font-medium text-gray-800">{{ $subscription->plan->name_en ?? '—' }}</dd>
+                        <dd class="font-medium text-gray-800">{{ localized($subscription->plan) ?: '—' }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">{{ __('admin.subscriptions.started') }}</dt>

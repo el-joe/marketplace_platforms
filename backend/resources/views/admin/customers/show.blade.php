@@ -180,8 +180,8 @@
                                         $address->floor ? __('admin.customers_section.floor_label') . ' ' . $address->floor : null,
                                         $address->apartment ? __('admin.customers_section.apartment_label') . ' ' . $address->apartment : null,
                                         $address->area,
-                                        $address->city?->name_en ?? null,
-                                        $address->country?->name_en ?? null,
+                                        localized($address->city) ?: null,
+                                        localized($address->country) ?: null,
                                         $address->postal_code,
                                     ])) }}
                                 </p>
@@ -814,7 +814,7 @@
                         <span class="text-gray-500">{{ __('admin.customers_section.country_column') }}</span>
                         <span class="text-gray-900">
                             @if($customer->country)
-                                {{ $customer->country->flag_emoji ?? '' }} {{ $customer->country->name_en }}
+                                {{ $customer->country->flag_emoji ?? '' }} {{ localized($customer->country) }}
                             @else
                                 <span class="text-gray-400">—</span>
                             @endif
@@ -836,6 +836,23 @@
                                 <span class="text-xs text-gray-400 font-mono">{{ $customer->last_login_ip }}</span>
                             @endif
                         </div>
+                    </div>
+
+                    {{-- Gender --}}
+                    <div class="flex items-center justify-between gap-2">
+                        @if(auth('admin')->user()->can('customers.edit'))
+                            <label for="customer-gender-select" class="text-gray-500">{{ __('admin.customers_section.gender_column') }}</label>
+                            <select id="customer-gender-select" class="form-input text-sm py-1 w-36"
+                                data-url="{{ route('admin.customers.update', $customer->id) }}">
+                                <option value="" @selected($customer->gender === null)>{{ __('admin.customers_section.gender_unspecified') }}</option>
+                                @foreach(\App\Enums\Gender::cases() as $gender)
+                                    <option value="{{ $gender->value }}" @selected($customer->gender === $gender)>{{ $gender->label() }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <span class="text-gray-500">{{ __('admin.customers_section.gender_column') }}</span>
+                            <span class="text-gray-900">{{ $customer->gender?->label() ?? __('admin.customers_section.gender_unspecified') }}</span>
+                        @endif
                     </div>
 
                     {{-- DOB --}}
@@ -872,11 +889,11 @@
             <div class="space-y-2.5 text-sm">
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500">{{ __('admin.customers_section.total_orders') }}</span>
-                    <span class="font-semibold text-gray-900">{{ number_format($customer->total_orders) }}</span>
+                    <span class="font-semibold text-gray-900" title="{{ __('admin.customers_section.metrics_tooltip') }}">{{ number_format($customerStats['orders']) }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500">{{ __('admin.customers_section.total_spent') }}</span>
-                    <span class="font-semibold text-gray-900">{{ number_format((float) $customer->total_spent, 2) }}</span>
+                    <span class="font-semibold text-gray-900 text-end" title="{{ __('admin.customers_section.metrics_tooltip') }}">{{ $customerStats['spend'] }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-gray-500">{{ __('admin.customers_section.loyalty_points') }}</span>
@@ -1124,6 +1141,7 @@
             suspend: @json(__('admin.customers_section.suspend')),
             customerSuspended: @json(__('admin.customers_section.customer_suspended')),
             actionFailed: @json(__('admin.customers_section.action_failed')),
+            genderSaved: @json(__('admin.customers_section.gender_saved')),
             typeConfirmToProceed: @json(__('admin.customers_section.type_confirm_to_proceed')),
             banCustomer: @json(__('admin.customers_section.ban_customer')),
             customerBanned: @json(__('admin.customers_section.customer_banned')),
@@ -1145,6 +1163,7 @@
             revokeDevicesConfirm: @json(__('admin.customers_section.log_out_all_devices_confirm')),
             devicesRevoked: @json(__('admin.customers_section.devices_revoked_success')),
             walletAdjusted: @json(__('admin.customers_section.wallet_adjusted')),
+            walletAdjustFailed: @json(__('admin.customers_section.wallet_adjust_failed')),
             enterValidAmount: @json(__('admin.customers_section.enter_valid_amount')),
             enterNote: @json(__('admin.customers_section.enter_note')),
             submitAdjustment: @json(__('admin.customers_section.submit_adjustment')),

@@ -9,6 +9,7 @@ use App\Models\Country;
 use App\Models\ShippingCompany;
 use App\Models\ShippingCompanySupervisor;
 use App\Models\ShippingFallbackRule;
+use App\Models\Vendor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,23 +19,33 @@ use Illuminate\View\View;
 
 class ShippingCompanyController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $stats = [
-            'total'     => ShippingCompany::count(),
-            'active'    => ShippingCompany::where('status', ShippingCompanyStatus::Active)->count(),
-            'pending'   => ShippingCompany::where('status', ShippingCompanyStatus::Pending)->count(),
+            'total' => ShippingCompany::count(),
+            'active' => ShippingCompany::where('status', ShippingCompanyStatus::Active)->count(),
+            'pending' => ShippingCompany::where('status', ShippingCompanyStatus::Pending)->count(),
             'suspended' => ShippingCompany::where('status', ShippingCompanyStatus::Suspended)->count(),
         ];
 
+        $search = trim((string) $request->query('search', ''));
+        $like = '%'.addcslashes($search, '%_\\').'%';
+        $status = ShippingCompanyStatus::tryFrom((string) $request->query('status'));
+
         $companies = ShippingCompany::with(['country', 'owner:id,name'])
             ->withCount(['supervisors', 'agents'])
+            ->when($search !== '', fn ($query) => $query->where(fn ($q) => $q->where('name', 'like', $like)
+                ->orWhere('legal_name', 'like', $like)
+                ->orWhere('contact_email', 'like', $like)
+                ->orWhere('contact_phone', 'like', $like)))
+            ->when($status, fn ($query) => $query->where('status', $status))
             ->latest()
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'currency_code']);
 
-        $vendors = \App\Models\Vendor::orderBy('name')->limit(500)->get(['id', 'name']);
+        $vendors = Vendor::orderBy('name')->limit(500)->get(['id', 'name']);
 
         return view('admin.shipping-companies.index', compact('companies', 'stats', 'countries', 'vendors'));
     }
@@ -43,7 +54,7 @@ class ShippingCompanyController extends Controller
     {
         $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'currency_code']);
 
-        $vendors = \App\Models\Vendor::orderBy('name')->limit(500)->get(['id', 'name']);
+        $vendors = Vendor::orderBy('name')->limit(500)->get(['id', 'name']);
 
         return view('admin.shipping-companies.create', compact('countries', 'vendors'));
     }
@@ -51,17 +62,17 @@ class ShippingCompanyController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'                                       => ['required', 'string', 'max:255'],
-            'legal_name'                                 => ['nullable', 'string', 'max:255'],
-            'country_id'                                 => ['nullable', 'exists:countries,id'],
-            'contact_email'                              => ['required', 'email', 'max:255', 'unique:shipping_companies,contact_email'],
-            'contact_phone'                               => ['nullable', 'string', 'max:30'],
-            'served_countries'                            => ['nullable', 'array'],
-            'served_countries.*'                          => ['exists:countries,id'],
-            'status'                                       => ['required', 'in:pending,active,suspended'],
-            'can_supervisors_receive_all_notifications'    => ['boolean'],
-            'logo'                                         => ['nullable', 'image', 'max:2048'],
-            'owner_vendor_id'                              => ['nullable', 'uuid', 'exists:vendors,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'legal_name' => ['nullable', 'string', 'max:255'],
+            'country_id' => ['nullable', 'exists:countries,id'],
+            'contact_email' => ['required', 'email', 'max:255', 'unique:shipping_companies,contact_email'],
+            'contact_phone' => ['nullable', 'string', 'max:30'],
+            'served_countries' => ['nullable', 'array'],
+            'served_countries.*' => ['exists:countries,id'],
+            'status' => ['required', 'in:pending,active,suspended'],
+            'can_supervisors_receive_all_notifications' => ['boolean'],
+            'logo' => ['nullable', 'image', 'max:2048'],
+            'owner_vendor_id' => ['nullable', 'uuid', 'exists:vendors,id'],
         ]);
 
         $logoPath = null;
@@ -70,23 +81,23 @@ class ShippingCompanyController extends Controller
         }
 
         $company = ShippingCompany::create([
-            'name'                                       => $data['name'],
-            'legal_name'                                 => $data['legal_name'] ?? null,
-            'country_id'                                 => $data['country_id'] ?? null,
-            'contact_email'                              => $data['contact_email'],
-            'contact_phone'                               => $data['contact_phone'] ?? null,
-            'served_countries'                            => $data['served_countries'] ?? null,
-            'status'                                       => $data['status'],
-            'can_supervisors_receive_all_notifications'    => $data['can_supervisors_receive_all_notifications'] ?? true,
-            'owner_vendor_id'                             => $data['owner_vendor_id'] ?? null,
-            'logo_path'                                   => $logoPath,
-            'approved_by_admin_id'                        => $data['status'] === 'active' ? auth('admin')->id() : null,
-            'approved_at'                                  => $data['status'] === 'active' ? now() : null,
+            'name' => $data['name'],
+            'legal_name' => $data['legal_name'] ?? null,
+            'country_id' => $data['country_id'] ?? null,
+            'contact_email' => $data['contact_email'],
+            'contact_phone' => $data['contact_phone'] ?? null,
+            'served_countries' => $data['served_countries'] ?? null,
+            'status' => $data['status'],
+            'can_supervisors_receive_all_notifications' => $data['can_supervisors_receive_all_notifications'] ?? true,
+            'owner_vendor_id' => $data['owner_vendor_id'] ?? null,
+            'logo_path' => $logoPath,
+            'approved_by_admin_id' => $data['status'] === 'active' ? auth('admin')->id() : null,
+            'approved_at' => $data['status'] === 'active' ? now() : null,
         ]);
 
         return response()->json([
-            'success'  => true,
-            'message'  => __('admin.shipping_section.company_created'),
+            'success' => true,
+            'message' => __('admin.shipping_section.company_created'),
             'redirect' => route('admin.shipping-companies.show', $company->id),
         ], 201);
     }
@@ -94,18 +105,18 @@ class ShippingCompanyController extends Controller
     public function update(Request $request, ShippingCompany $shippingCompany): JsonResponse
     {
         $data = $request->validate([
-            'name'                                       => ['required', 'string', 'max:255'],
-            'legal_name'                                 => ['nullable', 'string', 'max:255'],
-            'country_id'                                 => ['nullable', 'exists:countries,id'],
-            'contact_email'                              => ['required', 'email', 'max:255',
-                                                              'unique:shipping_companies,contact_email,' . $shippingCompany->id],
-            'contact_phone'                               => ['nullable', 'string', 'max:30'],
-            'served_countries'                            => ['nullable', 'array'],
-            'served_countries.*'                          => ['exists:countries,id'],
-            'can_supervisors_receive_all_notifications'    => ['boolean'],
-            'logo'                                         => ['nullable', 'image', 'max:2048'],
-            'owner_vendor_id'                              => ['nullable', 'uuid', 'exists:vendors,id'],
-            'remove_logo'                                 => ['boolean'],
+            'name' => ['required', 'string', 'max:255'],
+            'legal_name' => ['nullable', 'string', 'max:255'],
+            'country_id' => ['nullable', 'exists:countries,id'],
+            'contact_email' => ['required', 'email', 'max:255',
+                'unique:shipping_companies,contact_email,'.$shippingCompany->id],
+            'contact_phone' => ['nullable', 'string', 'max:30'],
+            'served_countries' => ['nullable', 'array'],
+            'served_countries.*' => ['exists:countries,id'],
+            'can_supervisors_receive_all_notifications' => ['boolean'],
+            'logo' => ['nullable', 'image', 'max:2048'],
+            'owner_vendor_id' => ['nullable', 'uuid', 'exists:vendors,id'],
+            'remove_logo' => ['boolean'],
         ]);
 
         $logoPath = $shippingCompany->logo_path;
@@ -123,15 +134,15 @@ class ShippingCompanyController extends Controller
         }
 
         $shippingCompany->update([
-            'name'                                       => $data['name'],
-            'legal_name'                                 => $data['legal_name'] ?? null,
-            'country_id'                                 => $data['country_id'] ?? null,
-            'contact_email'                              => $data['contact_email'],
-            'contact_phone'                               => $data['contact_phone'] ?? null,
-            'served_countries'                            => $data['served_countries'] ?? null,
-            'can_supervisors_receive_all_notifications'    => $data['can_supervisors_receive_all_notifications'] ?? true,
-            'owner_vendor_id'                             => $data['owner_vendor_id'] ?? null,
-            'logo_path'                                   => $logoPath,
+            'name' => $data['name'],
+            'legal_name' => $data['legal_name'] ?? null,
+            'country_id' => $data['country_id'] ?? null,
+            'contact_email' => $data['contact_email'],
+            'contact_phone' => $data['contact_phone'] ?? null,
+            'served_countries' => $data['served_countries'] ?? null,
+            'can_supervisors_receive_all_notifications' => $data['can_supervisors_receive_all_notifications'] ?? true,
+            'owner_vendor_id' => $data['owner_vendor_id'] ?? null,
+            'logo_path' => $logoPath,
         ]);
 
         return response()->json([
@@ -163,8 +174,8 @@ class ShippingCompanyController extends Controller
         $shippingCompany->delete();
 
         return response()->json([
-            'success'  => true,
-            'message'  => __('admin.shipping_section.company_deleted'),
+            'success' => true,
+            'message' => __('admin.shipping_section.company_deleted'),
             'redirect' => route('admin.shipping-companies.index'),
         ]);
     }
@@ -189,9 +200,9 @@ class ShippingCompanyController extends Controller
     public function approve(ShippingCompany $shippingCompany): RedirectResponse
     {
         $shippingCompany->update([
-            'status'              => ShippingCompanyStatus::Active,
+            'status' => ShippingCompanyStatus::Active,
             'approved_by_admin_id' => auth('admin')->id(),
-            'approved_at'         => now(),
+            'approved_at' => now(),
         ]);
 
         return back()->with('success', 'تم تفعيل شركة الشحن بنجاح.');
@@ -225,7 +236,7 @@ class ShippingCompanyController extends Controller
     {
         $data = $request->validate([
             'shipping_company_id' => ['required', 'exists:shipping_companies,id'],
-            'country_id'          => [
+            'country_id' => [
                 'nullable',
                 'exists:countries,id',
                 function (string $attribute, mixed $value, \Closure $fail) use ($request) {
@@ -252,25 +263,25 @@ class ShippingCompanyController extends Controller
                     }
                 },
             ],
-            'name'                => ['required', 'string', 'max:255'],
-            'email'               => ['required', 'email', 'max:255', 'unique:shipping_company_supervisors,email'],
-            'phone'               => ['nullable', 'string', 'max:30'],
-            'permissions'         => ['required', 'array', 'min:1'],
-            'permissions.*'       => ['string', 'in:manage_agents,view_orders,assign_orders,view_reports'],
-            'is_active'           => ['boolean'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:shipping_company_supervisors,email'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'permissions' => ['required', 'array', 'min:1'],
+            'permissions.*' => ['string', 'in:manage_agents,view_orders,assign_orders,view_reports'],
+            'is_active' => ['boolean'],
         ]);
 
         $tempPassword = Str::password(12, letters: true, numbers: true, symbols: false);
 
         $supervisor = ShippingCompanySupervisor::create([
             'shipping_company_id' => $data['shipping_company_id'],
-            'country_id'          => $data['country_id'] ?? null,
-            'name'                => $data['name'],
-            'email'               => $data['email'],
-            'phone'               => $data['phone'] ?? null,
-            'password'            => $tempPassword,   // model casts hash automatically
-            'permissions'         => $data['permissions'],
-            'is_active'           => $data['is_active'] ?? true,
+            'country_id' => $data['country_id'] ?? null,
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? null,
+            'password' => $tempPassword,   // model casts hash automatically
+            'permissions' => $data['permissions'],
+            'is_active' => $data['is_active'] ?? true,
             'receives_all_notifications' => false,
         ]);
 
@@ -278,14 +289,14 @@ class ShippingCompanyController extends Controller
         // Returning the temp password so the admin can relay it manually.
 
         return response()->json([
-            'success'       => true,
-            'message'       => 'Supervisor created successfully.',
+            'success' => true,
+            'message' => 'Supervisor created successfully.',
             'temp_password' => $tempPassword,
-            'data'          => [
-                'id'          => $supervisor->id,
-                'name'        => $supervisor->name,
-                'email'       => $supervisor->email,
-                'country'     => $supervisor->country?->name_en,
+            'data' => [
+                'id' => $supervisor->id,
+                'name' => $supervisor->name,
+                'email' => $supervisor->email,
+                'country' => $supervisor->country?->name_en,
                 'permissions' => $supervisor->permissions,
             ],
         ], 201);
@@ -296,41 +307,43 @@ class ShippingCompanyController extends Controller
     public function updateSupervisor(Request $request, ShippingCompanySupervisor $supervisor): JsonResponse
     {
         $data = $request->validate([
-            'name'        => ['required', 'string', 'max:255'],
-            'email'       => ['required', 'email', 'max:255',
-                              'unique:shipping_company_supervisors,email,' . $supervisor->id],
-            'phone'       => ['nullable', 'string', 'max:30'],
-            'country_id'  => [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255',
+                'unique:shipping_company_supervisors,email,'.$supervisor->id],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'country_id' => [
                 'nullable',
                 'exists:countries,id',
                 function (string $attribute, mixed $value, \Closure $fail) use ($supervisor) {
-                    if (!$value) return;
+                    if (! $value) {
+                        return;
+                    }
                     $company = $supervisor->company;
                     $allowed = collect($company->served_countries ?? [])
                         ->push($company->country_id)
                         ->filter()
                         ->unique();
-                    if ($allowed->isNotEmpty() && !$allowed->contains($value)) {
+                    if ($allowed->isNotEmpty() && ! $allowed->contains($value)) {
                         $fail('The selected country is not in this company\'s served countries.');
                     }
                 },
             ],
             'permissions' => ['required', 'array', 'min:1'],
             'permissions.*' => ['string', 'in:manage_agents,view_orders,assign_orders,view_reports'],
-            'is_active'   => ['boolean'],
-            'password'    => ['nullable', 'string', 'min:8', 'confirmed'],
+            'is_active' => ['boolean'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
         $updateData = [
-            'name'        => $data['name'],
-            'email'       => $data['email'],
-            'phone'       => $data['phone'] ?? null,
-            'country_id'  => $data['country_id'] ?? null,
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? null,
+            'country_id' => $data['country_id'] ?? null,
             'permissions' => $data['permissions'],
-            'is_active'   => $data['is_active'] ?? $supervisor->is_active,
+            'is_active' => $data['is_active'] ?? $supervisor->is_active,
         ];
 
-        if (!empty($data['password'])) {
+        if (! empty($data['password'])) {
             $updateData['password'] = $data['password'];
         }
 
@@ -339,13 +352,13 @@ class ShippingCompanyController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('admin.shipping_section.supervisor_updated'),
-            'data'    => [
-                'id'          => $supervisor->id,
-                'name'        => $supervisor->name,
-                'email'       => $supervisor->email,
-                'country'     => $supervisor->fresh('country')->country?->name_en,
+            'data' => [
+                'id' => $supervisor->id,
+                'name' => $supervisor->name,
+                'email' => $supervisor->email,
+                'country' => $supervisor->fresh('country')->country?->name_en,
                 'permissions' => $supervisor->permissions,
-                'is_active'   => $supervisor->is_active,
+                'is_active' => $supervisor->is_active,
             ],
         ]);
     }
@@ -357,8 +370,8 @@ class ShippingCompanyController extends Controller
         $supervisor->update(['password' => $tempPassword]);
 
         return response()->json([
-            'success'       => true,
-            'message'       => __('admin.shipping_section.supervisor_password_reset'),
+            'success' => true,
+            'message' => __('admin.shipping_section.supervisor_password_reset'),
             'temp_password' => $tempPassword,
         ]);
     }
@@ -380,7 +393,7 @@ class ShippingCompanyController extends Controller
             ->orderBy('priority')
             ->paginate(30);
 
-        $cities    = City::orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
+        $cities = City::orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
         $companies = ShippingCompany::active()->orderBy('name')->get(['id', 'name']);
 
         return view('admin.shipping-companies.fallback-rules', compact('rules', 'cities', 'companies'));
@@ -389,9 +402,9 @@ class ShippingCompanyController extends Controller
     public function storeFallbackRule(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'unserved_city_id'              => ['required', 'exists:cities,id'],
-            'fallback_shipping_company_id'  => ['required', 'exists:shipping_companies,id'],
-            'priority'                      => ['required', 'integer', 'min:1'],
+            'unserved_city_id' => ['required', 'exists:cities,id'],
+            'fallback_shipping_company_id' => ['required', 'exists:shipping_companies,id'],
+            'priority' => ['required', 'integer', 'min:1'],
         ]);
 
         ShippingFallbackRule::create($data);

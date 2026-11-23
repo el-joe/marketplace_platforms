@@ -31,6 +31,9 @@ class OrderItem extends Model
             'commission_amount' => 'decimal:4',
             'marketer_commission' => 'decimal:4',
             'platform_commission_after_discount' => 'decimal:4',
+            'source_link_clicked_at' => 'datetime',
+            'source_link_rule_snapshot' => 'array',
+            'source_link_discount' => 'decimal:4',
         ];
     }
 
@@ -60,12 +63,23 @@ class OrderItem extends Model
         'vendor_coupon_cost',
         'marketer_commission',
         'platform_commission_after_discount',
+        'source_link_channel',
+        'source_link_clicked_at',
+        'source_link_rule_id',
+        'source_link_rule_snapshot',
+        'source_link_discount',
         'fulfillment_status',
         'return_eligible_until',
         'warranty_purchase_id',
         'shipping_method_id',
         'shipping_method_snapshot',
     ];
+
+    /** WS12 #24: the customer arrived through the vendor's own product link / QR code. */
+    public function cameViaVendorProductLink(): bool
+    {
+        return $this->source_link_channel !== null;
+    }
 
     public function shippingMethod(): BelongsTo
     {

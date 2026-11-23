@@ -124,7 +124,7 @@
                     __('admin.marketer_campaigns.vendor')                     => $isPeer ? ($marketerCampaign->ownerMarketer?->name ?? '—').' ('.__('admin.marketer_campaigns.peer_owner').')' : ($marketerCampaign->vendor?->store_name ?? '—'),
                     __('admin.marketer_campaigns.peer_promoter')              => $isPeer ? ($marketerCampaign->promoter?->name ?? '—') : '—',
                     __('admin.marketer_campaigns.product')                    => $promotedLabel ?? '—',
-                    __('admin.marketer_campaigns.country')                    => $marketerCampaign->country?->name_en ?? '—',
+                    __('admin.marketer_campaigns.country')                    => localized($marketerCampaign->country) ?: '—',
                     __('admin.marketer_campaigns.currency')                   => $marketerCampaign->currency ?? '—',
                     __('admin.marketer_campaigns.max_commission_budget')      => $marketerCampaign->budgetLabel(false),
                     __('marketer_campaigns.cost.ends_at')                     => admin_tz($marketerCampaign->ends_at)?->format('d M Y') ?? __('marketer_campaigns.cost.no_end_date'),

@@ -24,6 +24,7 @@ use App\Models\WarehouseInventory;
 use App\Models\WarehouseVendorLimit;
 use App\Services\WarehouseService;
 use App\Services\WarehouseVendorLimitService;
+use App\Support\Bilingual;
 use App\Support\Money;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
@@ -73,7 +74,7 @@ class WarehouseController extends Controller
             ->leftJoin('admins', 'admins.id', '=', 'warehouses.manager_admin_id')
             ->select(
                 'warehouses.*',
-                'countries.name_en as country_name',
+                Bilingual::column('countries.name', null, 'country_name'),
                 'vendors.store_name as vendor_name',
                 'admins.name as manager_name'
             );
@@ -377,7 +378,7 @@ class WarehouseController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('warehouses.view'), 403);
 
-        $countries = Country::where('is_active', true)->orderBy('name_en')->pluck('name_en', 'id');
+        $countries = Bilingual::options(Country::where('is_active', true));
         $vendors = Vendor::where('global_status', 'approved')->orderBy('store_name')->pluck('store_name', 'id');
         $admins = Admin::orderBy('name')->pluck('name', 'id');
         $currencies = Currency::where('is_active', true)->orderBy('code')->pluck('code', 'code');
@@ -403,7 +404,7 @@ class WarehouseController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('warehouses.view'), 403);
 
-        $countries = Country::where('is_active', true)->orderBy('name_en')->pluck('name_en', 'id');
+        $countries = Bilingual::options(Country::where('is_active', true));
         $vendors = Vendor::where('global_status', 'approved')->orderBy('store_name')->pluck('store_name', 'id');
         $admins = Admin::orderBy('name')->pluck('name', 'id');
         $currencies = Currency::where('is_active', true)->orderBy('code')->pluck('code', 'code');
@@ -451,7 +452,7 @@ class WarehouseController extends Controller
             ->leftJoin('vendors', 'vendors.id', '=', 'vendor_listings.vendor_id')
             ->select(
                 'warehouse_inventories.*',
-                'products.name_en as product_name',
+                Bilingual::column('products.name', null, 'product_name'),
                 'vendors.store_name as vendor_name',
                 'product_variants.sku as sku',
             );

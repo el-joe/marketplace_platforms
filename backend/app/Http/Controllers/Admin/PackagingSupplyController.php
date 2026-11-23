@@ -7,6 +7,7 @@ use App\Models\Country;
 use App\Models\PackagingSupply;
 use App\Models\PackagingSupplyCountry;
 use App\Models\PackagingSupplyRequest;
+use App\Models\PackagingSupplyType;
 use App\Models\Vendor;
 use App\Notifications\Vendor\PackagingOrderApproved;
 use App\Notifications\Vendor\PackagingOrderDelivered;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -30,27 +32,41 @@ class PackagingSupplyController extends Controller
     use HasDataTable;
     use HasExport;
 
-    private const CURRENCIES = ['AED', 'SAR', 'EGP', 'KWD', 'OMR', 'QAR', 'BHD', 'JOD'];
+    /** Country rows shown inline in the catalog list before collapsing into "+N more". */
+    private const PRICING_ROWS_SHOWN = 3;
 
-    private const TYPES = ['box', 'bag', 'tape', 'label', 'bubble_wrap', 'other'];
+    /** Attributes the edit modal needs from a catalog row. */
+    private const EDITABLE_ATTRIBUTES = [
+        'id', 'name_en', 'name_ar', 'packaging_supply_type_id', 'size',
+        'description_en', 'description_ar', 'sort_order', 'is_active', 'image_path',
+    ];
 
     // ── Catalog ────────────────────────────────────────────────────────────
 
     public function catalog(): View
     {
-        $supplies = PackagingSupply::orderBy('sort_order')->orderBy('name_en')->get();
-        $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'name_ar', 'currency_code']);
+        $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'name_ar', 'currency_code', 'iso_code_2']);
+        $types = PackagingSupplyType::ordered()->get();
 
-        return view('admin.packaging.catalog', compact('supplies', 'countries'));
+        return view('admin.packaging.catalog', compact('countries', 'types'));
     }
 
     public function datatableCatalog(Request $request): JsonResponse
     {
-        $query = PackagingSupply::withCount('countryPricing as country_count');
+        $countryFilter = $request->filled('country_id') && is_string($request->input('country_id'))
+            ? $request->input('country_id')
+            : null;
+
+        $query = PackagingSupply::with([
+            'supplyType',
+            'countryPricing' => fn ($q) => $q->when($countryFilter, fn ($qq) => $qq->where('country_id', $countryFilter)),
+            'countryPricing.country:id,name_en,name_ar,iso_code_2,currency_code',
+        ]);
 
         $query = $this->applyFilters($query, $request, [
-            'type' => fn ($q, $v) => $q->where('type', $v),
+            'type_id' => fn ($q, $v) => $q->where('packaging_supply_type_id', $v),
             'is_active' => fn ($q, $v) => $q->where('is_active', (bool) $v),
+            'country_id' => fn ($q, $v) => $q->whereHas('countryPricing', fn ($cq) => $cq->where('country_id', $v)),
         ]);
 
         $columns = [
@@ -58,10 +74,8 @@ class PackagingSupplyController extends Controller
             ['searchable_columns' => ['name_en', 'name_ar'], 'orderable_column' => 'name_en'],
             ['searchable_columns' => ['type'], 'orderable_column' => 'type'],
             ['searchable_columns' => ['size'], 'orderable_column' => 'size'],
-            ['searchable_columns' => [], 'orderable_column' => 'unit_cost'],
-            ['searchable_columns' => [], 'orderable_column' => 'stock_available'],
+            ['searchable_columns' => [], 'orderable_column' => null], // price · stock by country
             ['searchable_columns' => [], 'orderable_column' => 'is_active'],
-            ['searchable_columns' => [], 'orderable_column' => null], // countries
             ['searchable_columns' => [], 'orderable_column' => null], // actions
         ];
 
@@ -79,9 +93,7 @@ class PackagingSupplyController extends Controller
                 .'<div class="text-xs text-gray-400 truncate max-w-xs" dir="rtl">'.e($row->name_ar).'</div>'
                 .'</div>';
 
-            $typeBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium '.$row->typeBadgeClass().'">'.e($row->type->label()).'</span>';
-
-            $stockHtml = $row->stock_available !== null ? number_format($row->stock_available) : '&infin;';
+            $typeBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium '.$row->typeBadgeClass().'">'.e($row->typeName()).'</span>';
 
             $statusToggle = '<button type="button" class="js-toggle-active relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none '
                 .($row->is_active ? 'bg-emerald-500' : 'bg-gray-200').'" data-id="'.$row->id.'" data-active="'.($row->is_active ? '1' : '0').'">'
@@ -89,25 +101,68 @@ class PackagingSupplyController extends Controller
                 .($row->is_active ? 'translate-x-4' : 'translate-x-0.5').'"></span></button>';
 
             $actionsHtml = '<div class="flex justify-end gap-3">'
-                .'<button type="button" class="js-edit-item text-primary-600 hover:underline text-xs font-medium" data-item="'.e(json_encode($row)).'">Edit</button>'
-                .'<button type="button" class="js-delete-item text-red-500 hover:underline text-xs font-medium" data-id="'.$row->id.'" data-name="'.e($row->name_en).'">Delete</button>'
+                .'<button type="button" class="js-edit-item text-primary-600 hover:underline text-xs font-medium" data-item="'.e(json_encode($row->only(self::EDITABLE_ATTRIBUTES))).'">'.e(__('admin.packaging_catalog.edit')).'</button>'
+                .'<button type="button" class="js-delete-item text-red-500 hover:underline text-xs font-medium" data-id="'.$row->id.'" data-name="'.e(localized($row)).'">'.e(__('admin.packaging_catalog.delete')).'</button>'
                 .'</div>';
-
-            $countriesHtml = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">'
-                .(int) $row->country_count.'</span>';
 
             return [
                 'image' => $imgHtml,
                 'name' => $nameHtml,
                 'type' => $typeBadge,
-                'size' => $row->size ?? '—',
-                'unit_cost' => $row->unit_cost_formatted,
-                'stock' => $stockHtml,
+                'size' => e($row->size ?? '—'),
+                'pricing' => $this->countryPricingHtml($row),
                 'status' => $statusToggle,
-                'countries' => $countriesHtml,
                 'actions' => $actionsHtml,
             ];
         });
+    }
+
+    /**
+     * Client item #29: the catalog's legacy unit_cost/stock_available columns are never written by the
+     * item form (pricing lives per country), so the list showed "Free"/"∞". Render the per-country
+     * values instead, e.g. "OM 0.50 OMR · 100", collapsing extra countries into "+N more" with a tooltip.
+     */
+    private function countryPricingHtml(PackagingSupply $supply): string
+    {
+        $rows = $supply->countryPricing
+            ->sortBy(fn (PackagingSupplyCountry $p) => $p->country?->iso_code_2 ?? '')
+            ->values();
+
+        if ($rows->isEmpty()) {
+            return '<span class="text-xs text-gray-400">'.e(__('admin.packaging_catalog.no_country_pricing')).'</span>';
+        }
+
+        $lines = $rows->map(function (PackagingSupplyCountry $pricing) {
+            $currency = $pricing->country?->currency_code ?? '';
+            $cost = (float) $pricing->unit_cost > 0
+                ? Money::format($pricing->unit_cost).' '.$currency
+                : __('admin.packaging_catalog.free');
+            $stock = $pricing->stock_available !== null
+                ? number_format($pricing->stock_available)
+                : __('admin.packaging_catalog.unlimited');
+
+            return [
+                'code' => $pricing->country?->iso_code_2 ?? '?',
+                'country' => $pricing->country ? localized($pricing->country) : '',
+                'text' => trim($cost).' · '.$stock,
+                'active' => $pricing->is_active,
+            ];
+        });
+
+        $renderLine = fn (array $line) => '<div class="whitespace-nowrap text-xs'.($line['active'] ? ' text-gray-800' : ' text-gray-400 line-through').'"'
+            .' title="'.e($line['country'].($line['active'] ? '' : ' — '.__('admin.packaging_catalog.inactive_in_country'))).'">'
+            .'<span class="font-semibold">'.e($line['code']).'</span> <span dir="ltr">'.e($line['text']).'</span></div>';
+
+        $html = $lines->take(self::PRICING_ROWS_SHOWN)->map($renderLine)->implode('');
+
+        $hidden = $lines->slice(self::PRICING_ROWS_SHOWN);
+        if ($hidden->isNotEmpty()) {
+            $tooltip = $hidden->map(fn (array $line) => $line['code'].' '.$line['text'])->implode("\n");
+            $html .= '<div class="text-xs text-primary-600 cursor-help" title="'.e($tooltip).'">'
+                .e(__('admin.packaging_catalog.more_countries', ['count' => $hidden->count()])).'</div>';
+        }
+
+        return '<div class="space-y-0.5">'.$html.'</div>';
     }
 
     public function getCatalogItem(PackagingSupply $supply): JsonResponse
@@ -125,12 +180,26 @@ class PackagingSupplyController extends Controller
         return response()->json(['success' => true, 'data' => $data]);
     }
 
-    private function validateCatalogItem(Request $request): array
+    /**
+     * New selections must use an active type; an item may keep the (possibly now inactive) type it already has.
+     */
+    private function validateCatalogItem(Request $request, ?PackagingSupply $supply = null): array
     {
+        $currentTypeId = $supply?->packaging_supply_type_id;
+
         return $request->validate([
             'name_en' => ['required', 'string', 'max:255'],
             'name_ar' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:'.implode(',', self::TYPES)],
+            'packaging_supply_type_id' => [
+                'required',
+                'uuid',
+                Rule::exists('packaging_supply_types', 'id')->where(function ($q) use ($currentTypeId) {
+                    $q->where('is_active', true);
+                    if ($currentTypeId) {
+                        $q->orWhere('id', $currentTypeId);
+                    }
+                }),
+            ],
             'size' => ['nullable', 'string', 'max:100'],
             'description_en' => ['nullable', 'string'],
             'description_ar' => ['nullable', 'string'],
@@ -167,14 +236,14 @@ class PackagingSupplyController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Supply \"{$supply->name_en}\" created.",
+            'message' => __('admin.packaging_catalog.created', ['name' => localized($supply)]),
             'data' => $supply,
         ]);
     }
 
     public function updateCatalogItem(Request $request, PackagingSupply $supply): JsonResponse
     {
-        $data = $this->validateCatalogItem($request);
+        $data = $this->validateCatalogItem($request, $supply);
         $countryPricing = $data['country_pricing'];
         unset($data['country_pricing']);
 
@@ -195,7 +264,7 @@ class PackagingSupplyController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Supply \"{$supply->name_en}\" updated.",
+            'message' => __('admin.packaging_catalog.updated', ['name' => localized($supply)]),
             'data' => $supply,
         ]);
     }
@@ -242,7 +311,7 @@ class PackagingSupplyController extends Controller
         if ($supply->requestItems()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'This item has existing orders and cannot be deleted. Deactivate it instead.',
+                'message' => __('admin.packaging_catalog.has_orders'),
             ], 422);
         }
 
@@ -252,7 +321,7 @@ class PackagingSupplyController extends Controller
 
         $supply->delete();
 
-        return response()->json(['success' => true, 'message' => 'Supply deleted.']);
+        return response()->json(['success' => true, 'message' => __('admin.packaging_catalog.deleted')]);
     }
 
     public function toggleActive(PackagingSupply $supply): JsonResponse
@@ -302,7 +371,7 @@ class PackagingSupplyController extends Controller
         $query = $this->buildRequestsQuery($request);
 
         $columns = [
-            ['searchable_columns' => ['request_number'], 'orderable_column' => 'request_number'],
+            ['searchable_columns' => [], 'orderable_column' => 'request_number'], // searched below together with the vendor name
             ['searchable_columns' => [], 'orderable_column' => null], // vendor
             ['searchable_columns' => [], 'orderable_column' => 'status'],
             ['searchable_columns' => [], 'orderable_column' => null], // items count
@@ -314,10 +383,12 @@ class PackagingSupplyController extends Controller
             ['searchable_columns' => [], 'orderable_column' => null], // actions
         ];
 
+        // Grouped so the search never ORs past the status/vendor/date filters (a top-level orWhereHas did).
         $searchValue = $request->input('search.value');
-        if (! empty($searchValue)) {
-            $query->orWhereHas('vendor', function ($q) use ($searchValue) {
-                $q->where('store_name', 'like', '%'.$searchValue.'%');
+        if (is_string($searchValue) && $searchValue !== '') {
+            $query->where(function ($q) use ($searchValue) {
+                $q->where('request_number', 'like', '%'.$searchValue.'%')
+                    ->orWhereHas('vendor', fn ($vq) => $vq->where('store_name', 'like', '%'.$searchValue.'%'));
             });
         }
 
@@ -357,11 +428,17 @@ class PackagingSupplyController extends Controller
             }),
             'status' => fn ($q, $v) => $q->where('status', $v),
             'vendor_id' => fn ($q, $v) => $q->where('vendor_id', $v),
-            'date_from' => fn ($q, $v) => $q->where('created_at', '>=', admin_day_start($v)),
-            'date_to' => fn ($q, $v) => $q->where('created_at', '<=', admin_day_end($v)),
+            'date_from' => fn ($q, $v) => $this->isDate($v) ? $q->where('created_at', '>=', admin_day_start($v)) : $q,
+            'date_to' => fn ($q, $v) => $this->isDate($v) ? $q->where('created_at', '<=', admin_day_end($v)) : $q,
         ]);
 
         return $query;
+    }
+
+    /** A "Y-m-d" day as sent by the date-range filter; anything else is ignored instead of throwing. */
+    private function isDate(string $value): bool
+    {
+        return (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($value));
     }
 
     private function exportRequests(Request $request): StreamedResponse

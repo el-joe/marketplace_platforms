@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\ProductLinkTrackingController;
+use App\Http\Controllers\Api\ReferralTrackingController;
+use App\Models\City;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,10 +26,10 @@ use Illuminate\Support\Facades\Route;
 // ═══════════════════════════════════════════════════════════════════════
 // Shared / Internal Lookups
 // ═══════════════════════════════════════════════════════════════════════
-Route::get('cities', function (\Illuminate\Http\Request $request) {
+Route::get('cities', function (Request $request) {
     $request->validate(['country_id' => 'required|uuid']);
 
-    return \App\Models\City::where('country_id', $request->country_id)
+    return City::where('country_id', $request->country_id)
         ->where('is_active', true)
         ->orderBy('name_en')
         ->get(['id', 'name_en', 'name_ar']);
@@ -34,8 +38,13 @@ Route::get('cities', function (\Illuminate\Http\Request $request) {
 // ═══════════════════════════════════════════════════════════════════════
 // Marketer Referral Tracking
 // ═══════════════════════════════════════════════════════════════════════
-Route::get('r/{code}', [\App\Http\Controllers\Api\ReferralTrackingController::class, 'track'])
+Route::get('r/{code}', [ReferralTrackingController::class, 'track'])
     ->name('api.referral.track');
+
+// WS12 #24: a vendor's own product share link / QR code (signed token) — remembers the click, then opens the product.
+Route::get('s/{token}', [ProductLinkTrackingController::class, 'track'])
+    ->middleware('throttle:60,1')
+    ->name('api.product-link.track');
 
 // ═══════════════════════════════════════════════════════════════════════
 // Customer / Website / App

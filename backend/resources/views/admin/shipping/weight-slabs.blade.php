@@ -40,7 +40,7 @@
                         class="block w-full rounded-lg border border-gray-300 py-2 pl-3 pr-8 text-sm text-gray-900 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500">
                     <option value="">{{ __('admin.weight_slabs.all_countries') }}</option>
                     @foreach($countries as $country)
-                        <option value="{{ $country->id }}" data-currency="{{ $country->currency_code }}">{{ $country->name_en }}</option>
+                        <option value="{{ $country->id }}" data-currency="{{ $country->currency_code }}">{{ localized($country) }}</option>
                     @endforeach
                 </select>
             </div>
@@ -118,7 +118,7 @@
                     <x-form-select name="country_id" id="slab-country" label="{{ __('admin.weight_slabs.country') }}" :select2="true" required>
                         <option value="">{{ __('admin.weight_slabs.select_country') }}</option>
                         @foreach($countries as $country)
-                            <option value="{{ $country->id }}" data-currency="{{ $country->currency_code }}">{{ $country->name_en }}</option>
+                            <option value="{{ $country->id }}" data-currency="{{ $country->currency_code }}">{{ localized($country) }}</option>
                         @endforeach
                     </x-form-select>
                 </div>

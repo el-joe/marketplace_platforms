@@ -1,6 +1,7 @@
 import { PlacementBanner } from "@/src/types/placement-banner";
 import { ImageDTO } from "@/src/types/media";
 import { Receiver } from "@/src/services/receiver";
+import type { DistancePricing } from "@/types/cart.type";
 
 // response
 // export interface IPrepareCheckout {
@@ -210,6 +211,7 @@ export interface OrderSummary {
 export interface ShipmentGroup {
   shipping_method: ShippingMethod;
   is_free_shipping: boolean;
+  distance_pricing?: DistancePricing | null;
   group_subtotal: number;
   items_count: number;
   items: Item[];
@@ -254,6 +256,10 @@ export interface ShippingMethod {
   badge_label_ar: string;
   badge_color_hex: string;
   is_express_type: boolean;
+  /** Latest promised delivery day (YYYY-MM-DD, country timezone) — "Get it by …". */
+  estimated_delivery_date?: string | null;
+  /** End of today's order window (ISO-8601); null when none or already passed. */
+  order_cutoff_at?: string | null;
 }
 
 export interface Shipping {

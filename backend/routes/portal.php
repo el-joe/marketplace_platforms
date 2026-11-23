@@ -116,6 +116,10 @@ Route::get('/marketers/{marketerType}', [MarketersController::class, 'show'])->n
 // landing page. It reuses the product-seller /vendors/register wizard until
 // Open Souq has its own registration flow.
 Route::get('/companies/open-souq', [OpenSouqController::class, 'landing'])->name('companies.open-souq');
+// One landing per active top-level classified category (Classifieds sub-options on /join).
+Route::get('/companies/open-souq/{category}', [OpenSouqController::class, 'category'])
+    ->where('category', '[A-Za-z0-9_-]+')
+    ->name('companies.open-souq.category');
 
 // Travel-agency section reached from the /join choice screen: an
 // introduction landing page plus the multi-step registration wizard that

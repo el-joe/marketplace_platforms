@@ -51,12 +51,17 @@ function registrationWizard() {
             // Step 5
             terms_agreed: false, privacy_agreed: false,
             signature_name: '', agreement_language: document.documentElement.lang === 'en' ? 'en' : 'ar',
+            category_contract_agreed: false,
         },
 
         // The Seller Agreement of the country chosen in step 1 (null when that country has none configured).
         // The server decides again on submit; this only drives what step 5 shows.
         get agreementId() {
             return (window._agreementMap || {})[this.form.country_id] ?? null;
+        },
+        // The contract of the Classifieds section chosen on /join, for the country chosen in step 1 (or null).
+        get categoryContractId() {
+            return (window._categoryContractMap || {})[this.form.country_id] ?? null;
         },
         get agreementEnforced() {
             return !!window._agreementEnforced;
@@ -194,9 +199,13 @@ function registrationWizard() {
                         body: JSON.stringify(payload),
                     });
 
-                    const data = await res.json();
+                    const data = await res.json().catch(() => ({}));
 
                     if (!res.ok || !data.success) {
+                        if (res.status >= 500) {
+                            this.globalError = window.t('portal.registration.submit_failed');
+                            return;
+                        }
                         this.errors = data.errors || {};
                         if (data.message) this.globalError = data.message;
                         return;
@@ -303,15 +312,26 @@ function registrationWizard() {
                         signature_name: this.form.signature_name,
                         agreement_language: this.form.agreement_language,
                         agreement_template_id: this.agreementId,
+                        category_contract_template_id: this.categoryContractId,
+                        category_contract_agreed: this.form.category_contract_agreed ? '1' : '0',
                         doc_expiries: this.docExpiries,
                     }),
                 });
 
-                const data = await res.json();
+                const data = await res.json().catch(() => ({}));
 
                 if (!res.ok || !data.success) {
+                    // Server errors (5xx) never carry user-safe text: show the generic message only.
+                    if (res.status >= 500) {
+                        this.globalError = window.t('portal.registration.submit_failed');
+                        return;
+                    }
                     this.errors = data.errors || {};
                     this.globalError = data.message || window.t('portal.registration.submit_failed');
+                    // Duplicate email/phone/store found on submit: send the applicant back to fix it.
+                    if (data.step) {
+                        this.step = data.step;
+                    }
                     return;
                 }
 

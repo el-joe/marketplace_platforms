@@ -46,7 +46,7 @@ class AdminController extends Controller
                 ['label' => __('admin.admins_section.administrators')],
             ],
             'roles' => Role::where('guard_name', 'admin')->orderBy('name')->get(['id', 'name']),
-            'countries' => Country::orderBy('name_en')->get(['id', 'name_en']),
+            'countries' => Country::orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
         ]);
     }
 
@@ -133,7 +133,7 @@ class AdminController extends Controller
                 ['label' => __('admin.admins_section.new_admin')],
             ],
             'allRoles' => Role::where('guard_name', 'admin')->with('permissions')->orderBy('name')->get(),
-            'countries' => Country::orderBy('name_en')->get(['id', 'name_en']),
+            'countries' => Country::orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
         ]);
     }
 
@@ -188,7 +188,7 @@ class AdminController extends Controller
         return view('admin.admins.edit', [
             'model' => $admin,
             'allRoles' => Role::where('guard_name', 'admin')->with('permissions')->orderBy('name')->get(),
-            'countries' => Country::orderBy('name_en')->get(['id', 'name_en']),
+            'countries' => Country::orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
             'vendorsAssignedOnly' => $admin->hasDirectPermission('vendors.assigned_only'),
             'directPortalPermissions' => array_values(array_intersect(
                 PortalPermissions::directlyAssignable(),

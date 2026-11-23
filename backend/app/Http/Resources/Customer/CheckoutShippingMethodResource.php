@@ -9,7 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * A shipping method option as shown on the checkout shipping-methods screen,
  * with per-request calculated fee/COD data merged in.
  * Wrap with: new CheckoutShippingMethodResource($method, $calc)
- * where $calc = ['fee', 'is_free', 'cod_extra_fee', 'cod_available'].
+ * where $calc = ['fee', 'is_free', 'cod_extra_fee', 'cod_available', optional 'is_available', 'unavailable_reason', 'distance'].
  */
 class CheckoutShippingMethodResource extends JsonResource
 {
@@ -35,6 +35,10 @@ class CheckoutShippingMethodResource extends JsonResource
             'is_free' => $this->calc['is_free'],
             'cod_extra_fee' => $this->calc['cod_extra_fee'],
             'cod_available' => $this->calc['cod_available'],
+            // Distance-based delivery (client item #19): false when the address is beyond the method's max radius.
+            'is_available' => $this->calc['is_available'] ?? true,
+            'unavailable_reason' => $this->calc['unavailable_reason'] ?? null,
+            'distance' => $this->calc['distance'] ?? null,
         ];
     }
 }

@@ -6,13 +6,13 @@
     @csrf
 
     <div class="grid grid-cols-2 gap-3">
-        <x-form.input name="title_en" label="Title (EN)" :value="$config['title_en'] ?? 'Mega Deals'" dir="ltr" />
-        <x-form.input name="title_ar" label="Title (AR)" :value="$config['title_ar'] ?? 'عروض ميجا'" dir="rtl" />
+        <x-form.input name="title_en" :label="__('admin.page_builder.cf.title_en')" :value="$config['title_en'] ?? 'Mega Deals'" dir="ltr" />
+        <x-form.input name="title_ar" :label="__('admin.page_builder.cf.title_ar')" :value="$config['title_ar'] ?? 'عروض ميجا'" dir="rtl" />
     </div>
 
     <div class="grid grid-cols-2 gap-3 mt-3">
-        <x-form.date-picker name="ends_at" label="Countdown ends at" enableTime :value="!empty($config['ends_at']) ? \Illuminate\Support\Carbon::parse($config['ends_at']) : ''" />
-        <x-form.select name="columns" label="Products per row"
+        <x-form.date-picker name="ends_at" :label="__('admin.page_builder.cf.countdown_ends_at')" enableTime :value="!empty($config['ends_at']) ? \Illuminate\Support\Carbon::parse($config['ends_at']) : ''" />
+        <x-form.select name="columns" :label="__('admin.page_builder.cf.products_per_row')"
             :value="$config['columns'] ?? 2"
             :options="['2' => '2 columns (2×2 grid)', '3' => '3 columns', '4' => '4 columns']" />
     </div>
@@ -28,7 +28,7 @@
         {{ __('admin.static_text.admin_page_builder_config_forms_mega_deals.show_view_all_button') }}
     </label>
     <div class="mt-2">
-        <x-form.input name="view_all_url" label="View All URL" :value="$config['view_all_url'] ?? ''" placeholder="/deals" />
+        <x-form.input name="view_all_url" :label="__('admin.page_builder.cf.view_all_url')" :value="$config['view_all_url'] ?? ''" placeholder="/deals" />
     </div>
 
     @include('admin.page-builder.config-forms.partials.manual-products-manager', ['block' => $block])

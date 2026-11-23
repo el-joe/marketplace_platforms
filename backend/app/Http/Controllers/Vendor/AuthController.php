@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Enums\VendorGlobalStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Vendor\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Vendor\Auth\LoginRequest;
 use App\Http\Requests\Vendor\Auth\ResetPasswordRequest;
+use App\Http\Resources\Vendor\SellerDocumentResource;
+use App\Http\Resources\Vendor\TeamMemberResource;
 use App\Http\Resources\Vendor\VendorProfileResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\DeviceToken;
@@ -19,6 +22,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 class AuthController extends Controller
 {
     private const ACCESS_TTL_MINUTES = 60;
+
     private const REFRESH_TTL_MINUTES = 43200; // 30 days
 
     // ── Login ─────────────────────────────────────────────────────────────────
@@ -28,17 +32,17 @@ class AuthController extends Controller
         /** @var VendorAdmin|null $admin */
         $admin = VendorAdmin::where('email', $request->email)->first();
 
-        if (!$admin || !Hash::check($request->password, $admin->password)) {
+        if (! $admin || ! Hash::check($request->password, $admin->password)) {
             return ApiResponse::error('Invalid credentials.', [], 401);
         }
 
-        if (!$admin->is_active) {
+        if (! $admin->is_active) {
             return ApiResponse::error('Your account has been deactivated.', [], 403);
         }
 
         $vendor = $admin->vendor;
 
-        if ($vendor && in_array($vendor->global_status, [\App\Enums\VendorGlobalStatus::Suspended, \App\Enums\VendorGlobalStatus::Blacklisted], true)) {
+        if ($vendor && in_array($vendor->global_status, [VendorGlobalStatus::Suspended, VendorGlobalStatus::Blacklisted], true)) {
             return ApiResponse::error('Your store account has been suspended.', [], 403);
         }
 
@@ -61,8 +65,8 @@ class AuthController extends Controller
 
         return ApiResponse::success(array_merge(
             [
-                'admin' => new \App\Http\Resources\Vendor\TeamMemberResource($admin),
-                'vendor' => $vendor ? new VendorProfileResource($vendor) : null
+                'admin' => new TeamMemberResource($admin),
+                'vendor' => $vendor ? new VendorProfileResource($vendor) : null,
             ],
             $this->issueTokenPair($admin)
         ));
@@ -73,6 +77,7 @@ class AuthController extends Controller
     public function logout(): JsonResponse
     {
         auth('vendor')->logout();
+
         return ApiResponse::success(null, 'Logged out successfully.');
     }
 
@@ -142,10 +147,10 @@ class AuthController extends Controller
         $vendor = $admin->vendor()->with('documents', 'bankAccounts')->first();
 
         return ApiResponse::success([
-            'admin' => new \App\Http\Resources\Vendor\TeamMemberResource($admin),
+            'admin' => new TeamMemberResource($admin),
             'vendor' => $vendor ? new VendorProfileResource($vendor) : null,
             'documents' => $vendor
-                ? \App\Http\Resources\Vendor\SellerDocumentResource::collection($vendor->documents)
+                ? SellerDocumentResource::collection($vendor->documents)
                 : [],
         ]);
     }
@@ -154,15 +159,10 @@ class AuthController extends Controller
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $status = Password::broker('vendor_admins')->sendResetLink(
-            $request->only('email')
-        );
+        // Same answer whether or not the address exists (no account enumeration).
+        Password::broker('vendor_admins')->sendResetLink($request->only('email'));
 
-        if ($status !== Password::RESET_LINK_SENT) {
-            return ApiResponse::error(__($status), [], 422);
-        }
-
-        return ApiResponse::success(null, 'Password reset link sent.');
+        return ApiResponse::success(null, __('common.exceptions.auth.reset_link_sent'));
     }
 
     // ── Reset Password ────────────────────────────────────────────────────────

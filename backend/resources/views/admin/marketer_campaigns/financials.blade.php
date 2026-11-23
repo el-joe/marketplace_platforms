@@ -26,7 +26,7 @@
                 <option value="">{{ __('admin.marketer_campaigns.all_countries') }}</option>
                 @foreach($countries as $country)
                     <option value="{{ $country->id }}" {{ (string) request('country_id') === (string) $country->id ? 'selected' : '' }}>
-                        {{ $country->name_en }}
+                        {{ localized($country) }}
                     </option>
                 @endforeach
             </select>
@@ -91,7 +91,7 @@
                 @forelse($campaigns as $campaign)
                     <tr>
                         <td class="py-2 px-3">{{ $campaign->vendor?->store_name ?? '—' }}</td>
-                        <td class="py-2 px-3">{{ $campaign->country?->name_en ?? '—' }}</td>
+                        <td class="py-2 px-3">{{ localized($campaign->country) ?: '—' }}</td>
                         <td class="py-2 px-3">{{ (float) $campaign->max_commission_budget > 0 ? \App\Support\Money::format($campaign->max_commission_budget).' '.$campaign->currency : __('marketer_campaigns.cost.unlimited') }}</td>
                         <td class="py-2 px-3 text-purple-700">{{ \App\Support\Money::format($campaign->influencer_fixed_reserved) }}</td>
                         <td class="py-2 px-3 text-red-600">{{ \App\Support\Money::format($campaign->commission_budget_spent) }}</td>

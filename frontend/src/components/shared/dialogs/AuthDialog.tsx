@@ -13,23 +13,22 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import Image from "next/image";
-import { Input } from "@/src/components/ui/base-inputs/input";
-import { Button } from "@/src/components/ui/button";
-import { Link } from "@/i18n/navigation";
-import { Field, FieldGroup, FieldLabel } from "@/src/components/ui/field";
-import { Checkbox } from "@/src/components/ui/base-inputs/checkbox";
 import { useAuthContext } from "@/src/providers/auth-provider";
+import { useState } from "react";
 import LoginForm from "../auth/login/login-form";
 import RegisterForm from "../auth/register/register-form";
+import ForgotPassword from "@/src/features/noon/auth/forgot-password";
 const AuthDialog = () => {
   // const AuthDialog = ({ triggerButton }: props) => {
   const { authDialogIsOpen, setAuthDialogIsOpen } = useAuthContext();
   const t = useTranslations("authDialog");
+  const [view, setView] = useState<"auth" | "forgot">("auth");
   return (
     <Dialog
       open={authDialogIsOpen}
       onOpenChange={() => {
         setAuthDialogIsOpen(false);
+        setView("auth");
       }}
     >
       {/* <DialogTrigger render={triggerButton} /> */}
@@ -59,25 +58,31 @@ const AuthDialog = () => {
             </div>
           </div>
         </DialogHeader>
-        <h2 className="text-center text-xl font-bold">{t("title")}</h2>
-        <Tabs defaultValue={"login"}>
-          <TabsList className={"mx-auto"}>
-            <TabsTrigger value={"login"} className={"flex-1"}>
-              {t("login")}
-            </TabsTrigger>
-            <TabsTrigger value={"signup"} className={"flex-1"}>
-              {t("signup")}
-            </TabsTrigger>
-          </TabsList>
-          {/* login tab */}
-          <TabsContent value={"login"}>
-            <LoginForm />
-          </TabsContent>
-          {/* sign up tab */}
-          <TabsContent value={"signup"}>
-            <RegisterForm />
-          </TabsContent>
-        </Tabs>
+        {view === "forgot" ? (
+          <ForgotPassword onBack={() => setView("auth")} />
+        ) : (
+          <>
+            <h2 className="text-center text-xl font-bold">{t("title")}</h2>
+            <Tabs defaultValue={"login"}>
+              <TabsList className={"mx-auto"}>
+                <TabsTrigger value={"login"} className={"flex-1"}>
+                  {t("login")}
+                </TabsTrigger>
+                <TabsTrigger value={"signup"} className={"flex-1"}>
+                  {t("signup")}
+                </TabsTrigger>
+              </TabsList>
+              {/* login tab */}
+              <TabsContent value={"login"}>
+                <LoginForm onForgotPassword={() => setView("forgot")} />
+              </TabsContent>
+              {/* sign up tab */}
+              <TabsContent value={"signup"}>
+                <RegisterForm />
+              </TabsContent>
+            </Tabs>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

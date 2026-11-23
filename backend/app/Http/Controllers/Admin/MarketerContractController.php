@@ -135,6 +135,6 @@ class MarketerContractController extends Controller
         abort_unless($version->contract->marketer_id === $marketer->id, 404);
         abort_if(! $version->file_url || $version->content_type !== 'pdf', 404);
 
-        return Storage::disk('local')->download($version->file_url);
+        return Storage::disk('private')->download($version->file_url);
     }
 }

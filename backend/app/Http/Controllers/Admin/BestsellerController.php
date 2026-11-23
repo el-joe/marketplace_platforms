@@ -27,8 +27,8 @@ class BestsellerController extends Controller
                 ['label' => __('admin.nav.products'), 'url' => route('admin.products.index')],
                 ['label' => __('admin.bestsellers.title')],
             ],
-            'categories' => Category::query()->orderBy('name_en')->get(['id', 'name_en']),
-            'countries' => Country::query()->orderBy('name_en')->get(['id', 'name_en']),
+            'categories' => Category::query()->orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
+            'countries' => Country::query()->orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
         ]);
     }
 
@@ -60,7 +60,7 @@ class BestsellerController extends Controller
                 'product_bestseller_rankings.calculated_at',
             ])
             ->join('products', 'products.id', '=', 'product_bestseller_rankings.product_id')
-            ->with(['product:id,name_en', 'category:id,name_en', 'country:id,name_en']);
+            ->with(['product:id,name_en,name_ar', 'category:id,name_en,name_ar', 'country:id,name_en,name_ar']);
 
         $query = $this->applyFilters($query, $request, [
             'category_id' => fn ($q, $v) => $q->where('product_bestseller_rankings.category_id', $v),

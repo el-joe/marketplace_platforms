@@ -151,7 +151,7 @@
                 <select name="parent_id" id="f-parent-id" class="form-input w-full text-sm">
                     <option value="">{{ __('admin.classifieds.top_level') }}</option>
                     @foreach($roots as $root)
-                        <option value="{{ $root->id }}">{{ $root->name_en }}</option>
+                        <option value="{{ $root->id }}">{{ localized($root) }}</option>
                     @endforeach
                 </select>
             </div>

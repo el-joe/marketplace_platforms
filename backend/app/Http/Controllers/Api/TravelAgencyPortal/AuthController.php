@@ -104,15 +104,10 @@ class AuthController extends Controller
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $status = Password::broker('travel_agencies')->sendResetLink(
-            $request->only('email')
-        );
+        // Same answer whether or not the address exists (no account enumeration).
+        Password::broker('travel_agencies')->sendResetLink($request->only('email'));
 
-        if ($status !== Password::RESET_LINK_SENT) {
-            return ApiResponse::error(__($status), [], 422);
-        }
-
-        return ApiResponse::success(null, 'Password reset link sent.');
+        return ApiResponse::success(null, __('common.exceptions.auth.reset_link_sent'));
     }
 
     // ── Reset Password ────────────────────────────────────────────────────────

@@ -58,6 +58,29 @@ $(function () {
             });
     });
 
+    $(document).on('click', '#btn-revert-to-draft', async function () {
+        const $btn = $(this);
+        const name = $btn.data('country-name');
+        const confirmed = await window.confirmDialog({
+            title: t('admin.countries.revert_to_draft_title', { name }),
+            text: t('admin.countries.revert_to_draft_confirm'),
+            icon: 'warning',
+            confirmButtonText: t('admin.countries.revert_to_draft_button'),
+        });
+        if (!confirmed) return;
+
+        $btn.prop('disabled', true);
+        $.ajax({ url: $btn.data('url'), method: 'POST', headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } })
+            .done(function (res) {
+                window.Toast && window.Toast.success(res.message);
+                setTimeout(() => location.reload(), 800);
+            })
+            .fail(function (xhr) {
+                $btn.prop('disabled', false);
+                window.Toast && window.Toast.error(xhr.responseJSON?.message || t('admin.countries.revert_to_draft_failed'));
+            });
+    });
+
     // ─────────────────────────────────────────────────────────────────────────
     // Delete country
     // ─────────────────────────────────────────────────────────────────────────

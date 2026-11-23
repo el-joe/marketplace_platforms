@@ -1,0 +1,62 @@
+<?php
+
+return [
+    'section_title' => 'Store location',
+    'section_hint' => 'Where orders are collected from. Used to calculate distance-based delivery when no warehouse with coordinates fulfils the order.',
+    'address' => 'Store address',
+    'address_placeholder' => 'Street, building, area',
+    'latitude' => 'Latitude',
+    'longitude' => 'Longitude',
+    'use_current_location' => 'Use my current location',
+    'locating' => 'Locating…',
+    'open_in_google_maps' => 'Open in Google Maps',
+    'clear' => 'Clear pin',
+    'map_hint' => 'Click the map or drag the pin to the store entrance.',
+    'no_key_hint' => 'Map picker is not configured. Enter the coordinates, use your current location while at the store, or copy them from Google Maps (long-press the store → copy the numbers).',
+    'save' => 'Save location',
+    'saving' => 'Saving…',
+    'saved' => 'Store location saved.',
+    'save_failed' => 'Could not save the location.',
+    'status_set' => 'Location set',
+    'status_missing' => 'No coordinates — distance-based delivery uses the normal rate',
+    'geolocation_unsupported' => 'Your browser cannot share its location.',
+    'geolocation_failed' => 'Could not get your location. Allow location access and try again.',
+    'not_set' => 'Not set',
+    'owner_only' => 'Only users who can edit store settings can change the location.',
+    'validation' => [
+        'zero_point' => 'Coordinates 0, 0 are not a real location. Pick the store on the map or enter its coordinates.',
+    ],
+
+    // Admin order page: snapshot stored on the sub-order at place-order time.
+    'order' => [
+        'title' => 'Distance-based delivery',
+        'distance' => 'Distance',
+        'origin' => 'Origin',
+        'fee' => 'Distance fee',
+        'tier' => 'Tier',
+        'rule' => 'Rule',
+        'not_charged' => 'Not applied — normal zone rate charged',
+        'km' => ':km km',
+        'tier_range' => ':from–:to km',
+        'tier_open' => ':from km and above',
+        'free_radius' => 'free radius :km km',
+        'max_radius' => 'max :km km',
+        'origin_types' => [
+            'fulfilling_warehouse' => 'Fulfilling warehouse',
+            'vendor_warehouse' => 'Seller warehouse',
+            'store_location' => 'Store location',
+            'none' => 'No coordinates',
+        ],
+        'statuses' => [
+            'tier' => 'Distance tier',
+            'free_within_radius' => 'Free within radius',
+            'free_by_order_amount' => 'Free by order amount',
+            'fallback' => 'Normal zone rate',
+            'unavailable' => 'Beyond service radius',
+        ],
+        'fallback_reasons' => [
+            'missing_coordinates' => 'missing coordinates',
+            'no_matching_tier' => 'no tier covers the distance',
+        ],
+    ],
+];

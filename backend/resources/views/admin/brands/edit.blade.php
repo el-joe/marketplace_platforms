@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', __('common.edit') . ': ' . $brand->name_en)
+@section('title', __('common.edit') . ': ' . localized($brand))
 
 @push('styles')
     @vite(['resources/js/components/slug-input.js', 'resources/js/admin/brands.js'])

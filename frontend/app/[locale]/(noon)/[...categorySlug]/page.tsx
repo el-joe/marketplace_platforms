@@ -1,5 +1,6 @@
+import { notFound } from "next/navigation";
 import { formatCategoryName } from "@/src/utils/formatCategoryName";
-import { fetchInstance } from "@/src/lib/utils";
+import { ApiRequestError, fetchInstance } from "@/src/lib/utils";
 import Shop from "@/src/features/noon/shop";
 import { Product } from "@/types/globals";
 import { PageBuilder } from "@/src/components/shared/page-builder/types";
@@ -92,7 +93,12 @@ export default async function ShopPage({ params, searchParams }: Props) {
     if (!isSearch && res.data?.category?.name) {
       categoryName = res.data.category.name[locale] || categoryName;
     }
-  } catch {
+  } catch (error) {
+    // Inactive category (or one not offered in this country): the API answers
+    // 404, so the storefront shows its not-found page instead of an empty grid.
+    if (!isSearch && error instanceof ApiRequestError && error.status === 404) {
+      notFound();
+    }
     products = [];
     totalCount = 0;
     totalPages = 1;

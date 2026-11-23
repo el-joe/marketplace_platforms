@@ -21,7 +21,10 @@ class RecordedStreamTest extends TestCase
         Permission::firstOrCreate(['name' => 'vendors.assigned_only', 'guard_name' => 'admin']);
         Permission::firstOrCreate(['name' => 'pages.view', 'guard_name' => 'admin']);
         $admin = Admin::factory()->create();
-        $admin->givePermissionTo('pages.view');
+        foreach (['pages.view', 'pages.manage'] as $permission) {
+            Permission::findOrCreate($permission, 'admin');
+        }
+        $admin->givePermissionTo(['pages.view', 'pages.manage']);
 
         return $admin;
     }

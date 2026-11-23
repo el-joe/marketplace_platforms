@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductHighlight;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -53,7 +54,7 @@ class ProductHighlightController extends Controller
                 'product_highlights.position',
             ])
             ->join('products', 'products.id', '=', 'product_highlights.product_id')
-            ->with('product:id,name_en');
+            ->with('product:id,name_en,name_ar');
 
         $query = $this->applyFilters($query, $request, [
             'product_id' => fn ($q, $v) => $q->where('product_highlights.product_id', $v),
@@ -103,7 +104,7 @@ class ProductHighlightController extends Controller
 
     public function edit(string $productHighlight): View
     {
-        $highlight = ProductHighlight::with('product:id,name_en')->findOrFail($productHighlight);
+        $highlight = ProductHighlight::with('product:id,name_en,name_ar')->findOrFail($productHighlight);
 
         return view('admin.products.highlight-form', [
             'breadcrumbs' => [
@@ -151,12 +152,12 @@ class ProductHighlightController extends Controller
 
         $rows = Product::query()
             ->whereNull('deleted_at')
-            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => Bilingual::whereLike($query, 'name', $q))
             ->limit(20)
-            ->get(['id', 'name_en']);
+            ->get(['id', 'name_en', 'name_ar']);
 
         return response()->json([
-            'results' => $rows->map(fn ($p) => ['id' => $p->id, 'text' => $p->name_en])->values(),
+            'results' => $rows->map(fn ($p) => ['id' => $p->id, 'text' => localized($p)])->values(),
         ]);
     }
 

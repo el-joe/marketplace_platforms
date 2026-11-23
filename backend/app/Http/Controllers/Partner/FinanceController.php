@@ -75,14 +75,20 @@ class FinanceController extends Controller
                 ->where('status', 'completed')
                 ->whereBetween('created_at', [$dateFrom, $dateTo])
                 ->with(['order:id,order_number', 'payoutItems.payout:id,payout_number'])
+                ->withSum('items as source_link_discount_total', 'source_link_discount')
                 ->get()
                 ->each(function ($so) use (&$rows) {
                     $payoutItem = $so->payoutItems->first();
+                    // WS12 #24: say when part of the commission was waived because the customer came through the
+                    // vendor's own product link / QR code.
+                    $sourceLinkDiscount = (float) ($so->source_link_discount_total ?? 0);
                     $rows->push([
                         'type' => 'sale',
                         'date' => $so->created_at,
                         'reference' => $so->sub_order_number,
-                        'description' => 'مبيعات – '.($so->order?->order_number ?? ''),
+                        'description' => 'مبيعات – '.($so->order?->order_number ?? '')
+                            .($sourceLinkDiscount > 0 ? ' · '.__('product_link.order.badge').' ('.__('product_link.order.discount').': '.Money::format($sourceLinkDiscount).')' : ''),
+                        'source_link_discount' => $sourceLinkDiscount,
                         'amount' => $so->vendor_payout,
                         'gross' => $so->subtotal,
                         'commission' => $so->platform_commission,

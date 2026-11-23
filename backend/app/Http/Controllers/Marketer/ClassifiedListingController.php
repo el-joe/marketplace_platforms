@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Marketer;
 
-use App\Support\Money;
 use App\Enums\ClassifiedInquiryStatus;
 use App\Enums\ClassifiedListingStatus;
 use App\Http\Controllers\Controller;
@@ -13,6 +12,7 @@ use App\Models\Country;
 use App\Models\Marketer;
 use App\Models\MarketerListing;
 use App\Models\OpenMarketListingPrice;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -73,32 +73,32 @@ class ClassifiedListingController extends Controller
 
         $listing = DB::transaction(function () use ($request, $marketer, $data, $price, $country) {
             $listing = ClassifiedListing::create([
-                'listing_number'         => 'CL-' . strtoupper(Str::random(8)),
-                'seller_type'            => Marketer::class,
-                'seller_id'              => $marketer->id,
+                'listing_number' => 'CL-'.strtoupper(Str::random(8)),
+                'seller_type' => Marketer::class,
+                'seller_id' => $marketer->id,
                 'classified_category_id' => $data['classified_category_id'],
-                'country_id'             => $data['country_id'],
-                'listing_purpose'        => $data['listing_purpose'],
-                'title_ar'               => $data['title_ar'],
-                'title_en'               => $data['title_en'] ?? $data['title_ar'],
-                'description_ar'         => $data['description_ar'] ?? null,
-                'description_en'         => $data['description_en'] ?? null,
-                'price'                  => $price,
-                'currency'               => $country->currency_code,
-                'price_negotiable'       => $request->boolean('price_negotiable'),
-                'attributes'             => $data['attributes'] ?? null,
-                'status'                 => ClassifiedListingStatus::PendingReview,
+                'country_id' => $data['country_id'],
+                'listing_purpose' => $data['listing_purpose'],
+                'title_ar' => $data['title_ar'],
+                'title_en' => $data['title_en'] ?? $data['title_ar'],
+                'description_ar' => $data['description_ar'] ?? null,
+                'description_en' => $data['description_en'] ?? null,
+                'price' => $price,
+                'currency' => $country->currency_code,
+                'price_negotiable' => $request->boolean('price_negotiable'),
+                'attributes' => $data['attributes'] ?? null,
+                'status' => ClassifiedListingStatus::PendingReview,
             ]);
 
             MarketerListing::create([
-                'marketer_id'           => $marketer->id,
-                'listing_category'      => 'classified',
+                'marketer_id' => $marketer->id,
+                'listing_category' => 'classified',
                 'classified_listing_id' => $listing->id,
-                'country_id'            => $data['country_id'],
-                'price'                 => $price,
-                'currency'              => $country->currency_code,
-                'status'                => 'active',
-                'referral_code'         => 'CLM-' . strtoupper(Str::random(10)),
+                'country_id' => $data['country_id'],
+                'price' => $price,
+                'currency' => $country->currency_code,
+                'status' => 'active',
+                'referral_code' => 'CLM-'.strtoupper(Str::random(10)),
             ]);
 
             $this->storeImages($request, $listing);
@@ -135,16 +135,16 @@ class ClassifiedListingController extends Controller
         DB::transaction(function () use ($request, $listing, $data, $price, $country) {
             $listing->update([
                 'classified_category_id' => $data['classified_category_id'],
-                'country_id'             => $data['country_id'],
-                'listing_purpose'        => $data['listing_purpose'],
-                'title_ar'               => $data['title_ar'],
-                'title_en'               => $data['title_en'] ?? $data['title_ar'],
-                'description_ar'         => $data['description_ar'] ?? null,
-                'description_en'         => $data['description_en'] ?? null,
-                'price'                  => $price,
-                'currency'               => $country->currency_code,
-                'price_negotiable'       => $request->boolean('price_negotiable'),
-                'attributes'             => $data['attributes'] ?? null,
+                'country_id' => $data['country_id'],
+                'listing_purpose' => $data['listing_purpose'],
+                'title_ar' => $data['title_ar'],
+                'title_en' => $data['title_en'] ?? $data['title_ar'],
+                'description_ar' => $data['description_ar'] ?? null,
+                'description_en' => $data['description_en'] ?? null,
+                'price' => $price,
+                'currency' => $country->currency_code,
+                'price_negotiable' => $request->boolean('price_negotiable'),
+                'attributes' => $data['attributes'] ?? null,
             ]);
 
             MarketerListing::where('classified_listing_id', $listing->id)->get()->each->update([
@@ -203,9 +203,9 @@ class ClassifiedListingController extends Controller
     private function formData(): array
     {
         return [
-            'categories'      => ClassifiedCategory::whereNull('parent_id')->where('is_active', true)
+            'categories' => ClassifiedCategory::whereNull('parent_id')->where('is_active', true)
                 ->with(['children' => fn ($q) => $q->where('is_active', true)])->orderBy('sort_order')->get(),
-            'countries'       => Country::where('is_active', true)->get(),
+            'countries' => Country::availableForVendors()->get(),
             'openMarketRules' => OpenMarketListingPrice::all()->keyBy('classified_category_id'),
         ];
     }
@@ -215,18 +215,18 @@ class ClassifiedListingController extends Controller
     {
         $rules = [
             'classified_category_id' => ['required', 'uuid', 'exists:classified_categories,id'],
-            'country_id'             => ['required', 'uuid', 'exists:countries,id'],
-            'title_ar'               => ['required', 'string', 'max:255'],
-            'title_en'               => ['nullable', 'string', 'max:255'],
-            'description_ar'         => ['nullable', 'string'],
-            'description_en'         => ['nullable', 'string'],
-            'listing_purpose'        => ['required', 'in:sale,rent'],
-            'price_negotiable'       => ['nullable', 'boolean'],
-            'attributes'             => ['nullable', 'array'],
-            'attributes.*'           => ['nullable'],
-            'images'                 => ['nullable', 'array', 'max:10'],
-            'images.*'               => ['image', 'max:5120'],
-            'price'                  => ['nullable', 'numeric', 'decimal:0,2'],
+            'country_id' => ['required', 'uuid', Country::availableForVendorsRule()],
+            'title_ar' => ['required', 'string', 'max:255'],
+            'title_en' => ['nullable', 'string', 'max:255'],
+            'description_ar' => ['nullable', 'string'],
+            'description_en' => ['nullable', 'string'],
+            'listing_purpose' => ['required', 'in:sale,rent'],
+            'price_negotiable' => ['nullable', 'boolean'],
+            'attributes' => ['nullable', 'array'],
+            'attributes.*' => ['nullable'],
+            'images' => ['nullable', 'array', 'max:10'],
+            'images.*' => ['image', 'max:5120'],
+            'price' => ['nullable', 'numeric', 'decimal:0,2'],
         ];
 
         $rule = OpenMarketListingPrice::where('classified_category_id', $request->input('classified_category_id'))->first();
@@ -235,15 +235,15 @@ class ClassifiedListingController extends Controller
         if ($rule && ! $rule->allow_marketer_override) {
             $forced = Money::number($rule->base_price);
         } else {
-            $rules['price'] = ['required', 'numeric', 'decimal:0,2', 'min:' . max(0, (float) ($rule?->min_price ?? 0))];
+            $rules['price'] = ['required', 'numeric', 'decimal:0,2', 'min:'.max(0, (float) ($rule?->min_price ?? 0))];
             if ($rule?->max_price) {
-                $rules['price'][] = 'max:' . Money::number($rule->max_price);
+                $rules['price'][] = 'max:'.Money::number($rule->max_price);
             }
         }
 
         $data = $request->validate($rules);
 
-        return [$data, $forced ?? \App\Support\Money::number($data['price'])];
+        return [$data, $forced ?? Money::number($data['price'])];
     }
 
     private function storeImages(Request $request, ClassifiedListing $listing): void
@@ -259,9 +259,9 @@ class ClassifiedListingController extends Controller
             $path = $file->store("classified-listings/{$listing->id}", 'public');
             ClassifiedListingImage::create([
                 'classified_listing_id' => $listing->id,
-                'file_path'             => $path,
-                'position'              => ++$position,
-                'is_primary'            => ! $hasPrimary,
+                'file_path' => $path,
+                'position' => ++$position,
+                'is_primary' => ! $hasPrimary,
             ]);
             $hasPrimary = true;
         }

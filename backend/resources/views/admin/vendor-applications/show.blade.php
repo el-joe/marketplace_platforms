@@ -86,7 +86,7 @@
                     </div>
                     <div>
                         <dt class="text-xs text-gray-400 uppercase font-medium mb-0.5">{{ __('admin.vendor_applications.country_label') }}</dt>
-                        <dd>{{ $vendor->country?->flag_emoji ?? '' }} {{ $vendor->country?->name_en ?? '—' }}</dd>
+                        <dd>{{ $vendor->country?->flag_emoji ?? '' }} {{ localized($vendor->country) ?: '—' }}</dd>
                     </div>
                     @php $address = $vendor->addresses->first(); @endphp
                     @if($address)
@@ -153,7 +153,7 @@
                                     @endphp
                                     <tr class="hover:bg-gray-50">
                                         <td class="py-2 pr-3 font-medium">
-                                            {{ $doc->documentType?->name_en ?? '—' }}
+                                            {{ localized($doc->documentType) ?: '—' }}
                                         </td>
                                         <td class="py-2 pr-3">
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $dc }}-100 text-{{ $dc }}-700">

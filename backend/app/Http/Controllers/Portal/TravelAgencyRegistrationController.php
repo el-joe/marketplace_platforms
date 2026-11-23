@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portal;
 use App\Enums\RegistrationFlow;
 use App\Enums\TravelAgencyStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Portal\Concerns\KeepsWizardPasswordHashed;
 use App\Models\Country;
 use App\Models\TravelAgency;
 use App\Models\TravelAgencyMember;
@@ -31,6 +32,8 @@ use Spatie\Permission\Models\Role;
  */
 class TravelAgencyRegistrationController extends Controller
 {
+    use KeepsWizardPasswordHashed;
+
     /** Session key holding the in-progress registration data. */
     private const SESSION_KEY = 'travel_reg_data';
 
@@ -55,9 +58,8 @@ class TravelAgencyRegistrationController extends Controller
                     Rule::unique('travel_agency_members', 'email'),
                 ],
                 'phone' => ['required', 'string', 'max:30'],
-                'country_id' => ['required', 'string', 'exists:countries,id,is_active,1'],
-                'password' => ['required', 'string', 'min:8', 'confirmed'],
-            ],
+                'country_id' => ['required', 'string', Country::availableForVendorsRule()],
+            ] + $this->wizardPasswordRules(session(self::SESSION_KEY.'.step1', [])),
             2 => [
                 'agency_name' => ['required', 'string', 'max:255'],
                 'license_number' => ['nullable', 'string', 'max:100'],
@@ -97,9 +99,9 @@ class TravelAgencyRegistrationController extends Controller
 
     public function show(): View
     {
-        $countries = Country::where('is_active', true)->orderBy('name_ar')->get();
+        $countries = Country::availableForVendors()->orderBy('name_ar')->get();
         $currentStep = session(self::SESSION_KEY.'.current_step', 1);
-        $savedData = session(self::SESSION_KEY, []);
+        $savedData = $this->wizardDataForView(session(self::SESSION_KEY, []));
 
         // Carry the portal country chosen earlier into the country field, unless
         // the applicant already saved a different one.
@@ -140,6 +142,10 @@ class TravelAgencyRegistrationController extends Controller
         }
 
         $data = $validator->validated();
+
+        if ($step === 1) {
+            $data = $this->hashWizardPassword($data, session(self::SESSION_KEY.'.step1', []));
+        }
 
         if ($step === 2) {
             $data = $this->stageLogo($request, $data);
@@ -227,7 +233,9 @@ class TravelAgencyRegistrationController extends Controller
         $step1 = session(self::SESSION_KEY.'.step1', []);
         $step2 = session(self::SESSION_KEY.'.step2', []);
 
-        if (empty($step1['email']) || empty($step2['agency_name'])) {
+        $passwordHash = $this->wizardPasswordHash($step1);
+
+        if (empty($step1['email']) || $passwordHash === null || empty($step2['agency_name'])) {
             $this->tracker->stepFailed(RegistrationFlow::TravelAgency, 3);
 
             return response()->json([
@@ -247,8 +255,8 @@ class TravelAgencyRegistrationController extends Controller
             ], 422);
         }
 
-        $country = Country::where('id', $step1['country_id'] ?? null)
-            ->where('is_active', true)
+        $country = Country::availableForVendors()
+            ->whereKey($step1['country_id'] ?? null)
             ->first();
 
         if (! $country) {
@@ -264,12 +272,12 @@ class TravelAgencyRegistrationController extends Controller
 
         $createdAgency = null;
 
-        DB::transaction(function () use ($step1, $step2, $country, $logoPath, &$createdAgency): void {
+        DB::transaction(function () use ($step1, $step2, $passwordHash, $country, $logoPath, &$createdAgency): void {
             $agency = TravelAgency::create([
                 'name' => $step2['agency_name'],
                 'email' => $step1['email'],
                 'phone' => $step1['phone'],
-                'password' => $step1['password'],
+                'password' => $passwordHash,
                 'license_number' => $step2['license_number'] ?? null,
                 'country_id' => $country->id,
                 'status' => TravelAgencyStatus::Pending,
@@ -282,7 +290,7 @@ class TravelAgencyRegistrationController extends Controller
                 'name' => $step1['name'],
                 'email' => $step1['email'],
                 'phone' => $step1['phone'],
-                'password' => $step1['password'],
+                'password' => $passwordHash,
                 'role' => 'travel_agency_owner',
                 'is_owner' => true,
                 'is_active' => true,

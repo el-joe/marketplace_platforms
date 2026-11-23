@@ -34,7 +34,7 @@
                             @foreach($req->items as $item)
                                 <tr>
                                     <td class="px-3 py-2">
-                                        <div class="font-medium text-gray-900">{{ $item->supply->name_en ?? '—' }}</div>
+                                        <div class="font-medium text-gray-900">{{ localized($item->supply) ?: '—' }}</div>
                                         @if($item->supply)
                                             <div class="text-xs text-gray-400" dir="rtl">{{ $item->supply->name_ar }}</div>
                                         @endif

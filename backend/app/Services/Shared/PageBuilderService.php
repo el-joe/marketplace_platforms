@@ -2,23 +2,33 @@
 
 namespace App\Services\Shared;
 
-use App\Models\AdImageItem;
+use App\Enums\VendorGlobalStatus;
+use App\Enums\VendorListingStatus;
+use App\Models\AdminListing;
 use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Country;
 use App\Models\FlashSale;
 use App\Models\Page;
 use App\Models\PageBlock;
+use App\Models\PageBlockBrand;
+use App\Models\PageBlockProduct;
 use App\Models\PageSection;
 use App\Models\Product;
 use App\Models\ProductCountrySetting;
+use App\Models\VendorListing;
 use App\Services\Ads\PaidAdInjector;
+use App\Services\Customer\CategoryService;
 use App\Services\Customer\ListingQueryService;
+use App\Services\Customer\PromoBadgeResolver;
 use App\Services\Customer\UnifiedListingQueryService;
+use App\Services\Media\ListingImageResolver;
 use App\Support\Bilingual;
 use App\Support\SafeCache;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class PageBuilderService
 {
@@ -33,16 +43,18 @@ class PageBuilderService
      * consumed by hydrateBlock() below instead of querying per block.
      */
     private Collection $bannersById;
+
     private Collection $brandStripRowsByBlock;
+
     private Collection $adminListingsByVariant;
+
     private Collection $vendorListingsByVariant;
 
     public function __construct(
         private readonly ListingQueryService $listingQuery,
         private readonly UnifiedListingQueryService $unifiedQuery,
         private readonly PaidAdInjector $adInjector,
-    ) {
-    }
+    ) {}
 
     /**
      * Resolve the active published page for the given type + reference,
@@ -60,17 +72,17 @@ class PageBuilderService
             ->where('page_type', $pageType)
             ->when(
                 $referenceId !== null,
-                fn($q) => $q->where('reference_id', $referenceId),
-                fn($q) => $q->whereNull('reference_id'),
+                fn ($q) => $q->where('reference_id', $referenceId),
+                fn ($q) => $q->whereNull('reference_id'),
             )
             ->where('status', 'published')
-            ->where(fn($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', now()))
-            ->where(fn($q) => $q->whereNull('unpublish_at')->orWhere('unpublish_at', '>', now()))
+            ->where(fn ($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('unpublish_at')->orWhere('unpublish_at', '>', now()))
             ->orderByDesc('is_default')
             ->orderByDesc('published_at')
             ->first();
 
-        if (!$page) {
+        if (! $page) {
             return null;
         }
 
@@ -144,25 +156,25 @@ class PageBuilderService
 
         $blocks = $page->blocks()
             ->where('is_visible', true)
-            ->where(fn($q) => $q->whereNull('visible_from')->orWhere('visible_from', '<=', $now))
-            ->where(fn($q) => $q->whereNull('visible_until')->orWhere('visible_until', '>', $now))
+            ->where(fn ($q) => $q->whereNull('visible_from')->orWhere('visible_from', '<=', $now))
+            ->where(fn ($q) => $q->whereNull('visible_until')->orWhere('visible_until', '>', $now))
             ->whereIn('device_target', ['all', $deviceTarget])
             ->whereIn('audience', ['all', $audience])
-            ->where(fn($q) => $q->whereNull('country_override')->orWhere('country_override', $country->id))
+            ->where(fn ($q) => $q->whereNull('country_override')->orWhere('country_override', $country->id))
             ->orderBy('position')
             ->with([
-                'slides' => fn($q) => $q->where('is_active', true)
-                    ->where(fn($q2) => $q2->whereNull('visible_from')->orWhere('visible_from', '<=', $now))
-                    ->where(fn($q2) => $q2->whereNull('visible_until')->orWhere('visible_until', '>', $now))
+                'slides' => fn ($q) => $q->where('is_active', true)
+                    ->where(fn ($q2) => $q2->whereNull('visible_from')->orWhere('visible_from', '<=', $now))
+                    ->where(fn ($q2) => $q2->whereNull('visible_until')->orWhere('visible_until', '>', $now))
                     ->orderBy('position'),
-                'adImageItems' => fn($q) => $q->where('is_active', true)->orderBy('position'),
-                'blockProducts' => fn($q) => $q->orderBy('position'),
+                'adImageItems' => fn ($q) => $q->where('is_active', true)->orderBy('position'),
+                'blockProducts' => fn ($q) => $q->orderBy('position'),
                 'blockProducts.productVariant.product.images',
                 'blockProducts.productVariant.product.category',
                 'blockProducts.productVariant.product.brand',
-                'blockSellers' => fn($q) => $q->orderBy('position'),
+                'blockSellers' => fn ($q) => $q->orderBy('position'),
                 'blockSellers.seller',
-                'blockCategories' => fn($q) => $q->orderBy('position'),
+                'blockCategories' => fn ($q) => $q->orderBy('position'),
                 'blockCategories.category',
                 // brand_strip brands are bulk-loaded once in buildSkeleton()
                 // via $this->brandStripRowsByBlock — no 'blockBrands' eager
@@ -193,7 +205,7 @@ class PageBuilderService
 
         $this->brandStripRowsByBlock = $brandStripBlockIds->isEmpty()
             ? collect()
-            : \App\Models\PageBlockBrand::whereIn('page_block_id', $brandStripBlockIds)
+            : PageBlockBrand::whereIn('page_block_id', $brandStripBlockIds)
                 ->orderBy('position')
                 ->with('brand')
                 ->get()
@@ -215,9 +227,9 @@ class PageBuilderService
         } else {
             // Pre-warm ListingImageResolver (P-17) so buildImagesSlider() calls
             // inside toCardShape() below don't re-query per product.
-            app(\App\Services\Media\ListingImageResolver::class)->forVariants($manualVariantIds->all());
+            app(ListingImageResolver::class)->forVariants($manualVariantIds->all());
 
-            $this->adminListingsByVariant = \App\Models\AdminListing::query()
+            $this->adminListingsByVariant = AdminListing::query()
                 ->whereIn('product_variant_id', $manualVariantIds)
                 ->where('country_id', $country->id)
                 ->where('status', 'active')
@@ -231,15 +243,16 @@ class PageBuilderService
                 ->map(function ($al) {
                     $al->setAttribute('listing_type', 'admin');
                     $al->setAttribute('vendor', null);
+
                     return $al;
                 })
                 ->groupBy('product_variant_id');
 
-            $this->vendorListingsByVariant = \App\Models\VendorListing::query()
+            $this->vendorListingsByVariant = VendorListing::query()
                 ->whereIn('product_variant_id', $manualVariantIds)
                 ->where('country_id', $country->id)
-                ->where('status', \App\Enums\VendorListingStatus::Active->value)
-                ->whereHas('vendor', fn ($q) => $q->where('global_status', \App\Enums\VendorGlobalStatus::Active->value))
+                ->where('status', VendorListingStatus::Active->value)
+                ->whereHas('vendor', fn ($q) => $q->where('global_status', VendorGlobalStatus::Active->value))
                 ->with([
                     'vendor:id,store_name,store_rating_avg,store_rating_count',
                     'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_icon_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
@@ -252,6 +265,7 @@ class PageBuilderService
                 ->get()
                 ->map(function ($vl) {
                     $vl->setAttribute('listing_type', 'vendor');
+
                     return $vl;
                 })
                 ->groupBy('product_variant_id');
@@ -267,42 +281,41 @@ class PageBuilderService
                 $columns = collect($sectionBlocks)
                     ->groupBy('column_index')
                     ->sortKeys()
-                    ->map(fn ($colBlocks) =>
-                        $colBlocks->map(fn (PageBlock $b) => $this->hydrateBlock($b, $country))->values()->all()
+                    ->map(fn ($colBlocks) => $colBlocks->map(fn (PageBlock $b) => $this->hydrateBlock($b, $country))->values()->all()
                     )->values()->all();
 
                 return [
-                    'id'                   => $section->id,
-                    'name'                 => $section->name,
-                    'name_i18n'            => Bilingual::pair($section, 'name'),
-                    'position'             => $section->position,
-                    'layout'               => 'columns',
-                    'columns_config'       => is_string($section->columns_config)
+                    'id' => $section->id,
+                    'name' => $section->name,
+                    'name_i18n' => Bilingual::pair($section, 'name'),
+                    'position' => $section->position,
+                    'layout' => 'columns',
+                    'columns_config' => is_string($section->columns_config)
                         ? json_decode($section->columns_config, true)
                         : $section->columns_config,
-                    'background_color'     => $section->background_color,
+                    'background_color' => $section->background_color,
                     'background_image_url' => Bilingual::pair($section, 'background_image_url'),
                     'background_image_type' => $section->background_image_type ?? 'section',
-                    'columns'              => $columns,   // array of column arrays
-                    'blocks'               => [],         // empty for column-layout sections
+                    'columns' => $columns,   // array of column arrays
+                    'blocks' => [],         // empty for column-layout sections
                 ];
             }
 
             // Default: stack layout
             return [
-                'id'               => $section->id,
-                'name'             => $section->name,
-                'name_i18n'        => Bilingual::pair($section, 'name'),
-                'position'         => $section->position,
-                'layout'           => 'stack',
-                'columns_config'   => is_string($section->columns_config)
+                'id' => $section->id,
+                'name' => $section->name,
+                'name_i18n' => Bilingual::pair($section, 'name'),
+                'position' => $section->position,
+                'layout' => 'stack',
+                'columns_config' => is_string($section->columns_config)
                     ? json_decode($section->columns_config, true)
                     : $section->columns_config,
-                'background_color'     => $section->background_color,
+                'background_color' => $section->background_color,
                 'background_image_url' => Bilingual::pair($section, 'background_image_url'),
                 'background_image_type' => $section->background_image_type ?? 'section',
-                'columns'          => [],
-                'blocks'           => $sectionBlocks
+                'columns' => [],
+                'blocks' => $sectionBlocks
                     ->map(fn (PageBlock $b) => $this->hydrateBlock($b, $country))
                     ->values()
                     ->all(),
@@ -324,7 +337,7 @@ class PageBuilderService
                 ->map(fn (PageBlock $b) => $this->hydrateBlock($b, $country))
                 ->values()
                 ->all(),
-            'has_sections'      => count($sectionsData) > 0,
+            'has_sections' => count($sectionsData) > 0,
             'total_block_count' => $blocks->count(),
         ];
     }
@@ -340,12 +353,12 @@ class PageBuilderService
         $inject = fn (array $block) => $this->adInjector->injectFlat($block, $country->id, $sessionId);
 
         foreach ($skeleton['sections'] as &$section) {
-            if (!empty($section['columns'])) {
+            if (! empty($section['columns'])) {
                 foreach ($section['columns'] as &$column) {
                     $column = array_values(array_map($inject, $column));
                 }
             }
-            if (!empty($section['blocks'])) {
+            if (! empty($section['blocks'])) {
                 $section['blocks'] = array_values(array_map($inject, $section['blocks']));
             }
         }
@@ -363,41 +376,41 @@ class PageBuilderService
     private function hydrateBlock(PageBlock $b, Country $country): array
     {
         $data = [
-            'id'               => $b->id,
-            'block_type'       => $b->block_type,
-            'position'         => $b->position,
-            'device_target'    => $b->device_target,
+            'id' => $b->id,
+            'block_type' => $b->block_type,
+            'position' => $b->position,
+            'device_target' => $b->device_target,
             'background_color' => ($b->config['background_color'] ?? null),
-            'config'           => $b->config,
+            'config' => $b->config,
         ];
 
-        if ($b->block_type === 'full_banner' && !empty($b->config['banner_id'])) {
+        if ($b->block_type === 'full_banner' && ! empty($b->config['banner_id'])) {
             $banner = $this->bannersById[$b->config['banner_id']] ?? null;
 
             if ($banner) {
                 $desktopImageEn = $banner->files->firstWhere('file_type', 'banner_desktop_en');
                 $desktopImageAr = $banner->files->firstWhere('file_type', 'banner_desktop_ar');
-                $mobileImageEn  = $banner->files->firstWhere('file_type', 'banner_mobile_en');
-                $mobileImageAr  = $banner->files->firstWhere('file_type', 'banner_mobile_ar');
+                $mobileImageEn = $banner->files->firstWhere('file_type', 'banner_mobile_en');
+                $mobileImageAr = $banner->files->firstWhere('file_type', 'banner_mobile_ar');
 
                 if ($desktopImageEn || $desktopImageAr) {
                     $data['banner'] = [
-                        'image_url'           => [
+                        'image_url' => [
                             'en' => $desktopImageEn?->full_path,
                             'ar' => $desktopImageAr?->full_path ?? $desktopImageEn?->full_path,
                         ],
-                        'mobile_image_url'    => [
+                        'mobile_image_url' => [
                             'en' => $mobileImageEn?->full_path,
                             'ar' => $mobileImageAr?->full_path ?? $mobileImageEn?->full_path,
                         ],
-                        'link_url'            => $banner->cta_url,
-                        'link_type'           => $banner->link_type?->value,
-                        'link_reference_id'   => $banner->link_reference_id,
-                        'alt_text'            => [
+                        'link_url' => $banner->cta_url,
+                        'link_type' => $banner->link_type?->value,
+                        'link_reference_id' => $banner->link_reference_id,
+                        'alt_text' => [
                             'ar' => $banner->title_ar,
                             'en' => $banner->title_en,
                         ],
-                        'aspect_ratio'        => $b->config['aspect_ratio'] ?? '4:1',
+                        'aspect_ratio' => $b->config['aspect_ratio'] ?? '4:1',
                         'mobile_aspect_ratio' => $b->config['mobile_aspect_ratio'] ?? '2:1',
                     ];
                 }
@@ -405,11 +418,11 @@ class PageBuilderService
         }
 
         if ($b->block_type === 'search_trends') {
-            $cfg      = $b->config ?? [];
+            $cfg = $b->config ?? [];
             $maxTerms = (int) ($cfg['max_terms'] ?? 10);
-            $source   = $cfg['source'] ?? 'auto';
+            $source = $cfg['source'] ?? 'auto';
 
-            if ($source === 'manual' && !empty($cfg['manual_keywords'])) {
+            if ($source === 'manual' && ! empty($cfg['manual_keywords'])) {
                 $terms = collect(explode("\n", $cfg['manual_keywords']))
                     ->map(fn ($t) => trim($t))
                     ->filter(fn ($t) => strlen($t) > 0)
@@ -417,7 +430,7 @@ class PageBuilderService
                     ->values()
                     ->all();
             } else {
-                $terms = \Illuminate\Support\Facades\DB::table('search_logs')
+                $terms = DB::table('search_logs')
                     ->where('country_id', $country->id)
                     ->where('created_at', '>=', now()->subDays(7))
                     ->whereNotNull('query_normalized')
@@ -435,12 +448,12 @@ class PageBuilderService
                 'ar' => $cfg['title_ar'] ?? null,
                 'en' => $cfg['title_en'] ?? null,
             ];
-            $data['show_icons']           = (bool) ($cfg['show_icons'] ?? true);
+            $data['show_icons'] = (bool) ($cfg['show_icons'] ?? true);
             $data['show_category_filter'] = (bool) ($cfg['show_category_filter'] ?? false);
         }
 
         if ($b->slides->isNotEmpty()) {
-            $data['slides'] = $b->slides->map(fn($s) => [
+            $data['slides'] = $b->slides->map(fn ($s) => [
                 'id' => $s->id,
                 'position' => $s->position,
                 'desktop_url' => Bilingual::pair($s, 'desktop_url'),
@@ -460,7 +473,7 @@ class PageBuilderService
         }
 
         if ($b->adImageItems->isNotEmpty()) {
-            $data['items'] = $b->adImageItems->map(fn($i) => [
+            $data['items'] = $b->adImageItems->map(fn ($i) => [
                 'id' => $i->id,
                 'position' => $i->position,
                 'url' => Bilingual::pair($i, 'file_url'),
@@ -479,15 +492,15 @@ class PageBuilderService
             foreach ($b->blockProducts as $bp) {
                 $l = $this->adminListingsByVariant[$bp->productVariant?->id][0] ?? $this->vendorListingsByVariant[$bp->productVariant?->id][0] ?? null;
                 if ($l) {
-                    $primeTuples[] = [\App\Services\Customer\PromoBadgeResolver::typeOf($l), $l->id, $bp->productVariant->product_id];
+                    $primeTuples[] = [PromoBadgeResolver::typeOf($l), $l->id, $bp->productVariant->product_id];
                 }
             }
-            \App\Services\Customer\PromoBadgeResolver::instance()->prime($primeTuples);
+            PromoBadgeResolver::instance()->prime($primeTuples);
             $data['products'] = $b->blockProducts
                 ->filter(fn ($bp) => $bp->productVariant?->product !== null)
                 ->map(function ($bp) use ($country) {
                     $variantId = $bp->productVariant->id;
-                    $product   = $bp->productVariant->product;
+                    $product = $bp->productVariant->product;
 
                     // Admin listing wins over vendor listing — resolved from the
                     // pass-1 bulk-loaded maps built once per buildSkeleton() call
@@ -509,8 +522,8 @@ class PageBuilderService
 
         if ($b->blockSellers->isNotEmpty()) {
             $data['sellers'] = $b->blockSellers
-                ->filter(fn($bs) => $bs->seller !== null)
-                ->map(fn($bs) => [
+                ->filter(fn ($bs) => $bs->seller !== null)
+                ->map(fn ($bs) => [
                     'id' => $bs->seller->id,
                     'store_name' => $bs->seller->store_name,
                     'store_slug' => $bs->seller->store_slug,
@@ -522,10 +535,26 @@ class PageBuilderService
                 ->all();
         }
 
-        if ($b->blockCategories->isNotEmpty()) {
+        if ($b->block_type === 'category_pills') {
+            $cfg = $b->config ?? [];
+            $data['title'] = Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en');
+            $data['categories'] = app(CategoryService::class)
+                ->homepageCategories(
+                    $country,
+                    $b->blockCategories->pluck('category'),
+                    max(1, min(40, (int) ($cfg['max_items'] ?? 12))),
+                )
+                ->map(fn (Category $category) => [
+                    'id' => $category->id,
+                    'name' => Bilingual::pair($category, 'name'),
+                    'slug' => $category->slug,
+                    'image_url' => $category->image_url,
+                ])
+                ->all();
+        } elseif ($b->blockCategories->isNotEmpty()) {
             $data['categories'] = $b->blockCategories
-                ->filter(fn($bc) => $bc->category !== null)
-                ->map(fn($bc) => [
+                ->filter(fn ($bc) => $bc->category !== null)
+                ->map(fn ($bc) => [
                     'id' => $bc->category->id,
                     'name' => Bilingual::pair($bc->category, 'name'),
                     'slug' => $bc->category->slug,
@@ -536,15 +565,15 @@ class PageBuilderService
 
         if ($b->block_type === 'brand_strip') {
             $maxItems = (int) ($b->config['max_items'] ?? 10);
-            $brands   = ($this->brandStripRowsByBlock[$b->id] ?? collect())->take($maxItems);
+            $brands = ($this->brandStripRowsByBlock[$b->id] ?? collect())->take($maxItems);
 
             $data['brands'] = $brands
                 ->filter(fn ($bb) => $bb->brand?->is_active)
                 ->map(fn ($bb) => [
-                    'id'         => $bb->brand->id,
-                    'name'       => ['ar' => $bb->brand->name_ar, 'en' => $bb->brand->name_en],
-                    'slug'       => $bb->brand->slug,
-                    'logo_url'   => $bb->brand->logo_url,
+                    'id' => $bb->brand->id,
+                    'name' => ['ar' => $bb->brand->name_ar, 'en' => $bb->brand->name_en],
+                    'slug' => $bb->brand->slug,
+                    'logo_url' => $bb->brand->logo_url,
                     'browse_url' => "/browse/brand/{$bb->brand->id}",
                 ])
                 ->values()
@@ -554,17 +583,17 @@ class PageBuilderService
         // ── newsletter_signup ─────────────────────────────────────────────────────
         if ($b->block_type === 'newsletter_signup') {
             $cfg = $b->config ?? [];
-            $data['title']              = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
-            $data['subtitle']           = ['ar' => $cfg['subtitle_ar'] ?? null, 'en' => $cfg['subtitle_en'] ?? null];
-            $data['subscribe_url']      = '/api/customer/v1/{country}/newsletter/subscribe';
-            $data['placeholder_email']  = ['ar' => 'بريدك الإلكتروني', 'en' => 'Your email address'];
-            $data['button_label']       = ['ar' => 'اشترك الآن', 'en' => 'Subscribe Now'];
+            $data['title'] = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
+            $data['subtitle'] = ['ar' => $cfg['subtitle_ar'] ?? null, 'en' => $cfg['subtitle_en'] ?? null];
+            $data['subscribe_url'] = '/api/customer/v1/{country}/newsletter/subscribe';
+            $data['placeholder_email'] = ['ar' => 'بريدك الإلكتروني', 'en' => 'Your email address'];
+            $data['button_label'] = ['ar' => 'اشترك الآن', 'en' => 'Subscribe Now'];
         }
 
         if ($b->block_type === 'mega_deals') {
-            $cfg  = $b->config ?? [];
+            $cfg = $b->config ?? [];
 
-            $productIds = \App\Models\PageBlockProduct::where('page_block_id', $b->id)
+            $productIds = PageBlockProduct::where('page_block_id', $b->id)
                 ->with('productVariant:id,product_id')
                 ->orderBy('position')
                 ->get()
@@ -589,88 +618,88 @@ class PageBuilderService
                 $products = $this->productsToCards($productModels, $country);
             }
 
-            $endsAt = isset($cfg['ends_at']) ? \Carbon\Carbon::parse($cfg['ends_at']) : null;
-            $data['title']           = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
-            $data['show_countdown']  = (bool) ($cfg['show_countdown'] ?? true);
+            $endsAt = isset($cfg['ends_at']) ? Carbon::parse($cfg['ends_at']) : null;
+            $data['title'] = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
+            $data['show_countdown'] = (bool) ($cfg['show_countdown'] ?? true);
             $data['seconds_remaining'] = $endsAt ? max(0, now()->diffInSeconds($endsAt, false)) : null;
-            $data['ends_at']         = $endsAt?->toIso8601String();
-            $data['columns']         = (int) ($cfg['columns'] ?? 2);
-            $data['show_view_all']   = (bool) ($cfg['show_view_all'] ?? true);
-            $data['view_all_url']    = $cfg['view_all_url'] ?? null;
-            $data['products']        = $products;
+            $data['ends_at'] = $endsAt?->toIso8601String();
+            $data['columns'] = (int) ($cfg['columns'] ?? 2);
+            $data['show_view_all'] = (bool) ($cfg['show_view_all'] ?? true);
+            $data['view_all_url'] = $cfg['view_all_url'] ?? null;
+            $data['products'] = $products;
         }
 
         if ($b->block_type === 'image_slider') {
-            $cfg   = $b->config ?? [];
+            $cfg = $b->config ?? [];
             $items = $b->adImageItems
                 ->map(fn ($img) => [
                     'image_url' => Bilingual::pair($img, 'file_url'),
-                    'link_url'  => $img->link_url,
-                    'title'     => ['ar' => $img->title_ar, 'en' => $img->title_en],
-                    'subtitle'  => ['ar' => $img->subtitle_ar, 'en' => $img->subtitle_en],
-                    'badge'     => ['ar' => $img->badge_label_ar, 'en' => $img->badge_label_en],
+                    'link_url' => $img->link_url,
+                    'title' => ['ar' => $img->title_ar, 'en' => $img->title_en],
+                    'subtitle' => ['ar' => $img->subtitle_ar, 'en' => $img->subtitle_en],
+                    'badge' => ['ar' => $img->badge_label_ar, 'en' => $img->badge_label_en],
                 ])->all();
 
-            $data['title']        = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
-            $data['columns']      = (int) ($cfg['columns'] ?? 5);
-            $data['rows']         = (int) ($cfg['rows'] ?? 1);
-            $data['scrollable']   = (bool) ($cfg['scrollable'] ?? true);
-            $data['show_label']   = (bool) ($cfg['show_label'] ?? true);
-            $data['show_badge']   = (bool) ($cfg['show_badge'] ?? false);
-            $data['image_shape']  = $cfg['image_shape']  ?? 'rounded';
-            $data['size_preset']  = $cfg['size_preset']  ?? 'medium';
+            $data['title'] = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
+            $data['columns'] = (int) ($cfg['columns'] ?? 5);
+            $data['rows'] = (int) ($cfg['rows'] ?? 1);
+            $data['scrollable'] = (bool) ($cfg['scrollable'] ?? true);
+            $data['show_label'] = (bool) ($cfg['show_label'] ?? true);
+            $data['show_badge'] = (bool) ($cfg['show_badge'] ?? false);
+            $data['image_shape'] = $cfg['image_shape'] ?? 'rounded';
+            $data['size_preset'] = $cfg['size_preset'] ?? 'medium';
             $data['aspect_ratio'] = $cfg['aspect_ratio'] ?? '';
-            $data['items']        = $items;
+            $data['items'] = $items;
         }
 
         if ($b->block_type === 'promo_tiles') {
             $cfg = $b->config ?? [];
-            $data['title']   = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
+            $data['title'] = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
             $data['columns'] = (int) ($cfg['grid_cols'] ?? $cfg['columns'] ?? 2);
-            $data['rows']    = (int) ($cfg['grid_rows'] ?? 1);
-            $data['tiles']   = collect($cfg['tiles'] ?? [])->map(fn ($tile) => [
-                'label'        => ['ar' => $tile['label_ar'] ?? null,      'en' => $tile['label_en'] ?? null],
-                'badge'        => ['ar' => $tile['badge_label_ar'] ?? null, 'en' => $tile['badge_label_en'] ?? null],
-                'image_url'    => [
+            $data['rows'] = (int) ($cfg['grid_rows'] ?? 1);
+            $data['tiles'] = collect($cfg['tiles'] ?? [])->map(fn ($tile) => [
+                'label' => ['ar' => $tile['label_ar'] ?? null,      'en' => $tile['label_en'] ?? null],
+                'badge' => ['ar' => $tile['badge_label_ar'] ?? null, 'en' => $tile['badge_label_en'] ?? null],
+                'image_url' => [
                     'en' => $tile['image_url_en'] ?? $tile['image_url'] ?? null,
                     'ar' => $tile['image_url_ar'] ?? ($tile['image_url_en'] ?? $tile['image_url'] ?? null),
                 ],
-                'link_url'     => $tile['link_url'] ?? null,
-                'is_paid'      => (bool) ($tile['is_paid'] ?? false),
+                'link_url' => $tile['link_url'] ?? null,
+                'is_paid' => (bool) ($tile['is_paid'] ?? false),
             ])->all();
         }
 
         if ($b->block_type === 'ad_images_3col') {
             $cfg = $b->config ?? [];
-            $data['title']        = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
-            $data['columns']      = 3;
+            $data['title'] = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
+            $data['columns'] = 3;
             $data['aspect_ratio'] = $cfg['aspect_ratio'] ?? '4:3';
-            $data['images']       = $b->adImageItems->take(3)->map(fn ($img) => [
+            $data['images'] = $b->adImageItems->take(3)->map(fn ($img) => [
                 'image_url' => Bilingual::pair($img, 'file_url'),
-                'link_url'  => $img->link_url,
-                'title'     => ['ar' => $img->title_ar, 'en' => $img->title_en],
-                'subtitle'  => ['ar' => $img->subtitle_ar, 'en' => $img->subtitle_en],
-                'is_paid'   => (bool) $img->is_paid,
+                'link_url' => $img->link_url,
+                'title' => ['ar' => $img->title_ar, 'en' => $img->title_en],
+                'subtitle' => ['ar' => $img->subtitle_ar, 'en' => $img->subtitle_en],
+                'is_paid' => (bool) $img->is_paid,
             ])->all();
         }
 
         if ($b->block_type === 'sponsored_grid') {
-            $cfg      = $b->config ?? [];
-            $maxProd  = (int) ($cfg['max_products'] ?? 20);
+            $cfg = $b->config ?? [];
+            $maxProd = (int) ($cfg['max_products'] ?? 20);
             $products = $this->resolveDynamicProducts($b, $country) ?? [];
-            $data['title']                = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
-            $data['columns']              = (int) ($cfg['columns'] ?? 5);
+            $data['title'] = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
+            $data['columns'] = (int) ($cfg['columns'] ?? 5);
             $data['show_sponsored_badge'] = (bool) ($cfg['show_sponsored_badge'] ?? true);
-            $data['products']             = array_slice($products, 0, $maxProd);
+            $data['products'] = array_slice($products, 0, $maxProd);
         }
 
         if ($b->block_type === 'app_download_banner') {
             $cfg = $b->config ?? [];
-            $data['title']            = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
-            $data['subtitle']         = ['ar' => $cfg['subtitle_ar'] ?? null, 'en' => $cfg['subtitle_en'] ?? null];
+            $data['title'] = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
+            $data['subtitle'] = ['ar' => $cfg['subtitle_ar'] ?? null, 'en' => $cfg['subtitle_en'] ?? null];
             $data['background_color'] = $cfg['background_color'] ?? '#FEE200';
-            $data['app_store_url']    = $cfg['app_store_url'] ?? null;
-            $data['play_store_url']   = $cfg['play_store_url'] ?? null;
+            $data['app_store_url'] = $cfg['app_store_url'] ?? null;
+            $data['play_store_url'] = $cfg['play_store_url'] ?? null;
             $data['phone_mockup_url'] = $cfg['phone_mockup_url'] ?? null;
         }
 
@@ -725,10 +754,10 @@ class PageBuilderService
                 ->pluck('product_id'))
             ->with(['variants', 'images']);
 
-        if (!empty($config['category_id'])) {
+        if (! empty($config['category_id'])) {
             $rootCat = Category::find($config['category_id']);
             $categoryIds = $rootCat
-                ? app(\App\Services\Customer\CategoryService::class)->getDescendantIds($rootCat)
+                ? app(CategoryService::class)->getDescendantIds($rootCat)
                 : [$config['category_id']];
             $query->whereIn('category_id', $categoryIds);
         }
@@ -751,8 +780,8 @@ class PageBuilderService
     private function productsToCards(Collection $products, Country $country): array
     {
         $buyBox = $this->unifiedQuery->getBuyBoxForProducts($products, $country);
-        \App\Services\Customer\PromoBadgeResolver::instance()->prime(
-            $products->map(fn (Product $p) => isset($buyBox[$p->id]) ? [\App\Services\Customer\PromoBadgeResolver::typeOf($buyBox[$p->id]), $buyBox[$p->id]->id, $p->id] : null)->filter()->values()
+        PromoBadgeResolver::instance()->prime(
+            $products->map(fn (Product $p) => isset($buyBox[$p->id]) ? [PromoBadgeResolver::typeOf($buyBox[$p->id]), $buyBox[$p->id]->id, $p->id] : null)->filter()->values()
         );
 
         return $products
@@ -782,7 +811,7 @@ class PageBuilderService
                 ->orderBy('sale_ends_at')
                 ->first();
 
-        if (!$sale) {
+        if (! $sale) {
             return [];
         }
 
@@ -794,9 +823,9 @@ class PageBuilderService
                 'vendorListing.productVariant.product.images',
             ])
             ->get()
-            ->filter(fn($s) => $s->vendorListing && $s->vendorListing->productVariant?->product);
+            ->filter(fn ($s) => $s->vendorListing && $s->vendorListing->productVariant?->product);
 
-        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($submissions->pluck('vendorListing')));
+        PromoBadgeResolver::instance()->prime(PromoBadgeResolver::tuplesForListings($submissions->pluck('vendorListing')));
 
         return $submissions
             ->sortBy(fn ($s) => self::BUY_BOX_ORDER[$s->vendorListing->global_system_type->value] ?? 3)
@@ -826,8 +855,8 @@ class PageBuilderService
      * products — never per-product — same batching shape as
      * ProductQueryService::promoBadgesForProducts().
      *
-     * @param  \Illuminate\Support\Collection<int,string>|array<int,string>  $productIds
-     * @return \Illuminate\Support\Collection<int,string> subset of $productIds currently in an active mega_deals block
+     * @param  Collection<int,string>|array<int,string>  $productIds
+     * @return Collection<int,string> subset of $productIds currently in an active mega_deals block
      */
     public function activeMegaDealProductIds($productIds, Country $country): Collection
     {
@@ -850,7 +879,7 @@ class PageBuilderService
             return collect();
         }
 
-        return \App\Models\PageBlockProduct::query()
+        return PageBlockProduct::query()
             ->whereIn('page_block_id', $blockIds)
             ->join('product_variants', 'product_variants.id', '=', 'page_block_products.product_variant_id')
             ->whereIn('product_variants.product_id', $productIds)

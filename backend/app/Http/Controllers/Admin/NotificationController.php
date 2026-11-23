@@ -110,7 +110,7 @@ class NotificationController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('notifications.send'), 403);
 
-        $countries = Country::orderBy('name_en')->get(['id', 'name_en']);
+        $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
 
         return view('admin.notifications.send', compact('countries'));
     }

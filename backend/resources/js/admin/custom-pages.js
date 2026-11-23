@@ -11,6 +11,7 @@
  */
 
 import $ from 'jquery';
+import '../components/media-field';
 
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.content ?? '';

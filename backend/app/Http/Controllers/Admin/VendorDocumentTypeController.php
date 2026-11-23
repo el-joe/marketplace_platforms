@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\VendorDocumentCountryRequirement;
 use App\Models\VendorDocumentType;
+use App\Support\Bilingual;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -13,9 +14,15 @@ use Illuminate\Validation\Rule;
 
 class VendorDocumentTypeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $search = trim((string) $request->query('search', ''));
+
         $types = VendorDocumentType::with(['countryRequirements'])
+            ->when($search !== '', fn ($query) => $query->where(fn ($q) => Bilingual::whereLike($q, 'name', $search)
+                ->orWhere('code', 'like', '%'.addcslashes($search, '%_\\').'%')))
+            ->when($request->query('status') === 'active', fn ($query) => $query->where('is_active', true))
+            ->when($request->query('status') === 'inactive', fn ($query) => $query->where('is_active', false))
             ->orderBy('sort_order')
             ->orderBy('name_en')
             ->get();
@@ -48,7 +55,7 @@ class VendorDocumentTypeController extends Controller
 
         // Seed optional requirement for every existing country
         $countries = Country::all(['id']);
-        $rows = $countries->map(fn($c) => [
+        $rows = $countries->map(fn ($c) => [
             'id' => Str::orderedUuid()->toString(),
             'vendor_document_type_id' => $type->id,
             'country_id' => $c->id,
@@ -114,7 +121,7 @@ class VendorDocumentTypeController extends Controller
 
     public function toggleActive(VendorDocumentType $type): JsonResponse
     {
-        $type->update(['is_active' => !$type->is_active]);
+        $type->update(['is_active' => ! $type->is_active]);
 
         return response()->json([
             'success' => true,

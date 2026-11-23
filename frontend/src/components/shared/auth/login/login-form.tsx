@@ -10,7 +10,11 @@ import { getLoginSchema, loginFormValues } from "./schema";
 import { useAuthContext } from "@/src/providers/auth-provider";
 import { Spinner } from "@/src/components/ui/spinner";
 
-export default function LoginForm() {
+export default function LoginForm({
+  onForgotPassword,
+}: {
+  onForgotPassword?: () => void;
+}) {
   const t = useTranslations("authDialog");
   const { login, isLogging, loginError, loginIsError } = useAuthContext();
 
@@ -43,6 +47,15 @@ export default function LoginForm() {
           className="h-12 w-full"
           placeholder={t("passwordPlaceholder")}
         />
+        {onForgotPassword && (
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="self-end text-sm font-semibold text-blue-2 hover:underline cursor-pointer"
+          >
+            {t("forgotPassword.link")}
+          </button>
+        )}
         <Button
           className={"h-12 bg-gray-2 w-full cursor-pointer"}
           disabled={!isDirty || !isValid || isLogging}

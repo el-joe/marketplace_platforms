@@ -62,7 +62,7 @@
                 </div>
                 <div>
                     <dt class="text-gray-500 text-xs uppercase tracking-wide">{{ __('admin.shipping_section.company_details_country') }}</dt>
-                    <dd class="font-medium text-gray-800">{{ $shippingCompany->country?->name_en ?? '—' }}</dd>
+                    <dd class="font-medium text-gray-800">{{ localized($shippingCompany->country) ?: '—' }}</dd>
                 </div>
                 <div>
                     <dt class="text-gray-500 text-xs uppercase tracking-wide">{{ __('admin.shipping_section.contact_email') }}</dt>
@@ -126,7 +126,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-3 font-medium text-gray-900">{{ $sup->name }}</td>
                             <td class="px-6 py-3 text-gray-500">{{ $sup->email }}</td>
-                            <td class="px-6 py-3 text-gray-500">{{ $sup->country?->name_en ?? '—' }}</td>
+                            <td class="px-6 py-3 text-gray-500">{{ localized($sup->country) ?: '—' }}</td>
                             <td class="px-6 py-3">
                                 <div class="flex flex-wrap gap-1">
                                     @foreach($sup->permissions ?? [] as $perm)
@@ -252,7 +252,7 @@
                         <select name="country_id" class="form-input w-full">
                             <option value="">— {{ __('admin.shipping_section.supervisor_country_any') }} —</option>
                             @foreach($countries as $country)
-                                <option value="{{ $country->id }}">{{ $country->name_en }}</option>
+                                <option value="{{ $country->id }}">{{ localized($country) }}</option>
                             @endforeach
                         </select>
                         <p class="text-xs text-gray-400 mt-1">
@@ -387,7 +387,7 @@
                             <select name="country_id" id="field-country" class="form-input w-full">
                                 <option value="">— {{ __('admin.shipping_section.select_country') }} —</option>
                                 @foreach($countries as $country)
-                                    <option value="{{ $country->id }}">{{ $country->name_en }}</option>
+                                    <option value="{{ $country->id }}">{{ localized($country) }}</option>
                                 @endforeach
                             </select>
                             <p class="text-xs text-gray-400 mt-1">{{ __('admin.shipping_section.home_country_note') }}</p>
@@ -400,7 +400,7 @@
                                     multiple class="form-input w-full" style="min-height: 100px;">
                                 @foreach($countries as $country)
                                     <option value="{{ $country->id }}">
-                                        {{ $country->name_en }}{{ $country->currency_code ? ' (' . $country->currency_code . ')' : '' }}
+                                        {{ localized($country) }}{{ $country->currency_code ? ' (' . $country->currency_code . ')' : '' }}
                                     </option>
                                 @endforeach
                             </select>

@@ -70,7 +70,7 @@
                         <td class="px-4 py-3">{{ $contract->contractTemplate?->name ?? '—' }}</td>
                         <td class="px-4 py-3">{{ __('admin.contracts.scope_' . $contract->category_scope) }}</td>
                         <td class="px-4 py-3">{{ $contract->country ? (app()->getLocale() === 'ar' ? $contract->country->name_ar : $contract->country->name_en) : '—' }}</td>
-                        <td class="px-4 py-3">{{ $contract->product?->name_en ?? $category?->name_en ?? '—' }}</td>
+                        <td class="px-4 py-3">{{ localized($contract->product) ?: localized($category) ?: '—' }}</td>
                         <td class="px-4 py-3 text-center">v{{ $contract->template_version }}</td>
                         <td class="px-4 py-3 uppercase">{{ $contract->language_signed }}</td>
                         <td class="px-4 py-3">{{ $contract->signer_name }}</td>

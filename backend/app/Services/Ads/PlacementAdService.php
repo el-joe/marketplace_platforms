@@ -2,6 +2,7 @@
 
 namespace App\Services\Ads;
 
+use App\Models\Banner;
 use App\Models\Country;
 use App\Services\BannerService;
 
@@ -10,8 +11,7 @@ class PlacementAdService
     public function __construct(
         private readonly PaidAdResolver $resolver,
         private readonly BannerService $bannerService,
-    ) {
-    }
+    ) {}
 
     public function resolve(
         string $code,
@@ -27,15 +27,31 @@ class PlacementAdService
             return $paid;
         }
 
-        $banner = $this->bannerService->getActivePlacement($code, $country->id, $audience, $productId);
+        ['desktop' => $desktop, 'mobile' => $mobile] = $this->bannerService
+            ->getActivePlacementByDevice($code, $country->id, $audience, $productId);
 
-        if (!$banner) {
+        if (! $desktop && ! $mobile) {
             return null;
         }
 
-        $desktopFile = $this->bannerService->getDesktopImage($banner);
-        $mobileFile = $this->bannerService->getMobileImage($banner);
+        // Different banners won each device (e.g. one desktop-only + one mobile-only banner):
+        // the top level carries the desktop banner, `mobile_variant` the mobile one.
+        if ($desktop && $mobile && $desktop->isNot($mobile)) {
+            return [
+                ...$this->bannerPayload($desktop, ['desktop']),
+                'mobile_variant' => $this->bannerPayload($mobile, ['mobile']),
+            ];
+        }
 
+        return $this->bannerPayload($desktop ?? $mobile);
+    }
+
+    /**
+     * @param  list<'desktop'|'mobile'>|null  $devices
+     * @return array<string, mixed>
+     */
+    private function bannerPayload(Banner $banner, ?array $devices = null): array
+    {
         return [
             'id' => $banner->id,
             'title_en' => $banner->title_en,
@@ -47,13 +63,12 @@ class PlacementAdService
             'cta_url' => $banner->cta_url,
             'link_type' => $banner->link_type?->value,
             'link_reference_id' => $banner->link_reference_id,
-            'desktop_image_url' => $desktopFile?->full_path,
-            'mobile_image_url' => $mobileFile?->full_path,
-            'desktop_image_url_ar' => $desktopFile?->full_path,
-            'mobile_image_url_ar' => $mobileFile?->full_path,
+            'device_target' => $banner->device_target?->value,
+            ...$this->bannerService->resolvedImageUrls($banner, $devices),
             'is_external' => false,
             'is_paid' => false,
             'ad' => null,
+            'mobile_variant' => null,
         ];
     }
 
@@ -74,7 +89,7 @@ class PlacementAdService
 
         // Prefer category-scoped slots over unscoped ones.
         $categoryScoped = array_values(array_filter($scoped, fn (array $c) => $c['category_id'] !== null));
-        $pool = !empty($categoryScoped) ? $categoryScoped : array_values($scoped);
+        $pool = ! empty($categoryScoped) ? $categoryScoped : array_values($scoped);
 
         if (empty($pool)) {
             return null;
@@ -82,7 +97,7 @@ class PlacementAdService
 
         $picked = $this->resolver->pick($pool, $sessionId, $code);
 
-        if (!$picked) {
+        if (! $picked) {
             return null;
         }
 
@@ -99,13 +114,17 @@ class PlacementAdService
             'cta_url' => $ad['link_url'],
             'link_type' => $ad['link_type'],
             'link_reference_id' => $ad['link_reference_id'],
-            'desktop_image_url' => $ad['image_url']['en'],
-            'mobile_image_url' => $ad['mobile_image_url']['en'],
-            'desktop_image_url_ar' => $ad['image_url']['ar'],
-            'mobile_image_url_ar' => $ad['mobile_image_url']['ar'],
+            'device_target' => 'all',
+            ...BannerService::resolveImageGrid([
+                'desktop_en' => $ad['image_url']['en'] ?? null,
+                'desktop_ar' => $ad['image_url']['ar'] ?? null,
+                'mobile_en' => $ad['mobile_image_url']['en'] ?? null,
+                'mobile_ar' => $ad['mobile_image_url']['ar'] ?? null,
+            ], ['desktop', 'mobile']),
             'is_external' => $ad['is_external'],
             'is_paid' => true,
             'ad' => $ad['ad'],
+            'mobile_variant' => null,
         ];
     }
 }

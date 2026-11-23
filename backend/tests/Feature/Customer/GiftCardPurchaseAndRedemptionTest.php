@@ -4,12 +4,16 @@ namespace Tests\Feature\Customer;
 
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
+use App\Enums\WalletOwnerType;
 use App\Jobs\SendGiftCardDeliveryJob;
 use App\Mail\GiftCardDeliveryMail;
+use App\Models\Admin;
 use App\Models\GiftCard;
 use App\Models\GiftCardBatch;
 use App\Models\GiftCardPurchase;
 use App\Models\PaymentTransaction;
+use App\Models\Wallet;
+use App\Services\GiftCardPurchaseService;
 use App\Services\GiftCardService;
 use App\Services\Payments\PaymentGatewayFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,6 +22,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
 use Tests\Support\FakePaymentGateway;
 use Tests\Support\MarketplaceScenario;
 use Tests\TestCase;
@@ -111,7 +116,7 @@ class GiftCardPurchaseAndRedemptionTest extends TestCase
         // fresh PIN and emails it), not the broken/dead notification job.
         Queue::assertPushed(SendGiftCardDeliveryJob::class, fn ($job) => $job->giftCardPurchaseId === $purchase->id);
 
-        app(\App\Services\GiftCardPurchaseService::class)->deliverCard($purchase->fresh());
+        app(GiftCardPurchaseService::class)->deliverCard($purchase->fresh());
 
         Mail::assertSent(GiftCardDeliveryMail::class, function (GiftCardDeliveryMail $mail) use ($purchase) {
             return $mail->purchase->id === $purchase->id && strlen($mail->plainPin) === 4;
@@ -126,7 +131,7 @@ class GiftCardPurchaseAndRedemptionTest extends TestCase
 
         $card = $purchase->giftCard()->firstOrFail();
 
-        $walletBalanceBefore = \App\Models\Wallet::where('owner_type', \App\Enums\WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)
+        $walletBalanceBefore = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)
             ->where('currency', 'AED')
             ->value('balance') ?? 0;
 
@@ -171,7 +176,7 @@ class GiftCardPurchaseAndRedemptionTest extends TestCase
         Mail::fake();
         Queue::fake([SendGiftCardDeliveryJob::class]);
 
-        $fake = (new FakePaymentGateway())->withCode('bank_transfer');
+        $fake = (new FakePaymentGateway)->withCode('bank_transfer');
         $fake->scriptDefaultInitiate(FakePaymentGateway::OUTCOME_SUCCESS);
         PaymentGatewayFactory::fake($fake);
 
@@ -214,10 +219,13 @@ class GiftCardPurchaseAndRedemptionTest extends TestCase
         $this->assertNotNull($transaction->proof_uploaded_at);
         $this->assertSame('Paid via bank X', $transaction->note);
 
-        $admin = \App\Models\Admin::factory()->create();
-        \Spatie\Permission\Models\Permission::findOrCreate('transactions.view', 'admin');
-        \Spatie\Permission\Models\Permission::findOrCreate('vendors.assigned_only', 'admin');
-        $admin->givePermissionTo('transactions.view');
+        $admin = Admin::factory()->create();
+        Permission::findOrCreate('transactions.view', 'admin');
+        Permission::findOrCreate('vendors.assigned_only', 'admin');
+        foreach (['transactions.view', 'transactions.edit'] as $permission) {
+            Permission::findOrCreate($permission, 'admin');
+        }
+        $admin->givePermissionTo(['transactions.view', 'transactions.edit']);
         $this->actingAs($admin, 'admin');
 
         $confirm = $this->postJson(route('admin.transactions.confirm-bank-transfer', $transaction->id));
@@ -257,7 +265,7 @@ class GiftCardPurchaseAndRedemptionTest extends TestCase
     {
         $scenario = $this->buildScenario();
 
-        $admin = \App\Models\Admin::factory()->create();
+        $admin = Admin::factory()->create();
 
         $result = app(GiftCardService::class)->generateBatch([
             'name' => 'No expiry given',

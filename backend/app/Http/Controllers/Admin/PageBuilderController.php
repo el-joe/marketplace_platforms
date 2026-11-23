@@ -35,6 +35,7 @@ use App\Services\Ads\AdSlotBlockGuard;
 use App\Services\Ads\PaidAdResolver;
 use App\Services\PageBuilderService;
 use App\Services\Shared\PageCacheService;
+use App\Support\Bilingual;
 use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -469,6 +470,7 @@ class PageBuilderController extends Controller
             'block_type' => $block->block_type,
             'default_config' => $block->config,
             'label_en' => optional($block->blockType)->label_en,
+            'label' => localized($block->blockType, 'label') ?: $block->block_type,
             'icon' => optional($block->blockType)->icon,
             'preview_text' => $block->getPreviewText(),
         ]);
@@ -745,10 +747,10 @@ class PageBuilderController extends Controller
 
         $extra = [];
         if ($blockType->code === 'product_row') {
-            $extra['categories'] = Category::orderBy('name_en')->get(['id', 'name_en']);
+            $extra['categories'] = Category::orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
             $extra['flashSales'] = FlashSale::whereIn('status', ['submission_open', 'approved', 'live'])
                 ->orWhere('id', $config['flash_sale_id'] ?? null)
-                ->orderBy('name_en')->get(['id', 'name_en']);
+                ->orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
 
             // Resolve human-readable labels so the async-select pre-populates
             // with the name instead of the raw UUID.
@@ -764,11 +766,11 @@ class PageBuilderController extends Controller
         if (in_array($blockType->code, ['flash_sale', 'deal_of_day'])) {
             $extra['flashSales'] = FlashSale::whereIn('status', ['submission_open', 'approved', 'live'])
                 ->orWhere('id', $config['flash_sale_id'] ?? null)
-                ->orderBy('name_en')->get(['id', 'name_en']);
+                ->orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
         }
         if ($blockType->code === 'deal_of_day') {
             if (! empty($config['vendor_listing_id']) && empty($config['vendor_listing_label'])) {
-                $vl = VendorListing::with(['productVariant.product:id,name_en', 'vendor:id,store_name'])
+                $vl = VendorListing::with(['productVariant.product:id,name_en,name_ar', 'vendor:id,store_name'])
                     ->find($config['vendor_listing_id']);
                 if ($vl) {
                     $config['vendor_listing_label'] = trim(
@@ -792,7 +794,13 @@ class PageBuilderController extends Controller
             }
         }
         if ($blockType->code === 'full_banner') {
-            $extra['banners'] = Banner::orderBy('name')->get(['id', 'name']);
+            $extra['banners'] = Banner::with(['files' => fn ($q) => $q->where('file_type', 'banner_desktop_en')])
+                ->orderBy('name')->get(['id', 'name']);
+            $extra['bannerPreviews'] = $extra['banners']->mapWithKeys(function (Banner $banner) {
+                $image = $banner->files->first();
+
+                return [$banner->id => $image ? Storage::disk($image->storage_type ?: 'public')->url($image->path) : null];
+            });
         }
 
         return response()->view($view, array_merge([
@@ -1018,10 +1026,11 @@ class PageBuilderController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         $rows = ProductVariant::query()
-            ->with('product:id,name_en')
+            ->with('product:id,name_en,name_ar')
             ->when($q !== '', function ($query) use ($q) {
-                $query->whereHas('product', fn ($p) => $p->where('name_en', 'like', "%{$q}%"))
-                    ->orWhere('sku', 'like', "%{$q}%");
+                $query->where(fn ($sub) => $sub
+                    ->whereHas('product', fn ($p) => Bilingual::whereLike($p, 'name', $q))
+                    ->orWhere('sku', 'like', "%{$q}%"));
             })
             ->limit(20)
             ->get(['id', 'product_id', 'sku']);
@@ -1029,7 +1038,7 @@ class PageBuilderController extends Controller
         return response()->json([
             'results' => $rows->map(fn ($v) => [
                 'id' => $v->id,
-                'text' => trim(optional($v->product)->name_en.' — '.$v->sku, ' —'),
+                'text' => trim(localized($v->product).' — '.$v->sku, ' —'),
             ])->values(),
         ]);
     }
@@ -1039,12 +1048,13 @@ class PageBuilderController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         $rows = Category::query()
-            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => Bilingual::whereLike($query, 'name', $q))
+            ->orderBy(Bilingual::column('name'))
             ->limit(20)
-            ->get(['id', 'name_en']);
+            ->get(['id', 'name_en', 'name_ar']);
 
         return response()->json([
-            'results' => $rows->map(fn ($c) => ['id' => $c->id, 'text' => $c->name_en])->values(),
+            'results' => $rows->map(fn ($c) => ['id' => $c->id, 'text' => localized($c)])->values(),
         ]);
     }
 
@@ -1054,12 +1064,12 @@ class PageBuilderController extends Controller
 
         $rows = CustomPage::query()
             ->where('is_active', true)
-            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => Bilingual::whereLike($query, 'name', $q))
             ->limit(20)
-            ->get(['id', 'name_en']);
+            ->get(['id', 'name_en', 'name_ar']);
 
         return response()->json([
-            'results' => $rows->map(fn ($p) => ['id' => $p->id, 'text' => $p->name_en])->values(),
+            'results' => $rows->map(fn ($p) => ['id' => $p->id, 'text' => localized($p)])->values(),
         ]);
     }
 
@@ -1069,17 +1079,15 @@ class PageBuilderController extends Controller
 
         $brands = Brand::where('is_active', true)
             ->whereNull('deleted_at')
-            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%")
-                ->orWhere('name_ar', 'like', "%{$q}%")
-            )
-            ->orderBy('name_en')
+            ->when($q !== '', fn ($query) => Bilingual::whereLike($query, 'name', $q))
+            ->orderBy(Bilingual::column('name'))
             ->limit(20)
             ->get(['id', 'name_en', 'name_ar', 'logo_media_id']);
 
         return response()->json([
             'results' => $brands->map(fn ($b) => [
                 'id' => $b->id,
-                'text' => $b->name_en.($b->name_ar ? ' — '.$b->name_ar : ''),
+                'text' => localized($b),
             ]),
         ]);
     }
@@ -1108,14 +1116,14 @@ class PageBuilderController extends Controller
 
         $rows = FlashSale::query()
             ->whereIn('status', ['submission_open', 'approved', 'live'])
-            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => Bilingual::whereLike($query, 'name', $q))
             ->limit(20)
             ->get(['id', 'name_en', 'name_ar', 'sale_starts_at', 'status']);
 
         return response()->json([
             'results' => $rows->map(fn ($fs) => [
                 'id' => $fs->id,
-                'text' => $fs->name_en,
+                'text' => localized($fs),
                 'name_ar' => $fs->name_ar,
                 'sale_starts_at' => optional(admin_tz($fs->sale_starts_at))->format('M d, Y'),
                 'status' => $fs->status?->value,
@@ -1128,7 +1136,7 @@ class PageBuilderController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         $rows = VendorListing::query()
-            ->with(['vendor:id,store_name', 'productVariant:id,product_id,sku', 'productVariant.product:id,name_en'])
+            ->with(['vendor:id,store_name', 'productVariant:id,product_id,sku', 'productVariant.product:id,name_en,name_ar'])
             ->where('status', VendorListingStatus::Active)
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($inner) use ($q) {
@@ -1163,7 +1171,7 @@ class PageBuilderController extends Controller
             ->where('admin_listings.status', 'active')
             ->whereNull('admin_listings.deleted_at')
             ->when($q !== '', fn ($query) => $query->where(function ($inner) use ($q) {
-                $inner->where('p.name_en', 'like', "%{$q}%")
+                Bilingual::whereLike($inner, 'p.name', $q)
                     ->orWhere('pv.sku', 'like', "%{$q}%");
             }))
             ->limit(20)
@@ -1172,12 +1180,13 @@ class PageBuilderController extends Controller
                 'admin_listings.price',
                 'admin_listings.currency',
                 'p.name_en',
+                'p.name_ar',
             ]);
 
         return response()->json([
             'results' => $rows->map(fn ($al) => [
                 'id' => $al->id,
-                'text' => $al->name_en.' (Platform) — '.number_format((float) $al->price, 2).' '.$al->currency,
+                'text' => localized($al).' ('.__('admin.page_builder.platform').') — '.number_format((float) $al->price, 2).' '.$al->currency,
             ])->values(),
         ]);
     }
@@ -1217,7 +1226,7 @@ class PageBuilderController extends Controller
         $items = $block->blockProducts()
             ->when($tabIndex !== null, fn ($q) => $q->where('tab_index', (int) $tabIndex))
             ->orderBy('position')
-            ->with('productVariant.product:id,name_en')
+            ->with('productVariant.product:id,name_en,name_ar')
             ->get();
 
         return response()->json([
@@ -1225,7 +1234,7 @@ class PageBuilderController extends Controller
                 'id' => $item->id,
                 'product_variant_id' => $item->product_variant_id,
                 'position' => $item->position,
-                'text' => trim(optional(optional($item->productVariant)->product)->name_en.' — '.optional($item->productVariant)->sku, ' —'),
+                'text' => trim(localized($item->productVariant?->product).' — '.optional($item->productVariant)->sku, ' —'),
             ])->values(),
         ]);
     }
@@ -1273,14 +1282,14 @@ class PageBuilderController extends Controller
 
     public function getBlockCategories(PageBlock $block)
     {
-        $items = $block->blockCategories()->with('category:id,name_en')->get();
+        $items = $block->blockCategories()->with('category:id,name_en,name_ar')->get();
 
         return response()->json([
             'results' => $items->map(fn ($item) => [
                 'id' => $item->id,
                 'category_id' => $item->category_id,
                 'position' => $item->position,
-                'text' => optional($item->category)->name_en,
+                'text' => localized($item->category),
             ])->values(),
         ]);
     }
@@ -1389,7 +1398,7 @@ class PageBuilderController extends Controller
             ->get()
             ->map(fn ($pb) => [
                 'id' => $pb->id,
-                'text' => $pb->brand?->name_en.($pb->brand?->name_ar ? ' — '.$pb->brand?->name_ar : ''),
+                'text' => localized($pb->brand),
             ]);
 
         return response()->json(['results' => $items]);

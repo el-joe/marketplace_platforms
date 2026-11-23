@@ -113,6 +113,7 @@ export interface Category {
   id: string;
   name: Name;
   slug: string;
+  image_url?: string | null;
 }
 
 export interface Vendor {

@@ -17,6 +17,9 @@
             </a>
         </div>
 
+        <x-filter.bar class="mb-4" :statuses="['active' => __('common.active'), 'inactive' => __('common.inactive')]"
+            :search-placeholder="__('admin.list_search.custom_pages')" />
+
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="table-responsive">
                 <table class="min-w-full divide-y divide-gray-100 text-sm" id="custom-pages-table">
@@ -34,7 +37,7 @@
                     <tbody class="divide-y divide-gray-50">
                         @forelse($customPages as $page)
                             <tr data-id="{{ $page->id }}">
-                                <td class="px-4 py-3 font-medium text-gray-800">{{ $page->name_en }}</td>
+                                <td class="px-4 py-3 font-medium text-gray-800">{{ localized($page) }}</td>
                                 <td class="px-4 py-3 text-gray-500">{{ $page->slugRecord?->slug_url }}</td>
                                 <td class="px-4 py-3 text-gray-500">@if($page->all_categories)
                                         <span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">{{ __('admin.custom_pages.all_categories') }}</span>

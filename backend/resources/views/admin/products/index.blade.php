@@ -18,7 +18,7 @@
                 'className' => 'w-12 px-2',
                 'render' => 'Renderers.image()'
             ],
-            ['title' => __('admin.products.column_product'), 'data' => 'name_en', 'name' => 'name_en'],
+            ['title' => __('admin.products.column_product'), 'data' => 'name', 'name' => 'name'],
             ['title' => __('admin.category'), 'data' => 'category', 'name' => 'category', 'searchable' => false],
             ['title' => __('admin.brand'), 'data' => 'brand', 'name' => 'brand', 'searchable' => false],
             [
@@ -136,7 +136,7 @@
         window.tableActions = window.tableActions || {};
 
         window.tableActions.delete = async function (id, row) {
-            const message = window.TRANSLATIONS.deleteProductQuestion.replace(':name', row.name_en || window.TRANSLATIONS.thisProduct);
+            const message = window.TRANSLATIONS.deleteProductQuestion.replace(':name', row.name || window.TRANSLATIONS.thisProduct);
             const confirmed = window.confirmDelete
                 ? await window.confirmDelete(message, { title: window.TRANSLATIONS.deleteProductTitle })
                 : confirm(message);

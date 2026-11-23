@@ -10,12 +10,12 @@
     @php
         $categoryOptions = ['' => __('admin.warranty_plans.all_categories')];
         foreach ($categories as $cat) {
-            $categoryOptions[$cat->id] = str_repeat('— ', $cat->depth ?? 0) . $cat->name_en;
+            $categoryOptions[$cat->id] = str_repeat('— ', $cat->depth ?? 0) . localized($cat);
         }
 
         $columns = [
             ['title' => 'ID', 'data' => 'id', 'name' => 'id'],
-            ['title' => __('common.name'), 'data' => 'name_en', 'name' => 'name_en'],
+            ['title' => __('common.name'), 'data' => 'name', 'name' => 'name'],
             ['title' => __('admin.warranty_plans.category'), 'data' => 'category_path', 'name' => 'category_path', 'orderable' => false],
             ['title' => __('admin.warranty_plans.duration_months'), 'data' => 'duration_months', 'name' => 'duration_months', 'searchable' => false],
             ['title' => __('admin.warranty_plans.price'), 'data' => 'price_display', 'name' => 'price_display', 'searchable' => false],

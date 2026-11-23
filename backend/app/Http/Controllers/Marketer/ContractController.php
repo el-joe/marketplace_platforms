@@ -80,7 +80,7 @@ class ContractController extends Controller
         $version = MarketerContractVersion::whereHas('contract', fn ($q) => $q->where('marketer_id', $this->marketer()->id))->findOrFail($version);
         abort_if(! $version->file_url || $version->content_type !== 'pdf', 404);
 
-        return Storage::disk('local')->download($version->file_url);
+        return Storage::disk('private')->download($version->file_url);
     }
 
     public function accept(Request $request): RedirectResponse

@@ -40,10 +40,10 @@
                                 <div class="flex flex-wrap gap-1.5">
                                     @foreach($countries as $country)
                                         <a href="{{ route('admin.portal-content.page', [$country->site_code, $page->page_key]) }}"
-                                           title="{{ __('admin.portal_content.edit_for_country', ['country' => $locale === 'ar' ? ($country->name_ar ?: $country->name_en) : $country->name_en]) }}"
+                                           title="{{ __('admin.portal_content.edit_for_country', ['country' => $locale === 'ar' ? (localized($country)) : $country->name_en]) }}"
                                            class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-blue-400">
                                             @include('admin.portal-content._flag', ['country' => $country])
-                                            {{ $locale === 'ar' ? ($country->name_ar ?: $country->name_en) : $country->name_en }}
+                                            {{ $locale === 'ar' ? (localized($country)) : $country->name_en }}
                                         </a>
                                     @endforeach
                                 </div>

@@ -2,6 +2,7 @@
 
 namespace App\Services\Customer;
 
+use App\Enums\DistanceDeliveryStatus;
 use App\Enums\GlobalSystemType;
 use App\Models\Address;
 use App\Models\AffiliatePromoCode;
@@ -18,6 +19,7 @@ use App\Models\ShippingRate;
 use App\Models\VendorListing;
 use App\Models\WarrantyPlan;
 use App\Services\Checkout\CheckoutPricingEngine;
+use App\Services\Shipping\DistancePricing\DistancePricingResolver;
 use App\Services\WarrantyPlanService;
 use App\Support\Money;
 use Illuminate\Support\Carbon;
@@ -56,6 +58,10 @@ class CheckoutCalculationService
                 'is_free' => true,
                 'error' => null,
                 'cod_available' => false,
+                'available' => true,
+                'unavailable_reason' => null,
+                'distance' => null,
+                'distance_snapshot' => null,
             ];
         }
 
@@ -66,14 +72,24 @@ class CheckoutCalculationService
             ->orderBy('base_fee')
             ->first();
 
+        $codAvailable = (bool) ($city->cod_available && $country->cod_available);
+
+        $cartSubtotal = 0;
+        foreach ($cartItems as $item) {
+            $cartSubtotal += $item->unit_price * $item->quantity;
+        }
+        $cartSubtotal = Money::number(round($cartSubtotal, 2));
+
         if (! $rate) {
-            return [
+            $result = [
                 'fee' => 0,
                 'cod_extra_fee' => 0,
                 'is_free' => true,
                 'error' => null,
-                'cod_available' => (bool) ($city->cod_available && $country->cod_available),
+                'cod_available' => $codAvailable,
             ];
+
+            return $this->applyDistancePricing($result, $shippingAddress, $city->shipping_zone_id, $shippingMethodId, $cartItems, false);
         }
 
         $totalWeightGrams = 0;
@@ -86,12 +102,6 @@ class CheckoutCalculationService
             ? Money::number(round(($totalWeightGrams / 1000) * (float) $rate->rate_per_kg, 2))
             : 0;
 
-        $cartSubtotal = 0;
-        foreach ($cartItems as $item) {
-            $cartSubtotal += $item->unit_price * $item->quantity;
-        }
-        $cartSubtotal = Money::number(round($cartSubtotal, 2));
-
         $shippingFee = Money::number($rate->base_fee + $weightFee);
 
         $isFree = $rate->free_shipping_threshold !== null
@@ -102,9 +112,8 @@ class CheckoutCalculationService
         }
 
         $codFee = ($isCOD && $rate->cod_extra_fee > 0) ? $rate->cod_extra_fee : 0;
-        $codAvailable = (bool) ($city->cod_available && $country->cod_available);
 
-        return [
+        $result = [
             'fee' => $shippingFee,
             'cod_extra_fee' => $codFee,
             'is_free' => $isFree,
@@ -114,10 +123,51 @@ class CheckoutCalculationService
             'carrier_id' => $rate->carrier_id,
             'zone_id' => $city->shipping_zone_id,
         ];
+
+        return $this->applyDistancePricing($result, $shippingAddress, $city->shipping_zone_id, $shippingMethodId, $cartItems, $isFree);
+    }
+
+    /**
+     * Overlay the zone+method distance pricing rule (client item #19) on a normal zone-rate result.
+     *
+     * Adds `available`, `unavailable_reason`, `distance` and `distance_snapshot` (null when no rule applies) to every result. When the
+     * group is distance-priced, `fee` becomes the sum of the per-seller distance fees (`distance.fee_by_seller`);
+     * on fallback (missing coordinates, distance in a tier gap) the zone-rate fee is kept untouched.
+     *
+     * @param  array<int, CartItem>  $cartItems
+     */
+    private function applyDistancePricing(array $result, Address $address, string $zoneId, string $shippingMethodId, array $cartItems, bool $orderAmountThresholdMet): array
+    {
+        $result += ['available' => true, 'unavailable_reason' => null, 'distance' => null, 'distance_snapshot' => null];
+
+        $pricing = $this->distancePricing->activeRuleFor($zoneId, $shippingMethodId);
+        $distance = $pricing ? $this->distancePricing->resolve($pricing, $address, $cartItems, $orderAmountThresholdMet) : null;
+
+        if ($distance === null) {
+            return $result;
+        }
+
+        // The per-seller audit snapshot (origins, rule id) is internal: it is persisted on the sub-order at
+        // place-order time and never sent to the storefront with the customer-facing `distance` payload.
+        $result['distance_snapshot'] = $distance['snapshot'];
+        unset($distance['snapshot']);
+        $result['distance'] = $distance;
+        $status = DistanceDeliveryStatus::from($distance['status']);
+
+        if ($status === DistanceDeliveryStatus::Unavailable) {
+            $result['available'] = false;
+            $result['unavailable_reason'] = $distance['message'];
+        } elseif ($status->isDistancePriced()) {
+            $result['fee'] = $distance['fee'];
+            $result['is_free'] = $distance['fee'] == 0;
+        }
+
+        return $result;
     }
 
     public function __construct(
         private readonly CheckoutPricingEngine $pricingEngine,
+        private readonly DistancePricingResolver $distancePricing,
     ) {}
 
     public function calculateTax(int|float $taxableAmountCents, Country $country): int|float

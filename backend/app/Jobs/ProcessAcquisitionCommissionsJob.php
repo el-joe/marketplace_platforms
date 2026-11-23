@@ -33,11 +33,16 @@ class ProcessAcquisitionCommissionsJob implements ShouldQueue
 
     private function processCommission(VendorAcquisitionCommission $commission, Carbon $prevMonth, Carbon $prevMonthEnd): void
     {
+        // Only sales inside the deal's own period count: a deal that starts or ends mid-month must not pay
+        // for orders completed before it started or after it ended.
+        $windowStart = $commission->valid_from->copy()->startOfDay()->max($prevMonth);
+        $windowEnd = $commission->valid_until->copy()->endOfDay()->min($prevMonthEnd);
+
         // sub_orders has no dedicated completed_at column, so updated_at is used as the
         // completion timestamp (it is set when status transitions to 'completed').
         $baseQuery = SubOrder::where('vendor_id', $commission->vendor_id)
             ->where('status', SubOrderStatus::Completed->value)
-            ->whereBetween('updated_at', [$prevMonth, $prevMonthEnd]);
+            ->whereBetween('updated_at', [$windowStart, $windowEnd]);
 
         $monthlyCount = (clone $baseQuery)->count();
 

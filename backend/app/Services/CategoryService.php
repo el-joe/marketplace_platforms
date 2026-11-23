@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\Admin;
 use App\Models\Category;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CategoryService
 {
-    private const MAX_FEATURED = 12;
+    public const MAX_FEATURED = 12;
 
     // ─── Commission Rate ──────────────────────────────────────────────────────
 
@@ -32,7 +34,7 @@ class CategoryService
         if ($featured) {
             $currentCount = Category::where('is_featured', true)->where('id', '!=', $category->id)->count();
             if ($currentCount >= self::MAX_FEATURED) {
-                throw new \RuntimeException("Maximum of " . self::MAX_FEATURED . " featured categories allowed.");
+                throw new \RuntimeException('Maximum of '.self::MAX_FEATURED.' featured categories allowed.');
             }
         }
 
@@ -80,12 +82,12 @@ class CategoryService
     public function delete(Category $category, ?string $adminId = null): void
     {
         $check = $this->canDelete($category);
-        if (!$check['allowed']) {
+        if (! $check['allowed']) {
             throw new \RuntimeException($check['reason']);
         }
 
         // Soft-delete all descendants first
-        $category->descendants()->each(fn($child) => $child->delete());
+        $category->descendants()->each(fn ($child) => $child->delete());
 
         $category->delete();
 
@@ -115,7 +117,7 @@ class CategoryService
 
             foreach ($assignments as $i => $assignment) {
                 DB::table('category_attributes')->insert([
-                    'id' => (string) \Illuminate\Support\Str::uuid(),
+                    'id' => (string) Str::uuid(),
                     'category_id' => $category->id,
                     'attribute_id' => $assignment['attribute_id'],
                     'is_required' => (bool) ($assignment['is_required'] ?? false),
@@ -132,12 +134,12 @@ class CategoryService
     private function logActivity(string $event, Category $category, ?string $adminId, array $properties = []): void
     {
         DB::table('activity_log')->insert([
-            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'id' => (string) Str::uuid(),
             'log_name' => 'categories',
             'description' => $event,
             'subject_type' => Category::class,
             'subject_id' => $category->id,
-            'causer_type' => $adminId ? \App\Models\Admin::class : null,
+            'causer_type' => $adminId ? Admin::class : null,
             'causer_id' => $adminId,
             'properties' => json_encode($properties),
             'event' => $event,

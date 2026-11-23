@@ -67,7 +67,7 @@ return [
         'ads' => 'Ads',
         'marketer_campaigns' => 'Marketer Campaigns',
         'sample_requests' => 'Sample Requests',
-        'open_market' => 'Open Market',
+        'open_market' => 'Classifieds',
         'my_classifieds' => 'My Classifieds',
         'marketer' => 'Marketer',
         'marketer_profile' => 'Marketer Profile',
@@ -101,6 +101,7 @@ return [
     ],
 
     'auth' => [
+        'reset_link_sent' => 'If a seller account uses this email, a password reset link has been sent to it. Check your inbox (and spam folder).',
         'sellers' => 'For Sellers',
         'email' => 'Email',
         'password' => 'Password',
@@ -1914,8 +1915,8 @@ return [
     ],
 
     'classifieds_extra' => [
-        'index_title' => 'Open Market',
-        'index_subtitle' => 'Create and manage your listings in the open market.',
+        'index_title' => 'Classifieds',
+        'index_subtitle' => 'Create and manage your classified listings.',
         'create_ad' => 'Create Listing',
         'search_placeholder' => 'Search by listing title...',
         'all_statuses' => 'All Statuses',
@@ -1969,7 +1970,7 @@ return [
         'accept_contract_submit' => 'Accept Contract & Submit for Review',
         'cancel' => 'Cancel',
         'no_ads' => 'No listings yet',
-        'no_ads_desc' => 'Create your first listing in the open market',
+        'no_ads_desc' => 'Create your first classified listing',
         'wizard_title' => 'Create New Listing',
         'wizard_step_of' => 'Step :current of :total',
         'wizard' => [

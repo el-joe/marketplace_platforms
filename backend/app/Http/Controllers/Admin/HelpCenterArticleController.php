@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\HelpCenterArticle;
 use App\Models\HelpCenterCategory;
+use App\Support\HtmlSanitizer;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -275,9 +276,9 @@ class HelpCenterArticleController extends Controller
             'excerpt' => $validated['excerpt_en'] ?? $validated['excerpt'] ?? null,
             'excerpt_en' => $validated['excerpt_en'] ?? null,
             'excerpt_ar' => $validated['excerpt_ar'] ?? null,
-            'body' => $validated['body_en'] ?? $validated['body'],
-            'body_en' => $validated['body_en'] ?? null,
-            'body_ar' => $validated['body_ar'] ?? null,
+            'body' => HtmlSanitizer::clean($validated['body_en'] ?? $validated['body']) ?? '',
+            'body_en' => HtmlSanitizer::clean($validated['body_en'] ?? null) ?? '',
+            'body_ar' => HtmlSanitizer::clean($validated['body_ar'] ?? null) ?? '',
             'related_article_ids' => $validated['related_article_ids'] ?? [],
             'is_featured' => $request->boolean('is_featured'),
         ];

@@ -637,7 +637,7 @@ async function wizLoadContractInWizard() {
         } else {
             // NOTE: contractShow() requires an existing listing ID, so we cannot fetch the full
             // contract before creation. Display terms summary; detailed contract sent after creation.
-            textEl.textContent = 'سيتم إنشاء العقد التفصيلي بعد إرسال الإعلان وسيُطلب منك قبوله قبل النشر. بالمتابعة توافق على الشروط العامة للسوق المفتوح في المنصة.';
+            textEl.textContent = 'سيتم إنشاء العقد التفصيلي بعد إرسال الإعلان وسيُطلب منك قبوله قبل النشر. بالمتابعة توافق على الشروط العامة لـالإعلانات المبوبة في المنصة.';
         }
     }
     wizContractLoaded = true;

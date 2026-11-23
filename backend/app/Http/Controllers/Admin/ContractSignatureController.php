@@ -29,7 +29,7 @@ class ContractSignatureController extends Controller
         $countryFilter = $this->countryFilter($request);
 
         $contracts = VendorContract::query()
-            ->with(['vendor:id,store_name', 'contractTemplate:id,name,country_id', 'classifiedCategory:id,name_en', 'productCategory:id,name_en', 'product:id,name_en', 'country:id,name_en,name_ar,iso_code_2'])
+            ->with(['vendor:id,store_name', 'contractTemplate:id,name,country_id', 'classifiedCategory:id,name_en,name_ar', 'productCategory:id,name_en,name_ar', 'product:id,name_en,name_ar', 'country:id,name_en,name_ar,iso_code_2'])
             ->when($scope, fn (Builder $query) => $query->where('category_scope', $scope))
             ->when($status, fn (Builder $query) => $query->where('status', $status))
             ->when($countryFilter === 'legacy', fn (Builder $query) => $query->whereNull('country_id'))

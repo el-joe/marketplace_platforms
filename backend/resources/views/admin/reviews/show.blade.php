@@ -4,7 +4,7 @@
     @vite(['resources/js/admin/reviews.js'])
 @endpush
 
-@section('title', __('admin.reviews_section.review_detail') . ': ' . ($review->product?->name_en ?? __('admin.reviews_section.review_detail')))
+@section('title', __('admin.reviews_section.review_detail') . ': ' . (localized($review->product) ?: __('admin.reviews_section.review_detail')))
 
 @section('content')
 
@@ -14,7 +14,7 @@
             <div class="flex items-center gap-2 text-sm text-gray-500 mb-1">
                 <a href="{{ route('admin.reviews.index') }}" class="hover:text-primary-600">{{ __('admin.reviews_section.title') }}</a>
                 <span>/</span>
-                <span class="text-gray-800">{{ $review->product?->name_en ?? __('admin.reviews_section.review_detail') }}</span>
+                <span class="text-gray-800">{{ localized($review->product) ?: __('admin.reviews_section.review_detail') }}</span>
             </div>
             <h1 class="text-xl font-bold text-gray-900">{{ __('admin.reviews_section.review_detail') }}</h1>
         </div>
@@ -41,7 +41,7 @@
                             @if($review->product)
                                 <a href="{{ route('admin.products.show', $review->product->id) }}"
                                     class="font-semibold text-primary-600 hover:underline" target="_blank">
-                                    {{ $review->product->name_en }}
+                                    {{ localized($review->product) }}
                                 </a>
                             @else
                                 <span class="text-gray-500">—</span>
@@ -77,7 +77,7 @@
                         </div>
                         <div>
                             <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">{{ __('admin.reviews_section.country') }}</p>
-                            <span>{{ $review->country?->flag_emoji ?? '' }} {{ $review->country?->name_en ?? '—' }}</span>
+                            <span>{{ $review->country?->flag_emoji ?? '' }} {{ localized($review->country) ?: '—' }}</span>
                         </div>
                         <div>
                             <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">{{ __('admin.reviews_section.submitted') }}</p>

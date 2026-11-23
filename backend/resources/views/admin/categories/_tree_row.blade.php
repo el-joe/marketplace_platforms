@@ -22,7 +22,7 @@
     <td class="px-4 py-2">
         <div class="flex items-center gap-2" style="padding-left: {{ $depth * 20 }}px">
             <div>
-                <span class="font-medium text-gray-900">{{ $category->name_en }}</span>
+                <span class="font-medium text-gray-900">{{ localized($category) }}</span>
                 @if($category->name_ar)
                     <span class="text-xs text-gray-400 mx-1" dir="rtl">{{ $category->name_ar }}</span>
                 @endif
@@ -120,7 +120,7 @@
         <div class="flex items-center justify-end gap-1">
             <a href="{{ route('admin.categories.edit', $category->id) }}" class="btn btn-ghost btn-xs">{{ __('common.edit') }}</a>
             <button type="button" class="btn btn-ghost btn-xs text-red-600 hover:bg-red-50 delete-cat-btn"
-                data-id="{{ $category->id }}" data-name="{{ addslashes($category->name_en) }}"
+                data-id="{{ $category->id }}" data-name="{{ addslashes(localized($category)) }}"
                 data-url="{{ route('admin.categories.destroy', $category->id) }}">
                 {{ __('common.delete') }}
             </button>

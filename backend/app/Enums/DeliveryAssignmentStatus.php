@@ -13,4 +13,5 @@ enum DeliveryAssignmentStatus: string
     case PickedUp = 'picked_up';
     case Delivered = 'delivered';
     case Failed = 'failed';
+    case Cancelled = 'cancelled';
 }

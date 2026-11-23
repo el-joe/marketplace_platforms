@@ -20,6 +20,24 @@
         </button>
     </div>
 
+    {{-- Menu search: filters items by label (both languages) or route name; Ctrl+K or "/" focuses it --}}
+    <div class="px-2 pt-3 sidebar-label" id="sidebar-search-wrap">
+        <label for="sidebar-search" class="sr-only">{{ __('admin.nav.search_menu') }}</label>
+        <div class="relative">
+            <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-2.5 text-gray-500">
+                <x-heroicon name="magnifying-glass" class="w-4 h-4" />
+            </span>
+            <input id="sidebar-search" type="search" autocomplete="off" spellcheck="false"
+                placeholder="{{ __('admin.nav.search_menu') }}"
+                aria-describedby="sidebar-search-hint"
+                aria-controls="sidebar-nav"
+                class="w-full rounded-lg border border-gray-700 bg-gray-800 py-1.5 ps-8 pe-12 text-sm text-gray-100 placeholder-gray-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+            <kbd id="sidebar-search-hint" class="pointer-events-none absolute inset-y-0 end-0 my-1.5 me-2 hidden items-center rounded border border-gray-700 px-1.5 text-[10px] text-gray-400 md:inline-flex"
+                title="{{ __('admin.nav.search_menu_hint') }}">Ctrl K</kbd>
+        </div>
+        <p id="sidebar-search-empty" class="hidden px-1 pt-3 text-xs text-gray-500" role="status">{{ __('admin.nav.search_menu_empty') }}</p>
+    </div>
+
     {{-- Navigation --}}
     <nav class="flex-1 overflow-y-auto px-2 py-3 space-y-1" id="sidebar-nav">
         @foreach($navGroups as $groupIndex => $group)
@@ -29,7 +47,8 @@
                         $isActive = NavigationService::isActive($item['route']);
                         $url = \Illuminate\Support\Facades\Route::has($item['route']) ? route($item['route'], $item['route_params'] ?? []) : '#';
                     @endphp
-                    <a href="{{ $url }}" class="nav-item {{ $isActive ? 'is-active' : '' }}" title="{{ $item['label'] }}">
+                    <a href="{{ $url }}" class="nav-item {{ $isActive ? 'is-active' : '' }}" title="{{ $item['label'] }}"
+                        data-nav-search="{{ $item['search'] ?? $item['label'] }}">
                         <x-heroicon :name="$item['icon']" class="nav-item-icon" />
                         <span class="sidebar-label truncate flex-1">{{ $item['label'] }}</span>
                         @if(!empty($item['badge']))
@@ -42,7 +61,8 @@
                     $groupIsActive = NavigationService::isGroupActive($group);
                     $groupBadgeTotal = collect($group['items'])->sum(fn($i) => (int) ($i['badge'] ?? 0));
                 @endphp
-                <div class="nav-group {{ $groupIsActive ? 'is-open' : '' }}" data-group-id="{{ $groupIndex }}">
+                <div class="nav-group {{ $groupIsActive ? 'is-open' : '' }}" data-group-id="{{ $groupIndex }}"
+                    data-nav-search="{{ $group['search'] ?? $group['group'] }}">
                     <button type="button"
                         class="nav-group-header {{ $groupIsActive ? 'is-active' : '' }}"
                         aria-expanded="{{ $groupIsActive ? 'true' : 'false' }}"
@@ -63,7 +83,8 @@
                                     $isActive = NavigationService::isActive($item['route']);
                                     $url = \Illuminate\Support\Facades\Route::has($item['route']) ? route($item['route'], $item['route_params'] ?? []) : '#';
                                 @endphp
-                                <a href="{{ $url }}" class="nav-item nav-subitem {{ $isActive ? 'is-active' : '' }}" title="{{ $item['label'] }}">
+                                <a href="{{ $url }}" class="nav-item nav-subitem {{ $isActive ? 'is-active' : '' }}" title="{{ $item['label'] }}"
+                                    data-nav-search="{{ $item['search'] ?? $item['label'] }}">
                                     <x-heroicon :name="$item['icon']" class="nav-item-icon" />
                                     <span class="sidebar-label truncate">{{ $item['label'] }}</span>
                                     @if(!empty($item['badge']))

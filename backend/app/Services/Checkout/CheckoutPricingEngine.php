@@ -18,6 +18,7 @@ use App\Models\CouponUsage;
 use App\Models\Customer;
 use App\Models\MarketerCampaign;
 use App\Models\Order;
+use App\Models\ProductLinkCommissionRule;
 use App\Models\Vendor;
 use App\Models\WarrantyPlan;
 use App\Services\Shared\CommissionCalculator;
@@ -444,6 +445,7 @@ class CheckoutPricingEngine
      * @param  array<string, int|float>  $adminSubsidyByGroup  vendor key (or 'platform') => admin_subsidy_amount
      * @param  array<string, int|float>  $carrierRawFeeByGroup  vendor key (or 'platform') => the shipping resolver's raw (pre-subsidy) carrier fee for that group; falls back to the group's charged shipping when no resolver ran (e.g. FBN/admin — see enhancement.md P-03 task 3 note)
      * @param  array<string, int|float>  $chargedShippingByGroup  vendor key (or 'platform') => shipping fee charged to the customer for that group (same values priceCart() was given as $shippingByGroup)
+     * @param  array<string, array{rule: ProductLinkCommissionRule}>  $productLinkAttributions  line key => the vendor product-link rule that lowers this line's platform commission (WS12 #24, ProductLinkAttributionService)
      * @return array{
      *   lines: array<string, array{vendor_coupon_cost:int|float, platform_coupon_cost:int|float, platform_commission_after_discount:int|float, marketer_commission:int|float}>,
      *   sub_orders: array<string, array{
@@ -469,6 +471,7 @@ class CheckoutPricingEngine
         bool $isCod,
         int|float $codFeeCents,
         int|float $warrantyTotalCents,
+        array $productLinkAttributions = [],
     ): array {
         $lines = $this->normalizeAll($items);
 
@@ -514,6 +517,13 @@ class CheckoutPricingEngine
                 [$rawCommission, $commissionCategoryId] = $this->resolveCommission($vendor, $l['category_id'], $l['fulfillment_model'], $country, $base, $l['quantity'], $categoriesWithTiers);
             }
 
+            // WS12 #24: the customer came through this vendor's own product link / QR code. The discount comes off
+            // this line's platform commission first; the vendor's own commission discount then applies to the rest.
+            $sourceLinkDiscount = 0;
+            if (! $isPlatformLine && isset($productLinkAttributions[$key]['rule'])) {
+                $sourceLinkDiscount = $productLinkAttributions[$key]['rule']->discountOn($rawCommission, $l['quantity']);
+            }
+
             // Marketer commission (D5): owner pays; base is the vendor
             // listing price, not the marketer's resale price.
             $marketerCommission = 0;
@@ -527,12 +537,14 @@ class CheckoutPricingEngine
             $groups[$groupKey]['vendor_coupon_cost'] = ($groups[$groupKey]['vendor_coupon_cost'] ?? 0) + $vendorCouponCost;
             $groups[$groupKey]['platform_coupon_cost'] = ($groups[$groupKey]['platform_coupon_cost'] ?? 0) + $platformCouponCost;
             $groups[$groupKey]['raw_commission'] = ($groups[$groupKey]['raw_commission'] ?? 0) + $rawCommission;
+            $groups[$groupKey]['source_link_discount'] = ($groups[$groupKey]['source_link_discount'] ?? 0) + $sourceLinkDiscount;
             $groups[$groupKey]['marketer_commission'] = ($groups[$groupKey]['marketer_commission'] ?? 0) + $marketerCommission;
             $groups[$groupKey]['marketer_owner'] = $l['marketer_owner'] ?? ($groups[$groupKey]['marketer_owner'] ?? null);
             $groups[$groupKey]['lines'][$key] = [
                 'vendor_coupon_cost' => $vendorCouponCost,
                 'platform_coupon_cost' => $platformCouponCost,
                 'raw_commission' => $rawCommission,
+                'source_link_discount' => $sourceLinkDiscount,
                 'marketer_commission' => $marketerCommission,
             ];
 
@@ -541,6 +553,7 @@ class CheckoutPricingEngine
                 'vendor_coupon_cost' => $vendorCouponCost,
                 'platform_coupon_cost' => $platformCouponCost,
                 'raw_commission' => $rawCommission,
+                'source_link_discount' => $sourceLinkDiscount,
                 'marketer_commission' => $marketerCommission,
                 'commission_category_id' => $commissionCategoryId,
             ];
@@ -568,10 +581,11 @@ class CheckoutPricingEngine
         foreach ($groups as $groupKey => $g) {
             $isPlatformGroup = $groupKey === 'platform';
 
-            $platformCommissionAfterDiscount = $this->wholeIfPossible($g['raw_commission']);
+            $commissionAfterSourceLink = $this->wholeIfPossible(max(0, round($g['raw_commission'] - ($g['source_link_discount'] ?? 0), 4)));
+            $platformCommissionAfterDiscount = $commissionAfterSourceLink;
             if (! $isPlatformGroup && $g['vendor_id'] !== null) {
                 $vendor = Vendor::find($g['vendor_id']);
-                $platformCommissionAfterDiscount = $vendor?->applyCommissionDiscount($g['raw_commission']) ?? $g['raw_commission'];
+                $platformCommissionAfterDiscount = $vendor?->applyCommissionDiscount($commissionAfterSourceLink) ?? $commissionAfterSourceLink;
             }
 
             // VAT on the platform commission, at the order country's rate. It is billed to the seller
@@ -627,7 +641,7 @@ class CheckoutPricingEngine
             // lines (weighted by each line's raw commission), so
             // Sigma(order_items.platform_commission_after_discount) ==
             // sub_orders.platform_commission_after_discount exactly.
-            $lineCommissionWeights = array_map(fn ($l) => $l['raw_commission'], $g['lines']);
+            $lineCommissionWeights = array_map(fn ($l) => max(0, $l['raw_commission'] - ($l['source_link_discount'] ?? 0)), $g['lines']);
             $lineCommissionAfterDiscount = $this->allocateProRataDecimal($platformCommissionAfterDiscount, $lineCommissionWeights);
             $groupLines = $g['lines'];
             foreach ($groupLines as $lineKey => $lineData) {

@@ -30,6 +30,7 @@ class CategoryEditPageEscapingTest extends TestCase
         ]);
 
         $html = $this->actingAs($admin, 'admin')
+            ->withSession(['locale' => 'en'])
             ->get(route('admin.categories.edit', $category->id))
             ->assertOk()
             ->getContent();

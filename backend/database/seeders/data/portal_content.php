@@ -555,7 +555,7 @@ $rows = [
     ['nav', 'section_travel_agency', 'publish', 'text', 'What you can publish', 'ما يمكنك نشره', null, 30],
     ['nav', 'section_travel_agency', 'steps', 'text', 'How it works', 'كيف تبدأ', null, 31],
     ['nav', 'section_travel_agency', 'register', 'text', 'Register now', 'سجّل الآن', null, 32],
-    ['nav', 'section_open_souq', 'benefits', 'text', 'Why sell on Open Souq', 'لماذا تبيع على السوق المفتوح', null, 33],
+    ['nav', 'section_open_souq', 'benefits', 'text', 'Why list on Classifieds', 'لماذا تنشر في الإعلانات المبوبة', null, 33],
     ['nav', 'section_open_souq', 'publish', 'text', 'What you can list', 'ما يمكنك إدراجه', null, 34],
     ['nav', 'section_open_souq', 'steps', 'text', 'How it works', 'كيف تبدأ', null, 35],
     ['nav', 'section_open_souq', 'register', 'text', 'Register now', 'سجّل الآن', null, 36],
@@ -786,9 +786,9 @@ $rows = [
     ['join', 'card_product_vendor', 'description', 'text', 'Sell physical or digital products and manage your own store on Nawy.', 'بِع منتجاتك المادية أو الرقمية وأدر متجرك الخاص على ناوي.', null, 2],
     ['join', 'card_product_vendor', 'image', 'image', 'Product seller', 'بائع منتجات', '/images/join/seller.svg', 3],
 
-    ['join', 'card_open_souq', 'title', 'text', 'Open Souq', 'السوق المفتوح', null, 1],
-    ['join', 'card_open_souq', 'description', 'text', 'List across our classified categories — real estate, cars, chalets and more.', 'أدرج إعلاناتك في فئات السوق المفتوح — العقارات والسيارات والشاليهات وغيرها.', null, 2],
-    ['join', 'card_open_souq', 'image', 'image', 'Open Souq', 'السوق المفتوح', '/images/join/open-souq.jpg', 3],
+    ['join', 'card_open_souq', 'title', 'text', 'Classifieds', 'الإعلانات المبوبة', null, 1],
+    ['join', 'card_open_souq', 'description', 'text', 'List in our classified sections — real estate, cars, travel & tourism and more.', 'انشر إعلاناتك في أقسام الإعلانات المبوبة — العقارات والسيارات والسفر والسياحة وغيرها.', null, 2],
+    ['join', 'card_open_souq', 'image', 'image', 'Classifieds', 'الإعلانات المبوبة', '/images/join/open-souq.jpg', 3],
 
     ['join', 'card_travel_agency', 'title', 'text', 'Travel Agency', 'وكالة سفر', null, 1],
     ['join', 'card_travel_agency', 'description', 'text', 'Register your travel agency to publish trips, packages and bookings on Nawy.', 'سجّل وكالة السفر الخاصة بك لنشر الرحلات والباقات والحجوزات على ناوي.', null, 2],
@@ -934,16 +934,16 @@ $rows = [
     // Introduction landing reached from the /companies choice screen. It reuses
     // the product-seller /vendors/register wizard until it has its own flow, so
     // the CTA urls stay null and fall back to the route passed by the view.
-    ['open-souq', 'meta', 'title', 'text', 'Sell on Open Souq — Nawy', 'بِع على السوق المفتوح — ناوي', null, 1],
-    ['open-souq', 'meta', 'description', 'text', 'List across our classified categories — real estate, cars, chalets and more — and reach buyers across the region.', 'أدرج إعلاناتك في فئات السوق المفتوح — العقارات والسيارات والشاليهات وغيرها — وصِل إلى المشترين في جميع أنحاء المنطقة.', null, 2],
+    ['open-souq', 'meta', 'title', 'text', 'List on Classifieds — Nawy', 'انشر في الإعلانات المبوبة — ناوي', null, 1],
+    ['open-souq', 'meta', 'description', 'text', 'List in our classified sections — real estate, cars, travel & tourism and more — and reach buyers across the region.', 'انشر إعلاناتك في أقسام الإعلانات المبوبة — العقارات والسيارات والسفر والسياحة وغيرها — وصِل إلى المشترين في جميع أنحاء المنطقة.', null, 2],
 
-    ['open-souq', 'hero', 'eyebrow', 'text', 'Open Souq', 'السوق المفتوح', null, 1],
+    ['open-souq', 'hero', 'eyebrow', 'text', 'Classifieds', 'الإعلانات المبوبة', null, 1],
     ['open-souq', 'hero', 'title', 'text', 'List anything, reach everyone', 'أدرج أي شيء، وصِل إلى الجميع', null, 2],
-    ['open-souq', 'hero', 'subtitle', 'text', 'Open Souq is where individuals and businesses list across our classified categories — real estate, cars, chalets and more.', 'السوق المفتوح هو المكان الذي يدرج فيه الأفراد والشركات إعلاناتهم في فئاتنا المبوبة — العقارات والسيارات والشاليهات وغيرها.', null, 3],
+    ['open-souq', 'hero', 'subtitle', 'text', 'Classifieds is where individuals and businesses list across our sections — real estate, cars, travel & tourism and more.', 'الإعلانات المبوبة هي المكان الذي ينشر فيه الأفراد والشركات إعلاناتهم في أقسامنا — العقارات والسيارات والسفر والسياحة وغيرها.', null, 3],
     ['open-souq', 'hero', 'cta_button', 'link', 'Start selling', 'ابدأ البيع', null, 4],
-    ['open-souq', 'hero', 'photo', 'image', 'A seller listing items on Open Souq', 'بائع يدرج إعلاناته على السوق المفتوح', '/images/join/open-souq.jpg', 5],
+    ['open-souq', 'hero', 'photo', 'image', 'A seller publishing classified ads', 'بائع ينشر إعلاناته المبوبة', '/images/join/open-souq.jpg', 5],
 
-    ['open-souq', 'benefits', 'title', 'text', 'Why sell on Open Souq?', 'لماذا تبيع على السوق المفتوح؟', null, 1],
+    ['open-souq', 'benefits', 'title', 'text', 'Why list on Classifieds?', 'لماذا تنشر في الإعلانات المبوبة؟', null, 1],
     ['open-souq', 'benefits_item_1', 'title', 'text', 'Reach more buyers', 'صِل إلى مشترين أكثر', null, 1],
     ['open-souq', 'benefits_item_1', 'description', 'text', 'Put your listings in front of millions of shoppers browsing Nawy every day.', 'اعرض إعلاناتك أمام ملايين المتسوقين الذين يتصفحون ناوي يومياً.', null, 2],
     ['open-souq', 'benefits_item_2', 'title', 'text', 'List in minutes', 'أدرج إعلانك في دقائق', null, 1],

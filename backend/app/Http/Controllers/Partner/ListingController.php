@@ -23,6 +23,7 @@ use App\Models\Product;
 use App\Models\ProductCountry;
 use App\Models\ProductCustomAttribute;
 use App\Models\ProductImage;
+use App\Models\ProductLinkCommissionRule;
 use App\Models\ProductVariant;
 use App\Models\ShippingRate;
 use App\Models\ShippingZone;
@@ -39,6 +40,7 @@ use App\Services\ListingCertificationGate;
 use App\Services\ListingContractGate;
 use App\Services\ListingShippingResolver;
 use App\Services\MarketerCampaignService;
+use App\Services\ProductLink\ProductShareLinkService;
 use App\Services\Shared\PageCacheService;
 use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\ShippingWeightService;
@@ -553,7 +555,15 @@ class ListingController extends Controller
 
         $sizeGuides = SizeGuide::where('vendor_id', $this->vendorId())->orderBy('name')->get(['id', 'name']);
 
-        return view('partner.listings.show', compact('listing', 'movements', 'availableShippingMethods', 'defaultShippingMethod', 'marketerCampaigns', 'marketerCampaignStats', 'marketerCampaignBlock', 'sizeGuides'));
+        // WS12 #24: the vendor's own signed share link / QR code for this listing, and the country's commission rule.
+        $shareLinks = app(ProductShareLinkService::class);
+        $productLink = [
+            'url' => $shareLinks->urlFor($listing),
+            'qr' => $shareLinks->qrDataUri($listing),
+            'rule' => ProductLinkCommissionRule::query()->where('country_id', $listing->country_id)->where('is_active', true)->first(),
+        ];
+
+        return view('partner.listings.show', compact('listing', 'movements', 'availableShippingMethods', 'defaultShippingMethod', 'marketerCampaigns', 'marketerCampaignStats', 'marketerCampaignBlock', 'sizeGuides', 'productLink'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -752,7 +762,7 @@ class ListingController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'code', 'type']);
 
-        $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'name_ar', 'currency_code']);
+        $countries = Country::availableForVendors()->orderBy('name_en')->get(['id', 'name_en', 'name_ar', 'currency_code']);
 
         $fulfillmentModels = [
             'fbm' => 'FBM — الشحن الذاتي',
@@ -808,7 +818,7 @@ class ListingController extends Controller
             'signed' => $signed,
             'not_configured' => false,
             'name' => $resolved->template->name,
-            'category_name' => $resolved->subject->name_en,
+            'category_name' => localized($resolved->subject),
             'message' => $signed
                 ? __('contracts.partner.hint_signed', ['name' => $resolved->template->name])
                 : __('contracts.partner.hint_required', ['name' => $resolved->template->name]),
@@ -861,7 +871,7 @@ class ListingController extends Controller
         $request->validate([
             'product_variant_id' => ['nullable', 'required_without:product_id', 'uuid', 'exists:product_variants,id'],
             'product_id' => ['nullable', 'required_without:product_variant_id', 'uuid', 'exists:products,id'],
-            'country_id' => ['required', 'exists:countries,id'],
+            'country_id' => ['required', Country::availableForVendorsRule()],
             'price' => ['required', 'numeric', 'decimal:0,2', 'min:1', 'max:999999999'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'vendor_sku' => ['nullable', 'string', 'max:100'],

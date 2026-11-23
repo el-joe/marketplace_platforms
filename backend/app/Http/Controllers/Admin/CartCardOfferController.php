@@ -51,7 +51,9 @@ class CartCardOfferController extends Controller
                 'cart_card_offers.id',
                 'cart_card_offers.card_image_path',
                 'cart_card_offers.card_name_en',
-                'countries.name_en as country_name',
+                'cart_card_offers.card_name_ar',
+                'countries.name_en as country_name_en',
+                'countries.name_ar as country_name_ar',
                 'cart_card_offers.cashback_type',
                 'cart_card_offers.cashback_pct',
                 'cart_card_offers.cashback_fixed_amount',
@@ -73,8 +75,9 @@ class CartCardOfferController extends Controller
                 'card_image_url' => $row->card_image_path
                     ? Storage::disk('public')->url($row->card_image_path)
                     : null,
+                'card_name' => e(localized($row, 'card_name')),
                 'card_name_en' => e($row->card_name_en),
-                'country_name' => e($row->country_name),
+                'country_name' => e(localized($row, 'country_name')),
                 'cashback_type' => $row->cashback_type,
                 'cashback_pct' => $row->cashback_pct,
                 'cashback_fixed_amount' => Money::number($row->cashback_fixed_amount),
@@ -98,7 +101,7 @@ class CartCardOfferController extends Controller
                 ['label' => __('admin.nav.cart_card_offers'), 'url' => route('admin.cart-card-offers.index')],
                 ['label' => __('admin.cart_card_offers_section.new_offer')],
             ],
-            'countries' => Country::query()->orderBy('name_en')->get(['id', 'name_en']),
+            'countries' => Country::query()->orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
         ]);
     }
 
@@ -145,7 +148,7 @@ class CartCardOfferController extends Controller
                 ['label' => __('admin.nav.cart_card_offers'), 'url' => route('admin.cart-card-offers.index')],
                 ['label' => $model->card_name_en],
             ],
-            'countries' => Country::query()->orderBy('name_en')->get(['id', 'name_en']),
+            'countries' => Country::query()->orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
         ]);
     }
 
@@ -181,7 +184,7 @@ class CartCardOfferController extends Controller
     {
         return [
             ['title' => 'Image', 'data' => 'card_image_url', 'name' => 'card_image_path', 'orderable' => false, 'searchable' => false],
-            ['title' => 'Card', 'data' => 'card_name_en', 'name' => 'card_name_en', 'orderable_column' => 'cart_card_offers.card_name_en', 'searchable_columns' => ['cart_card_offers.card_name_en']],
+            ['title' => 'Card', 'data' => 'card_name_en', 'name' => 'card_name_en', 'orderable_column' => 'cart_card_offers.card_name_en', 'searchable_columns' => ['cart_card_offers.card_name_en', 'cart_card_offers.card_name_ar']],
             ['title' => 'Country', 'data' => 'country_name', 'name' => 'country_name', 'orderable_column' => 'countries.name_en', 'searchable' => false],
             ['title' => 'Type', 'data' => 'cashback_type', 'name' => 'cashback_type', 'searchable' => false],
             ['title' => 'Cashback', 'data' => 'cashback_pct', 'name' => 'cashback_pct', 'searchable' => false],

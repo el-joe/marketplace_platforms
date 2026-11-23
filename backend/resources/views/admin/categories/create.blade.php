@@ -14,6 +14,7 @@
     id="category-form"
     method="POST"
     action="{{ route('admin.categories.store') }}"
+    enctype="multipart/form-data"
     novalidate
 >
     @csrf

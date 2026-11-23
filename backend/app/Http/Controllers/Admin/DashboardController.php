@@ -17,6 +17,7 @@ use App\Models\ReturnRequest;
 use App\Models\Vendor;
 use App\Models\WarehouseInventory;
 use App\Models\WithdrawalRequest;
+use App\Support\Bilingual;
 use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -329,7 +330,7 @@ class DashboardController extends Controller
         $products = WarehouseInventory::query()->from('warehouse_inventories as wi')
             ->select([
                 'p.id as product_id',
-                'p.name_en as name',
+                Bilingual::column('p.name', null, 'name'),
                 'wi.quantity_available as stock',
                 'v.business_name as vendor',
             ])

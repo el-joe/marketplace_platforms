@@ -2,9 +2,12 @@
 
 @php
     $isAr = session('locale', 'ar') === 'ar';
-    // Open Souq reuses the /vendors/register wizard; ?account=classified makes it
-    // create a classified-ads (Open Souq) vendor account instead of a product seller.
-    $registerUrl = route('portal.register', ['account' => 'classified']);
+    // Classifieds (formerly Open Souq) reuses the /vendors/register wizard; ?account=classified makes it
+    // create a classified-ads vendor account instead of a product seller. A section landing also passes
+    // its category, so the wizard shows and collects that section's contract.
+    $selectedCategory = $selectedCategory ?? null;
+    $categoryName = fn ($category) => $isAr ? $category->name_ar : ($category->name_en ?: $category->name_ar);
+    $registerUrl = route('portal.register', array_filter(['account' => 'classified', 'category' => $selectedCategory?->slug]));
     $registerCta = portal_link('open-souq', 'hero', 'cta_button', 'Start selling', 'ابدأ البيع', $registerUrl);
 
     $benefits = [
@@ -26,11 +29,11 @@
     ];
 @endphp
 
-@section('title', portal_content('open-souq', 'meta', 'title', 'Sell on Open Souq — Nawy', 'بِع على السوق المفتوح — ناوي'))
-@section('meta_description', portal_content('open-souq', 'meta', 'description', 'List across our classified categories — real estate, cars, chalets and more — and reach buyers across the region.', 'أدرج إعلاناتك في فئات السوق المفتوح — العقارات والسيارات والشاليهات وغيرها — وصِل إلى المشترين في جميع أنحاء المنطقة.'))
+@section('title', portal_content('open-souq', 'meta', 'title', 'List on Classifieds — Nawy', 'انشر في الإعلانات المبوبة — ناوي'))
+@section('meta_description', portal_content('open-souq', 'meta', 'description', 'List in our classified sections — real estate, cars, travel & tourism and more — and reach buyers across the region.', 'انشر إعلاناتك في أقسام الإعلانات المبوبة — العقارات والسيارات والسفر والسياحة وغيرها — وصِل إلى المشترين في جميع أنحاء المنطقة.'))
 
 @php($souqNav = [
-    ['key' => 'benefits', 'href' => '#benefits', 'label_en' => 'Why sell on Open Souq', 'label_ar' => 'لماذا تبيع على السوق المفتوح'],
+    ['key' => 'benefits', 'href' => '#benefits', 'label_en' => 'Why list on Classifieds', 'label_ar' => 'لماذا تنشر في الإعلانات المبوبة'],
     ['key' => 'publish', 'href' => '#publish', 'label_en' => 'What you can list', 'label_ar' => 'ما يمكنك إدراجه'],
     ['key' => 'steps', 'href' => '#steps', 'label_en' => 'How it works', 'label_ar' => 'كيف تبدأ'],
     ['key' => 'register', 'href' => $registerUrl, 'label_en' => 'Register now', 'label_ar' => 'سجّل الآن'],
@@ -47,14 +50,14 @@
 @section('content')
     <x-portal.section-landing
         :hero="[
-            'eyebrow' => portal_content('open-souq', 'hero', 'eyebrow', 'Open Souq', 'السوق المفتوح'),
+            'eyebrow' => portal_content('open-souq', 'hero', 'eyebrow', 'Classifieds', 'الإعلانات المبوبة').($selectedCategory ? ' · '.$categoryName($selectedCategory) : ''),
             'title' => portal_content('open-souq', 'hero', 'title', 'List anything, reach everyone', 'أدرج أي شيء، وصِل إلى الجميع'),
-            'subtitle' => portal_content('open-souq', 'hero', 'subtitle', 'Open Souq is where individuals and businesses list across our classified categories — real estate, cars, chalets and more.', 'السوق المفتوح هو المكان الذي يدرج فيه الأفراد والشركات إعلاناتهم في فئاتنا المبوبة — العقارات والسيارات والشاليهات وغيرها.'),
-            'image' => portal_image('open-souq', 'hero', 'photo', asset('images/join/open-souq.jpg'), 'A seller listing items on Open Souq', 'بائع يدرج إعلاناته على السوق المفتوح'),
+            'subtitle' => portal_content('open-souq', 'hero', 'subtitle', 'Classifieds is where individuals and businesses list across our sections — real estate, cars, travel & tourism and more.', 'الإعلانات المبوبة هي المكان الذي ينشر فيه الأفراد والشركات إعلاناتهم في أقسامنا — العقارات والسيارات والسفر والسياحة وغيرها.'),
+            'image' => portal_image('open-souq', 'hero', 'photo', asset('images/join/open-souq.jpg'), 'A seller publishing classified ads', 'بائع ينشر إعلاناته المبوبة'),
             'cta' => $registerCta,
         ]"
         :benefits="$benefits"
-        :benefits-title="portal_content('open-souq', 'benefits', 'title', 'Why sell on Open Souq?', 'لماذا تبيع على السوق المفتوح؟')"
+        :benefits-title="portal_content('open-souq', 'benefits', 'title', 'Why list on Classifieds?', 'لماذا تنشر في الإعلانات المبوبة؟')"
         :steps="[
             ['number' => '1', 'title' => portal_content('open-souq', 'steps', 'step_1_title', 'Create your account', 'أنشئ حسابك'), 'desc' => portal_content('open-souq', 'steps', 'step_1_text', 'Sign up with your business details and pick what you want to list.', 'سجّل بيانات نشاطك واختر ما تريد إدراجه.')],
             ['number' => '2', 'title' => portal_content('open-souq', 'steps', 'step_2_title', 'Get approved', 'احصل على الموافقة'), 'desc' => portal_content('open-souq', 'steps', 'step_2_text', 'Our team reviews your details and activates your account.', 'يراجع فريقنا بياناتك ويُفعّل حسابك.')],
@@ -74,11 +77,21 @@
                 </h2>
                 <div class="flex flex-wrap gap-3">
                     @foreach ($categories as $category)
-                        <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#151515] px-4 py-2 text-sm font-semibold text-white">
+                        @php($isCurrent = $selectedCategory?->is($category))
+                        <a href="{{ route('portal.companies.open-souq.category', $category->slug) }}"
+                            @if ($isCurrent) aria-current="page" @endif
+                            class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors {{ $isCurrent ? 'border-[#feee00] bg-[#feee00]/10 text-[#feee00]' : 'border-white/10 bg-[#151515] text-white hover:border-white/30' }}">
                             <span class="h-2 w-2 rounded-full bg-[#feee00]"></span>
-                            {{ $isAr ? $category->name_ar : ($category->name_en ?? $category->name_ar) }}
-                        </span>
+                            {{ $categoryName($category) }}
+                        </a>
                     @endforeach
+                    @if ($travelFolded ?? false)
+                        <a href="{{ route('portal.companies.travel-agency') }}"
+                            class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#151515] px-4 py-2 text-sm font-semibold text-white transition-colors hover:border-white/30">
+                            <span class="h-2 w-2 rounded-full bg-[#feee00]"></span>
+                            {{ __('portal.join.travel_option_title') }}
+                        </a>
+                    @endif
                 </div>
             </section>
         @endif

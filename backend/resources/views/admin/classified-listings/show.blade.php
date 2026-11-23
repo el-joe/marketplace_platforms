@@ -59,12 +59,12 @@
                 <dl class="grid grid-cols-2 gap-3 text-sm">
                     <div><dt class="text-gray-500">{{ __('admin.classifieds.title_en_short') }}</dt><dd class="font-medium" dir="ltr">{{ $listing->title_en }}</dd></div>
                     <div><dt class="text-gray-500">{{ __('admin.classifieds.title_ar_short') }}</dt><dd class="font-medium" dir="rtl">{{ $listing->title_ar }}</dd></div>
-                    <div><dt class="text-gray-500">{{ __('common.category') }}</dt><dd>{{ $listing->classifiedCategory?->name_en }}</dd></div>
+                    <div><dt class="text-gray-500">{{ __('common.category') }}</dt><dd>{{ localized($listing->classifiedCategory) }}</dd></div>
                     <div><dt class="text-gray-500">{{ __('admin.classifieds.purpose') }}</dt><dd>{{ __('admin.classifieds.purpose_' . $listing->listing_purpose) }}</dd></div>
                     <div><dt class="text-gray-500">{{ __('common.price') }}</dt><dd class="font-bold text-gray-900">{{ $listing->price_formatted }}</dd></div>
                     <div><dt class="text-gray-500">{{ __('admin.classifieds.negotiable') }}</dt><dd>{{ $listing->price_negotiable ? __('common.yes') : __('common.no') }}</dd></div>
-                    <div><dt class="text-gray-500">{{ __('common.country') }}</dt><dd>{{ $listing->country?->name_en }}</dd></div>
-                    <div><dt class="text-gray-500">{{ __('common.city') }}</dt><dd>{{ $listing->city?->name_en ?? '—' }}</dd></div>
+                    <div><dt class="text-gray-500">{{ __('common.country') }}</dt><dd>{{ localized($listing->country) }}</dd></div>
+                    <div><dt class="text-gray-500">{{ __('common.city') }}</dt><dd>{{ localized($listing->city) ?: '—' }}</dd></div>
                     <div><dt class="text-gray-500">{{ __('admin.classifieds.views') }}</dt><dd>{{ number_format($listing->views_count) }}</dd></div>
                     <div><dt class="text-gray-500">{{ __('admin.classifieds.expires') }}</dt><dd>{{ admin_tz($listing->expires_at)?->format('Y-m-d') ?? '—' }}</dd></div>
                 </dl>

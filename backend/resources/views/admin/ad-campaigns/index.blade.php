@@ -146,7 +146,7 @@
                 <select id="filter-country" class="form-input w-full text-sm">
                     <option value="">{{ __('admin.ad_campaigns.all_countries') }}</option>
                     @foreach($countries as $c)
-                        <option value="{{ $c->id }}">{{ $c->flag_emoji ? $c->flag_emoji . ' ' : '' }}{{ $c->name_en }}</option>
+                        <option value="{{ $c->id }}">{{ $c->flag_emoji ? $c->flag_emoji . ' ' : '' }}{{ localized($c) }}</option>
                     @endforeach
                 </select>
             </div>

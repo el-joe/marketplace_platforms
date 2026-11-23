@@ -11,6 +11,7 @@ use App\Models\CategoryAttribute;
 use App\Models\ProductVariant;
 use App\Models\ProductVariantAttribute;
 use App\Services\VariantSlugService;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -65,6 +66,7 @@ class AttributeController extends Controller
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
             return [
                 'id' => $row->id,
+                'name' => e(localized($row)),
                 'name_en' => e($row->name_en),
                 'name_ar' => e($row->name_ar ?? ''),
                 'code' => e($row->code),
@@ -471,8 +473,8 @@ class AttributeController extends Controller
     private function columnDefinitions(): array
     {
         return [
-            ['name' => 'name_en', 'data' => 'name_en', 'title' => __('common.name')],
-            ['name' => 'code', 'data' => 'code', 'title' => __('admin.attributes_section.code')],
+            ['name' => 'name', 'data' => 'name', 'title' => __('common.name'), 'searchable_columns' => ['name_en', 'name_ar', 'code'], 'orderable_column' => Bilingual::column('name')],
+            ['name' => 'code', 'data' => 'code', 'title' => __('admin.attributes_section.code'), 'orderable_column' => 'code'],
             ['name' => 'type', 'data' => 'type', 'title' => __('admin.attributes_section.type'), 'searchable' => false],
             ['name' => 'unit', 'data' => 'unit', 'title' => __('admin.attributes_section.unit_col'), 'searchable' => false],
             ['name' => 'created_at', 'data' => 'created_at', 'title' => __('admin.created_at'), 'searchable' => false],

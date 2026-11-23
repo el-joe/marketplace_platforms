@@ -3,20 +3,25 @@
 namespace App\Services\Marketer;
 
 use App\Enums\CommissionVertical;
+use App\Models\ClassifiedCategory;
 use App\Models\MarketerDefaultCommission;
 
 /**
- * Platform defaults configured on the admin "Marketer Settings" page (marketer_default_commissions).
+ * Platform defaults configured on the admin "Marketer Settings" page and on the classified category page
+ * (marketer_default_commissions).
  *
- * Lookup order for a country + vertical (+ optional category):
- *   1. the category-specific row, when one exists;
- *   2. the vertical-wide row (category_id NULL);
- *   3. nothing configured => 0.
+ * Lookup order for a country + vertical (+ optional category), per value:
+ *   1. the category's own row, when it sets that value;
+ *   2. classified vertical only: the nearest ancestor category's row that sets it (a new sub-category inherits its
+ *      section's settings automatically);
+ *   3. the vertical-wide row (category_id NULL);
+ *   4. nothing configured => 0.
  *
- * - influencer fixed amount: the ONE amount an influencer earns per campaign. A category row that exists wins,
- *   even when it is 0 (an explicit "free" override).
- * - commission fee (pct + fixed): taken from every marketer commission. Category rows are only created from the
- *   influencer-amount grid, so a category row with both fee columns at 0 does not shadow the vertical-wide fee.
+ * A NULL column on a category row means "inherit"; 0 is an explicit zero.
+ * - influencer fixed amount: the ONE amount an influencer earns per campaign (0 = explicitly free).
+ * - commission fee (pct + fixed): taken from every marketer commission. A category row with a fee above zero provides
+ *   the fee (a part it leaves NULL comes from the vertical-wide row); a 0/0 fee row does not shadow the vertical fee,
+ *   so a per-category fee of exactly zero cannot be expressed (unchanged from before).
  */
 class MarketerDefaultCommissionResolver
 {
@@ -40,9 +45,10 @@ class MarketerDefaultCommissionResolver
      */
     public function influencerFixed(?string $countryId, CommissionVertical|string $vertical, ?string $categoryId = null): array
     {
-        $category = $this->row($countryId, $vertical, $categoryId);
-        if ($category) {
-            return ['amount' => round((float) $category->influencer_fixed_amount, 4), 'source' => self::SOURCE_CATEGORY];
+        foreach ($this->categoryRows($countryId, $vertical, $categoryId) as $category) {
+            if ($category->influencer_fixed_amount !== null) {
+                return ['amount' => round((float) $category->influencer_fixed_amount, 4), 'source' => self::SOURCE_CATEGORY];
+            }
         }
 
         $wide = $this->row($countryId, $vertical, null);
@@ -60,16 +66,19 @@ class MarketerDefaultCommissionResolver
      */
     public function commissionFee(?string $countryId, CommissionVertical|string $vertical, ?string $categoryId = null): array
     {
-        $category = $this->row($countryId, $vertical, $categoryId);
-        if ($category && ((float) $category->commission_fee_percentage > 0 || (float) $category->commission_fee_fixed > 0)) {
-            return [
-                'percentage' => (float) $category->commission_fee_percentage,
-                'fixed' => round((float) $category->commission_fee_fixed, 4),
-                'source' => self::SOURCE_CATEGORY,
-            ];
+        $wide = $this->row($countryId, $vertical, null);
+
+        foreach ($this->categoryRows($countryId, $vertical, $categoryId) as $category) {
+            // A row whose fee is 0/0 (or NULL) sets no fee, as before: it never shadows the vertical-wide fee.
+            if ((float) ($category->commission_fee_percentage ?? 0) > 0 || (float) ($category->commission_fee_fixed ?? 0) > 0) {
+                return [
+                    'percentage' => (float) ($category->commission_fee_percentage ?? $wide?->commission_fee_percentage ?? 0),
+                    'fixed' => round((float) ($category->commission_fee_fixed ?? $wide?->commission_fee_fixed ?? 0), 4),
+                    'source' => self::SOURCE_CATEGORY,
+                ];
+            }
         }
 
-        $wide = $this->row($countryId, $vertical, null);
         if ($wide) {
             return [
                 'percentage' => (float) $wide->commission_fee_percentage,
@@ -79,6 +88,31 @@ class MarketerDefaultCommissionResolver
         }
 
         return ['percentage' => 0.0, 'fixed' => 0.0, 'source' => self::SOURCE_NONE];
+    }
+
+    /**
+     * The category's own row, then (classified vertical) the rows of its ancestors, nearest first.
+     *
+     * @return list<MarketerDefaultCommission>
+     */
+    private function categoryRows(?string $countryId, CommissionVertical|string $vertical, ?string $categoryId): array
+    {
+        $type = $vertical instanceof CommissionVertical ? $vertical->value : $vertical;
+        $rows = [];
+        $seen = [];
+
+        while ($categoryId && ! isset($seen[$categoryId]) && count($seen) < 10) {
+            $seen[$categoryId] = true;
+            if ($row = $this->row($countryId, $type, $categoryId)) {
+                $rows[] = $row;
+            }
+            if ($type !== CommissionVertical::Classified->value) {
+                break;
+            }
+            $categoryId = ClassifiedCategory::query()->whereKey($categoryId)->value('parent_id');
+        }
+
+        return $rows;
     }
 
     private function row(?string $countryId, CommissionVertical|string $vertical, ?string $categoryId): ?MarketerDefaultCommission

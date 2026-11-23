@@ -13,6 +13,7 @@ use App\Models\VendorContract;
 use App\Services\Vendor\CategoryContractService;
 use App\Services\Vendor\ContractFileService;
 use App\Services\Vendor\SellerAgreementService;
+use App\Support\Timezones;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -356,7 +357,7 @@ class SellerAgreementLifecycleTest extends TestCase
         $this->actingAs($owner, 'vendor')->get(route('partner.legal.index'))
             ->assertOk()
             ->assertSee('Fees updated')
-            ->assertSee($v2->effective_at->format('d/m/Y'));
+            ->assertSee($v2->effective_at->copy()->setTimezone(Timezones::forCountry($scenario->vendor->country))->format('d/m/Y'));
 
         $this->travel(15)->days();
         $this->assertSame($v2->id, $this->agreements()->inForce()->id);
@@ -419,7 +420,7 @@ class SellerAgreementLifecycleTest extends TestCase
         $scenario = $this->activeScenario();
         $this->ownerOf($scenario->vendor);
         $admin = Admin::factory()->create();
-        $admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only']);
+        $admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only', 'contracts.view', 'contracts.manage']);
         $draft = $this->platformFileTemplate(published: false, overrides: ['change_summary' => 'First version']);
 
         $this->actingAs($admin, 'admin')
@@ -448,7 +449,7 @@ class SellerAgreementLifecycleTest extends TestCase
         $template = $this->platformFileTemplate();
         $contract = $this->agreements()->sign($scenario->vendor, null, $template, 'ar', 'Vendor Owner', '127.0.0.1', 'phpunit', 'registration');
         $admin = Admin::factory()->create();
-        $admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only']);
+        $admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only', 'contracts.view', 'contracts.manage']);
 
         $this->actingAs($admin, 'admin')
             ->get(route('admin.contracts.templates.signatures', $template))

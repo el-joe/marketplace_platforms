@@ -1,6 +1,8 @@
 @php
     /** @var array $breadcrumbs */
     $user = auth('admin')->user() ?? auth()->user();
+    $breadcrumbLabels = trans('admin.breadcrumb_labels');
+    $breadcrumbLabels = is_array($breadcrumbLabels) ? $breadcrumbLabels : [];
 @endphp
 
 <header id="topbar" class="bg-white border-b border-gray-200 px-4 lg:px-6 flex items-center gap-4">
@@ -27,9 +29,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                     @if($i === count($breadcrumbs) - 1 || empty($crumb['url']))
-                        <span class="text-gray-900 font-medium">{{ $crumb['label'] }}</span>
+                        <span class="text-gray-900 font-medium">{{ $breadcrumbLabels[$crumb['label']] ?? $crumb['label'] }}</span>
                     @else
-                        <a href="{{ $crumb['url'] }}" class="hover:text-gray-700">{{ $crumb['label'] }}</a>
+                        <a href="{{ $crumb['url'] }}" class="hover:text-gray-700">{{ $breadcrumbLabels[$crumb['label']] ?? $crumb['label'] }}</a>
                     @endif
                 </li>
             @endforeach

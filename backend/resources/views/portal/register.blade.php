@@ -25,7 +25,11 @@
             <p class="mt-2 text-gray-400 text-sm">{{ portal_content('register', 'header', 'subtitle', 'Complete the following steps to create your business account', 'أكمل الخطوات التالية لإنشاء حسابك التجاري') }}</p>
             @if($isClassifiedAccount ?? false)
                 <p data-testid="classified-account-notice" class="mt-4 inline-block rounded-lg border border-[#0F807E]/40 bg-[#0F807E]/10 px-4 py-2 text-sm text-teal-200">
-                    {{ __('portal.registration.classified_account_notice') }}
+                    @if ($classifiedCategory ?? null)
+                        {{ __('portal.registration.classified_category_notice', ['category' => $isAr ? $classifiedCategory->name_ar : ($classifiedCategory->name_en ?: $classifiedCategory->name_ar)]) }}
+                    @else
+                        {{ __('portal.registration.classified_account_notice') }}
+                    @endif
                     <a href="{{ route('portal.register') }}" class="ms-1 underline text-teal-100">{{ __('portal.registration.switch_to_product_account') }}</a>
                 </p>
             @endif
@@ -142,7 +146,7 @@
                     x-show="step === totalSteps"
                     @click="submit()"
                     type="button"
-                    :disabled="loading || !form.terms_agreed || !form.privacy_agreed || (agreementId && form.signature_name.trim().length < 3) || (agreementEnforced && !agreementId)"
+                    :disabled="loading || !form.terms_agreed || !form.privacy_agreed || ((agreementId || categoryContractId) && form.signature_name.trim().length < 3) || (categoryContractId && !form.category_contract_agreed) || (agreementEnforced && !agreementId)"
                     class="flex-1 py-2.5 rounded-xl text-sm font-bold bg-[#0F807E] hover:bg-[#0c6665] text-gray-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     <span x-show="!loading">{{ portal_content('register', 'footer_nav', 'submit_button', 'Submit Application ✓', 'إرسال الطلب ✓') }}</span>
@@ -181,6 +185,7 @@ window._routes = {
 window._csrf = '{{ csrf_token() }}';
 window._agreementMap = @json($agreementByCountry);
 window._agreementEnforced = @json($agreementEnforced);
+window._categoryContractMap = @json((object) ($categoryContractByCountry ?? []));
 window._countryNames = @json($countries->mapWithKeys(fn ($country) => [$country->id => app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en]));
 window._agreementNotConfigured = @json(__('contracts.api.not_configured', ['country' => ':country']));
 </script>

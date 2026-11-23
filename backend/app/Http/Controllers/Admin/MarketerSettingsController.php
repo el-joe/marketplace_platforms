@@ -276,6 +276,6 @@ class MarketerSettingsController extends Controller
     private function options($query): array
     {
         return $query->where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en'])
-            ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name_ar ?: $c->name_en])->values()->all();
+            ->map(fn ($c) => ['id' => $c->id, 'name' => localized($c)])->values()->all();
     }
 }

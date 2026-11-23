@@ -192,7 +192,7 @@
                     <option value="">{{ __('admin.vouchers_section.all_countries') }}</option>
                     @foreach($countries as $country)
                         <option value="{{ $country->id }}" {{ $val('country_id') === $country->id ? 'selected' : '' }}>
-                            {{ $country->name_en }}
+                            {{ localized($country) }}
                         </option>
                     @endforeach
                 </select>

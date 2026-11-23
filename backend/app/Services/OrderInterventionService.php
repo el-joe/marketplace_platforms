@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\CancelActor;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\PaymentTransactionType;
+use App\Exceptions\OrderNotCancellableException;
 use App\Jobs\RefundProcessingJob;
 use App\Models\Admin;
 use App\Models\Dispute;
@@ -14,14 +15,11 @@ use App\Models\OrderStatusHistory;
 use App\Models\Refund;
 use App\Models\SubOrder;
 use App\Notifications\Admin\FraudPatternDetected;
-use App\Notifications\Customer\OrderCancelled as CustomerOrderCancelled;
 use App\Notifications\Customer\OrderConfirmed;
 use App\Notifications\Customer\OrderDelivered;
 use App\Notifications\Customer\OrderOutForDelivery;
 use App\Notifications\Customer\OrderRefunded;
 use App\Notifications\Customer\OrderShipped as CustomerOrderShipped;
-use App\Notifications\Vendor\OrderCancelledByAdmin;
-use App\Services\Inventory\InventoryService;
 use App\Services\Payments\PaymentGatewayFactory;
 use App\Support\Money;
 use Illuminate\Support\Collection;
@@ -94,14 +92,26 @@ class OrderInterventionService
 
         $this->guardOfflinePaymentApproval($order, $newStatus);
 
+        if ($newStatus === 'cancelled') {
+            // Cancelling the master order is a real cancellation: it cascades to every open sub-order and
+            // item (stock, COD, delivery, refunds) through the single engine — never a status-only flip.
+            try {
+                $this->cancellation()->cancelOrder($order, CancelActor::Admin, $reason ?: '[Admin] Status updated.', false, $adminId);
+            } catch (OrderNotCancellableException $e) {
+                throw ValidationException::withMessages([
+                    'new_status' => [$e->status !== null ? __('admin.orders.status_cancel_blocked') : $e->getMessage()],
+                ]);
+            }
+
+            return;
+        }
+
         DB::transaction(function () use ($order, $newStatus, $reason, $adminId) {
             $old = $order->status->value;
 
             $updates = ['status' => $newStatus];
             if ($newStatus === 'completed') {
                 $updates['completed_at'] = now();
-            } elseif ($newStatus === 'cancelled') {
-                $updates['cancelled_at'] = now();
             }
 
             $order->update($updates);
@@ -187,6 +197,18 @@ class OrderInterventionService
             $this->guardOfflinePaymentApproval($subOrder->order, $newStatus);
         }
 
+        if ($newStatus === 'cancelled') {
+            // Same engine as every other cancel path: items, stock, COD, delivery, refunds, order roll-up
+            // and the customer/vendor notifications.
+            try {
+                $this->cancellation()->cancelSubOrder($subOrder, CancelActor::Admin, $reason, false, $adminId);
+            } catch (OrderNotCancellableException $e) {
+                throw ValidationException::withMessages(['new_status' => [$e->getMessage()]]);
+            }
+
+            return;
+        }
+
         DB::transaction(function () use ($subOrder, $newStatus, $reason, $adminId) {
             $old = $subOrder->status->value;
 
@@ -196,8 +218,6 @@ class OrderInterventionService
                 $updates['shipped_at'] = now();
             } elseif ($newStatus === 'delivered') {
                 $updates['delivered_at'] = now();
-            } elseif ($newStatus === 'cancelled') {
-                $updates['cancelled_at'] = now();
             }
 
             $subOrder->update($updates);
@@ -231,7 +251,6 @@ class OrderInterventionService
                     $subOrder->deliveryAssignments()->whereNotNull('delivery_otp')->latest()->first()?->delivery_otp,
                 ),
                 'delivered' => new OrderDelivered($subOrder),
-                'cancelled' => new CustomerOrderCancelled($subOrder, $reason),
                 'refunded' => new OrderRefunded($subOrder),
                 default => null,
             };
@@ -269,24 +288,9 @@ class OrderInterventionService
             );
         }
 
-        // enhancement.md P-06: delegate the actual money/stock reversal to
-        // OrderCancellationService (one call per sub-order still in a
-        // non-terminal state) instead of this service's own status-only
-        // implementation, which never touched wallet/card refunds, coupon
-        // usage, loyalty points, warranty purchases or marketer
-        // conversions.
-        foreach ($order->subOrders as $subOrder) {
-            if (in_array($subOrder->status->value, ['cancelled', 'refunded'], true)) {
-                continue;
-            }
-
-            app(OrderCancellationService::class)->cancel(
-                $subOrder,
-                CancelActor::Admin,
-                "[Force Cancel] {$reason}",
-                $force,
-            );
-        }
+        // enhancement.md P-06 / WS2: the single cancellation engine cancels every open sub-order (and
+        // heals one left open with all items already cancelled), its items, stock, COD and refunds.
+        $this->cancellation()->cancelOrder($order, CancelActor::Admin, "[Force Cancel] {$reason}", $force, $adminId);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -294,89 +298,33 @@ class OrderInterventionService
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Cancel a subset of an order's items, releasing their reserved inventory
-     * back to stock and issuing a partial refund for the cancelled value only.
-     * Remaining (non-cancelled) items continue their normal fulfillment.
+     * Cancel a subset of an order's items through the single cancellation engine: reserved stock released,
+     * only collected money refunded (an unpaid COD order just collects less on delivery), and the sub-order
+     * / master order cancelled once no live item is left in them.
+     *
+     * Admin may cancel items of a shipped sub-order too (force), as this action always allowed.
      *
      * @param  Collection<int, OrderItem>  $items
+     * @return bool whether any money was due back to the customer (refund issued) for these items
+     *
+     * @throws OrderNotCancellableException
      */
     public function cancelItems(
         Order $order,
         Collection $items,
         string $reason,
         string $adminId
-    ): Refund {
-        return DB::transaction(function () use ($order, $items, $reason, $adminId) {
-            $inventoryService = app(InventoryService::class);
+    ): bool {
+        $hadCollectedMoney = $this->hasRefundablePayment($order) || (float) $order->wallet_amount_used > 0;
 
-            foreach ($items as $item) {
-                $item->update(['fulfillment_status' => 'cancelled']);
+        $this->cancellation()->cancel($items, CancelActor::Admin, '[Partial Cancel] '.$reason, true, $adminId);
 
-                // enhancement.md P-13 task 3 / bug row "Admin intervention
-                // restock": these items were never shipped, so their stock
-                // is still held as `reserved`, not sold-out `on_hand`.
-                // Incrementing on_hand here (the old code) double-counted
-                // stock that was never decremented in the first place.
-                // Release the exact reserved allocation instead; if any
-                // allocation was already committed (shipped then force-
-                // cancelled), restock that row's on_hand.
-                $reservedAllocations = $item->allocations()->where('status', 'reserved')->get();
-                $committedAllocations = $item->allocations()->where('status', 'committed')->get();
+        return $hadCollectedMoney;
+    }
 
-                if ($reservedAllocations->isNotEmpty()) {
-                    $inventoryService->release($reservedAllocations, 'order', $order->id, actorType: 'admin', actorId: $adminId, reason: '[Partial Cancel] '.$reason);
-                }
-
-                foreach ($committedAllocations as $allocation) {
-                    $inventoryService->restock($allocation->warehouse_inventory_id, (int) $allocation->quantity, 'order', $order->id, actorType: 'admin', actorId: $adminId, reason: '[Partial Cancel] '.$reason, allocation: $allocation);
-                }
-            }
-
-            $refundAmountCents = Money::number($items->sum(fn ($item) => (float) $item->line_total));
-
-            // Only money the customer actually paid is refunded: cancelling items on a
-            // not-yet-collected COD order just shrinks what is collected on delivery.
-            $refund = $this->hasRefundablePayment($order)
-                ? $this->processRefund(
-                    $order,
-                    'partial',
-                    $refundAmountCents,
-                    'customer_request',
-                    $reason,
-                    $items->first()?->sub_order_id,
-                    false,
-                    $adminId
-                )
-                : null;
-
-            OrderStatusHistory::create([
-                'order_id' => $order->id,
-                'sub_order_id' => null,
-                'from_status' => $order->status->value,
-                'to_status' => $order->status->value,
-                'changed_by_admin_id' => $adminId,
-                'reason' => '[Partial Cancel] '.$reason,
-                'metadata' => [
-                    'action' => 'partial_item_cancellation',
-                    'item_ids' => $items->pluck('id')->all(),
-                    'refund_id' => $refund?->id,
-                ],
-            ]);
-
-            $order->loadMissing('subOrders.vendor.vendorAdmins', 'customer');
-
-            $vendorIds = $items->pluck('vendor_id')->unique()->filter();
-            foreach ($vendorIds as $vendorId) {
-                $subOrder = $order->subOrders->firstWhere('vendor_id', $vendorId);
-
-                if ($subOrder) {
-                    Notification::send($subOrder->vendor->vendorAdmins, new OrderCancelledByAdmin($subOrder, $reason));
-                    $order->customer?->notify(new OrderRefunded($subOrder));
-                }
-            }
-
-            return $refund;
-        });
+    private function cancellation(): OrderCancellationService
+    {
+        return app(OrderCancellationService::class);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

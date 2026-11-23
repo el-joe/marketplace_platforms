@@ -4,6 +4,7 @@ import CartItem from "./cart-item";
 import CartItemBoundary from "./cart-item-boundary";
 import { ShippingMethod } from "@/types/cart.type";
 import useLocale from "@/src/hooks/use-locale";
+import DistanceDeliveryNote from "@/src/components/shared/distance-delivery-note";
 
 export default function CartItems() {
   const { cart } = useCartContext();
@@ -34,6 +35,10 @@ export default function CartItems() {
             className="flex flex-col gap-0 rounded-[16px] bg-white mt-10 z-1 relative border "
             style={{ borderColor: group.shipping_method?.badge_color_hex }}
           >
+            <DistanceDeliveryNote
+              pricing={group.distance_pricing}
+              className="px-4 pt-3"
+            />
             {group.items?.map((item) => (
               <CartItemBoundary key={item.id} cartItemId={item.id}>
                 <CartItem

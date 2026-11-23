@@ -48,7 +48,7 @@
                             <div class="sm:col-span-2">
                                 <x-form-textarea name="description_ar" label="{{ __('admin.flash_sales.description_ar') }}" dir="rtl" rows="3" />
                             </div>
-                            <x-form-select name="country_id" label="{{ __('admin.flash_sales.country') }}" :options="$countries->mapWithKeys(fn($c) => [$c->id => $c->name_en])->toArray()" :nullable="true" placeholder="{{ __('admin.flash_sales.all_countries') }}" />
+                            <x-form-select name="country_id" label="{{ __('admin.flash_sales.country') }}" :options="$countries->mapWithKeys(fn($c) => [$c->id => localized($c)])->toArray()" :nullable="true" placeholder="{{ __('admin.flash_sales.all_countries') }}" />
                             <div class="flex items-end gap-6 pb-1">
                                 <x-form-toggle name="is_featured" label="{{ __('admin.flash_sales.featured_on_homepage') }}" />
                                 <x-form-toggle name="is_exclusive" label="{{ __('admin.flash_sales.exclusive_invite_only') }}" />
@@ -109,7 +109,7 @@
 
                     <x-card title="{{ __('admin.flash_sales.eligible_categories') }}">
                         <x-form-checkbox-group name="eligible_categories" label="{{ __('admin.flash_sales.limit_to_categories') }}"
-                            :options="$categories->mapWithKeys(fn($c) => [$c->id => $c->name_en])->toArray()" />
+                            :options="$categories->mapWithKeys(fn($c) => [$c->id => localized($c)])->toArray()" />
                     </x-card>
 
                 </div>

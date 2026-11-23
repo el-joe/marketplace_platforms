@@ -49,11 +49,15 @@
       "noSavedAddressesMessage": "Add an address to get your orders delivered straight to your doorstep.",
       "addPickupPoint": "Add new Locker / Pickup Point",
       "getPickupPoint": "Get your order delivered to a locker/pickup point",
-      "getPickupPointMessage": "Get it delivered free at your preferred time and location. No minimum order size."
+      "getPickupPointMessage": "Get it delivered free at your preferred time and location. No minimum order size.",
+      "changeCountry": "Change country",
+      "countries": "Countries",
+      "guestAddressHint": "You can change the country above without an account. Log in to add and use saved delivery addresses.",
+      "loginToAddAddress": "Log in to add an address"
     },
     "categoriesNav": {
       "topBrands": "Top Brands",
-      "openSouq": "Open Souq",
+      "openSouq": "Classifieds",
       "travel": "Travel",
       "marketers": "Marketers"
     }
@@ -84,7 +88,25 @@
     "phoneMaxLengthErr": "The phone number must be less then {value} character",
     "passwordMinLengthErr": "The password must be at least {value} digits",
     "marketingCommunicationConfirmErr": "You must confirm the marketing communications",
-    "passwordDontMatchErr": "The confirm password don't match the password"
+    "passwordDontMatchErr": "The confirm password don't match the password",
+    "forgotPassword": {
+      "link": "Forgot password?",
+      "title": "Reset your password",
+      "description": "Enter the email address of your account and we'll send you a link to choose a new password.",
+      "emailPlaceholder": "Email address",
+      "submit": "Send reset link",
+      "backToLogin": "Back to log in",
+      "sentTitle": "Check your email",
+      "sentMessage": "If an account exists for {email}, we've sent it a link to reset your password.",
+      "sentHint": "The link expires in 60 minutes. Didn't get it? Check your spam folder or try again in a minute.",
+      "invalidEmail": "Enter a valid email address",
+      "tooManyRequests": "Too many attempts. Please wait a minute and try again.",
+      "genericError": "Something went wrong. Please try again."
+    },
+    "genderLabel": "Gender (optional)",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderUnspecified": "Prefer not to say"
   },
   "mobileNav": {
     "home": "Home",
@@ -649,7 +671,8 @@
       "cancelled": "Cancelled"
     },
     "specialRequests": "Special Requests",
-    "chats": "Chats"
+    "chats": "Chats",
+    "genderUnspecified": "Not specified"
   },
   "giftCards": {
     "home": "Home",
@@ -739,6 +762,7 @@
     "applied": "Applied",
     "couponCode": "Coupon code",
     "bestsellersForYou": "bestsellers for you",
+    "emptyCartBannerAlt": "Start shopping — see current offers",
     "couponDetails": "Coupon details",
     "discountCouponDescription": "Extra {value}% off with {paymentMethod}",
     "copyCode": "Copy code",
@@ -963,7 +987,7 @@
       },
       "categoriesNav": {
         "topBrands": "Top Brands",
-        "openSouq": "Open Souq",
+        "openSouq": "Classifieds",
         "travel": "Travel",
         "marketers": "Marketers"
       }
@@ -1482,7 +1506,7 @@
   },
   "marketerProfile": {
     "contractType": "Contract type:",
-    "classifiedListings": "Open Market Listings",
+    "classifiedListings": "Classifieds",
     "activeExclusiveContracts": "Active exclusive contracts",
     "priceNegotiable": "Negotiable",
     "pageTitleFallback": "Marketer | Nawy",
@@ -1553,7 +1577,7 @@
     "resultsCount": "{count, plural, one {# item} other {# items}}",
     "noResults": "No items match your filters",
     "tabProducts": "Products",
-    "tabClassified": "Open Market",
+    "tabClassified": "Classifieds",
     "tabTravel": "Travel",
     "destinations": "Destinations",
     "sortPopular": "Most popular",
@@ -1784,5 +1808,35 @@
     "fieldRequired": "{field} is required",
     "yes": "Yes",
     "no": "No"
+  },
+  "resetPassword": {
+    "title": "Choose a new password",
+    "description": "Set a new password for your account. You'll use it the next time you log in.",
+    "forAccount": "Account:",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordHint": "Use at least 8 characters.",
+    "submit": "Save new password",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "confirmRequired": "Please confirm your new password",
+    "passwordsDontMatch": "Passwords don't match",
+    "tooManyRequests": "Too many attempts. Please wait a minute and try again.",
+    "genericError": "Something went wrong. Please try again.",
+    "invalidTitle": "This link is invalid or has expired",
+    "invalidMessage": "Reset links work once and expire after 60 minutes. Request a new one from the log in window (\"Forgot password?\").",
+    "requestNewLink": "Request a new link",
+    "successTitle": "Your password has been changed",
+    "successMessage": "You can now log in with your new password.",
+    "login": "Log in"
+  },
+  "deliveryEstimate": {
+    "orderWithin": "Order within {hours} hrs {minutes} mins",
+    "orderWithinMinutes": "Order within {minutes} mins"
+  },
+  "distanceDelivery": {
+    "freeWithinRadius": "Free delivery within {radius} km · {distance} km away",
+    "freeByOrderAmount": "Free delivery · {distance} km away",
+    "tier": "{distance} km · delivery",
+    "unavailable": "Not available for your address: {distance} km away, max {max} km"
   }
 }

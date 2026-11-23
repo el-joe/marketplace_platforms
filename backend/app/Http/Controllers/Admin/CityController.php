@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\ShippingZone;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +26,7 @@ class CityController extends Controller
     public function index(): View
     {
         return view('admin.cities.index', [
-            'countries' => Country::where('is_active', true)->orderBy('name_en')->pluck('name_en', 'id'),
+            'countries' => Bilingual::options(Country::where('is_active', true)),
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.cities')],
@@ -108,14 +109,14 @@ class CityController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'country_id' => fn($q, $v) => $q->where('cities.country_id', $v),
-            'is_active' => fn($q, $v) => $q->where('cities.is_active', (bool) $v),
-            'no_zone' => fn($q, $v) => $v ? $q->whereNull('cities.shipping_zone_id') : $q,
+            'country_id' => fn ($q, $v) => $q->where('cities.country_id', $v),
+            'is_active' => fn ($q, $v) => $q->where('cities.is_active', (bool) $v),
+            'no_zone' => fn ($q, $v) => $v ? $q->whereNull('cities.shipping_zone_id') : $q,
         ]);
 
-        return $this->dataTableResponse($request, $query, $columns, fn($row) => [
+        return $this->dataTableResponse($request, $query, $columns, fn ($row) => [
             'id' => $row->id,
-            'name' => $row->name_en . ' / ' . $row->name_ar,
+            'name' => $row->name_en.' / '.$row->name_ar,
             'country_name' => $row->country_name_en,
             'shipping_zone' => $row->shipping_zone_name
                 ? $row->shipping_zone_name
@@ -124,7 +125,7 @@ class CityController extends Controller
                 ? '<span class="text-success-600 font-bold">✓</span>'
                 : '<span class="text-gray-300">—</span>',
             'is_active' => (bool) $row->is_active,
-            'is_deleted' => !is_null($row->deleted_at),
+            'is_deleted' => ! is_null($row->deleted_at),
             'edit_url' => route('admin.cities.edit', $row->id),
         ]);
     }
@@ -136,7 +137,7 @@ class CityController extends Controller
     public function create(): View
     {
         return view('admin.cities.create', [
-            'countries' => Country::where('is_active', true)->orderBy('name_en')->pluck('name_en', 'id'),
+            'countries' => Bilingual::options(Country::where('is_active', true)),
             'shippingZones' => ShippingZone::query()->whereNull('deleted_at')->orderBy('name')->get(['id', 'name', 'country_id']),
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
@@ -166,7 +167,7 @@ class CityController extends Controller
 
         return view('admin.cities.edit', [
             'city' => $city,
-            'countries' => Country::where('is_active', true)->orderBy('name_en')->pluck('name_en', 'id'),
+            'countries' => Bilingual::options(Country::where('is_active', true)),
             'shippingZones' => ShippingZone::query()->whereNull('deleted_at')->orderBy('name')->get(['id', 'name', 'country_id']),
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
@@ -238,6 +239,7 @@ class CityController extends Controller
 
                 if (count($line) < 4) {
                     $errors[] = __('admin.cities_section.row_too_few_columns', ['row' => $row]);
+
                     continue;
                 }
 
@@ -253,13 +255,15 @@ class CityController extends Controller
                     $countryId = $countryRef;
                 }
 
-                if (!$countryId) {
+                if (! $countryId) {
                     $errors[] = __('admin.cities_section.row_unknown_country', ['row' => $row, 'country' => $countryRef]);
+
                     continue;
                 }
 
                 if (empty($nameEn)) {
                     $errors[] = __('admin.cities_section.row_name_required', ['row' => $row]);
+
                     continue;
                 }
 
@@ -283,6 +287,7 @@ class CityController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             fclose($handle);
+
             return response()->json(['message' => __('admin.cities_section.import_failed', ['error' => $e->getMessage()])], 500);
         }
 

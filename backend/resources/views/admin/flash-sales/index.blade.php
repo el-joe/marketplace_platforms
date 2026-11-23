@@ -51,7 +51,7 @@
             <select id="filter-country" class="form-select form-select-sm w-44">
                 <option value="">{{ __('admin.flash_sales.all_countries') }}</option>
                 @foreach($countries as $c)
-                    <option value="{{ $c->id }}">{{ $c->name_en }}</option>
+                    <option value="{{ $c->id }}">{{ localized($c) }}</option>
                 @endforeach
             </select>
             <input type="date" id="filter-date-from" class="form-input form-input-sm w-36" placeholder="{{ __('common.from') }}">
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initDataTable('flash-sales-table', {
         url: FLASH_SALES_DATATABLE_URL,
         columns: [
-            { data: 'name_en',           title: window.TRANSLATIONS.name,
+            { data: 'name',              title: window.TRANSLATIONS.name,
               render: (d, t, r) => `<a href="${r.show_url}" class="font-medium text-primary-600 hover:underline">${d}</a>` },
             { data: 'country_name',      title: window.TRANSLATIONS.country },
             { data: 'status',            title: window.TRANSLATIONS.status,

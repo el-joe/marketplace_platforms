@@ -20,7 +20,7 @@
             <option value="">{{ __('admin.travel.status.all_countries') }}</option>
             @foreach($countries as $c)
             <option value="{{ $c->id }}" {{ request('country_id') == $c->id ? 'selected' : '' }}>
-                {{ $c->flag_emoji }} {{ $c->name_en }}
+                {{ $c->flag_emoji }} {{ localized($c) }}
             </option>
             @endforeach
         </select>
@@ -50,11 +50,11 @@
                 @forelse($cities as $city)
                 <tr class="hover:bg-gray-50" id="city-row-{{ $city->id }}">
                     <td class="px-4 py-3">
-                        <div class="font-medium text-gray-900">{{ $city->name_en }}</div>
+                        <div class="font-medium text-gray-900">{{ localized($city) }}</div>
                         <div class="text-gray-400 text-xs" dir="rtl">{{ $city->name_ar }}</div>
                     </td>
                     <td class="px-4 py-3 text-gray-600">
-                        {{ $city->country?->flag_emoji }} {{ $city->country?->name_en }}
+                        {{ $city->country?->flag_emoji }} {{ localized($city->country) }}
                     </td>
                     <td class="px-4 py-3 font-mono text-xs text-gray-500">
                         @if($city->latitude !== null)
@@ -74,7 +74,7 @@
                     <td class="px-4 py-3 text-end whitespace-nowrap">
                         <button onclick="openEditModal({{ json_encode($city) }})"
                                 class="text-primary-600 hover:underline text-xs mr-3">{{ __('common.edit') }}</button>
-                        <button onclick="deleteCity('{{ $city->id }}', '{{ addslashes($city->name_en) }}')"
+                        <button onclick="deleteCity('{{ $city->id }}', '{{ addslashes(localized($city)) }}')"
                                 class="text-red-600 hover:underline text-xs">{{ __('common.delete') }}</button>
                     </td>
                 </tr>
@@ -108,7 +108,7 @@
                 <select id="f-country" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
                     <option value="">{{ __('admin.travel.select_country') }}</option>
                     @foreach($countries as $c)
-                    <option value="{{ $c->id }}">{{ $c->flag_emoji }} {{ $c->name_en }}</option>
+                    <option value="{{ $c->id }}">{{ $c->flag_emoji }} {{ localized($c) }}</option>
                     @endforeach
                 </select>
             </div>

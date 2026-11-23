@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Faq;
+use App\Support\Bilingual;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,13 @@ class FaqController extends Controller
 
         $context = $request->get('context', 'seller');
 
+        $search = trim((string) $request->query('search', ''));
+
         $faqs = Faq::forContext($context)
+            ->when($search !== '', fn ($query) => $query->where(fn ($q) => Bilingual::whereLike($q, 'question', $search)
+                ->orWhere(fn ($answer) => Bilingual::whereLike($answer, 'answer', $search))))
+            ->when($request->query('status') === 'active', fn ($query) => $query->where('is_active', true))
+            ->when($request->query('status') === 'inactive', fn ($query) => $query->where('is_active', false))
             ->orderBy('sort_order')
             ->orderBy('created_at')
             ->get();
@@ -40,7 +47,7 @@ class FaqController extends Controller
         abort_unless($admin->hasPermissionTo('faqs.create'), 403);
 
         $data = $request->validate([
-            'context' => 'required|string|in:' . implode(',', Faq::CONTEXTS),
+            'context' => 'required|string|in:'.implode(',', Faq::CONTEXTS),
             'question_en' => 'required|string|max:500',
             'question_ar' => 'required|string|max:500',
             'answer_en' => 'required|string',
@@ -69,7 +76,7 @@ class FaqController extends Controller
         abort_unless($admin->hasPermissionTo('faqs.edit'), 403);
 
         $data = $request->validate([
-            'context' => 'required|string|in:' . implode(',', Faq::CONTEXTS),
+            'context' => 'required|string|in:'.implode(',', Faq::CONTEXTS),
             'question_en' => 'required|string|max:500',
             'question_ar' => 'required|string|max:500',
             'answer_en' => 'required|string',
@@ -107,7 +114,7 @@ class FaqController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('faqs.edit'), 403);
 
-        $faq->update(['is_active' => !$faq->is_active, 'updated_by_admin_id' => $admin->id]);
+        $faq->update(['is_active' => ! $faq->is_active, 'updated_by_admin_id' => $admin->id]);
 
         return response()->json(['success' => true, 'is_active' => $faq->is_active]);
     }

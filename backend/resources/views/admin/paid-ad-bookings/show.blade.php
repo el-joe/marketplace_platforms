@@ -308,7 +308,7 @@
                         </div>
                         <div>
                             <dt class="text-xs text-gray-400">{{ __('admin.paid_ad_bookings.country') }}</dt>
-                            <dd>{{ $paidAdBooking->country?->name_en ?? '—' }}</dd>
+                            <dd>{{ localized($paidAdBooking->country) ?: '—' }}</dd>
                         </div>
                     </dl>
                 @else

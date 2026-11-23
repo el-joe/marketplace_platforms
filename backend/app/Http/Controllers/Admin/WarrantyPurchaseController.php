@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\WarrantyClaim;
 use App\Models\WarrantyPlan;
 use App\Models\WarrantyPurchase;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -34,8 +35,8 @@ class WarrantyPurchaseController extends Controller
             'cancelled' => WarrantyPurchase::where('status', 'cancelled')->count(),
         ];
 
-        $plans = WarrantyPlan::orderBy('name_en')->get(['id', 'name_en']);
-        $categories = Category::orderBy('name_en')->get(['id', 'name_en']);
+        $plans = WarrantyPlan::orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
+        $categories = Category::orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
 
         return view('admin.warranty-purchases.index', compact('stats', 'plans', 'categories'));
     }
@@ -58,7 +59,7 @@ class WarrantyPurchaseController extends Controller
                 'warranty_purchases.*',
                 'customers.name as customer_name',
                 'orders.order_number as order_number',
-                'warranty_plans.name_en as plan_name',
+                Bilingual::column('warranty_plans.name', null, 'plan_name'),
                 'warranty_plans.category_id as plan_category_id',
                 'order_items.product_snapshot as order_item_product_snapshot'
             );
@@ -169,11 +170,11 @@ class WarrantyPurchaseController extends Controller
             ->leftJoin('warranty_plans', 'warranty_plans.id', '=', 'warranty_purchases.warranty_plan_id')
             ->select(
                 'warranty_plans.id as plan_id',
-                'warranty_plans.name_en as plan_name',
+                Bilingual::column('warranty_plans.name', null, 'plan_name'),
                 DB::raw('COUNT(warranty_purchases.id) as sales_count'),
                 DB::raw('SUM(warranty_purchases.price_paid) as total')
             )
-            ->groupBy('warranty_plans.id', 'warranty_plans.name_en')
+            ->groupBy('warranty_plans.id', 'warranty_plans.name_en', 'warranty_plans.name_ar')
             ->orderByDesc('total')
             ->get();
 

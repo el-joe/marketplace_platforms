@@ -36,7 +36,7 @@
                 <option value="">{{ __('admin.travel.all_countries') }}</option>
                 @foreach ($countries as $c)
                     <option value="{{ $c->id }}" {{ request('country_id') == $c->id ? 'selected' : '' }}>
-                        {{ $c->name_en }}
+                        {{ localized($c) }}
                     </option>
                 @endforeach
             </select>

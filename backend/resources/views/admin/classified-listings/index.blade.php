@@ -29,7 +29,7 @@
             <option value="">{{ __('admin.classifieds.all_categories') }}</option>
             @foreach($categories as $cat)
             <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>
-                {{ $cat->name_en }}
+                {{ localized($cat) }}
             </option>
             @endforeach
         </select>
@@ -80,7 +80,7 @@
                                 <span class="ms-1 inline-flex items-center rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">{{ __('admin.classifieds.customer') }}</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-gray-600">{{ $listing->classifiedCategory?->name_en }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ localized($listing->classifiedCategory) }}</td>
                         <td class="px-4 py-3 font-medium text-gray-900">{{ $listing->price_formatted }}</td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$listing->status->value] ?? '' }}">

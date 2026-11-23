@@ -47,7 +47,7 @@
             <select id="filter-country" class="form-input py-1.5 text-sm w-36">
                 <option value="">{{ __('admin.analytics.all_countries') }}</option>
                 @foreach ($countries as $country)
-                    <option value="{{ $country->id }}">{{ $country->name_en }} ({{ $country->iso_code_2 }})</option>
+                    <option value="{{ $country->id }}">{{ localized($country) }} ({{ $country->iso_code_2 }})</option>
                 @endforeach
             </select>
 

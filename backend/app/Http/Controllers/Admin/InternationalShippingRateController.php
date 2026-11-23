@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\InternationalShippingRate;
 use App\Models\ShippingCarrier;
+use App\Support\Bilingual;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -20,9 +21,16 @@ use Illuminate\View\View;
  */
 class InternationalShippingRateController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $search = trim((string) $request->query('search', ''));
+
         $rates = InternationalShippingRate::query()
+            ->when($search !== '', fn ($query) => $query->where(fn ($q) => $q
+                ->whereHas('originCountry', fn ($country) => Bilingual::whereLike($country, 'name', $search))
+                ->orWhereHas('destinationCountry', fn ($country) => Bilingual::whereLike($country, 'name', $search))))
+            ->when($request->query('status') === 'active', fn ($query) => $query->where('is_active', true))
+            ->when($request->query('status') === 'inactive', fn ($query) => $query->where('is_active', false))
             ->with(['originCountry', 'destinationCountry', 'carrier'])
             ->orderBy('origin_country_id')
             ->orderBy('destination_country_id')

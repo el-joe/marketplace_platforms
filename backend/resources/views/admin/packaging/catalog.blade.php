@@ -17,6 +17,7 @@
         </div>
         <div class="flex items-center gap-2">
             <a href="{{ route('admin.packaging.requests') }}" class="btn btn-secondary text-sm">{{ __('admin.packaging_catalog.view_orders') }}</a>
+            <a href="{{ route('admin.packaging.types.index') }}" class="btn btn-secondary text-sm">{{ __('admin.packaging_catalog.manage_types') }}</a>
             <button type="button" id="btn-new-item" class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700">
                 <x-heroicon name="plus" class="w-4 h-4" />
                 {{ __('admin.packaging_catalog.add_item') }}
@@ -31,22 +32,23 @@
             ['title' => __('admin.packaging_catalog.col_name'), 'data' => 'name', 'name' => 'name_en'],
             ['title' => __('admin.packaging_catalog.col_type'), 'data' => 'type', 'name' => 'type', 'searchable' => false],
             ['title' => __('admin.packaging_catalog.col_size'), 'data' => 'size', 'name' => 'size', 'searchable' => false],
-            ['title' => __('admin.packaging_catalog.col_unit_cost'), 'data' => 'unit_cost', 'name' => 'unit_cost', 'searchable' => false],
-            ['title' => __('admin.packaging_catalog.col_stock'), 'data' => 'stock', 'name' => 'stock', 'searchable' => false],
+            ['title' => __('admin.packaging_catalog.col_pricing_by_country'), 'data' => 'pricing', 'name' => 'pricing', 'orderable' => false, 'searchable' => false],
             ['title' => __('admin.packaging_catalog.col_active'), 'data' => 'status', 'name' => 'status', 'searchable' => false],
-            ['title' => __('admin.packaging_catalog.col_countries'), 'data' => 'countries', 'name' => 'countries', 'orderable' => false, 'searchable' => false],
             ['title' => '', 'data' => 'actions', 'name' => 'actions', 'orderable' => false, 'searchable' => false, 'className' => 'text-end'],
         ];
 
         $filters = [
             [
                 'type' => 'select',
-                'name' => 'type',
+                'name' => 'type_id',
                 'label' => __('admin.packaging_catalog.filter_type'),
-                'options' => [
-                    'box' => __('admin.packaging_catalog.type_box'), 'bag' => __('admin.packaging_catalog.type_bag'), 'tape' => __('admin.packaging_catalog.type_tape'),
-                    'label' => __('admin.packaging_catalog.type_label'), 'bubble_wrap' => __('admin.packaging_catalog.type_bubble_wrap'), 'other' => __('admin.packaging_catalog.type_other'),
-                ],
+                'options' => $types->mapWithKeys(fn ($t) => [$t->id => $t->localizedName().($t->is_active ? '' : ' '.__('admin.packaging_catalog.type_inactive_suffix'))])->all(),
+            ],
+            [
+                'type' => 'select',
+                'name' => 'country_id',
+                'label' => __('admin.packaging_catalog.filter_country'),
+                'options' => $countries->mapWithKeys(fn ($c) => [$c->id => localized($c)])->all(),
             ],
             [
                 'type' => 'select',
@@ -80,15 +82,20 @@
 
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.packaging_catalog.type_label_field') }} <span class="text-red-500">*</span></label>
-                <select id="f-type" required class="form-select w-full text-sm">
-                    <option value="box">{{ __('admin.packaging_catalog.type_box') }}</option>
-                    <option value="bag">{{ __('admin.packaging_catalog.type_bag') }}</option>
-                    <option value="tape">{{ __('admin.packaging_catalog.type_tape') }}</option>
-                    <option value="label">{{ __('admin.packaging_catalog.type_label') }}</option>
-                    <option value="bubble_wrap">{{ __('admin.packaging_catalog.type_bubble_wrap') }}</option>
-                    <option value="other">{{ __('admin.packaging_catalog.type_other') }}</option>
-                </select>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-medium text-gray-700">{{ __('admin.packaging_catalog.type_label_field') }} <span class="text-red-500">*</span></label>
+                    <button type="button" id="btn-quick-add-type" class="text-xs text-primary-600 hover:underline">+ {{ __('admin.packaging_catalog.add_type') }}</button>
+                </div>
+                <select id="f-type" required class="form-select w-full text-sm"></select>
+                <div id="quick-type-form" class="hidden mt-2 space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <input type="text" id="qt-name-en" maxlength="100" class="form-input w-full text-sm" placeholder="{{ __('admin.packaging_types.name_en') }}">
+                    <input type="text" id="qt-name-ar" maxlength="100" dir="rtl" class="form-input w-full text-sm" placeholder="{{ __('admin.packaging_types.name_ar') }}">
+                    <p id="qt-error" class="hidden text-xs text-red-600"></p>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" id="btn-quick-type-cancel" class="btn btn-secondary text-xs">{{ __('admin.packaging_types.cancel') }}</button>
+                        <button type="button" id="btn-quick-type-save" class="btn btn-primary text-xs">{{ __('admin.packaging_types.save') }}</button>
+                    </div>
+                </div>
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.packaging_catalog.size_field') }}</label>
@@ -135,8 +142,8 @@
                         <option value="">{{ __('admin.packaging_catalog.add_country') }}</option>
                         @foreach($countries as $country)
                             <option value="{{ $country->id }}"
-                                    data-name="{{ $country->name_en }}"
-                                    data-currency="{{ $country->currency_code }}">{{ $country->name_en }}</option>
+                                    data-name="{{ localized($country) }}"
+                                    data-currency="{{ $country->currency_code }}">{{ localized($country) }}</option>
                         @endforeach
                     </select>
                     <button type="button" id="btn-add-country-row" class="btn btn-secondary text-xs">{{ __('admin.packaging_catalog.add_country') }}</button>
@@ -188,7 +195,66 @@
     const catalogBaseUrl = '{{ url('packaging/catalog') }}';
 
     const i18n = @json(__('admin.packaging_catalog'));
-    const countryMeta = @json($countries->mapWithKeys(fn ($c) => [$c->id => ['name' => $c->name_en, 'currency' => $c->currency_code]]));
+    const countryMeta = @json($countries->mapWithKeys(fn ($c) => [$c->id => ['name' => localized($c), 'currency' => $c->currency_code]]));
+    const typesStoreUrl = '{{ route('admin.packaging.types.store') }}';
+    const typesI18n = @json(__('admin.packaging_types'));
+    let packagingTypes = @json($types->map(fn ($t) => ['id' => $t->id, 'name' => $t->localizedName(), 'is_active' => $t->is_active])->values());
+
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value ?? '';
+        return div.innerHTML;
+    }
+
+    /** Active types are selectable for new items; an inactive type is only listed when the edited item already uses it. */
+    function renderTypeOptions(selectedId) {
+        const select = document.getElementById('f-type');
+        select.innerHTML = packagingTypes
+            .filter(t => t.is_active || t.id === selectedId)
+            .map(t => `<option value="${t.id}">${escapeHtml(t.name)}${t.is_active ? '' : ' ' + escapeHtml(i18n.type_inactive_suffix)}</option>`)
+            .join('');
+        if (selectedId) select.value = selectedId;
+    }
+
+    function toggleQuickTypeForm(show) {
+        document.getElementById('quick-type-form').classList.toggle('hidden', !show);
+        document.getElementById('qt-error').classList.add('hidden');
+        if (show) {
+            document.getElementById('qt-name-en').value = '';
+            document.getElementById('qt-name-ar').value = '';
+            document.getElementById('qt-name-en').focus();
+        }
+    }
+
+    document.getElementById('btn-quick-add-type').addEventListener('click', () => toggleQuickTypeForm(true));
+    document.getElementById('btn-quick-type-cancel').addEventListener('click', () => toggleQuickTypeForm(false));
+    document.getElementById('btn-quick-type-save').addEventListener('click', async () => {
+        const errEl = document.getElementById('qt-error');
+        try {
+            const res = await fetch(typesStoreUrl, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name_en: document.getElementById('qt-name-en').value,
+                    name_ar: document.getElementById('qt-name-ar').value,
+                    is_active: true,
+                }),
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                packagingTypes.push({ id: data.data.id, name: data.data.name, is_active: true });
+                renderTypeOptions(data.data.id);
+                toggleQuickTypeForm(false);
+                window.Toast && window.Toast.success(data.message);
+            } else {
+                errEl.textContent = data.message ?? Object.values(data.errors ?? {}).flat().join(' ');
+                errEl.classList.remove('hidden');
+            }
+        } catch (e) {
+            errEl.textContent = typesI18n.something_wrong;
+            errEl.classList.remove('hidden');
+        }
+    });
 
     let countryRows = [];
 
@@ -247,7 +313,8 @@
         ['f-name-en', 'f-name-ar', 'f-size', 'f-description-en', 'f-description-ar', 'f-image'].forEach(id => {
             document.getElementById(id).value = '';
         });
-        document.getElementById('f-type').value = 'box';
+        renderTypeOptions(null);
+        toggleQuickTypeForm(false);
         document.getElementById('f-sort-order').value = '0';
         document.getElementById('f-is-active').checked = true;
         document.getElementById('f-image-preview').classList.add('hidden');
@@ -279,7 +346,7 @@
             document.getElementById('f-id').value = item.id;
             document.getElementById('f-name-en').value = item.name_en ?? '';
             document.getElementById('f-name-ar').value = item.name_ar ?? '';
-            document.getElementById('f-type').value = item.type ?? 'box';
+            renderTypeOptions(item.packaging_supply_type_id ?? null);
             document.getElementById('f-size').value = item.size ?? '';
             document.getElementById('f-description-en').value = item.description_en ?? '';
             document.getElementById('f-description-ar').value = item.description_ar ?? '';
@@ -349,7 +416,7 @@
         const fd = new FormData();
         fd.append('name_en', document.getElementById('f-name-en').value);
         fd.append('name_ar', document.getElementById('f-name-ar').value);
-        fd.append('type', document.getElementById('f-type').value);
+        fd.append('packaging_supply_type_id', document.getElementById('f-type').value);
         fd.append('size', document.getElementById('f-size').value);
         fd.append('description_en', document.getElementById('f-description-en').value);
         fd.append('description_ar', document.getElementById('f-description-ar').value);

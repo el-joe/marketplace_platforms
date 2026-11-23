@@ -42,7 +42,7 @@
                             @if($certification->product?->primaryImage?->first()?->url)
                                 <img src="{{ $certification->product->primaryImage->first()->url }}" alt="" class="w-8 h-8 rounded object-cover border border-gray-200">
                             @endif
-                            <span class="font-medium text-gray-900">{{ $certification->product?->name_en ?? '—' }}</span>
+                            <span class="font-medium text-gray-900">{{ localized($certification->product) ?: '—' }}</span>
                         </dd>
                     </div>
                     <div>
@@ -51,7 +51,7 @@
                     </div>
                     <div>
                         <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('admin.vendor_product_certifications.country_column') }}</dt>
-                        <dd class="mt-1 text-gray-700">{{ $certification->country?->name_en ?? '—' }}</dd>
+                        <dd class="mt-1 text-gray-700">{{ localized($certification->country) ?: '—' }}</dd>
                     </div>
                     @if($certification->cert_name)
                         <div>

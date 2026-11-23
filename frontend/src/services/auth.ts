@@ -46,3 +46,28 @@ export const refreshTokenService = async (refreshToken: string) => {
     cache: "no-store",
   });
 };
+
+export type ForgotPasswordBody = {
+  email_or_phone: string;
+  /** Storefront language — the email and its reset link use it. */
+  locale: "ar" | "en";
+};
+export type ResetPasswordBody = {
+  token: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+};
+
+/** Always resolves the same way whether or not the account exists (no enumeration). */
+export const forgotPasswordService = (body: ForgotPasswordBody) =>
+  fetchInstance<{ success: boolean; message: string }>(
+    "/auth/forgot-password",
+    { method: "POST", body: JSON.stringify(body) },
+  );
+
+export const resetPasswordService = (body: ResetPasswordBody) =>
+  fetchInstance<{ success: boolean; message: string }>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });

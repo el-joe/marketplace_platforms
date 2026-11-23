@@ -57,7 +57,7 @@ class MarketerCollaborationContractTest extends TestCase
 
         $this->s = MarketplaceScenario::make()->build();
         $this->admin = Admin::factory()->create();
-        $this->admin->givePermissionTo(['classifieds.view', 'marketers.view']);
+        $this->admin->givePermissionTo(['classifieds.view', 'marketers.view', 'contracts.view', 'contracts.manage']);
     }
 
     private function service(): MarketerCollaborationContractService

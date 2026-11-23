@@ -14,7 +14,7 @@
         <h1 class="text-2xl font-bold text-gray-900 mt-1">{{ $zone->name }}</h1>
         <div class="flex items-center gap-3 mt-1">
             <code class="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{{ $zone->code }}</code>
-            <span class="text-sm text-gray-500">{{ $zone->country?->name_en }}</span>
+            <span class="text-sm text-gray-500">{{ localized($zone->country) }}</span>
             <span class="inline-flex items-center gap-1 text-xs font-medium
                 {{ $zone->is_active ? 'text-emerald-600' : 'text-gray-400' }}">
                 <span class="w-1.5 h-1.5 rounded-full {{ $zone->is_active ? 'bg-emerald-500' : 'bg-gray-400' }}"></span>
@@ -86,7 +86,7 @@
                     @foreach($cities as $city)
                         <li class="text-sm text-gray-700 flex items-center gap-2">
                             <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"></span>
-                            {{ $city->name_en }}
+                            {{ localized($city) }}
                         </li>
                     @endforeach
                 </ul>

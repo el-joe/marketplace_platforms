@@ -1,7 +1,7 @@
 @php
     /** @var \App\Models\PageBlock $block */
     $icon = optional($block->blockType)->icon ?? 'cube';
-    $label = optional($block->blockType)->label_en ?? $block->block_type;
+    $label = localized($block->blockType, 'label') ?: $block->block_type;
 @endphp
 
 <div class="block-card group" data-block-id="{{ $block->id }}" data-block-type="{{ $block->block_type }}">

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use App\Enums\DeliveryAssignmentStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -12,10 +13,23 @@ class DeliveryAssignment extends Model
     use HasUuids;
 
     public const STATUS_ASSIGNED = DeliveryAssignmentStatus::Assigned;
+
     public const STATUS_ACCEPTED = DeliveryAssignmentStatus::Accepted;
+
     public const STATUS_PICKED_UP = DeliveryAssignmentStatus::PickedUp;
+
     public const STATUS_DELIVERED = DeliveryAssignmentStatus::Delivered;
+
     public const STATUS_FAILED = DeliveryAssignmentStatus::Failed;
+
+    public const STATUS_CANCELLED = DeliveryAssignmentStatus::Cancelled;
+
+    /** Assignment statuses in which a rider still holds (or is about to hold) the parcel. */
+    public const OPEN_STATUSES = [
+        DeliveryAssignmentStatus::Assigned,
+        DeliveryAssignmentStatus::Accepted,
+        DeliveryAssignmentStatus::PickedUp,
+    ];
 
     protected $fillable = [
         'shipment_id',
@@ -27,6 +41,7 @@ class DeliveryAssignment extends Model
         'picked_up_at',
         'delivered_at',
         'failed_at',
+        'cancelled_at',
         'failure_reason',
         'failure_notes',
         'delivery_otp',
@@ -50,12 +65,13 @@ class DeliveryAssignment extends Model
     protected function casts(): array
     {
         return [
-            'cod_amount_collected' => \App\Casts\DecimalMoney::class,
+            'cod_amount_collected' => DecimalMoney::class,
             'assigned_at' => 'datetime',
             'accepted_at' => 'datetime',
             'picked_up_at' => 'datetime',
             'delivered_at' => 'datetime',
             'failed_at' => 'datetime',
+            'cancelled_at' => 'datetime',
             'rejected_by_customer_at' => 'datetime',
             'rejection_reason_mandatory' => 'boolean',
             'otp_verified' => 'boolean',
@@ -103,6 +119,7 @@ class DeliveryAssignment extends Model
         if ($this->assigned_at && $this->delivered_at) {
             return (int) $this->assigned_at->diffInMinutes($this->delivered_at);
         }
+
         return null;
     }
 }

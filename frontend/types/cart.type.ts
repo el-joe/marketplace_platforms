@@ -135,9 +135,28 @@ export interface Installment {
   remainder?: number;
 }
 
+/** Distance-based delivery outcome for a shipping group (null when the zone/method has no distance rule). */
+export interface DistancePricing {
+  status:
+    | "unavailable"
+    | "free_by_order_amount"
+    | "free_within_radius"
+    | "tier"
+    | "fallback";
+  available: boolean;
+  distance_km: number | null;
+  fee: number;
+  free_radius_km: number | null;
+  max_service_radius_km: number | null;
+  tier: { from_km: number; to_km: number | null; price: number } | null;
+  fallback_reason: string | null;
+  message: string;
+}
+
 export interface ShippingGroup {
   shipping_method: ShippingMethod | null;
   is_free_shipping: boolean;
+  distance_pricing?: DistancePricing | null;
   group_subtotal: number;
   items_count: number;
   items: ShippingGroupItem[];
@@ -151,6 +170,10 @@ export interface ShippingMethod {
   badge_label_ar: string;
   badge_color_hex: string;
   is_express_type: boolean;
+  /** Latest promised delivery day (YYYY-MM-DD, country timezone) — "Get it by …". */
+  estimated_delivery_date?: string | null;
+  /** End of today's order window (ISO-8601); null when none or already passed. */
+  order_cutoff_at?: string | null;
 }
 
 export interface WarrantyPlanSummary {

@@ -196,7 +196,7 @@ class SupportTicketController extends Controller
             'messages' => fn ($q) => $q->orderBy('created_at', 'asc'),
             'assignedToAdmin:id,name,email',
             'relatedOrder:id,order_number,status',
-            'relatedProduct:id,name_en',
+            'relatedProduct:id,name_en,name_ar',
         ]);
 
         // Load requester info based on role

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
+use App\Models\VendorAdmin;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ use Illuminate\View\View;
 class AuthController extends Controller
 {
     private const MAX_ATTEMPTS = 5;
+
     private const DECAY_SECONDS = 900; // 15 minutes
 
     // ────────────────────────────────────────────────
@@ -35,7 +37,7 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        $throttleKey = Str::lower($request->input('email')) . '|' . $request->ip();
+        $throttleKey = Str::lower($request->input('email')).'|'.$request->ip();
 
         if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_ATTEMPTS)) {
             $seconds = RateLimiter::availableIn($throttleKey);
@@ -54,7 +56,7 @@ class AuthController extends Controller
             RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
 
-            /** @var \App\Models\VendorAdmin $vendorAdmin */
+            /** @var VendorAdmin $vendorAdmin */
             $vendorAdmin = Auth::guard('vendor')->user();
             $vendorAdmin->update([
                 'last_login_at' => now(),
@@ -92,20 +94,14 @@ class AuthController extends Controller
     public function sendResetLink(Request $request): RedirectResponse
     {
         $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'email', 'max:255'],
         ]);
 
-        $status = Password::broker('vendor_admins')->sendResetLink(
-            $request->only('email')
-        );
+        // Same answer whether or not the address exists (no account enumeration). An unknown
+        // email (INVALID_USER) and the broker's own per-account throttle are deliberately silent.
+        Password::broker('vendor_admins')->sendResetLink($request->only('email'));
 
-        if ($status === Password::RESET_LINK_SENT) {
-            return back()->with('status', 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.');
-        }
-
-        throw ValidationException::withMessages([
-            'email' => __($status),
-        ]);
+        return back()->with('status', __('partner.auth.reset_link_sent'));
     }
 
     // ────────────────────────────────────────────────

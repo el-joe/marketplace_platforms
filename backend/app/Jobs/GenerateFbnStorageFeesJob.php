@@ -2,9 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Enums\FbnStorageFeeStatus;
 use App\Models\FbnStorageFee;
-use App\Models\StorageFeeFreePeriodRule;
 use App\Models\WarehouseInventory;
+use App\Services\Fbn\StorageFeeCalculator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -37,17 +38,6 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
 
     public int $timeout = 300;
 
-    /**
-     * Volumetric weight divisor (cm^3 -> grams), i.e.
-     * volumetric_weight_grams = (length_cm * width_cm * height_cm) / DIVISOR * 1000.
-     *
-     * The plan doc (section 5.1) leaves this "يُحدَّد مع العميل" (TBD, pending
-     * client confirmation) between the two industry-standard values of 5000
-     * and 6000. Hardcoded to 5000 here as the working default until the
-     * client confirms — revisit once section 6 (or a follow-up) settles it.
-     */
-    private const VOLUMETRIC_DIVISOR = 5000;
-
     private const STATUS_TTL_SECONDS = 3600;
 
     public function __construct(private string $monthString)
@@ -63,13 +53,13 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
         return "fbn_storage_fees_generation_status:{$monthString}";
     }
 
-    public function handle(): void
+    public function handle(StorageFeeCalculator $calculator): void
     {
         $month = Carbon::createFromFormat('Y-m', $this->monthString)->startOfMonth();
         $monthDate = $month->toDateString();
         $statusKey = self::statusCacheKey($this->monthString);
 
-        Cache::put($statusKey, ['state' => 'running', 'created' => 0, 'free' => 0, 'skipped' => 0], self::STATUS_TTL_SECONDS);
+        Cache::put($statusKey, ['state' => 'running', 'created' => 0, 'free' => 0, 'skipped' => 0, 'locked' => 0], self::STATUS_TTL_SECONDS);
 
         Log::info("[GenerateFbnStorageFeesJob] Generating storage fees for month: {$monthDate}");
 
@@ -97,12 +87,27 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
         $created = 0;
         $skipped = 0;
         $freeOfCharge = 0;
+        $locked = 0;
+
+        // Fees already invoiced or paid for this month are finance records:
+        // a re-run must never re-price them or push them back to pending.
+        $lockedInventoryIds = FbnStorageFee::query()
+            ->whereDate('month', $monthDate)
+            ->where('status', '!=', FbnStorageFeeStatus::Pending)
+            ->pluck('warehouse_inventory_id')
+            ->flip();
 
         // End of the billed month, used to measure days-in-storage consistently
         // regardless of when in the month the job actually runs.
         $billingCutoff = $month->copy()->endOfMonth();
 
         foreach ($inventories as $inv) {
+            if ($lockedInventoryIds->has($inv->inventory_id)) {
+                $locked++;
+
+                continue;
+            }
+
             $rateCents = round((float) ($inv->rate_per_unit ?? 0), 4);
             if ($rateCents <= 0) {
                 $skipped++;
@@ -136,31 +141,26 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
             // volumetric weight can still drive the chargeable weight.
             $actualWeightGrams = (int) ($inv->declared_weight_grams ?? 0);
 
-            // Volumetric weight (grams): (L x W x H in cm) / divisor -> "volumetric kg",
-            // converted to grams to compare against the actual weight on the
-            // same unit before picking the chargeable (larger) one.
-            $volumetricWeightGrams = 0;
-            if ($inv->declared_length_cm && $inv->declared_width_cm && $inv->declared_height_cm) {
-                $volumetricWeightKg = ((float) $inv->declared_length_cm * (float) $inv->declared_width_cm * (float) $inv->declared_height_cm)
-                    / self::VOLUMETRIC_DIVISOR;
-                $volumetricWeightGrams = (int) round($volumetricWeightKg * 1000);
-            }
+            $volumetricWeightGrams = $calculator->volumetricWeightGrams(
+                (float) $inv->declared_length_cm,
+                (float) $inv->declared_width_cm,
+                (float) $inv->declared_height_cm,
+            );
 
             $chargeableWeightGrams = max($actualWeightGrams, $volumetricWeightGrams);
 
-            $freeDays = StorageFeeFreePeriodRule::freeDaysFor($chargeableWeightGrams);
+            $charge = $calculator->charge(
+                $chargeableWeightGrams,
+                $storedSince,
+                $daysInStorage,
+                $calculator->volumeM3((float) $inv->declared_length_cm, (float) $inv->declared_width_cm, (float) $inv->declared_height_cm),
+                (float) $rateCents,
+                (int) $inv->quantity_on_hand,
+            );
 
-            $withinFree = $daysInStorage <= $freeDays;
-            if ($withinFree) {
+            if ($charge['within_free_period']) {
                 $freeOfCharge++;
             }
-
-            // Fee = physical volume (m3) x rate per m3 x units on hand.
-            $volumeM3 = ($inv->declared_length_cm && $inv->declared_width_cm && $inv->declared_height_cm)
-                ? ((float) $inv->declared_length_cm * (float) $inv->declared_width_cm * (float) $inv->declared_height_cm) / 1_000_000
-                : 0;
-
-            $totalCents = $withinFree ? 0 : round($volumeM3 * $rateCents * $inv->quantity_on_hand, 2);
 
             try {
                 FbnStorageFee::updateOrCreate(
@@ -172,16 +172,16 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
                     [
                         'units_stored' => $inv->quantity_on_hand,
                         'rate_per_unit' => $rateCents,
-                        'total_fee' => $totalCents,
+                        'total_fee' => $charge['total_fee'],
                         'currency' => $inv->currency,
                         'declared_weight_grams' => $actualWeightGrams,
                         'volumetric_weight_grams' => $volumetricWeightGrams,
                         'chargeable_weight_grams' => $chargeableWeightGrams,
-                        'free_days_applied' => $freeDays,
+                        'free_days_applied' => $charge['free_days_applied'],
                         'days_in_storage' => $daysInStorage,
                         'stored_since' => $storedSince->toDateString(),
-                        'within_free_period' => $withinFree,
-                        'status' => 'pending',
+                        'within_free_period' => $charge['within_free_period'],
+                        'status' => FbnStorageFeeStatus::Pending,
                     ]
                 );
                 $created++;
@@ -190,13 +190,14 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
             }
         }
 
-        Log::info("[GenerateFbnStorageFeesJob] Done. Created/updated: {$created}, free of charge: {$freeOfCharge}, skipped (no rate/data): {$skipped}");
+        Log::info("[GenerateFbnStorageFeesJob] Done. Created/updated: {$created}, free of charge: {$freeOfCharge}, skipped (no rate/data): {$skipped}, kept (invoiced/paid): {$locked}");
 
         Cache::put($statusKey, [
             'state' => 'done',
             'created' => $created,
             'free' => $freeOfCharge,
             'skipped' => $skipped,
+            'locked' => $locked,
         ], self::STATUS_TTL_SECONDS);
     }
 
@@ -209,6 +210,7 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
             'created' => 0,
             'free' => 0,
             'skipped' => 0,
+            'locked' => 0,
         ], self::STATUS_TTL_SECONDS);
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Marketer;
 
-use App\Support\Money;
 use App\Enums\MarketerListingStatus;
 use App\Enums\WarehouseType;
 use App\Http\Controllers\Controller;
@@ -15,6 +14,7 @@ use App\Models\ProductVariant;
 use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
 use App\Services\Shared\PromoBadgeSyncService;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -128,7 +128,7 @@ class ListingController extends Controller
     public function create(): View
     {
         $marketer = $this->marketer();
-        $countries = Country::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en', 'currency_code']);
+        $countries = Country::availableForVendors()->orderBy('name_ar')->get(['id', 'name_ar', 'name_en', 'currency_code']);
         $fbnWarehouses = $this->fbnWarehousesByCountry();
 
         return view('marketer.listings.create', compact('marketer', 'countries', 'fbnWarehouses'));
@@ -147,7 +147,7 @@ class ListingController extends Controller
 
         $request->validate([
             'product_variant_id' => ['required', 'uuid', 'exists:product_variants,id'],
-            'country_id' => ['required', 'uuid', 'exists:countries,id'],
+            'country_id' => ['required', 'uuid', Country::availableForVendorsRule()],
             'warehouse_id' => ['required', 'uuid', 'exists:warehouses,id'],
             'price' => ['required', 'numeric', 'decimal:0,2', 'min:1'],
             'compare_at_price' => ['nullable', 'numeric', 'decimal:0,2', 'min:1'],

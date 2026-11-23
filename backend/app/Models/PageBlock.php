@@ -122,53 +122,56 @@ class PageBlock extends Model
     /**
      * Human-readable preview text for the block card in the builder.
      */
+    /**
+     * One-line summary under the block name in the page-builder canvas (panel locale).
+     */
     public function getPreviewText(): string
     {
         $cfg = $this->config ?? [];
+        $title = fn (string $fallbackKey): string => (string) (localized($cfg, 'title') ?: __('admin.page_builder.block_preview.'.$fallbackKey));
 
         switch ($this->block_type) {
             case 'hero_slider':
-                $count = $this->slides()->count();
-                return 'Slider — ' . $count . ' slide' . ($count === 1 ? '' : 's');
+                return trans_choice('admin.page_builder.block_preview.slides', $this->slides()->count());
 
             case 'product_row':
-                $source = $cfg['source'] ?? 'best_sellers';
-                return 'Products — source: ' . $source;
+                return __('admin.page_builder.block_preview.products_source', ['source' => $cfg['source'] ?? 'best_sellers']);
 
             case 'flash_sale':
-                return 'Flash sale block';
+                return __('admin.page_builder.block_preview.flash_sale');
 
             case 'text_block':
-                $text = strip_tags((string) ($cfg['content_html_en'] ?? ''));
-                return $text === '' ? 'Text block' : Str::limit($text, 50);
+                $text = strip_tags((string) localized($cfg, 'content_html'));
+
+                return $text === '' ? __('admin.page_builder.block_preview.text_block') : Str::limit($text, 50);
 
             case 'ad_images_2col':
             case 'ad_images_4col':
-                $count = $this->adImageItems()->count();
-                return 'Ad images — ' . $count . ' image' . ($count === 1 ? '' : 's');
+                return trans_choice('admin.page_builder.block_preview.ad_images', $this->adImageItems()->count());
 
             case 'full_banner':
-                $count = $this->adImageItems()->count();
-                return $count ? 'Banner — 1 image' : 'Banner — no image yet';
+                return $this->adImageItems()->count()
+                    ? __('admin.page_builder.block_preview.banner_one_image')
+                    : __('admin.page_builder.block_preview.banner_no_image');
 
             case 'category_pills':
-                return $cfg['title_en'] ?? 'Category pills';
+                return $title('category_pills');
 
             case 'brand_strip':
-                return $cfg['title_en'] ?? 'Brand strip';
+                return $title('brand_strip');
 
             case 'countdown_deal':
             case 'countdown_timer':
-                return $cfg['title_en'] ?? 'Countdown';
+                return $title('countdown');
 
             case 'newsletter_signup':
-                return $cfg['title_en'] ?? 'Newsletter signup';
+                return $title('newsletter_signup');
 
             case 'divider':
-                return 'Divider';
+                return __('admin.page_builder.block_preview.divider');
 
             default:
-                return optional($this->blockType)->label_en ?? $this->block_type;
+                return localized($this->blockType, 'label') ?: $this->block_type;
         }
     }
 }

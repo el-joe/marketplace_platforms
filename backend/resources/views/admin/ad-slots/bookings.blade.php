@@ -50,7 +50,7 @@
             </div>
             <div>
                 <dt class="text-xs text-gray-400 uppercase font-medium mb-0.5">{{ __('admin.ad_slots.country') }}</dt>
-                <dd>{{ $adSlot->country?->flag_emoji ?? '' }} {{ $adSlot->country?->name_en ?? '—' }}</dd>
+                <dd>{{ $adSlot->country?->flag_emoji ?? '' }} {{ localized($adSlot->country) ?: '—' }}</dd>
             </div>
         </div>
     </x-card>

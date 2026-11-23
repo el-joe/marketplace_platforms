@@ -1,217 +1,168 @@
 {{--
-    Commission Tiers tab for $category (edit mode only).
-    Tiers are saved immediately via fetch (no nested form tag).
-    Each country gets its own section; a "Global / Default" section handles NULL country_id.
-    The global section applies when no country-specific tier matches at checkout.
-
-    Variables:
-      $category        – Category model (must be persisted)
-      $activeCountries – Collection<Country> with id, name_en, currency_code
+    Commissions section of the category form: per-country FBP/FBM/FBN overrides
+    (country_commissions[<country>][...]) and price tiers (tiers[i][...]), both
+    saved with the whole form. Works on create too.
+    Expects: $countries, $activeCountries, $countryCommissions (keyed by country id), $commissionTiers
 --}}
-
 @php
-    /** @var \App\Models\Category $category */
-    /** @var \Illuminate\Support\Collection $activeCountries */
+    $tierCountryIds = $commissionTiers->pluck('country_id')->filter()->unique();
+    $tierScopes = collect([['id' => '', 'name' => __('admin.categories.tier_global_label'), 'sub' => __('admin.categories.tier_global_sublabel'), 'flag' => '', 'currency' => '—']])
+        ->concat(
+            $countries->filter(fn ($c) => $c->is_active || $tierCountryIds->contains($c->id))
+                ->map(fn ($c) => ['id' => $c->id, 'name' => localized($c), 'sub' => '', 'flag' => $c->flag_emoji ?? '', 'currency' => $c->currency_code ?? '—'])
+        )->values();
 
-    // Build grouped tiers: 'global' + one key per country UUID
-    $tiersGrouped = $category->commissionTiers()
-        ->orderBy('country_id')
-        ->orderBy('sort_order')
-        ->get()
-        ->groupBy(fn ($t) => $t->country_id ?? 'global')
-        ->map(fn ($group) => $group->map(fn ($t) => [
-            'id'              => $t->id,
-            'country_id'      => $t->country_id,
-            'price_from'      => $t->price_from,
-            'price_to'        => $t->price_to,
-            'commission_rate' => (string) $t->commission_rate,
-            'min_commission'  => $t->min_commission,
-        ])->values()->all())
-        ->all();
+    $initialTiers = $commissionTiers->map(fn ($t) => [
+        'id' => $t->id,
+        'country_id' => $t->country_id ?? '',
+        'price_from' => (string) $t->price_from,
+        'price_to' => $t->price_to === null ? '' : (string) $t->price_to,
+        'commission_rate' => (string) $t->commission_rate,
+        'min_commission' => (string) ($t->min_commission ?? 0),
+    ])->values();
 
-    // Country lookup keyed by id for easy access
-    $countriesById = $activeCountries->keyBy('id');
+    $commissionColumns = [
+        'fbp' => ['label' => __('admin.categories.fbp_label'), 'color' => 'text-blue-600'],
+        'fbm' => ['label' => __('admin.categories.fbm_label'), 'color' => 'text-amber-600'],
+        'fbn' => ['label' => __('admin.categories.fbn_label'), 'color' => 'text-green-600'],
+    ];
 @endphp
+<div class="space-y-8 p-6">
 
-<div
-    x-data="categoryCommissionTiersTab({
-        indexUrl:          '{{ route('admin.categories.commission-tiers.index', $category->id) }}',
-        storeUrl:          '{{ route('admin.categories.commission-tiers.store', $category->id) }}',
-        updateUrlTemplate: '{{ route('admin.categories.commission-tiers.update', [$category->id, '__ID__']) }}',
-        destroyUrlTemplate:'{{ route('admin.categories.commission-tiers.destroy', [$category->id, '__ID__']) }}',
-        tiersGrouped: @js($tiersGrouped),
-        confirmText: @js(__('admin.categories.tier_delete_confirm')),
-    })"
-    class="space-y-6"
->
-
-    {{-- Global banner --}}
-    <div class="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800">
-        {{ __('admin.categories.tier_global_hint') }}
-    </div>
-
-    {{-- Global error --}}
-    <p x-show="error" x-cloak x-text="error" class="rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700"></p>
-
-    {{-- ══════════════════════════════════════════════════════ --}}
-    {{-- GLOBAL (null country) section                         --}}
-    {{-- ══════════════════════════════════════════════════════ --}}
-    <div class="rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-        <div class="flex items-center justify-between gap-3 bg-gray-50 px-4 py-3 border-b border-gray-200">
-            <div>
-                <span class="text-sm font-semibold text-gray-700">{{ __('admin.categories.tier_global_label') }}</span>
-                <span class="ms-2 text-xs text-gray-400">{{ __('admin.categories.tier_global_sublabel') }}</span>
-            </div>
-            <button
-                type="button"
-                class="btn btn-primary btn-sm whitespace-nowrap"
-                @click="startAdd('global', null)"
-                x-show="addingKey !== 'global' && editingKey !== 'global'"
-            >
-                {{ __('admin.categories.tier_add') }}
-            </button>
+    {{-- Per-country commission overrides --}}
+    <div class="space-y-3">
+        <div>
+            <h3 class="text-sm font-semibold text-gray-800">{{ __('category_form.commissions.country_title') }}</h3>
+            <p class="text-xs text-gray-500">{{ __('category_form.commissions.country_hint') }}</p>
         </div>
 
-        @include('admin.categories._commission_tier_section', [
-            'scopeKey'     => 'global',
-            'currencyCode' => '—',
-        ])
+        @forelse($activeCountries as $country)
+            @php $override = $countryCommissions->get($country->id); @endphp
+            <div class="rounded-lg border border-gray-200 p-4">
+                <div class="mb-3 flex items-center gap-2">
+                    <span class="text-base">{{ $country->flag_emoji }}</span>
+                    <span class="text-sm font-semibold text-gray-700">{{ localized($country) }}</span>
+                    <span class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-500">{{ $country->currency_code ?? '—' }}</span>
+                </div>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    @foreach($commissionColumns as $model => $meta)
+                        <div class="space-y-2">
+                            <p class="text-xs font-bold uppercase tracking-wide {{ $meta['color'] }}">{{ $meta['label'] }}</p>
+                            @foreach(['pct' => ['label' => __('admin.categories.percentage_rate'), 'suffix' => '%', 'step' => '0.01'], 'fixed' => ['label' => __('admin.categories.fixed_fee_per_unit'), 'suffix' => $country->currency_code ?? '', 'step' => '0.001']] as $kind => $field)
+                                @php $fieldName = "commission_{$model}_{$kind}"; @endphp
+                                <div class="space-y-1">
+                                    <label class="block text-xs font-medium text-gray-500" for="cc_{{ $country->id }}_{{ $fieldName }}">{{ $field['label'] }}</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" id="cc_{{ $country->id }}_{{ $fieldName }}"
+                                            name="country_commissions[{{ $country->id }}][{{ $fieldName }}]"
+                                            value="{{ old("country_commissions.{$country->id}.{$fieldName}", $override?->{$fieldName}) }}"
+                                            step="{{ $field['step'] }}" min="0" @if($kind === 'pct') max="100" @endif
+                                            placeholder="{{ __('admin.categories.inherit_global') }}" class="input w-full text-sm">
+                                        <span class="whitespace-nowrap font-mono text-xs text-gray-400">{{ $field['suffix'] }}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @empty
+            <p class="text-sm italic text-gray-400">—</p>
+        @endforelse
     </div>
 
-    {{-- ══════════════════════════════════════════════════════ --}}
-    {{-- Per-country sections                                   --}}
-    {{-- ══════════════════════════════════════════════════════ --}}
-    @foreach ($activeCountries as $country)
-    <div class="rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-        <div class="flex items-center justify-between gap-3 bg-gray-50 px-4 py-3 border-b border-gray-200">
-            <div class="flex items-center gap-2">
-                <span class="text-lg leading-none">{{ $country->flag_emoji }}</span>
-                <span class="text-sm font-semibold text-gray-700">{{ $country->name_en }}</span>
-                <span class="inline-flex items-center rounded-md bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-xs font-medium text-indigo-700">
-                    {{ $country->currency_code }}
-                </span>
-            </div>
-            <button
-                type="button"
-                class="btn btn-primary btn-sm whitespace-nowrap"
-                @click="startAdd('{{ $country->id }}', '{{ $country->id }}')"
-                x-show="addingKey !== '{{ $country->id }}' && editingKey !== '{{ $country->id }}'"
-            >
-                {{ __('admin.categories.tier_add') }}
-            </button>
+    {{-- Price tiers --}}
+    <div class="space-y-3" x-data="categoryTiersSection(@js($initialTiers))">
+        <div>
+            <h3 class="text-sm font-semibold text-gray-800">{{ __('category_form.commissions.tiers_title') }}</h3>
+            <p class="text-xs text-gray-500">{{ __('admin.categories.tier_global_hint') }}</p>
         </div>
 
-        @include('admin.categories._commission_tier_section', [
-            'scopeKey'     => $country->id,
-            'currencyCode' => $country->currency_code,
-        ])
-    </div>
-    @endforeach
+        @foreach($tierScopes as $scope)
+            <div class="overflow-hidden rounded-lg border border-gray-200">
+                <div class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
+                    <div class="flex items-center gap-2">
+                        @if($scope['flag'])<span class="text-base leading-none">{{ $scope['flag'] }}</span>@endif
+                        <span class="text-sm font-semibold text-gray-700">{{ $scope['name'] }}</span>
+                        @if($scope['sub'])<span class="text-xs text-gray-400">{{ $scope['sub'] }}</span>@endif
+                        @if($scope['id'])<span class="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">{{ $scope['currency'] }}</span>@endif
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="add(@js($scope['id']))">
+                        <x-heroicon name="plus" class="h-4 w-4" />
+                        {{ __('category_form.commissions.add_tier') }}
+                    </button>
+                </div>
 
+                <p x-show="countFor(@js($scope['id'])) === 0" class="px-4 py-3 text-xs italic text-gray-400">{{ __('category_form.commissions.no_tiers') }}</p>
+
+                <div x-show="countFor(@js($scope['id'])) > 0" class="divide-y divide-gray-100">
+                    <template x-for="tier in tiers" :key="tier.key">
+                        <div x-show="tier.country_id === @js($scope['id'])" class="grid grid-cols-2 items-end gap-3 px-4 py-3 sm:grid-cols-5">
+                            <template x-if="tier.country_id === @js($scope['id'])">
+                                <div class="contents">
+                                    <input type="hidden" :name="`tiers[${index(tier)}][id]`" :value="tier.id">
+                                    <input type="hidden" :name="`tiers[${index(tier)}][country_id]`" :value="tier.country_id">
+                                    <label class="space-y-1">
+                                        <span class="block text-xs font-medium text-gray-500">{{ __('admin.categories.tier_price_from') }}</span>
+                                        <input type="number" step="0.01" min="0" class="input w-full text-sm" :name="`tiers[${index(tier)}][price_from]`" x-model="tier.price_from">
+                                    </label>
+                                    <label class="space-y-1">
+                                        <span class="block text-xs font-medium text-gray-500">{{ __('admin.categories.tier_price_to') }}</span>
+                                        <input type="number" step="0.01" min="0" class="input w-full text-sm" :name="`tiers[${index(tier)}][price_to]`" x-model="tier.price_to"
+                                               placeholder="{{ __('admin.categories.tier_no_limit') }}">
+                                    </label>
+                                    <label class="space-y-1">
+                                        <span class="block text-xs font-medium text-gray-500">{{ __('admin.categories.tier_rate') }}</span>
+                                        <input type="number" step="0.01" min="0" max="100" class="input w-full text-sm" :name="`tiers[${index(tier)}][commission_rate]`" x-model="tier.commission_rate">
+                                    </label>
+                                    <label class="space-y-1">
+                                        <span class="block text-xs font-medium text-gray-500">{{ __('admin.categories.tier_min') }}</span>
+                                        <input type="number" step="0.01" min="0" class="input w-full text-sm" :name="`tiers[${index(tier)}][min_commission]`" x-model="tier.min_commission">
+                                    </label>
+                                    <div class="flex justify-end pb-2">
+                                        <button type="button" class="text-xs text-danger-600 hover:underline" @click="remove(tier)">{{ __('category_form.commissions.remove_tier') }}</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        @endforeach
+    </div>
 </div>
 
-{{-- ══════════════════════════════════════════════════════════ --}}
-{{-- Alpine component                                           --}}
-{{-- ══════════════════════════════════════════════════════════ --}}
 <script>
-function categoryCommissionTiersTab(config) {
-    const blank = (countryId) => ({
-        country_id:      countryId,
-        price_from:      0,
-        price_to:        '',
-        commission_rate: 0,
-        min_commission:  0,
-    });
-
-    async function request(url, method, body) {
-        const r = await fetch(url, {
-            method,
-            headers: {
-                'Content-Type':    'application/json',
-                'Accept':          'application/json',
-                'X-CSRF-TOKEN':    document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                'X-Requested-With':'XMLHttpRequest',
-            },
-            body: body ? JSON.stringify(body) : undefined,
-        });
-        const data = await r.json().catch(() => ({}));
-        if (!r.ok) {
-            const first = data.errors ? Object.values(data.errors)[0]?.[0] : null;
-            throw new Error(first || data.message || 'Request failed');
-        }
-        return data;
-    }
-
+function categoryTiersSection(initial) {
+    let seq = 0;
     return {
-        // tiersGrouped: { 'global': [...], '<uuid>': [...] }
-        tiersGrouped: config.tiersGrouped,
-        addingKey:    null,   // scopeKey of section currently showing add form
-        editingKey:   null,   // scopeKey of section currently in edit mode
-        editingId:    null,   // tier UUID being edited
-        saving:       false,
-        error:        '',
-        form:         blank(null),
+        tiers: initial.map(t => ({ ...t, key: ++seq })),
 
-        tiersFor(scopeKey) {
-            return this.tiersGrouped[scopeKey] ?? [];
+        index(tier) {
+            return this.tiers.indexOf(tier);
         },
 
-        startAdd(scopeKey, countryId) {
-            this.error    = '';
-            this.form     = blank(countryId);
-            this.editingId  = null;
-            this.editingKey = null;
-            this.addingKey  = scopeKey;
+        countFor(countryId) {
+            return this.tiers.filter(t => t.country_id === countryId).length;
         },
 
-        startEdit(scopeKey, tier) {
-            this.error      = '';
-            this.addingKey  = null;
-            this.editingKey = scopeKey;
-            this.editingId  = tier.id;
-            this.form = {
-                ...tier,
-                price_to: tier.price_to ?? '',
-            };
+        add(countryId) {
+            const last = this.tiers.filter(t => t.country_id === countryId).at(-1);
+            this.tiers.push({
+                key: ++seq,
+                id: '',
+                country_id: countryId,
+                price_from: last && last.price_to !== '' ? String(Number(last.price_to) + 0.01) : (last ? '' : '0'),
+                price_to: '',
+                commission_rate: '0',
+                min_commission: '0',
+            });
+            this.$dispatch('category-form:changed');
         },
 
-        cancel() {
-            this.addingKey  = null;
-            this.editingKey = null;
-            this.editingId  = null;
-            this.error      = '';
-        },
-
-        async save() {
-            this.saving = true;
-            this.error  = '';
-            const payload = {
-                ...this.form,
-                price_to: this.form.price_to === '' ? null : this.form.price_to,
-            };
-            try {
-                const data = this.editingId
-                    ? await request(config.updateUrlTemplate.replace('__ID__', this.editingId), 'PUT', payload)
-                    : await request(config.storeUrl, 'POST', payload);
-                // Merge updated grouped tiers from server response
-                this.tiersGrouped = data.tiers;
-                this.cancel();
-            } catch (e) {
-                this.error = e.message;
-            } finally {
-                this.saving = false;
-            }
-        },
-
-        async remove(tier) {
-            if (!confirm(config.confirmText)) return;
-            this.error = '';
-            try {
-                const data = await request(config.destroyUrlTemplate.replace('__ID__', tier.id), 'DELETE');
-                this.tiersGrouped = data.tiers;
-            } catch (e) {
-                this.error = e.message;
-            }
+        remove(tier) {
+            this.tiers.splice(this.tiers.indexOf(tier), 1);
+            this.$dispatch('category-form:changed');
         },
     };
 }

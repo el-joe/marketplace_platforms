@@ -65,7 +65,7 @@ Route::middleware('web')->group(function () {
         Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 
         Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('auth.forgot');
-        Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('auth.forgot.send');
+        Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:5,1')->name('auth.forgot.send');
         Route::get('/reset-password/{token}', [AuthController::class, 'resetPassword'])->name('auth.reset');
         Route::post('/reset-password', [AuthController::class, 'updatePassword'])->name('auth.reset.update');
     });

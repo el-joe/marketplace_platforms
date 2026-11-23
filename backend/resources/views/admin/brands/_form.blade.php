@@ -26,7 +26,7 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-xl font-semibold text-gray-900">
-                {{ $isEdit ? __('admin.brands_section.edit_brand_prefix') . e($brand->name_en) : __('admin.brands_section.new_brand') }}
+                {{ $isEdit ? __('admin.brands_section.edit_brand_prefix') . e(localized($brand)) : __('admin.brands_section.new_brand') }}
             </h1>
         </div>
     </div>

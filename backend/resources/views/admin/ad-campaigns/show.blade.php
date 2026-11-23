@@ -86,7 +86,7 @@
             <p class="text-sm text-gray-500 mt-0.5">
                 {{ __('admin.ad_campaigns.by') }} <strong>{{ $campaign->vendor?->store_name ?? '—' }}</strong>
                 @if($campaign->country)
-                    · {{ $campaign->country->flag_emoji ?? '' }} {{ $campaign->country->name_en }}
+                    · {{ $campaign->country->flag_emoji ?? '' }} {{ localized($campaign->country) }}
                 @endif
             </p>
         </div>
@@ -425,7 +425,7 @@
                                 @foreach($campaign->categoryTargets as $ct)
                                     <tr>
                                         <td class="py-2 pr-4 font-medium">
-                                            {{ $ct->category?->name_en ?? $ct->category_id }}
+                                            {{ localized($ct->category) ?: $ct->category_id }}
                                         </td>
                                         <td class="py-2 pr-4">
                                             {{ $ct->bid_override ? number_format($ct->bid_override, 4) . ' ' . $currency : '—' }}

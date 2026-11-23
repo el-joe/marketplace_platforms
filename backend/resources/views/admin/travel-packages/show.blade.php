@@ -66,9 +66,9 @@
                     <dt class="text-gray-500">{{ __('admin.travel.destination_label') }}</dt>
                     <dd class="text-gray-900 text-end">
                         @if($travelPackage->destinationCountry)
-                            {{ $travelPackage->destinationCountry->flag_emoji }} {{ $travelPackage->destinationCountry->name_en }}
+                            {{ $travelPackage->destinationCountry->flag_emoji }} {{ localized($travelPackage->destinationCountry) }}
                             @if($travelPackage->destinationCity)
-                                <span class="text-gray-400">, {{ $travelPackage->destinationCity->name_en }}</span>
+                                <span class="text-gray-400">, {{ localized($travelPackage->destinationCity) }}</span>
                             @endif
                         @else
                             {{ $travelPackage->destination_country }}{{ $travelPackage->destination_city ? ', ' . $travelPackage->destination_city : '' }}
@@ -179,7 +179,7 @@
         <div id="cat-badges" class="flex flex-wrap gap-2 min-h-[24px]">
             @forelse($travelPackage->categories as $cat)
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700">
-                {{ $cat->icon ? $cat->icon . ' ' : '' }}{{ $cat->name_en }}
+                {{ $cat->icon ? $cat->icon . ' ' : '' }}{{ localized($cat) }}
             </span>
             @empty
             <span class="text-xs text-gray-400">{{ __('admin.travel.no_categories_assigned') }}</span>
@@ -205,7 +205,7 @@
                             <input type="checkbox" class="cat-checkbox w-4 h-4 rounded border-gray-300 text-primary-600"
                                    value="{{ $parent->id }}"
                                    {{ in_array($parent->id, $assignedIds) ? 'checked' : '' }}>
-                            <span class="text-sm">{{ $parent->icon ? $parent->icon . ' ' : '' }}{{ $parent->name_en }}</span>
+                            <span class="text-sm">{{ $parent->icon ? $parent->icon . ' ' : '' }}{{ localized($parent) }}</span>
                         </label>
                         @if(isset($childCats[$parent->id]))
                         <div class="ms-6 mt-1 grid grid-cols-2 gap-1.5">
@@ -214,7 +214,7 @@
                                 <input type="checkbox" class="cat-checkbox w-4 h-4 rounded border-gray-300 text-primary-600"
                                        value="{{ $child->id }}"
                                        {{ in_array($child->id, $assignedIds) ? 'checked' : '' }}>
-                                <span class="text-sm text-gray-700">{{ $child->icon ? $child->icon . ' ' : '' }}{{ $child->name_en }}</span>
+                                <span class="text-sm text-gray-700">{{ $child->icon ? $child->icon . ' ' : '' }}{{ localized($child) }}</span>
                             </label>
                             @endforeach
                         </div>

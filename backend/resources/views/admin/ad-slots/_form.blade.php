@@ -99,7 +99,7 @@
                 <option value="">{{ __('admin.ad_slots.select_country') }}</option>
                 @foreach($countries as $c)
                     <option value="{{ $c->id }}" data-currency="{{ $c->currency_code }}" {{ old('country_id', $adSlot?->country_id) == $c->id ? 'selected' : '' }}>
-                        {{ $c->flag_emoji ? $c->flag_emoji . ' ' : '' }}{{ $c->name_en }}
+                        {{ $c->flag_emoji ? $c->flag_emoji . ' ' : '' }}{{ localized($c) }}
                     </option>
                 @endforeach
             </x-form-select>

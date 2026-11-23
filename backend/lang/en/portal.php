@@ -170,7 +170,13 @@ return [
 
     'registration' => [
         'signature_name_required' => 'Type your full name to sign the Seller Agreement.',
-        'classified_account_notice' => 'You are registering an Open Souq account for classified ads (real estate, cars, services…).',
+        'classified_account_notice' => 'You are registering a Classifieds account to publish classified ads (real estate, cars, travel & tourism…).',
+        'classified_category_notice' => 'You are registering a Classifieds account for the :category section.',
+        'category_contract_title' => ':category section contract',
+        'category_contract_intro' => 'Publishing in this section requires its own contract. Your full name below signs it together with the Seller Agreement.',
+        'category_contract_agree' => 'I have read and agree to the :category section contract.',
+        'category_contract_required' => 'Please read and agree to the section contract.',
+        'category_contract_changed' => 'The section contract was updated during registration. Reload the page and review it again.',
         'switch_to_product_account' => 'Want to sell products instead?',
         'agreement_changed' => 'The Seller Agreement was updated while you were registering. Reload the page and review it again.',
         'agreement_download' => 'Download the agreement',
@@ -178,6 +184,8 @@ return [
         'signature_name_placeholder' => 'Full name as in your commercial registration',
         'signature_name_help' => 'Typing your name and submitting the application is your electronic signature and has the same legal force as a handwritten one. A copy is emailed to you.',
         'email_unique' => 'This email is already registered.',
+        'phone_unique' => 'This phone number is already registered. Use another number or log in to your existing account.',
+        'account_conflict' => 'Some of your details are already registered. Please review the highlighted step and try again.',
         'password_min' => 'Password must be at least 8 characters.',
         'password_confirmed' => 'Password and confirmation do not match.',
         'store_name_unique' => 'This store name is already in use, please try another.',
@@ -191,6 +199,12 @@ return [
     ],
 
     'join' => [
+        'classified_option_invalid' => 'The selected classifieds section is not available.',
+        'classified_option_required' => 'Choose a classifieds section to continue.',
+        'classified_options_title' => 'Which section do you want to publish in?',
+        'travel_option_title' => 'Travel & tourism agencies',
+        'travel_option_description' => 'Register your agency to publish trips, packages and bookings.',
+        'classified_option_fallback_description' => 'Publish ads in the :category section.',
         'country_unavailable' => 'The selected country is not available for joining right now.',
         'section_unavailable' => 'This option is not available right now.',
         'section_invalid' => 'The selected section is invalid.',

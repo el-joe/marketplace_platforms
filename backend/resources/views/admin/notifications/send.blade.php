@@ -32,7 +32,7 @@
                 <select id="country_id" name="country_id" class="form-input w-full">
                     <option value="">—</option>
                     @foreach($countries as $country)
-                        <option value="{{ $country->id }}">{{ $country->name_en }}</option>
+                        <option value="{{ $country->id }}">{{ localized($country) }}</option>
                     @endforeach
                 </select>
             </div>

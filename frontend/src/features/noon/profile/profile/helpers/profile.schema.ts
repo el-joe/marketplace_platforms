@@ -7,7 +7,7 @@ export function getProfileSchema(t: (key: string) => string) {
     firstName: z.string().trim().min(1, t("invalidFirstName")),
     lastName: z.string().trim().min(1, t("invalidLastName")),
     date_of_birth: z.string().optional(),
-    gender: z.enum(["male", "female"]).optional(),
+    gender: z.enum(["male", "female"]).nullable().optional(),
     nationality: z.string().optional(),
   });
 }

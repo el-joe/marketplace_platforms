@@ -3,12 +3,11 @@
 namespace App\Services\Vendor;
 
 use App\Enums\CancelActor;
+use App\Exceptions\OrderNotCancellableException;
 use App\Jobs\CustomerShippedNotificationJob;
-use App\Models\InventoryMovement;
 use App\Models\OrderStatusHistory;
 use App\Models\SubOrder;
-use App\Models\VendorListing;
-use App\Models\WarehouseInventory;
+use App\Services\Inventory\InventoryService;
 use App\Services\OrderCancellationService;
 use Illuminate\Support\Facades\DB;
 
@@ -28,23 +27,23 @@ class OrderFulfillmentService
 
         DB::transaction(function () use ($subOrder, $data) {
             $subOrder->update([
-                'status'           => 'shipped',
-                'tracking_number'  => $data['tracking_number'],
-                'carrier_id'       => $data['carrier_id'] ?? null,
-                'shipped_at'       => now(),
-                'sla_breached'     => $subOrder->sla_ship_deadline
+                'status' => 'shipped',
+                'tracking_number' => $data['tracking_number'],
+                'carrier_id' => $data['carrier_id'] ?? null,
+                'shipped_at' => now(),
+                'sla_breached' => $subOrder->sla_ship_deadline
                     ? now()->gt($subOrder->sla_ship_deadline)
                     : false,
             ]);
 
             OrderStatusHistory::create([
                 'sub_order_id' => $subOrder->id,
-                'from_status'  => $subOrder->getOriginal('status'),
-                'to_status'    => 'shipped',
-                'reason'       => 'Vendor marked as shipped',
-                'metadata'     => [
+                'from_status' => $subOrder->getOriginal('status'),
+                'to_status' => 'shipped',
+                'reason' => 'Vendor marked as shipped',
+                'metadata' => [
                     'tracking_number' => $data['tracking_number'],
-                    'carrier_id'      => $data['carrier_id'] ?? null,
+                    'carrier_id' => $data['carrier_id'] ?? null,
                 ],
             ]);
 
@@ -66,11 +65,15 @@ class OrderFulfillmentService
      */
     public function cancel(SubOrder $subOrder, string $reason): SubOrder
     {
-        if (! in_array($subOrder->status->value, self::CANCELLABLE_STATUSES)) {
-            abort(422, "Order cannot be cancelled from status '{$subOrder->status->value}'.");
+        if ($subOrder->status->value !== 'cancelled' && ! in_array($subOrder->status->value, self::CANCELLABLE_STATUSES)) {
+            abort(422, __('common.exceptions.order.cannot_cancel'));
         }
 
-        app(OrderCancellationService::class)->cancel($subOrder, CancelActor::Vendor, $reason);
+        try {
+            app(OrderCancellationService::class)->cancelSubOrder($subOrder, CancelActor::Vendor, $reason);
+        } catch (OrderNotCancellableException $e) {
+            abort(422, $e->getMessage());
+        }
 
         return $subOrder->fresh();
     }
@@ -85,7 +88,7 @@ class OrderFulfillmentService
      */
     private function decrementInventory(SubOrder $subOrder): void
     {
-        $inventoryService = app(\App\Services\Inventory\InventoryService::class);
+        $inventoryService = app(InventoryService::class);
 
         foreach ($subOrder->items as $item) {
             $allocations = $item->allocations()->where('status', 'reserved')->get();

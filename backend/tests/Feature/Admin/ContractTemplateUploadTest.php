@@ -36,7 +36,7 @@ class ContractTemplateUploadTest extends TestCase
         }
 
         $this->admin = Admin::factory()->create();
-        $this->admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only']);
+        $this->admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only', 'contracts.view', 'contracts.manage']);
     }
 
     /**
@@ -274,7 +274,7 @@ class ContractTemplateUploadTest extends TestCase
             ->assertOk()
             ->assertSee(__('admin.contracts.mode_file_badge'))
             ->assertSee(route('admin.contracts.templates.file', [$scheduled, 'ar']), false)
-            ->assertSee(__('admin.contracts.status_scheduled', ['date' => now()->addDays(14)->format('d/m/Y')]));
+            ->assertSee(__('admin.contracts.status_scheduled', ['date' => admin_tz(now()->addDays(14))->format('d/m/Y')]));
     }
 
     public function test_word_documents_get_a_pdf_preview_when_libreoffice_is_installed(): void

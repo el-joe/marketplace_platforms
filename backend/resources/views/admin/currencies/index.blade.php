@@ -26,6 +26,9 @@
             </button>
         </div>
 
+        <x-filter.bar class="mb-4" :statuses="['active' => __('common.active'), 'inactive' => __('common.inactive')]"
+            :search-placeholder="__('admin.list_search.currencies')" />
+
         <x-card>
             <x-slot name="header">
                 <h2 class="text-base font-semibold text-gray-800">{{ __('admin.currencies_section.all_currencies') }}</h2>

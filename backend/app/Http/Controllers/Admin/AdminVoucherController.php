@@ -8,6 +8,7 @@ use App\Models\Country;
 use App\Models\Voucher;
 use App\Models\VoucherRedemption;
 use App\Services\VoucherService;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Http\JsonResponse;
@@ -61,7 +62,7 @@ class AdminVoucherController extends Controller
             ->leftJoin('countries', 'countries.id', '=', 'vouchers.country_id')
             ->select([
                 'vouchers.*',
-                'countries.name_en as country_name',
+                Bilingual::column('countries.name', null, 'country_name'),
             ]);
 
         $query = $this->applyFilters($query, $request, [

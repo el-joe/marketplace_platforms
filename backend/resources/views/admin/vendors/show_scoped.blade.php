@@ -49,7 +49,7 @@
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.vendors.country') }}</dt>
-                    <dd class="font-medium text-gray-900">{{ $vendor->country?->name_en }}</dd>
+                    <dd class="font-medium text-gray-900">{{ localized($vendor->country) }}</dd>
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.vendors.status') }}</dt>

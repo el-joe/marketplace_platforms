@@ -7,15 +7,22 @@ use App\Models\Category;
 use App\Models\ClassifiedCategory;
 use App\Models\MarketerJob;
 use App\Models\MarketerJobCategory;
+use App\Support\Bilingual;
 use Illuminate\Http\Request;
 
 class MarketerJobController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         abort_unless(auth('admin')->user()->can('marketers.view'), 403);
 
+        $search = trim((string) $request->query('search', ''));
+
         $marketerJobs = MarketerJob::withCount('marketers')
+            ->when($search !== '', fn ($query) => $query->where(fn ($q) => Bilingual::whereLike($q, 'name', $search)
+                ->orWhere('key', 'like', '%'.addcslashes($search, '%_\\').'%')))
+            ->when($request->query('status') === 'active', fn ($query) => $query->where('is_active', true))
+            ->when($request->query('status') === 'inactive', fn ($query) => $query->where('is_active', false))
             ->orderBy('sort_order')
             ->orderBy('name_en')
             ->get();

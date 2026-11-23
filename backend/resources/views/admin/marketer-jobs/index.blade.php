@@ -66,6 +66,9 @@
         </div>
     </div>
 
+    <x-filter.bar class="mb-4" :statuses="['active' => __('common.active'), 'inactive' => __('common.inactive')]"
+        :search-placeholder="__('admin.list_search.marketer_jobs')" />
+
     <div class="bg-white rounded-xl border overflow-hidden">
         <div class="table-responsive">
             <table class="w-full text-sm">
@@ -85,7 +88,7 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 font-mono text-xs text-gray-500" dir="ltr">{{ $job->key }}</td>
                         <td class="px-4 py-3">{{ $job->name_ar }}</td>
-                        <td class="px-4 py-3" dir="ltr">{{ $job->name_en }}</td>
+                        <td class="px-4 py-3">{{ localized($job) }}</td>
                         <td class="px-4 py-3 text-center text-gray-500">{{ $job->sort_order }}</td>
                         <td class="px-4 py-3 text-center text-gray-500">{{ $job->marketers_count }}</td>
                         <td class="px-4 py-3 text-center">

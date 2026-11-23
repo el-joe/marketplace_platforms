@@ -43,7 +43,7 @@
                     <tr class="hover:bg-gray-50" id="inclusion-row-{{ $inclusion->id }}">
                         <td class="px-4 py-3 text-xl">{{ $inclusion->icon }}</td>
                         <td class="px-4 py-3">
-                            <div class="font-medium text-gray-900">{{ $inclusion->name_en }}</div>
+                            <div class="font-medium text-gray-900">{{ localized($inclusion) }}</div>
                             <div class="text-gray-400 text-xs" dir="rtl">{{ $inclusion->name_ar }}</div>
                         </td>
                         <td class="px-4 py-3 text-center text-gray-600">{{ $inclusion->sort_order }}</td>
@@ -58,7 +58,7 @@
                         <td class="px-4 py-3 text-end whitespace-nowrap">
                             <button onclick="openEditModal({{ json_encode($inclusion) }})"
                                     class="text-primary-600 hover:underline text-xs mr-3">{{ __('common.edit') }}</button>
-                            <button onclick="deleteInclusion('{{ $inclusion->id }}', '{{ addslashes($inclusion->name_en) }}')"
+                            <button onclick="deleteInclusion('{{ $inclusion->id }}', '{{ addslashes(localized($inclusion)) }}')"
                                     class="text-red-600 hover:underline text-xs">{{ __('common.delete') }}</button>
                         </td>
                     </tr>

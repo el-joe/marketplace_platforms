@@ -16,6 +16,7 @@ use App\Models\File;
 use App\Models\Page;
 use App\Models\Slug;
 use App\Models\TravelCategory;
+use App\Services\CategoryCountryAvailabilityService;
 use App\Services\PageBuilderService;
 use App\Support\Bilingual;
 use App\Support\SafeCache;
@@ -362,17 +363,47 @@ class CategoryService
     }
 
     /**
-     * IDs of $category plus all active descendants — single query via nested-set lft/rgt range.
+     * IDs of $category plus its reachable descendants — one nested-set query, then a
+     * walk down parent_id so an inactive (or, with $country, country-excluded) node
+     * takes its whole subtree with it: a product in an active grandchild of an
+     * inactive child is not listed under the root.
      *
      * @return list<string>
      */
-    public function getDescendantIds(Category $category): array
+    public function getDescendantIds(Category $category, ?Country $country = null): array
     {
-        return $category->descendants()
-            ->where('is_active', true)
-            ->pluck('id')
-            ->prepend($category->id)
-            ->toArray();
+        $descendants = $category->descendants()
+            ->when($country, fn ($query) => $query->leftJoin('country_categories', function ($join) use ($country) {
+                $join->on('country_categories.category_id', '=', 'categories.id')
+                    ->where('country_categories.country_id', $country->id);
+            }))
+            ->get($country
+                ? ['categories.id', 'categories.parent_id', 'categories.is_active', 'country_categories.is_available']
+                : ['categories.id', 'categories.parent_id', 'categories.is_active']);
+
+        $byParent = $descendants->groupBy('parent_id');
+        $excluded = $descendants
+            ->filter(fn ($node) => $node->is_available !== null && ! $node->is_available)
+            ->keyBy('id')
+            ->all();
+
+        $ids = [$category->id];
+        $queue = [$category->id];
+
+        while ($queue !== []) {
+            $parentId = array_shift($queue);
+
+            foreach ($byParent->get($parentId, []) as $child) {
+                if (! $child->is_active || isset($excluded[$child->id])) {
+                    continue;
+                }
+
+                $ids[] = $child->id;
+                $queue[] = $child->id;
+            }
+        }
+
+        return $ids;
     }
 
     /**
@@ -468,6 +499,54 @@ class CategoryService
         }
 
         return $this->getCategoryIdsForFilter($idOrSlug);
+    }
+
+    /**
+     * Categories for a homepage "category pills" block. Admin-picked categories
+     * win (in their order); otherwise the categories flagged "Featured (homepage)"
+     * are used, and only when none are featured do the top-level visible ones fill
+     * in. Every result must be reachable in this country (active, its parents
+     * active, not excluded); featured/fallback picks must also be visible.
+     *
+     * @param  Collection<int, Category>  $manual
+     * @return Collection<int, Category>
+     */
+    public function homepageCategories(Country $country, Collection $manual, int $limit): Collection
+    {
+        $reachable = app(CategoryCountryAvailabilityService::class)->reachabilityCheck($country);
+        $accessible = fn (?Category $category) => $category !== null && $reachable($category->id);
+
+        if ($manual->filter()->isNotEmpty()) {
+            $picked = $manual->filter($accessible)->take($limit)->values();
+        } else {
+            $base = fn () => Category::query()
+                ->where('is_active', true)
+                ->where('is_visible', true)
+                ->orderBy('sort_order')
+                ->orderBy('name_en');
+
+            $picked = $base()->where('is_featured', true)->get()->filter($accessible)->take($limit)->values();
+
+            if ($picked->isEmpty()) {
+                $picked = $base()->whereNull('parent_id')->get()->filter($accessible)->take($limit)->values();
+            }
+        }
+
+        // One query for every picked category's images (primary first), handed to
+        // the relations the image_url accessor reads, so it never queries per item.
+        $filesByCategory = File::query()
+            ->where('model_type', Category::class)
+            ->whereIn('model_id', $picked->pluck('id'))
+            ->orderByDesc('is_primary')
+            ->orderBy('position')
+            ->get()
+            ->groupBy('model_id');
+
+        return $picked->each(function (Category $category) use ($filesByCategory): void {
+            $files = $filesByCategory->get($category->id, collect());
+            $category->setRelation('primaryImage', $files->first());
+            $category->setRelation('files', $files);
+        });
     }
 
     /**

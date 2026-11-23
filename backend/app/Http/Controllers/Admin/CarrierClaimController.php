@@ -21,11 +21,11 @@ class CarrierClaimController extends Controller
         abort_unless($admin->hasPermissionTo('carrier-claims.view'), 403);
 
         $stats = [
-            'submitted'    => CarrierClaim::where('status', CarrierClaimStatus::Submitted)->count(),
+            'submitted' => CarrierClaim::where('status', CarrierClaimStatus::Submitted)->count(),
             'under_review' => CarrierClaim::where('status', CarrierClaimStatus::UnderReview)->count(),
-            'approved'     => CarrierClaim::where('status', CarrierClaimStatus::Approved)->count(),
-            'compensated'  => CarrierClaim::where('status', CarrierClaimStatus::Compensated)->count(),
-            'rejected'     => CarrierClaim::where('status', CarrierClaimStatus::Rejected)->count(),
+            'approved' => CarrierClaim::where('status', CarrierClaimStatus::Approved)->count(),
+            'compensated' => CarrierClaim::where('status', CarrierClaimStatus::Compensated)->count(),
+            'rejected' => CarrierClaim::where('status', CarrierClaimStatus::Rejected)->count(),
         ];
 
         $query = CarrierClaim::with(['shipment', 'shippingCompany'])
@@ -33,6 +33,11 @@ class CarrierClaimController extends Controller
 
         if ($status = $request->input('status')) {
             $query->where('status', $status);
+        }
+
+        if ($search = trim((string) $request->input('search', ''))) {
+            $like = '%'.addcslashes($search, '%_\\').'%';
+            $query->where(fn ($q) => $q->where('claim_number', 'like', $like)->orWhere('description', 'like', $like));
         }
 
         if ($companyId = $request->input('shipping_company_id')) {
@@ -43,7 +48,7 @@ class CarrierClaimController extends Controller
             $query->where('claim_type', $type);
         }
 
-        $claims    = $query->paginate(20)->withQueryString();
+        $claims = $query->paginate(20)->withQueryString();
         $companies = ShippingCompany::orderBy('name')->get(['id', 'name']);
 
         return view('admin.carrier-claims.index', compact('claims', 'stats', 'companies'));
@@ -72,9 +77,9 @@ class CarrierClaimController extends Controller
         abort_if($carrierClaim->isResolved(), 422, __('admin.carrier_claims.already_resolved'));
 
         $data = $request->validate([
-            'decision'          => ['required', 'in:approved,rejected'],
+            'decision' => ['required', 'in:approved,rejected'],
             'compensated_amount' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
-            'resolution_notes'  => ['nullable', 'string', 'max:2000'],
+            'resolution_notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $compensatedCents = isset($data['compensated_amount'])

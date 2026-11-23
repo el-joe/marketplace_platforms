@@ -76,6 +76,10 @@ export const dtLanguage = _isAr
         },
     };
 
+// Pages that call $(...).DataTable() directly (FBN, subscriptions, delivery, newsletter…)
+// get the same localized chrome as initDataTable(); a page's own `language` still wins.
+$.extend(true, DataTable.defaults, { language: dtLanguage });
+
 /* =========================================================
    HELPERS
    ========================================================= */

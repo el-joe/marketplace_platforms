@@ -14,6 +14,7 @@ use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Notifications\Vendor\AdCampaignApproved;
 use App\Notifications\Vendor\AdCampaignRejected;
+use App\Support\Bilingual;
 use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
@@ -382,14 +383,14 @@ class AdCampaignController extends Controller
             ->where('status', 'active')
             ->when($q !== '', fn ($query) => $query->whereHas(
                 'productVariant.product',
-                fn ($p) => $p->where('name_en', 'like', "%{$q}%")
+                fn ($p) => Bilingual::whereLike($p, 'name', $q)
             ))
             ->with('productVariant.product')
             ->limit(20)
             ->get()
             ->map(fn (VendorListing $l) => [
                 'id' => $l->id,
-                'text' => $l->productVariant?->product?->name_en ?? 'Unknown',
+                'text' => localized($l->productVariant?->product) ?: '—',
                 'price' => $l->price,
                 'currency' => $l->currency,
             ]);
@@ -407,14 +408,14 @@ class AdCampaignController extends Controller
         $listings = AdminListing::active()
             ->when($q !== '', fn ($query) => $query->where(
                 fn ($w) => $w->where('platform_sku', 'like', "%{$q}%")
-                    ->orWhereHas('productVariant.product', fn ($p) => $p->where('name_en', 'like', "%{$q}%"))
+                    ->orWhereHas('productVariant.product', fn ($p) => Bilingual::whereLike($p, 'name', $q))
             ))
             ->with('productVariant.product')
             ->limit(20)
             ->get()
             ->map(fn (AdminListing $l) => [
                 'id' => $l->id,
-                'text' => ($l->productVariant?->product?->name_en ?? 'Unknown').' ('.$l->platform_sku.')',
+                'text' => (localized($l->productVariant?->product) ?: '—').' ('.$l->platform_sku.')',
                 'price' => $l->price,
                 'currency' => $l->currency,
             ]);

@@ -5,6 +5,9 @@ export type UpdateProfilePayload = {
   name: string;
   date_of_birth?: string | null;
   phone?: string | null;
+  /** null = not specified. */
+  gender?: "male" | "female" | null;
+  nationality?: string;
 };
 
 /** Shared: read the authenticated customer's profile. GET /profile */

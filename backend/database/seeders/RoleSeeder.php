@@ -28,14 +28,14 @@ class RoleSeeder extends Seeder
             'roles.delete',
             'countries.launch',
             'admins.impersonate',
+            'fbn_storage_fees.revert_status',
         ]));
 
         // ── operations: vendors + orders + tickets + disputes ─────────────────
         $ops = Role::firstOrCreate(['name' => 'operations', 'guard_name' => $guard]);
         $ops->syncPermissions(array_values(array_filter(
             $allPerms,
-            fn($p) =>
-            str_starts_with($p, 'vendors.') ||
+            fn ($p) => str_starts_with($p, 'vendors.') ||
             str_starts_with($p, 'orders.') ||
             str_starts_with($p, 'tickets.') ||
             str_starts_with($p, 'disputes.')
@@ -45,8 +45,7 @@ class RoleSeeder extends Seeder
         $finance = Role::firstOrCreate(['name' => 'finance', 'guard_name' => $guard]);
         $finance->syncPermissions(array_values(array_filter(
             $allPerms,
-            fn($p) =>
-            str_starts_with($p, 'payouts.') ||
+            fn ($p) => str_starts_with($p, 'payouts.') ||
             str_starts_with($p, 'commissions.') ||
             str_starts_with($p, 'ledger.')
         )));
@@ -55,8 +54,7 @@ class RoleSeeder extends Seeder
         $marketing = Role::firstOrCreate(['name' => 'marketing', 'guard_name' => $guard]);
         $marketing->syncPermissions(array_values(array_filter(
             $allPerms,
-            fn($p) =>
-            str_starts_with($p, 'banners.') ||
+            fn ($p) => str_starts_with($p, 'banners.') ||
             str_starts_with($p, 'flash_sales.') ||
             str_starts_with($p, 'coupons.') ||
             str_starts_with($p, 'ad_campaigns.') ||
@@ -67,8 +65,7 @@ class RoleSeeder extends Seeder
         $support = Role::firstOrCreate(['name' => 'support', 'guard_name' => $guard]);
         $support->syncPermissions(array_values(array_filter(
             $allPerms,
-            fn($p) =>
-            str_starts_with($p, 'tickets.') ||
+            fn ($p) => str_starts_with($p, 'tickets.') ||
             str_starts_with($p, 'reviews.') ||
             str_starts_with($p, 'disputes.')
         )));
@@ -77,8 +74,7 @@ class RoleSeeder extends Seeder
         $catalog = Role::firstOrCreate(['name' => 'catalog', 'guard_name' => $guard]);
         $catalog->syncPermissions(array_values(array_filter(
             $allPerms,
-            fn($p) =>
-            str_starts_with($p, 'products.') ||
+            fn ($p) => str_starts_with($p, 'products.') ||
             str_starts_with($p, 'categories.') ||
             str_starts_with($p, 'brands.') ||
             str_starts_with($p, 'attributes.')
@@ -88,8 +84,7 @@ class RoleSeeder extends Seeder
         $readonly = Role::firstOrCreate(['name' => 'readonly', 'guard_name' => $guard]);
         $readonly->syncPermissions(array_values(array_filter(
             $allPerms,
-            fn($p) =>
-            str_ends_with($p, '.view')
+            fn ($p) => str_ends_with($p, '.view')
         )));
 
         // ── Assign super_admin role to admin@admin.com ────────────────────────

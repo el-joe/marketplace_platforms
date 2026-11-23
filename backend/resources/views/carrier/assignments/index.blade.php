@@ -22,6 +22,7 @@
                 'picked_up' => __('carrier.assignments.status_picked_up'),
                 'delivered' => __('carrier.assignments.status_delivered'),
                 'failed'    => __('carrier.assignments.status_failed'),
+                'cancelled' => __('carrier.assignments.status_cancelled'),
             ] as $val=>$label)
             <option value="{{ $val }}" @selected(request('status')===$val)>{{ $label }}</option>
             @endforeach
@@ -57,6 +58,7 @@
                         'picked_up' => __('carrier.assignments.status_picked_up'),
                         'delivered' => __('carrier.assignments.status_delivered'),
                         'failed'    => __('carrier.assignments.status_failed'),
+                        'cancelled' => __('carrier.assignments.status_cancelled'),
                     ];
                     $c = $colors[$a->status->value] ?? 'gray';
                 @endphp

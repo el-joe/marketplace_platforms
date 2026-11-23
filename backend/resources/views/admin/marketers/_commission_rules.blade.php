@@ -12,7 +12,7 @@
 @php
     $cardTypes = count($commissionTypes) ? $commissionTypes : [null];
     $oldType = old('marketer_type');
-    $categoryOptions = $commissionCategories->map(fn ($c) => $c->map(fn ($x) => ['id' => $x->id, 'name' => $x->name_ar ?: $x->name_en])->values());
+    $categoryOptions = $commissionCategories->map(fn ($c) => $c->map(fn ($x) => ['id' => $x->id, 'name' => localized($x)])->values());
     $scopeLabels = collect(\App\Models\MarketerCommissionRule::SCOPES)
         ->mapWithKeys(fn ($sc) => [$sc => \App\Models\MarketerCommissionRule::verticalFor($sc)->label()]);
     $previewStrings = [
@@ -75,9 +75,9 @@
                         <tr class="hover:bg-gray-50/60 transition-colors" data-commission-rule="{{ $cc->id }}">
                             <td class="px-6 py-3 font-medium">
                                 <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">{{ \App\Models\MarketerCommissionRule::verticalFor($cc->scope)->label() }}</span>
-                                <span class="ms-1">{{ $cc->category ? ($cc->category->name_ar ?: $cc->category->name_en) : __('admin.marketer_commission_default_all') }}</span>
+                                <span class="ms-1">{{ $cc->category ? (localized($cc->category)) : __('admin.marketer_commission_default_all') }}</span>
                                 @if (! $cc->category && $cc->excluded_category_ids)
-                                    <div class="text-xs text-red-500 font-normal">{{ __('admin.marketer_commission_except') }}: {{ ($commissionCategories[$cc->scope] ?? collect())->whereIn('id', $cc->excluded_category_ids)->map(fn ($x) => $x->name_ar ?: $x->name_en)->implode('، ') }}</div>
+                                    <div class="text-xs text-red-500 font-normal">{{ __('admin.marketer_commission_except') }}: {{ ($commissionCategories[$cc->scope] ?? collect())->whereIn('id', $cc->excluded_category_ids)->map(fn ($x) => localized($x))->implode('، ') }}</div>
                                 @endif
                                 @if ($cc->marketer_type === null)
                                     <div class="text-[11px] font-normal text-amber-600">{{ __('marketer_commissions.legacy_rule') }}@if($legacyMismatch) · {{ __('marketer_commissions.legacy_rule_mismatch') }}@endif</div>

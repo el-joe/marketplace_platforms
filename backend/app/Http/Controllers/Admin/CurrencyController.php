@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -22,9 +23,18 @@ class CurrencyController extends Controller
     // Index
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $currencies = Currency::orderByDesc('is_active')->orderBy('code')->get();
+        $search = trim((string) $request->query('search', ''));
+        $like = '%'.addcslashes($search, '%_\\').'%';
+
+        $currencies = Currency::query()
+            ->when($search !== '', fn ($query) => $query->where(fn ($q) => $q->where('code', 'like', $like)->orWhere('name', 'like', $like)))
+            ->when($request->query('status') === 'active', fn ($query) => $query->where('is_active', true))
+            ->when($request->query('status') === 'inactive', fn ($query) => $query->where('is_active', false))
+            ->orderByDesc('is_active')
+            ->orderBy('code')
+            ->get();
 
         return view('admin.currencies.index', [
             'currencies' => $currencies,
@@ -48,7 +58,7 @@ class CurrencyController extends Controller
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => 'Currencies', 'url' => route('admin.currencies.index')],
-                ['label' => $currency->code . ' — ' . $currency->name],
+                ['label' => $currency->code.' — '.$currency->name],
             ],
         ]);
     }
@@ -140,7 +150,7 @@ class CurrencyController extends Controller
             if ($svg === null) {
                 return response()->json(['success' => false, 'message' => 'Invalid SVG file.'], 422);
             }
-            $path = 'currencies/' . \Illuminate\Support\Str::uuid() . '.svg';
+            $path = 'currencies/'.Str::uuid().'.svg';
             Storage::disk('public')->put($path, $svg);
         } else {
             $path = $file->store('currencies', 'public');
@@ -157,7 +167,7 @@ class CurrencyController extends Controller
 
     public static function sanitizeSvg(string $svg): ?string
     {
-        if (!preg_match('/<svg[\s>]/i', $svg)) {
+        if (! preg_match('/<svg[\s>]/i', $svg)) {
             return null;
         }
         $svg = preg_replace('#<script\b.*?</script\s*>#is', '', $svg);
@@ -167,6 +177,7 @@ class CurrencyController extends Controller
         $svg = preg_replace('/\s(?:xlink:)?href\s*=\s*("\s*(?!#)[^"]*"|\'\s*(?!#)[^\']*\')/i', '', $svg);
         $svg = preg_replace('/javascript:/i', '', $svg);
         $svg = preg_replace('#<!DOCTYPE[^>]*(\[.*?\])?>#is', '', $svg);
+
         return $svg;
     }
 
@@ -200,11 +211,10 @@ class CurrencyController extends Controller
     // AJAX: Return rendered rates table tbody
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function ratesTable(): \Illuminate\View\View
+    public function ratesTable(): View
     {
         $currencies = Currency::where('is_active', 1)->orderBy('code')->get();
 
         return view('admin.settings.partials._rates_table', compact('currencies'));
     }
 }
-

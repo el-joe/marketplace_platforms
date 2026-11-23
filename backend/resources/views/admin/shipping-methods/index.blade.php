@@ -23,6 +23,9 @@
         </div>
     </div>
 
+    <x-filter.bar class="mb-4" :statuses="['active' => __('common.active'), 'inactive' => __('common.inactive')]"
+        :search-placeholder="__('admin.list_search.shipping_methods')" />
+
     <x-card padding="none">
         <div class="table-responsive">
             <table class="table-base w-full">

@@ -280,6 +280,7 @@ class MarketerSaleSettlementTest extends TestCase
 
         Permission::firstOrCreate(['name' => 'vendors.assigned_only', 'guard_name' => 'admin']);
         $admin = Admin::factory()->create();
+        $admin->givePermissionTo('wallets.view');
 
         foreach (['en', 'ar'] as $locale) {
             app()->setLocale($locale);

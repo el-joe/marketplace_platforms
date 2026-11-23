@@ -23,6 +23,7 @@
         "tymon/jwt-auth": "^2.3"
     },
     "require-dev": {
+        "brianium/paratest": "^7.20",
         "fakerphp/faker": "^1.23",
         "laravel/boost": "^2.9",
         "laravel/pail": "^1.2.5",
@@ -36,7 +37,8 @@
         "files": [
             "app/Helpers/settings.php",
             "app/Helpers/portal_content.php",
-            "app/Helpers/timezone.php"
+            "app/Helpers/timezone.php",
+            "app/Helpers/localization.php"
         ],
         "psr-4": {
             "App\\": "app/",
@@ -64,7 +66,7 @@
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test"
+            "@php artisan test --parallel"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

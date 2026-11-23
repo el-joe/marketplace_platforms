@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BlogPostStatus;
+use App\Support\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -45,16 +46,22 @@ class BlogPost extends Model
     ];
 
     protected $casts = [
-        'published_at'   => 'datetime',
-        'scheduled_for'  => 'datetime',
-        'archived_at'    => 'datetime',
+        'published_at' => 'datetime',
+        'scheduled_for' => 'datetime',
+        'archived_at' => 'datetime',
         'allow_comments' => 'boolean',
-        'is_featured'    => 'boolean',
-        'status'         => BlogPostStatus::class,
-        'tags'           => 'array',
-        'views_count'    => 'integer',
+        'is_featured' => 'boolean',
+        'status' => BlogPostStatus::class,
+        'tags' => 'array',
+        'views_count' => 'integer',
         'reading_time_minutes' => 'integer',
     ];
+
+    /** Body HTML for the given locale, re-sanitized on output (bodies are also cleaned on save). */
+    public function safeBody(string $locale): ?string
+    {
+        return HtmlSanitizer::clean($locale === 'ar' ? $this->body_ar : $this->body_en);
+    }
 
     public function category(): BelongsTo
     {

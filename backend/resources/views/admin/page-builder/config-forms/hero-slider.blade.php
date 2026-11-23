@@ -6,7 +6,7 @@
     <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
         <x-form.toggle
             name="is_announcement"
-            label="Announcement Banner Mode"
+            :label="__('admin.page_builder.cf.announcement_mode')"
             :value="$config['is_announcement'] ?? false"
         />
         <p class="text-xs text-amber-700 mt-1">

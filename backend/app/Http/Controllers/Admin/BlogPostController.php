@@ -9,6 +9,7 @@ use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\Country;
 use App\Models\File;
+use App\Support\HtmlSanitizer;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Database\Eloquent\Builder;
@@ -492,8 +493,8 @@ class BlogPostController extends Controller
             'slug' => $slug,
             'excerpt_en' => $validated['excerpt_en'] ?? null,
             'excerpt_ar' => $validated['excerpt_ar'] ?? null,
-            'body_en' => $validated['body_en'],
-            'body_ar' => $validated['body_ar'],
+            'body_en' => HtmlSanitizer::clean($validated['body_en']) ?? '',
+            'body_ar' => HtmlSanitizer::clean($validated['body_ar']) ?? '',
             'featured_image_alt_en' => $validated['featured_image_alt_en'] ?? null,
             'featured_image_alt_ar' => $validated['featured_image_alt_ar'] ?? null,
             'seo_title_en' => $validated['seo_title_en'] ?? null,

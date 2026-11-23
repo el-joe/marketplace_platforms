@@ -94,7 +94,7 @@ class NavigationService
                         'label' => __('admin.nav.ai_dashboard'),
                         'route' => 'admin.ai.index',
                         'icon' => 'sparkles',
-                        'permission' => 'dashboard.view',
+                        'permission' => 'ai.view',
                         'badge' => null,
                     ],
                 ],
@@ -197,21 +197,21 @@ class NavigationService
                         'label' => __('admin.nav.fbn_inbound'),
                         'route' => 'admin.fbn.inbound.index',
                         'icon' => 'inbox-stack',
-                        'permission' => 'warehouses.view',
+                        'permission' => 'fbn.view',
                         'badge' => null,
                     ],
                     [
                         'label' => __('admin.nav.fbn_marketplace'),
                         'route' => 'admin.fbn.marketplace.index',
                         'icon' => 'inbox-stack',
-                        'permission' => 'warehouses.view',
+                        'permission' => 'fbn.view',
                         'badge' => null,
                     ],
                     [
                         'label' => __('admin.nav.fbn_storage_fees'),
                         'route' => 'admin.fbn.storage-fees.index',
                         'icon' => 'inbox-stack',
-                        'permission' => 'warehouses.view',
+                        'permission' => 'fbn_storage_fees.view',
                         'badge' => null,
                     ],
                     [
@@ -328,7 +328,14 @@ class NavigationService
                         'label' => __('admin.nav.acquisition_commissions'),
                         'route' => 'admin.acquisition-commissions.index',
                         'icon' => 'user-plus',
-                        'permission' => 'vendors.view',
+                        'permission' => 'acquisition_commissions.view',
+                        'badge' => null,
+                    ],
+                    [
+                        'label' => __('product_link.nav'),
+                        'route' => 'admin.product-link-commission.index',
+                        'icon' => 'tag',
+                        'permission' => 'product_link_commission.view',
                         'badge' => null,
                     ],
                     ...($this->hasActiveAcquisitionCommissions() ? [
@@ -439,14 +446,14 @@ class NavigationService
                         'label' => 'Nawi Ads',
                         'route' => 'admin.ad-slots.index',
                         'icon' => 'rectangle-stack',
-                        'permission' => 'ad_campaigns.view',
+                        'permission' => 'ad_slots.view',
                         'badge' => null,
                     ],
                     [
                         'label' => __('admin.nav.paid_ad_bookings'),
                         'route' => 'admin.paid-ad-bookings.index',
                         'icon' => 'ticket',
-                        'permission' => 'ad_campaigns.view',
+                        'permission' => 'ad_bookings.view',
                         'badge' => null,
                     ],
                     [
@@ -514,14 +521,14 @@ class NavigationService
                         'label' => __('admin.nav.contract_templates'),
                         'route' => 'admin.contracts.templates.index',
                         'icon' => 'document-text',
-                        'permission' => 'classifieds.view',
+                        'permission' => 'contracts.view',
                         'badge' => null,
                     ],
                     [
                         'label' => __('admin.nav.customer_contracts'),
                         'route' => 'admin.contracts.customer.index',
                         'icon' => 'clipboard-document-list',
-                        'permission' => 'classifieds.view',
+                        'permission' => 'contracts.view',
                         'badge' => null,
                     ],
                     [
@@ -610,28 +617,28 @@ class NavigationService
                         'label' => __('admin.nav.delivery_agents'),
                         'route' => 'admin.delivery.agents.index',
                         'icon' => 'user-group',
-                        'permission' => 'payouts.view',
+                        'permission' => 'delivery.view',
                         'badge' => null,
                     ],
                     [
                         'label' => __('admin.nav.delivery_zones'),
                         'route' => 'admin.delivery.zones.index',
                         'icon' => 'map-pin',
-                        'permission' => 'payouts.view',
+                        'permission' => 'delivery.view',
                         'badge' => null,
                     ],
                     [
                         'label' => __('admin.nav.delivery_assignments'),
                         'route' => 'admin.delivery.assignments.index',
                         'icon' => 'arrows-right-left',
-                        'permission' => 'payouts.view',
+                        'permission' => 'delivery.view',
                         'badge' => null,
                     ],
                     [
                         'label' => __('admin.nav.carrier_claims'),
                         'route' => 'admin.carrier-claims.index',
                         'icon' => 'exclamation-triangle',
-                        'permission' => 'payouts.view',
+                        'permission' => 'carrier-claims.view',
                         'badge' => null,
                     ],
                     [
@@ -645,7 +652,7 @@ class NavigationService
                         'label' => __('admin.nav.shipping_companies'),
                         'route' => 'admin.shipping-companies.index',
                         'icon' => 'building-office',
-                        'permission' => 'settings.view',
+                        'permission' => 'shipping_companies.view',
                         'badge' => null,
                     ],
                 ],
@@ -665,7 +672,7 @@ class NavigationService
                         'label' => __('admin.nav.delivery_payouts'),
                         'route' => 'admin.delivery.payouts.index',
                         'icon' => 'banknotes',
-                        'permission' => 'payouts.view',
+                        'permission' => 'delivery.view',
                         'badge' => null,
                     ],
                     [
@@ -686,7 +693,7 @@ class NavigationService
                         'label' => __('admin.nav.cod_settlements'),
                         'route' => 'admin.delivery.cod-settlements.index',
                         'icon' => 'banknotes',
-                        'permission' => 'payouts.view',
+                        'permission' => 'delivery.view',
                         'badge' => null,
                     ],
                     [
@@ -707,28 +714,28 @@ class NavigationService
                         'label' => __('admin.nav.wallets'),
                         'route' => 'admin.wallets.index',
                         'icon' => 'banknotes',
-                        'permission' => 'payouts.view',
+                        'permission' => 'wallets.view',
                         'badge' => null,
                     ],
                     [
                         'label' => __('admin.nav.subscriptions'),
                         'route' => 'admin.subscriptions.index',
                         'icon' => 'banknotes',
-                        'permission' => 'transactions.view',
+                        'permission' => 'subscriptions.view',
                         'badge' => null,
                     ],
                     [
                         'label' => __('admin.nav.subscription_plans'),
                         'route' => 'admin.subscriptions.plans.index',
                         'icon' => 'rectangle-stack',
-                        'permission' => 'transactions.view',
+                        'permission' => 'subscriptions.view',
                         'badge' => null,
                     ],
                     [
                         'label' => __('admin.nav.subscription_invoices'),
                         'route' => 'admin.subscriptions.invoices.index',
                         'icon' => 'document-text',
-                        'permission' => 'transactions.view',
+                        'permission' => 'subscriptions.view',
                         'badge' => null,
                     ],
                 ],
@@ -859,7 +866,7 @@ class NavigationService
                         'label' => __('admin.nav.shipping_zones'),
                         'route' => 'admin.shipping-zones.index',
                         'icon' => 'truck',
-                        'permission' => 'countries.view',
+                        'permission' => 'settings.view',
                         'badge' => null,
                     ],
                     [
@@ -989,6 +996,62 @@ class NavigationService
         ];
 
         return $this->filterByPermissions($groups);
+    }
+
+    /**
+     * Admin navigation where every group and item carries a `search` string with
+     * its label in both panel languages plus its route name, for the sidebar
+     * search box (an Arabic panel still finds "Products" and vice versa).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function adminNavigationWithSearchTerms(): array
+    {
+        $groups = $this->adminNavigation();
+        $currentLocale = app()->getLocale();
+
+        app()->setLocale($currentLocale === 'ar' ? 'en' : 'ar');
+        try {
+            $otherLocaleGroups = $this->adminNavigation();
+        } finally {
+            app()->setLocale($currentLocale);
+        }
+
+        $otherGroupLabels = [];
+        $otherItemLabels = [];
+        foreach ($otherLocaleGroups as $group) {
+            $otherGroupLabels[$group['icon'].'|'.($group['items'][0]['route'] ?? '')] = $group['group'];
+            foreach ($group['items'] as $item) {
+                $otherItemLabels[$this->navigationItemKey($item)] = $item['label'];
+            }
+        }
+
+        foreach ($groups as &$group) {
+            $group['search'] = implode(' ', array_filter([
+                $group['group'],
+                $otherGroupLabels[$group['icon'].'|'.($group['items'][0]['route'] ?? '')] ?? null,
+            ]));
+
+            foreach ($group['items'] as &$item) {
+                $item['search'] = implode(' ', array_filter([
+                    $item['label'],
+                    $otherItemLabels[$this->navigationItemKey($item)] ?? null,
+                    str_replace(['admin.', '.index', '.', '-', '_'], ['', '', ' ', ' ', ' '], $item['route']),
+                ]));
+            }
+            unset($item);
+        }
+        unset($group);
+
+        return $groups;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    private function navigationItemKey(array $item): string
+    {
+        return $item['route'].'|'.json_encode($item['route_params'] ?? []);
     }
 
     /**

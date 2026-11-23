@@ -2,7 +2,6 @@
 
 namespace App\Traits;
 
-use DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -14,11 +13,11 @@ trait HasDataTable
     /**
      * Build a DataTables-compatible JSON response for server-side processing.
      *
-     * @param  Request   $request         The incoming DataTables AJAX request.
-     * @param  Builder   $query           Base Eloquent query (without pagination/ordering applied).
-     * @param  array     $columns         Column definitions. Each entry may have:
-     *                                     - 'searchable_columns' (array)  columns to search on globally
-     *                                     - 'orderable_column'  (string)  column used for ORDER BY
+     * @param  Request  $request  The incoming DataTables AJAX request.
+     * @param  Builder  $query  Base Eloquent query (without pagination/ordering applied).
+     * @param  array  $columns  Column definitions. Each entry may have:
+     *                          - 'searchable_columns' (array)  columns to search on globally
+     *                          - 'orderable_column'  (string)  column used for ORDER BY
      * @param  callable  $rowTransformer  Closure(model) → array  transforms each row for the response.
      */
     public function dataTableResponse(
@@ -35,14 +34,14 @@ trait HasDataTable
         if ($searchValue !== '' && $searchValue !== null) {
             $searchable = array_filter(
                 $columns,
-                fn($c) => !empty($c['searchable_columns'])
+                fn ($c) => ! empty($c['searchable_columns'])
             );
 
-            if (!empty($searchable)) {
+            if (! empty($searchable)) {
                 $query->where(function (Builder|QueryBuilder $q) use ($searchable, $searchValue) {
                     foreach ($searchable as $col) {
                         foreach ($col['searchable_columns'] as $dbCol) {
-                            $q->orWhere($dbCol, 'like', '%' . $searchValue . '%');
+                            $q->orWhere($dbCol, 'like', '%'.$searchValue.'%');
                         }
                     }
                 });
@@ -54,10 +53,13 @@ trait HasDataTable
             $colSearch = $col['search']['value'] ?? '';
             if ($colSearch !== '' && isset($columns[$i]['searchable_columns'])) {
                 foreach ($columns[$i]['searchable_columns'] as $dbCol) {
-                    $query->where($dbCol, 'like', '%' . $colSearch . '%');
+                    $query->where($dbCol, 'like', '%'.$colSearch.'%');
                 }
             }
         }
+
+        // ── Count after search filters (before ORDER BY: it may use select aliases) ──
+        $filteredRecords = (clone $query)->count();
 
         // ── Ordering ────────────────────────────────────────────────────────
         $orderApplied = false;
@@ -71,14 +73,12 @@ trait HasDataTable
             }
         }
 
-        // ── Count after search filters ──────────────────────────────────────
-        $filteredRecords = (clone $query)->count();
-
         // ── Paginate ─────────────────────────────────────────────────────────
         $start = max(0, (int) $request->input('start', 0));
         $length = (int) $request->input('length', 25);
-        if ($length < 1)
+        if ($length < 1) {
             $length = 25;
+        }
 
         $data = $query
             ->skip($start)
@@ -110,10 +110,11 @@ trait HasDataTable
     {
         foreach ($scopes as $param => $scope) {
             $value = $request->input($param);
-            if ($value !== null && $value !== '' && !is_array($value)) {
+            if ($value !== null && $value !== '' && ! is_array($value)) {
                 $scope($query, $value);
             }
         }
+
         return $query;
     }
 }

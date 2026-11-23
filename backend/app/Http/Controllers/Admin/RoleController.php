@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
+use App\Support\PermissionLabels;
 use App\Support\PortalPermissions;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
@@ -238,36 +239,6 @@ class RoleController extends Controller
 
     private function groupedPermissions(): array
     {
-        $groupLabels = [
-            'products' => 'Catalog — Products',
-            'categories' => 'Catalog — Categories',
-            'brands' => 'Catalog — Brands',
-            'attributes' => 'Catalog — Attributes',
-            'vendors' => 'Vendors',
-            'orders' => 'Orders',
-            'payouts' => 'Finance — Payouts',
-            'commissions' => 'Finance — Commissions',
-            'ledger' => 'Finance — Ledger',
-            'banners' => 'Marketing — Banners',
-            'flash_sales' => 'Marketing — Flash Sales',
-            'coupons' => 'Marketing — Coupons',
-            'ad_campaigns' => 'Marketing — Ad Campaigns',
-            'page_builder' => 'Marketing — Page Builder',
-            'app_contexts' => 'Marketing — App Contexts',
-            'customers' => 'Customers',
-            'tickets' => 'Support — Tickets',
-            'reviews' => 'Support — Reviews',
-            'disputes' => 'Support — Disputes',
-            'countries' => 'System — Countries',
-            'settings' => 'System — Settings',
-            'admins' => 'System — Admins',
-            'roles' => 'System — Roles',
-            'activity_log' => 'System — Activity Log',
-            'static_pages' => __('admin.static_pages.permission_group'),
-            'portal_content' => __('admin.portal_permissions.group'),
-            'portal_analytics' => __('admin.portal_permissions.analytics_group'),
-        ];
-
         $permissions = Permission::where('guard_name', 'admin')
             ->orderBy('name')
             ->get(['id', 'name']);
@@ -275,11 +246,21 @@ class RoleController extends Controller
         $grouped = [];
         foreach ($permissions as $perm) {
             $prefix = explode('.', $perm->name)[0];
-            $label = $groupLabels[$prefix] ?? ucfirst($prefix);
-            $grouped[$prefix] ??= ['label' => $label, 'key' => $prefix, 'permissions' => []];
+            $grouped[$prefix] ??= [
+                'label' => PermissionLabels::group($prefix),
+                'label_en' => PermissionLabels::group($prefix, 'en'),
+                'label_ar' => PermissionLabels::group($prefix, 'ar'),
+                'key' => $prefix,
+                'permissions' => [],
+            ];
             $grouped[$prefix]['permissions'][] = [
                 'name' => $perm->name,
-                'label' => $this->formatPermissionLabel($perm->name),
+                'label' => PermissionLabels::label($perm->name),
+                'search_text' => implode(' ', [
+                    $perm->name,
+                    PermissionLabels::label($perm->name, 'en'),
+                    PermissionLabels::label($perm->name, 'ar'),
+                ]),
                 'description' => PortalPermissions::description($perm->name),
             ];
         }
@@ -291,19 +272,10 @@ class RoleController extends Controller
             $grouped['portal_content']['description'] = __('admin.portal_permissions.group_description');
         }
 
-        return array_values($grouped);
-    }
+        $grouped = array_values($grouped);
+        usort($grouped, fn ($a, $b) => strcmp($a['label'], $b['label']));
 
-    private function formatPermissionLabel(string $permission): string
-    {
-        if (in_array($permission, PortalPermissions::ALL, true)) {
-            return PortalPermissions::label($permission);
-        }
-
-        $parts = explode('.', $permission, 2);
-        $action = $parts[1] ?? $parts[0];
-
-        return ucwords(str_replace(['_', '.'], ' ', $action));
+        return $grouped;
     }
 
     private function columnDefinitions(): array

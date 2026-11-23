@@ -9,7 +9,7 @@ export function toFormValues(profile: ICustomerProfile): ProfileFormValues {
     firstName,
     lastName: rest.join(" "),
     date_of_birth: profile.date_of_birth ?? "",
-    gender: profile.gender,
+    gender: profile.gender ?? null,
     nationality: profile.nationality,
   };
 }

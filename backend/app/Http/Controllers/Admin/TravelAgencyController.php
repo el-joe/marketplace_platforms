@@ -16,7 +16,7 @@ class TravelAgencyController extends Controller
     public function index()
     {
         $pendingCount = TravelAgency::where('status', TravelAgencyStatus::Pending)->count();
-        $countries = Country::orderBy('name_en')->get(['id', 'name_en']);
+        $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
 
         return view('admin.travel-agencies.index', compact('pendingCount', 'countries'));
     }

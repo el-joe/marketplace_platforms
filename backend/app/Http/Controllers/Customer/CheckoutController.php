@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Enums\AdminListingStatus;
 use App\Enums\CouponType;
 use App\Enums\DeliveryInstruction;
+use App\Enums\DistanceDeliveryStatus;
 use App\Enums\GlobalSystemType;
 use App\Enums\MarketerListingStatus;
 use App\Enums\OrderStatus;
@@ -74,6 +75,7 @@ use App\Services\MarketerContractGateService;
 use App\Services\Media\ListingImageResolver;
 use App\Services\Payments\PaymentMethodMapper;
 use App\Services\PaymentService;
+use App\Services\ProductLink\ProductLinkAttributionService;
 use App\Services\Shipping\CurrencyConversionService;
 use App\Services\Shipping\InternationalShippingRateService;
 use App\Services\ShippingSubsidyService;
@@ -106,6 +108,7 @@ class CheckoutController extends Controller
         private readonly LoyaltyService $loyaltyService,
         private readonly CodValidationService $codValidationService,
         private readonly LastClickAttributionService $attributionService,
+        private readonly ProductLinkAttributionService $productLinkAttribution,
         private readonly PlacementAdService $placementAds,
         private readonly CheckoutPricingEngine $pricingEngine,
         private readonly CouponEligibilityService $couponEligibilityService,
@@ -318,6 +321,9 @@ class CheckoutController extends Controller
                 'is_free' => $calc['is_free'],
                 'cod_extra_fee' => $codCalc['cod_extra_fee'],
                 'cod_available' => $calc['cod_available'],
+                'is_available' => $calc['available'] ?? true,
+                'unavailable_reason' => $calc['unavailable_reason'] ?? null,
+                'distance' => $calc['distance'] ?? null,
             ]);
         })->values();
 
@@ -405,6 +411,7 @@ class CheckoutController extends Controller
         $totalShippingFee = 0;
         $codExtraFee = 0;
         $shippingGroups = [];
+        $distanceFeeBySeller = [];
 
         foreach ($groupedForShipping as $methodId => $groupItems) {
             $method = $shippingMethods[$methodId] ?? null;
@@ -412,7 +419,11 @@ class CheckoutController extends Controller
                 ? $this->calculationService->calculateShipping($address, $country, $methodId, $groupItems->all(), $isCod)
                 : ['fee' => 0, 'cod_extra_fee' => 0, 'is_free' => true, 'cod_available' => false];
 
-            $totalShippingFee = Money::number($totalShippingFee + $calc['fee']);
+            if ($method && ! ($calc['available'] ?? true)) {
+                return ApiResponse::error(__('distance_delivery.method_unavailable', ['method' => $method->name, 'reason' => $calc['unavailable_reason']]), [], 422);
+            }
+
+            $totalShippingFee = Money::number($totalShippingFee + $this->collectDistanceFees($calc, $distanceFeeBySeller));
             $codExtraFee = Money::number($codExtraFee + $calc['cod_extra_fee']);
             $shippingGroups[$methodId] = array_merge($calc, ['method' => $method]);
         }
@@ -435,7 +446,10 @@ class CheckoutController extends Controller
             return ApiResponse::error($ineligibleError, [], 422);
         }
 
-        $vendorShipping = $this->resolveVendorShipping($cartItems, $cartLineSources, $totalShippingFee, $shippingZone, null);
+        $vendorShipping = $this->addDistanceShipping(
+            $this->resolveVendorShipping($cartItems, $cartLineSources, $totalShippingFee, $shippingZone, null),
+            $distanceFeeBySeller,
+        );
 
         $customsDutyCents = $this->applyInternationalShippingOverrides(
             collect($cartItems),
@@ -564,7 +578,7 @@ class CheckoutController extends Controller
                     : null,
             ])->values()->all();
 
-        $shipmentGroupsForItems = $this->cartService->buildShippingGroups($cart, $country->id);
+        $shipmentGroupsForItems = $this->cartService->buildShippingGroups($cart, $country->id, $address);
 
         $orderCurrency = $cart->currency ?? $customer->country?->currency_code;
         $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
@@ -610,6 +624,7 @@ class CheckoutController extends Controller
                     'is_free' => ($chargedShippingByMethod[$id] ?? 0) == 0,
                     'estimated_delivery_days_min' => $g['method']?->min_delivery_days,
                     'estimated_delivery_days_max' => $g['method']?->max_delivery_days,
+                    'distance' => $g['distance'] ?? null,
                 ])->values(),
                 'delivery_fee' => $vendorShipping['total'],
                 'is_free_delivery' => $vendorShipping['total'] == 0,
@@ -828,6 +843,8 @@ class CheckoutController extends Controller
         $groupedForShipping = collect($cartItems)->groupBy('selected_shipping_method_id');
         $totalShippingFee = 0;
         $codExtraFee = 0;
+        $distanceFeeBySeller = [];
+        $distanceSnapshotsByMethod = [];
 
         foreach ($groupedForShipping as $methodId => $groupItems) {
             $method = $shippingMethods[$methodId] ?? null;
@@ -835,13 +852,22 @@ class CheckoutController extends Controller
                 $calc = $this->calculationService->calculateShipping(
                     $address, $country, $methodId, $groupItems->all(), $isCod
                 );
-                $totalShippingFee = Money::number($totalShippingFee + $calc['fee']);
+
+                if (! ($calc['available'] ?? true)) {
+                    return ApiResponse::error(__('distance_delivery.method_unavailable', ['method' => $method->name, 'reason' => $calc['unavailable_reason']]), [], 422);
+                }
+
+                $totalShippingFee = Money::number($totalShippingFee + $this->collectDistanceFees($calc, $distanceFeeBySeller));
                 $codExtraFee = Money::number($codExtraFee + $calc['cod_extra_fee']);
+                $distanceSnapshotsByMethod[$methodId] = $calc['distance_snapshot'] ?? null;
             }
         }
 
         $shippingZone = $address->city?->shippingZone;
-        $vendorShipping = $this->resolveVendorShipping($cartItems, $cartLineSources, $totalShippingFee, $shippingZone, null);
+        $vendorShipping = $this->addDistanceShipping(
+            $this->resolveVendorShipping($cartItems, $cartLineSources, $totalShippingFee, $shippingZone, null),
+            $distanceFeeBySeller,
+        );
 
         $customsDutyCents = $this->applyInternationalShippingOverrides(
             collect($cartItems),
@@ -1001,6 +1027,13 @@ class CheckoutController extends Controller
         $walletAmountForGatewayCents = Money::number($validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $pricedCart->total : 0));
         $amountDueGatewayCents = ($isCod || $isWallet) ? 0 : Money::number(max(0, $pricedCart->total - $walletAmountForGatewayCents));
 
+        // WS12 #24: lines bought after a click on the vendor's own product link / QR code (same session id the
+        // marketer attribution uses) get the country's product-link discount on their platform commission.
+        $attributionSessionId = $request->header('X-Session-Id')
+            ?? $request->cookie('session_id')
+            ?? session()->getId();
+        $productLinkAttributions = $this->productLinkAttribution->resolveForCart($cartLineSources, $country, $attributionSessionId);
+
         $moneySplit = $this->pricingEngine->computeMoneySplit(
             items: $cartItems,
             country: $country,
@@ -1016,6 +1049,7 @@ class CheckoutController extends Controller
             isCod: $isCod,
             codFeeCents: $codFeeCents,
             warrantyTotalCents: $pricedCart->warrantyTotal,
+            productLinkAttributions: $productLinkAttributions,
         );
         $moneySplitByGroup = $moneySplit['sub_orders'];
 
@@ -1069,7 +1103,7 @@ class CheckoutController extends Controller
                 $loyaltyDiscount, $loyaltyPointsToUse,
                 $gatewayCode, $isCod, $isWallet, $methodConfig,
                 $pricedLinesByItemId, $pricedSubOrdersByVendorId, $cartLineSources,
-                $hasAffiliatePromo
+                $hasAffiliatePromo, $productLinkAttributions, $distanceSnapshotsByMethod
             ) {
                 $vendorShippingMap = $vendorShipping['per_vendor'];
 
@@ -1275,6 +1309,7 @@ class CheckoutController extends Controller
                         $commission['vendor_coupon_cost'] = $lineSplit['vendor_coupon_cost'] ?? 0;
                         $commission['marketer_commission'] = $lineSplit['marketer_commission'] ?? 0;
                         $commission['platform_commission_after_discount'] = $lineSplit['platform_commission_after_discount'] ?? 0;
+                        $commission['source_link_discount'] = $lineSplit['source_link_discount'] ?? 0;
                         $itemCommissions[$cartItem->id] = $commission;
 
                         // enhancement.md P-13 task 1/3: reserve through the
@@ -1374,6 +1409,7 @@ class CheckoutController extends Controller
                         'fx_rate_denominator' => $fxRateDenominatorForSubOrder,
                         'fx_rate_captured_at' => $fxRateCapturedAtForSubOrder,
                         'shipping_method_id' => $subOrderShippingMethodId,
+                        'distance_pricing' => $this->distanceSnapshotForSubOrder($distanceSnapshotsByMethod[$subOrderShippingMethodId] ?? null, $sellerParty),
                         'estimated_delivery_date' => $subOrderShippingMethod
                             ? $this->calculateEstimatedDeliveryDate($subOrderShippingMethod)
                             : null,
@@ -1435,6 +1471,11 @@ class CheckoutController extends Controller
                             'vendor_coupon_cost' => $commission['vendor_coupon_cost'] ?? 0,
                             'marketer_commission' => $commission['marketer_commission'] ?? 0,
                             'platform_commission_after_discount' => $commission['platform_commission_after_discount'] ?? 0,
+                            'source_link_channel' => isset($productLinkAttributions[$cartItem->id]) ? $productLinkAttributions[$cartItem->id]['channel'] : null,
+                            'source_link_clicked_at' => isset($productLinkAttributions[$cartItem->id]) ? $productLinkAttributions[$cartItem->id]['clicked_at'] : null,
+                            'source_link_rule_id' => isset($productLinkAttributions[$cartItem->id]) ? $productLinkAttributions[$cartItem->id]['rule']->id : null,
+                            'source_link_rule_snapshot' => isset($productLinkAttributions[$cartItem->id]) ? $productLinkAttributions[$cartItem->id]['rule']->snapshot() : null,
+                            'source_link_discount' => $commission['source_link_discount'] ?? 0,
                             'shipping_method_id' => $cartItem->selected_shipping_method_id,
                             'shipping_method_snapshot' => $itemShippingMethodSnapshot,
                             'fulfillment_status' => 'pending',
@@ -1939,6 +1980,77 @@ class CheckoutController extends Controller
         }
 
         return ['total' => $totalCents, 'per_vendor' => $perVendor];
+    }
+
+    /**
+     * Distance-priced groups (client item #19) are charged per seller leg, not through the per-seller
+     * proportional split of the zone-rate total. Returns the part of $calc['fee'] that still goes into that
+     * split (0 for a distance-priced group) and accumulates the distance fees per seller party.
+     *
+     * @param  array<string, int|float>  $distanceFeeBySeller
+     */
+    private function collectDistanceFees(array $calc, array &$distanceFeeBySeller): int|float
+    {
+        $distance = $calc['distance'] ?? null;
+
+        if (! $distance || ! DistanceDeliveryStatus::from($distance['status'])->isDistancePriced()) {
+            return $calc['fee'];
+        }
+
+        foreach ($distance['fee_by_seller'] as $sellerParty => $fee) {
+            $distanceFeeBySeller[$sellerParty] = Money::number(($distanceFeeBySeller[$sellerParty] ?? 0) + $fee);
+        }
+
+        return 0;
+    }
+
+    /**
+     * The distance pricing decision for one sub-order (one seller leg of one shipping-method group), as stored in
+     * sub_orders.distance_pricing. Null when no distance rule applied to the group or the seller has no leg.
+     *
+     * @param  array<string, mixed>|null  $groupSnapshot  DistancePricingResolver snapshot of the method group
+     * @return array<string, mixed>|null
+     */
+    private function distanceSnapshotForSubOrder(?array $groupSnapshot, string $sellerParty): ?array
+    {
+        $leg = $groupSnapshot['legs'][$sellerParty] ?? null;
+        if ($leg === null) {
+            return null;
+        }
+
+        return [
+            'rule_id' => $groupSnapshot['rule_id'],
+            'shipping_zone_id' => $groupSnapshot['shipping_zone_id'],
+            'shipping_method_id' => $groupSnapshot['shipping_method_id'],
+            'group_status' => $groupSnapshot['group_status'],
+            'applied' => $groupSnapshot['applied'],
+            'free_radius_km' => $groupSnapshot['free_radius_km'],
+            'max_service_radius_km' => $groupSnapshot['max_service_radius_km'],
+            'captured_at' => now()->toIso8601String(),
+        ] + $leg;
+    }
+
+    /**
+     * Add each seller's distance delivery fee on top of what resolveVendorShipping() charged it (FBN sellers
+     * are otherwise free, FBP sellers keep their share of any non-distance groups and surcharges).
+     *
+     * @param  array{total: int|float, per_vendor: array<string, array<string, mixed>>}  $vendorShipping
+     * @param  array<string, int|float>  $distanceFeeBySeller
+     * @return array{total: int|float, per_vendor: array<string, array<string, mixed>>}
+     */
+    private function addDistanceShipping(array $vendorShipping, array $distanceFeeBySeller): array
+    {
+        foreach ($distanceFeeBySeller as $sellerParty => $fee) {
+            if (! isset($vendorShipping['per_vendor'][$sellerParty]) || $fee == 0) {
+                continue;
+            }
+
+            $vendorShipping['per_vendor'][$sellerParty]['shipping'] = Money::number($vendorShipping['per_vendor'][$sellerParty]['shipping'] + $fee);
+            $vendorShipping['per_vendor'][$sellerParty]['distance_fee'] = $fee;
+            $vendorShipping['total'] = Money::number($vendorShipping['total'] + $fee);
+        }
+
+        return $vendorShipping;
     }
 
     /**

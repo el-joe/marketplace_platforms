@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @push('styles')
-    @vite(['resources/js/components/datatable.js', 'resources/js/components/select2.js'])
+    @vite(['resources/js/components/datatable.js', 'resources/js/components/select2.js', 'resources/js/components/location-picker.js'])
 @endpush
 
 @section('title', $vendor->store_name . ' — ' . __('admin.vendors.title'))
@@ -121,7 +121,7 @@
                             __('admin.vendors.whatsapp')        => $vendor->whatsapp_number ?: '—',
                             __('admin.vendors.commission_rate') => $vendor->commission_rate ? $vendor->commission_rate . '%' : __('admin.vendors.platform_default'),
                             __('admin.vendors.payout_schedule') => $vendor->payout_schedule ? __('admin.vendors.payout_schedule_' . $vendor->payout_schedule->value) : '—',
-                            __('admin.vendors.country')         => $vendor->country?->name_en ?? '—',
+                            __('admin.vendors.country')         => localized($vendor->country) ?: '—',
                             __('admin.vendors.approved_at')     => admin_tz($vendor->approved_at)?->format('d M Y') ?? '—',
                             __('admin.vendors.approved_by')     => $vendor->approvedByAdmin?->name ?? '—',
                             __('admin.vendors.joined')          => admin_tz($vendor->created_at)?->format('d M Y'),
@@ -189,6 +189,11 @@
                         </div>
                     </form>
                 </x-card>
+
+                <x-store-location-form class="mt-6"
+                    :location="$storeLocation"
+                    :url="route('admin.vendors.location.update', $vendor)"
+                    :can-edit="auth('admin')->user()?->can('vendors.edit')" />
             </div>
 
             {{-- ── Documents ────────────────────────────────────────────────── --}}
@@ -499,8 +504,8 @@
                             <tbody class="divide-y divide-gray-50">
                                 @forelse($citySurcharges as $surcharge)
                                     <tr class="hover:bg-gray-50/50">
-                                        <td class="py-3 pr-4">{{ $surcharge->city?->name_en }}</td>
-                                        <td class="py-3 pr-4 text-gray-600">{{ $surcharge->city?->country?->name_en }}</td>
+                                        <td class="py-3 pr-4">{{ localized($surcharge->city) }}</td>
+                                        <td class="py-3 pr-4 text-gray-600">{{ localized($surcharge->city?->country) }}</td>
                                         <td class="py-3 pr-4 tabular-nums">{{ number_format($surcharge->extra_amount_cents, 2) }}</td>
                                         <td class="py-3">
                                             <x-badge :color="$surcharge->is_active ? 'success' : 'gray'">
@@ -839,14 +844,19 @@
                     <a href="{{ route('admin.vendors.acquisition-agent.show', $vendor) }}" class="w-full btn btn-ghost btn-sm text-xs text-center">
                         {{ __('admin.vendors.view_earnings') }}
                     </a>
+                    @can('acquisition_commissions.manage')
                     <button type="button" data-revoke-acquisition-agent="{{ $acquisitionCommission->id }}" data-vendor-id="{{ $vendor->id }}" class="w-full btn btn-danger btn-sm text-xs">
                         {{ __('admin.vendors.revoke') }}
                     </button>
+                    @endcan
                 </div>
             @else
+                <p class="text-xs text-gray-500 mb-3">{{ __('acquisition.help.vendor_card') }}</p>
+                @can('acquisition_commissions.manage')
                 <button type="button" data-modal-open="assign-acquisition-agent-modal" class="w-full btn btn-ghost btn-sm text-xs">
                     {{ __('admin.vendors.assign_acquisition_agent') }}
                 </button>
+                @endcan
             @endif
         </x-card>
 
@@ -1031,7 +1041,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.vendors.select_admin_staff') }} <span class="text-danger-500">*</span></label>
                 <select name="admin_id" class="form-input w-full" data-select2-init required>
                     <option value="">{{ __('admin.vendors.select_admin_placeholder') }}</option>
-                    @foreach($accountManagerCandidates as $admin)
+                    @foreach($acquisitionAgentCandidates as $admin)
                         <option value="{{ $admin->id }}">{{ $admin->name }} ({{ $admin->email }})</option>
                     @endforeach
                 </select>
@@ -1053,6 +1063,11 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.vendors.monthly_max_sales') }} <span class="text-danger-500">*</span></label>
                     <input type="number" name="monthly_max_sales" value="100" min="0" class="form-input w-full" required>
                 </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('acquisition.fields.valid_from') }}</label>
+                <input type="date" name="valid_from" value="{{ ($vendor->approved_at ?? now())->toDateString() }}" class="form-input w-full">
+                <p class="text-xs text-gray-500 mt-1">{{ __('acquisition.fields.valid_from_hint') }}</p>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('common.notes') }}</label>

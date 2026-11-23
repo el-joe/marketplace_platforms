@@ -1,4 +1,5 @@
 import { Banner } from "../sections/banner";
+import { CategoryPills } from "../sections/category-pills";
 import { FlashSale } from "../sections/flash-sale";
 import HeroSlider from "../sections/hero-slider";
 import { HtmlContent } from "../sections/html-content";
@@ -19,4 +20,5 @@ export const blocks = {
   promo_tiles: ImagesGrid,
   flash_sale: FlashSale,
   text_block: HtmlContent,
+  category_pills: CategoryPills,
 };

@@ -28,7 +28,7 @@ Route::prefix('v1')->name('api.travel-agency.')->group(function (): void {
     Route::prefix('auth')->name('auth.')->group(function (): void {
         Route::post('login', [AuthController::class, 'login'])->name('login')
             ->middleware('throttle:10,1');
-        Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot-password');
+        Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1')->name('forgot-password');
         Route::post('reset-password', [AuthController::class, 'resetPassword'])->name('reset-password');
     });
 
@@ -96,21 +96,21 @@ Route::prefix('v1')->name('api.travel-agency.')->group(function (): void {
 
         // ── Campaigns (read-only) ─────────────────────────────────────────────
         Route::prefix('campaigns')->name('campaigns.')->group(function (): void {
-            Route::get('/',      [CampaignController::class, 'index'])->name('index');
-            Route::get('{id}',   [CampaignController::class, 'show'])->name('show');
+            Route::get('/', [CampaignController::class, 'index'])->name('index');
+            Route::get('{id}', [CampaignController::class, 'show'])->name('show');
         });
 
         // ── Finance (read-only) ───────────────────────────────────────────────
         Route::prefix('finance')->name('finance.')->group(function (): void {
-            Route::get('revenue',      [FinanceController::class, 'revenue'])->name('revenue');
-            Route::get('payouts',      [FinanceController::class, 'payouts'])->name('payouts');
-            Route::get('wallet',       [FinanceController::class, 'wallet'])->name('wallet');
+            Route::get('revenue', [FinanceController::class, 'revenue'])->name('revenue');
+            Route::get('payouts', [FinanceController::class, 'payouts'])->name('payouts');
+            Route::get('wallet', [FinanceController::class, 'wallet'])->name('wallet');
             Route::get('sales-report', [FinanceController::class, 'salesReport'])->name('sales-report');
         });
 
         // ── Reports (read-only) ───────────────────────────────────────────────
         Route::prefix('reports')->name('reports.')->group(function (): void {
-            Route::get('revenue',  [ReportController::class, 'revenue'])->name('revenue');
+            Route::get('revenue', [ReportController::class, 'revenue'])->name('revenue');
             Route::get('bookings', [ReportController::class, 'bookings'])->name('bookings');
             Route::get('packages', [ReportController::class, 'packages'])->name('packages');
         });

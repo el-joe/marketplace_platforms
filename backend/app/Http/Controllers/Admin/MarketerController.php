@@ -416,6 +416,7 @@ class MarketerController extends Controller
                 $categories = MarketerDefaultCommission::query()
                     ->where('country_id', $countryId)->where('category_type', $vertical->value)->whereNotNull('category_id')
                     ->pluck('influencer_fixed_amount', 'category_id')
+                    ->reject(fn ($v) => $v === null) // NULL = the category inherits the amount
                     ->map(fn ($v) => (float) $v)->all();
             }
 

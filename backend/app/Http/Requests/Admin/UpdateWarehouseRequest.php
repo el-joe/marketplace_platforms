@@ -25,8 +25,8 @@ class UpdateWarehouseRequest extends FormRequest
             'country_id' => ['required', 'uuid', 'exists:countries,id'],
             'owner_vendor_id' => ['nullable', 'uuid', 'exists:vendors,id'],
             'manager_admin_id' => ['nullable', 'uuid', 'exists:admins,id'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'latitude' => ['nullable', 'required_with:longitude', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
             'total_capacity_m3' => ['nullable', 'numeric', 'min:0'],
             'used_capacity_m3' => ['nullable', 'numeric', 'min:0'],
             'storage_rate_per_m3_price' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
@@ -48,7 +48,7 @@ class UpdateWarehouseRequest extends FormRequest
                 return;
             }
 
-            if (!Warehouse::isValidTypeOwner($this->input('type'), $this->input('owner_vendor_id') ?: null)) {
+            if (! Warehouse::isValidTypeOwner($this->input('type'), $this->input('owner_vendor_id') ?: null)) {
                 $validator->errors()->add('type', __('common.exceptions.warehouse.warehouse_type_owner_mismatch'));
             }
         });

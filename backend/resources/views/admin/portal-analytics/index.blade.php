@@ -91,7 +91,7 @@
                 <select id="pa-country" class="form-input py-1.5 text-sm w-44">
                     <option value="">{{ __('admin.portal_analytics.all_countries') }}</option>
                     @foreach ($countries as $country)
-                        <option value="{{ $country->site_code }}" @selected($filters['country'] === $country->site_code)>{{ $country->name_en }}</option>
+                        <option value="{{ $country->site_code }}" @selected($filters['country'] === $country->site_code)>{{ localized($country) }}</option>
                     @endforeach
                 </select>
             </div>

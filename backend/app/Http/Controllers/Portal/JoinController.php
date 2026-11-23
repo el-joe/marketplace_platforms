@@ -33,6 +33,7 @@ class JoinController extends Controller
 
         return view('portal.join', [
             'sections' => $this->joinService->sections(),
+            'classifiedOptions' => $this->joinService->classifiedOptions($currentCountry),
             'selection' => $this->joinService->currentSelection(),
             'countries' => $countries,
             'currentCountry' => $currentCountry,
@@ -51,6 +52,7 @@ class JoinController extends Controller
     {
         $validated = $request->validate([
             'section' => ['required', 'string', Rule::in(JoinSection::values())],
+            'classified_option' => ['nullable', 'string', 'max:64'],
             'country' => ['nullable', 'string', 'max:20', function (string $attribute, mixed $value, Closure $fail): void {
                 if (! Country::isPortalSelectable(strtolower((string) $value))) {
                     $fail(__('portal.join.country_unavailable'));
@@ -68,9 +70,41 @@ class JoinController extends Controller
             return redirect()->route('portal.join')->withErrors(['section' => __('portal.join.section_unavailable')]);
         }
 
+        if ($validated['section'] === JoinSection::OpenSouq->value && ! empty($validated['classified_option'])) {
+            return $this->selectClassifiedOption($validated['classified_option']);
+        }
+
         $this->joinService->storeSection($validated['section']);
 
         return redirect()->route($this->joinService->sectionLandingRoute($validated['section']));
+    }
+
+    /**
+     * A sub-option picked under the Classifieds card: a classified category opens that category's landing (and
+     * later its registration and contract); the travel option opens the travel-agency flow, which stays its own
+     * account type. Every choice is re-checked against live data, never trusted from the form.
+     */
+    private function selectClassifiedOption(string $option): RedirectResponse
+    {
+        if ($option === JoinService::TRAVEL_OPTION) {
+            if (! $this->joinService->travelFoldedIntoClassifieds()) {
+                return redirect()->route('portal.join')->withErrors(['classified_option' => __('portal.join.classified_option_invalid')]);
+            }
+
+            $this->joinService->storeSection(JoinSection::TravelAgency->value);
+
+            return redirect()->route($this->joinService->sectionLandingRoute(JoinSection::TravelAgency->value));
+        }
+
+        $category = $this->joinService->findJoinableClassifiedCategory($option, $this->joinService->headerCountry());
+
+        if (! $category) {
+            return redirect()->route('portal.join')->withErrors(['classified_option' => __('portal.join.classified_option_invalid')]);
+        }
+
+        $this->joinService->storeSection(JoinSection::OpenSouq->value, $category->id);
+
+        return redirect()->route('portal.companies.open-souq.category', $category->slug);
     }
 
     /**

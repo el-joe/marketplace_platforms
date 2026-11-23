@@ -62,7 +62,7 @@
                 <select id="filter-plan" class="form-input w-full text-sm">
                     <option value="">{{ __('admin.warranty_purchases_section.any_plan') }}</option>
                     @foreach($plans as $plan)
-                        <option value="{{ $plan->id }}">{{ $plan->name_en }}</option>
+                        <option value="{{ $plan->id }}">{{ localized($plan) }}</option>
                     @endforeach
                 </select>
             </div>
@@ -71,7 +71,7 @@
                 <select id="filter-category" class="form-input w-full text-sm">
                     <option value="">{{ __('admin.warranty_purchases_section.any_category') }}</option>
                     @foreach($categories as $category)
-                        <option value="{{ $category->id }}">{{ $category->name_en }}</option>
+                        <option value="{{ $category->id }}">{{ localized($category) }}</option>
                     @endforeach
                 </select>
             </div>

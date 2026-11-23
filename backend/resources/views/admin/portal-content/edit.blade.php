@@ -6,7 +6,7 @@
 @php($locale = app()->getLocale() === 'ar' ? 'ar' : 'en')
 @php($dir = $locale === 'ar' ? 'rtl' : 'ltr')
 @php($readOnly = ! $can['edit'])
-@php($countryName = fn ($c) => $locale === 'ar' ? ($c->name_ar ?: $c->name_en) : $c->name_en)
+@php($countryName = fn ($c) => localized($c))
 <div class="p-6 space-y-5" dir="{{ $dir }}"
      x-data="{ dirty: false, lightbox: null, lightboxLabel: '' }"
      x-init="window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } })"

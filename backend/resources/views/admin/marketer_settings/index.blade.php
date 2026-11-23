@@ -11,7 +11,7 @@
         $input = 'rounded-md border-gray-300 shadow-sm text-sm focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-100 disabled:text-gray-500';
         $btn = 'inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700';
         $locale = app()->getLocale();
-        $countryName = fn ($c) => $locale === 'ar' ? ($c->name_ar ?: $c->name_en) : ($c->name_en ?: $c->name_ar);
+        $countryName = fn ($c) => localized($c);
         $trim = fn ($v) => rtrim(rtrim(number_format((float) $v, 4, '.', ''), '0'), '.') ?: '0';
         $verticalLabels = collect($verticals)->mapWithKeys(fn ($v) => [$v->value => $v->label()]);
 
@@ -167,7 +167,7 @@
                                     <td class="px-3 py-2">{{ $override->country ? $countryName($override->country) : '—' }}</td>
                                     <td class="px-3 py-2">{{ $override->category_type->label() }}</td>
                                     <td class="px-3 py-2">{{ $override->category_name }}</td>
-                                    <td class="px-3 py-2 font-semibold">{{ \App\Support\Money::format($override->influencer_fixed_amount) }} {{ $override->country?->currency_code }}</td>
+                                    <td class="px-3 py-2 font-semibold">@if($override->influencer_fixed_amount === null)<span class="text-gray-400 font-normal">{{ __('classified_commission.inherits') }}</span>@else{{ \App\Support\Money::format($override->influencer_fixed_amount) }} {{ $override->country?->currency_code }}@endif</td>
                                     <td class="px-3 py-2 text-end">
                                         @if ($canEdit)
                                             <form method="POST" action="{{ route('admin.marketer-settings.influencer-overrides.destroy', $override) }}"

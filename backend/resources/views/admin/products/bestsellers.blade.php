@@ -10,12 +10,12 @@
     @php
         $categoryOptions = ['' => __('admin.bestsellers.all_categories')];
         foreach ($categories as $cat) {
-            $categoryOptions[$cat->id] = $cat->name_en;
+            $categoryOptions[$cat->id] = localized($cat);
         }
 
         $countryOptions = ['' => __('admin.bestsellers.all_countries')];
         foreach ($countries as $country) {
-            $countryOptions[$country->id] = $country->name_en;
+            $countryOptions[$country->id] = localized($country);
         }
 
         $columns = [

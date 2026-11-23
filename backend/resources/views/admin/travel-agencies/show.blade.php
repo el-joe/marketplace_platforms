@@ -49,7 +49,7 @@
             <dl class="space-y-2 text-sm">
                 <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.phone') }}</dt><dd class="text-gray-900">{{ $travelAgency->phone ?? '—' }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.license_number') }}</dt><dd class="text-gray-900">{{ $travelAgency->license_number ?? '—' }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">{{ __('common.country') }}</dt><dd class="text-gray-900">{{ $travelAgency->country?->name_en }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">{{ __('common.country') }}</dt><dd class="text-gray-900">{{ localized($travelAgency->country) }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">{{ __('admin.travel.registered') }}</dt><dd class="text-gray-900">{{ admin_tz($travelAgency->created_at)?->format('d M Y') }}</dd></div>
             </dl>
         </div>

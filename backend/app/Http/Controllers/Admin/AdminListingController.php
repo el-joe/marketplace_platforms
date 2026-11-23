@@ -20,6 +20,7 @@ use App\Services\CachedListingResolver;
 use App\Services\Shared\PageCacheService;
 use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\ShippingMethodResolverService;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -46,10 +47,7 @@ class AdminListingController extends Controller
             ])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $term = $request->input('search');
-                $q->whereHas('productVariant.product', function ($pq) use ($term) {
-                    $pq->where('name_en', 'like', "%{$term}%")
-                        ->orWhere('name_ar', 'like', "%{$term}%");
-                });
+                $q->whereHas('productVariant.product', fn ($pq) => Bilingual::whereLike($pq, 'name', $term));
             })
             ->when($request->filled('country_id'), fn ($q) => $q->where('country_id', $request->input('country_id')))
             ->when($request->filled('status') && $request->input('status') !== 'all',
@@ -59,7 +57,7 @@ class AdminListingController extends Controller
 
         return view('admin.admin-listings.index', [
             'listings' => $query->paginate(25)->withQueryString(),
-            'countries' => Country::query()->orderBy('name_en')->pluck('name_en', 'id'),
+            'countries' => Bilingual::options(Country::query()),
             'statuses' => collect(AdminListingStatus::cases())
                 ->mapWithKeys(fn ($status) => [$status->value => Str::headline($status->value)]),
             'stats' => $this->buildStats(),
@@ -92,8 +90,8 @@ class AdminListingController extends Controller
             ->join('product_variants as pv', 'pv.id', '=', 'apl.product_variant_id')
             ->join('products as p', 'p.id', '=', 'pv.product_id')
             ->whereNotNull('order_items.admin_listing_id')
-            ->select('p.name_en', DB::raw('SUM(order_items.quantity) as units_sold'))
-            ->groupBy('p.name_en')
+            ->select('p.id', 'p.name_en', 'p.name_ar', DB::raw('SUM(order_items.quantity) as units_sold'))
+            ->groupBy('p.id', 'p.name_en', 'p.name_ar')
             ->orderByDesc('units_sold')
             ->first();
 
@@ -108,9 +106,9 @@ class AdminListingController extends Controller
     public function datatable(Request $request): JsonResponse
     {
         $columns = [
-            ['searchable_columns' => ['p.name_en', 'p.name_ar', 'pv.sku'], 'orderable_column' => 'p.name_en'],
+            ['searchable_columns' => ['p.name_en', 'p.name_ar', 'pv.sku'], 'orderable_column' => Bilingual::column('p.name')],
             ['orderable_column' => 'pv.variant_name'],
-            ['searchable_columns' => ['co.name_en'], 'orderable_column' => 'co.name_en'],
+            ['searchable_columns' => ['co.name_en', 'co.name_ar'], 'orderable_column' => Bilingual::column('co.name')],
             ['orderable_column' => 'admin_listings.currency'],
             ['orderable_column' => 'admin_listings.price'],
             ['orderable_column' => 'admin_listings.compare_at_price'],
@@ -145,10 +143,12 @@ class AdminListingController extends Controller
                 'admin_listings.rating_count',
                 'admin_listings.total_sold',
                 'admin_listings.created_at',
-                'p.name_en as product_name',
+                'p.name_en as product_name_en',
+                'p.name_ar as product_name_ar',
                 'pv.sku as variant_sku',
                 'pv.variant_name as variant_name',
-                'co.name_en as country_name',
+                'co.name_en as country_name_en',
+                'co.name_ar as country_name_ar',
                 'wh.name as warehouse_name',
                 'dsm.name as default_shipping_method_name',
                 'dsm.badge_label_en as default_shipping_badge_label',
@@ -162,6 +162,8 @@ class AdminListingController extends Controller
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
+            $productName = Bilingual::localized($row, 'product_name');
+
             $effectiveMethod = $row->primaryShippingMethod ?? ($row->default_shipping_method_name ? (object) [
                 'name' => $row->default_shipping_method_name,
                 'badge_label_en' => $row->default_shipping_badge_label,
@@ -177,11 +179,11 @@ class AdminListingController extends Controller
                     'text_color' => $effectiveMethod->badge_text_color_hex ?? '#374151',
                     'is_inherited' => $row->primaryShippingMethod === null,
                 ] : null,
-                'product_name' => e($row->product_name),
+                'product_name' => e($productName),
                 'variant_name' => e($row->variant_name),
-                'display_name' => e(trim($row->product_name.' '.$row->variant_name)),
+                'display_name' => e(trim($productName.' '.$row->variant_name)),
                 'variant_sku' => e($row->variant_sku),
-                'country' => e($row->country_name),
+                'country' => e(Bilingual::localized($row, 'country_name')),
                 'currency' => e($row->currency),
                 'price' => $row->price,
                 'compare_at_price' => $row->compare_at_price,
@@ -453,7 +455,7 @@ class AdminListingController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.admin_listings.title'), 'url' => route('admin.admin-listings.index')],
-                ['label' => $adminListing->productVariant->product->name_en],
+                ['label' => $adminListing->productVariant->product->localized_name],
             ],
         ]);
     }
@@ -740,18 +742,18 @@ class AdminListingController extends Controller
             ->where('p.is_hidden', false)
             ->where('product_variants.is_hidden', false)
             ->where(function ($q) use ($term) {
-                $q->where('p.name_en', 'like', "%{$term}%")
+                Bilingual::whereLike($q, 'p.name', $term)
                     ->orWhere('product_variants.sku', 'like', "%{$term}%");
             })
-            ->orderBy('p.name_en')
+            ->orderBy(Bilingual::column('p.name'))
             ->limit(30)
-            ->get(['product_variants.id', 'product_variants.product_id', 'p.name_en', 'product_variants.sku', 'product_variants.variant_name', 'product_variants.slug']);
+            ->get(['product_variants.id', 'product_variants.product_id', 'p.name_en', 'p.name_ar', 'product_variants.sku', 'product_variants.variant_name', 'product_variants.slug']);
 
         return response()->json([
             'results' => $variants->map(fn ($v) => [
                 'id' => $v->id,
                 'product_id' => $v->product_id,
-                'text' => $v->name_en.($v->variant_name ? " ({$v->variant_name})" : '')." [{$v->slug}] — {$v->sku}",
+                'text' => Bilingual::localized($v, 'name').($v->variant_name ? " ({$v->variant_name})" : '')." [{$v->slug}] — {$v->sku}",
             ]),
         ]);
     }

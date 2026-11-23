@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', $plan->name_en)
+@section('title', localized($plan))
 
 @push('styles')
     @vite(['resources/js/components/select2.js'])

@@ -27,6 +27,9 @@ class JoinService
     /** Session key holding the last validated join selection. */
     public const SESSION_KEY = 'join.selection';
 
+    /** Classifieds sub-option value that opens the travel-agency registration instead of a category. */
+    public const TRAVEL_OPTION = 'travel_agency';
+
     /**
      * Countries a visitor may choose to join from.
      *
@@ -34,7 +37,7 @@ class JoinService
      */
     public function countries(): Collection
     {
-        return Country::where('is_active', true)->orderBy('name_ar')->get();
+        return Country::availableForVendors()->orderBy('name_ar')->get();
     }
 
     /**
@@ -100,16 +103,102 @@ class JoinService
     }
 
     /**
-     * Selectable sections, keyed by {@see JoinSection} value.
+     * Selectable top-level sections (the /join cards), keyed by {@see JoinSection} value.
+     *
+     * When both Classifieds and Travel Agency are visible, travel is offered as a sub-option of Classifieds
+     * ({@see self::travelFoldedIntoClassifieds()}) instead of a card of its own.
      *
      * @return array<string, string>
      */
     public function sections(): array
     {
-        return array_intersect_key(
+        $sections = array_intersect_key(
             JoinSection::options(),
             array_flip(array_map(fn (JoinSection $s) => $s->value, $this->enabledSections())),
         );
+
+        if ($this->travelFoldedIntoClassifieds()) {
+            unset($sections[JoinSection::TravelAgency->value]);
+        }
+
+        return $sections;
+    }
+
+    /**
+     * Whether Travel Agency is presented under Classifieds (client feedback #25) rather than as its own card.
+     * Travel agencies keep their own account type and registration flow; only the entry point moves.
+     */
+    public function travelFoldedIntoClassifieds(): bool
+    {
+        return $this->isSectionEnabled(JoinSection::OpenSouq->value)
+            && $this->isSectionEnabled(JoinSection::TravelAgency->value);
+    }
+
+    /**
+     * The sub-options revealed under the Classifieds card: one per active top-level classified category offered in
+     * the country (no country rows = every country), in the admin's order, plus the travel-agency flow when it is
+     * folded in. Built from live data, so a category the admin adds or activates appears without code changes.
+     *
+     * @return list<array{value: string, title: string, description: string, image: ?string}>
+     */
+    public function classifiedOptions(?Country $country): array
+    {
+        $isAr = session('locale', 'ar') === 'ar';
+
+        $options = $this->joinableClassifiedCategories($country)
+            ->map(function (ClassifiedCategory $category) use ($isAr): array {
+                $name = $isAr ? $category->name_ar : ($category->name_en ?: $category->name_ar);
+                $description = $isAr ? $category->description_ar : ($category->description_en ?: $category->description_ar);
+
+                return [
+                    'value' => (string) $category->id,
+                    'title' => $name,
+                    'description' => $description ?: __('portal.join.classified_option_fallback_description', ['category' => $name]),
+                    'image' => $category->image_url,
+                ];
+            })
+            ->values()
+            ->all();
+
+        if ($this->travelFoldedIntoClassifieds()) {
+            $options[] = [
+                'value' => self::TRAVEL_OPTION,
+                'title' => __('portal.join.travel_option_title'),
+                'description' => __('portal.join.travel_option_description'),
+                'image' => null,
+            ];
+        }
+
+        return $options;
+    }
+
+    /**
+     * Active top-level classified categories a seller from this country can join under.
+     *
+     * @return Collection<int, ClassifiedCategory>
+     */
+    public function joinableClassifiedCategories(?Country $country): Collection
+    {
+        return ClassifiedCategory::query()
+            ->whereNull('parent_id')
+            ->where('is_active', true)
+            ->when($country, fn ($query) => $query->where(fn ($q) => $q
+                ->whereDoesntHave('countries')
+                ->orWhereHas('countries', fn ($c) => $c->whereKey($country->id))))
+            ->with('primaryImage')
+            ->orderBy('sort_order')
+            ->orderBy('name_ar')
+            ->get();
+    }
+
+    /**
+     * The joinable top-level classified category with this id or slug, or null when it is unknown, inactive, a
+     * sub-category, or not offered in the country.
+     */
+    public function findJoinableClassifiedCategory(string $idOrSlug, ?Country $country): ?ClassifiedCategory
+    {
+        return $this->joinableClassifiedCategories($country)
+            ->first(fn (ClassifiedCategory $category) => $category->id === $idOrSlug || $category->slug === $idOrSlug);
     }
 
     /**
@@ -154,23 +243,6 @@ class JoinService
     }
 
     /**
-     * Active classified specializations a company/broker may operate under.
-     *
-     * Classified categories are not country-scoped in the current data model
-     * (only product categories are, via country_categories); country-level
-     * availability is a pending client decision.
-     *
-     * @return Collection<int, ClassifiedCategory>
-     */
-    public function classifiedCategories(): Collection
-    {
-        return ClassifiedCategory::where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name_ar')
-            ->get();
-    }
-
-    /**
      * Active marketer types a visitor may register as, keyed by marketer_jobs.key.
      *
      * Only keys that map to a real {@see MarketerType} are exposed, so legacy
@@ -205,7 +277,7 @@ class JoinService
             'country_id' => [
                 'required',
                 'string',
-                Rule::exists('countries', 'id')->where('is_active', true),
+                Country::availableForVendorsRule(),
             ],
             'section' => ['required', 'string', Rule::in(JoinSection::values())],
             'marketer_type' => [
@@ -286,11 +358,15 @@ class JoinService
 
     /**
      * Persist just the section chosen on the first screen, keeping any other
-     * previously stored join fields intact.
+     * previously stored join fields intact. The Classifieds category picked under the card (if any) replaces the
+     * previous one.
      */
-    public function storeSection(string $section): void
+    public function storeSection(string $section, ?string $classifiedCategoryId = null): void
     {
-        session([self::SESSION_KEY => array_merge($this->currentSelection(), ['section' => $section])]);
+        session([self::SESSION_KEY => array_merge($this->currentSelection(), [
+            'section' => $section,
+            'classified_category_id' => $classifiedCategoryId,
+        ])]);
     }
 
     /**

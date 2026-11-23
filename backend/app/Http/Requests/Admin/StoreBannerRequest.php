@@ -7,16 +7,19 @@ use App\Enums\BannerDeviceTarget;
 use App\Enums\BannerLinkType;
 use App\Enums\BannerStatus;
 use App\Http\Requests\Admin\Concerns\HasBannerMarketerTargeting;
+use App\Http\Requests\Admin\Concerns\RequiresBannerDeviceImages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreBannerRequest extends FormRequest
 {
     use HasBannerMarketerTargeting;
+    use RequiresBannerDeviceImages;
 
     public function authorize(): bool
     {
-        return true;
+        // Checked before validation so an unauthorised admin gets 403, not field errors.
+        return (bool) $this->user('admin')?->hasPermissionTo('banners.create');
     }
 
     public function rules(): array
@@ -50,11 +53,17 @@ class StoreBannerRequest extends FormRequest
         ];
     }
 
+    /** @return list<callable> */
+    public function after(): array
+    {
+        return $this->deviceImageChecks(null);
+    }
+
     public function messages(): array
     {
         return [
-            'ends_at.after' => 'End date must be after start date.',
-            'placement_code.exists' => 'Please select a valid placement.',
+            'ends_at.after' => __('admin.banners.ends_after_starts'),
+            'placement_code.exists' => __('admin.banners.placement_invalid'),
             'marketer_ids.required' => __('admin.banners.marketers_required'),
         ];
     }

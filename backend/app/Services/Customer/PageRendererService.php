@@ -2,14 +2,14 @@
 
 namespace App\Services\Customer;
 
-use App\Support\Money;
+use App\Enums\VendorGlobalStatus;
 use App\Enums\VendorListingStatus;
 use App\Http\Resources\Customer\FlashSaleItemResource;
-use App\Http\Resources\Customer\ProductListResource;
 use App\Jobs\FlushBlockImpressionJob;
 use App\Jobs\LogAbImpressionJob;
 use App\Models\AbTest;
 use App\Models\AdImageItem;
+use App\Models\AdminListing;
 use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Country;
@@ -18,17 +18,20 @@ use App\Models\FlashSale;
 use App\Models\FlashSaleSubmission;
 use App\Models\Page;
 use App\Models\PageBlock;
+use App\Models\PageBlockBrand;
 use App\Models\PageBlockCategory;
 use App\Models\PageBlockProduct;
-use App\Models\PageBlockSeller;
 use App\Models\PageSection;
 use App\Models\ProductCountrySetting;
-use App\Models\ProductVariant;
 use App\Models\VendorListing;
-use App\Enums\VendorGlobalStatus;
 use App\Services\Ads\PaidAdInjector;
+use App\Services\Media\ListingImageResolver;
+use App\Services\Shared\PageCacheService;
 use App\Support\Bilingual;
+use App\Support\Money;
 use App\Support\SafeCache;
+use Carbon\Carbon;
+use Illuminate\Cache\TaggableStore;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -61,10 +64,9 @@ class PageRendererService
 
     public function __construct(
         private readonly ProductQueryService $productQuery,
-        private readonly \App\Services\Customer\ListingQueryService $listingQuery,
+        private readonly ListingQueryService $listingQuery,
         private readonly PaidAdInjector $adInjector,
-    ) {
-    }
+    ) {}
 
     public function render(
         string $type,
@@ -78,14 +80,14 @@ class PageRendererService
         $page = Page::where('page_type', $type)
             ->where('status', 'published')
             ->where('is_default', true)
-            ->where(fn($q) => $q->whereNull('country_id')->orWhere('country_id', $country->id))
-            ->when($slug !== null, fn($q) => $q->where('slug', $slug))
-            ->where(fn($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', $now))
-            ->where(fn($q) => $q->whereNull('unpublish_at')->orWhere('unpublish_at', '>', $now))
+            ->where(fn ($q) => $q->whereNull('country_id')->orWhere('country_id', $country->id))
+            ->when($slug !== null, fn ($q) => $q->where('slug', $slug))
+            ->where(fn ($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', $now))
+            ->where(fn ($q) => $q->whereNull('unpublish_at')->orWhere('unpublish_at', '>', $now))
             ->orderByRaw('CASE WHEN country_id IS NOT NULL THEN 0 ELSE 1 END')
             ->first();
 
-        if (!$page) {
+        if (! $page) {
             return [];
         }
 
@@ -103,7 +105,7 @@ class PageRendererService
      */
     public function renderPage(Page $page, Country $country, ?Customer $customer, string $sessionId, ?string $appContextKey = null): array
     {
-        $identityKey = $customer ? 'c:' . $customer->id : 's:' . $sessionId;
+        $identityKey = $customer ? 'c:'.$customer->id : 's:'.$sessionId;
 
         // Resolve A/B variants for all running tests on this page, ASYNC log the
         // impression so it never blocks the response.
@@ -144,19 +146,19 @@ class PageRendererService
 
             if ($hydrated->isNotEmpty()) {
                 $sectionsData[] = [
-                    'id'                   => $section->id,
-                    'name'                 => $section->name,
-                    'position'             => $section->position,
-                    'layout'               => $section->layout ?? 'stack',
-                    'columns_config'       => is_string($section->columns_config)
+                    'id' => $section->id,
+                    'name' => $section->name,
+                    'position' => $section->position,
+                    'layout' => $section->layout ?? 'stack',
+                    'columns_config' => is_string($section->columns_config)
                         ? json_decode($section->columns_config, true)
                         : $section->columns_config,
-                    'background_color'     => $section->background_color,
+                    'background_color' => $section->background_color,
                     'background_image_url' => Bilingual::pair($section, 'background_image_url'),
-                    'padding_top'          => (int) $section->padding_top,
-                    'padding_bottom'       => (int) $section->padding_bottom,
-                    'max_width'            => $section->max_width,
-                    'blocks'               => $hydrated->all(),
+                    'padding_top' => (int) $section->padding_top,
+                    'padding_bottom' => (int) $section->padding_bottom,
+                    'max_width' => $section->max_width,
+                    'blocks' => $hydrated->all(),
                 ];
             }
         }
@@ -167,17 +169,17 @@ class PageRendererService
             $hydrated = $this->hydrateBlocks($unsectioned, $page, $country, $customer, $sessionId);
             if ($hydrated->isNotEmpty()) {
                 $sectionsData[] = [
-                    'id'                   => null,
-                    'name'                 => null,
-                    'position'             => 0,
-                    'layout'               => 'stack',
-                    'columns_config'       => null,
-                    'background_color'     => null,
+                    'id' => null,
+                    'name' => null,
+                    'position' => 0,
+                    'layout' => 'stack',
+                    'columns_config' => null,
+                    'background_color' => null,
                     'background_image_url' => ['ar' => null, 'en' => null],
-                    'padding_top'          => 0,
-                    'padding_bottom'       => 0,
-                    'max_width'            => null,
-                    'blocks'               => $hydrated->all(),
+                    'padding_top' => 0,
+                    'padding_bottom' => 0,
+                    'max_width' => null,
+                    'blocks' => $hydrated->all(),
                 ];
             }
         }
@@ -201,7 +203,7 @@ class PageRendererService
         $now = now();
 
         return $blocks->filter(function (PageBlock $block) use ($now, $country, $customer, $chosenVariants, $appContextKey) {
-            if (!$block->is_visible) {
+            if (! $block->is_visible) {
                 return false;
             }
             if ($appContextKey !== null && $block->app_context_key !== null && $block->app_context_key !== $appContextKey) {
@@ -219,14 +221,14 @@ class PageRendererService
             // NOTE: the page_blocks.audience column uses 'guest' (singular), not the
             // spec's 'guests'. Semantics preserved: guest-only blocks hidden from
             // authenticated customers and vice versa.
-            if ($block->audience === 'logged_in' && !$customer) {
+            if ($block->audience === 'logged_in' && ! $customer) {
                 return false;
             }
             if ($block->audience === 'guest' && $customer) {
                 return false;
             }
             if ($block->ab_test_id !== null) {
-                if (!isset($chosenVariants[$block->ab_test_id])) {
+                if (! isset($chosenVariants[$block->ab_test_id])) {
                     return false;
                 }
                 if ($block->ab_variant !== $chosenVariants[$block->ab_test_id]) {
@@ -252,21 +254,21 @@ class PageRendererService
                 dispatch(new FlushBlockImpressionJob($block->id, $page->id, $country->id));
 
                 $row = [
-                    'id'                => $block->id,
-                    'type'              => $block->block_type,
-                    'column_index'      => (int) $block->column_index,
-                    'position'          => $block->position,
-                    'device_target'     => $block->device_target,
-                    'audience'          => $block->audience,
+                    'id' => $block->id,
+                    'type' => $block->block_type,
+                    'column_index' => (int) $block->column_index,
+                    'position' => $block->position,
+                    'device_target' => $block->device_target,
+                    'audience' => $block->audience,
                     'cache_ttl_seconds' => $block->cache_ttl_seconds,
-                    'background_color'  => $block->config['background_color'] ?? null,
-                    'padding_top'       => isset($block->config['padding_top'])
+                    'background_color' => $block->config['background_color'] ?? null,
+                    'padding_top' => isset($block->config['padding_top'])
                                             ? (int) $block->config['padding_top']
                                             : null,
-                    'padding_bottom'    => isset($block->config['padding_bottom'])
+                    'padding_bottom' => isset($block->config['padding_bottom'])
                                             ? (int) $block->config['padding_bottom']
                                             : null,
-                    'data'              => $cached,
+                    'data' => $cached,
                 ];
 
                 return $this->adInjector->injectNested($row, $country->id, $sessionId);
@@ -287,15 +289,16 @@ class PageRendererService
         $ttl = max(1, (int) $block->cache_ttl_seconds);
 
         return SafeCache::remember(
-            \App\Services\Shared\PageCacheService::blockKey($block->id, $country->id),
+            PageCacheService::blockKey($block->id, $country->id),
             $ttl,
-            fn() => $this->hydrateBlock($block, $country, $customer),
+            fn () => $this->hydrateBlock($block, $country, $customer),
         );
     }
 
     public function resolveAbVariant(AbTest $test, string $identityKey): string
     {
-        $bucket = (crc32($identityKey . ':' . $test->id) & 0x7FFFFFFF) % 100;
+        $bucket = (crc32($identityKey.':'.$test->id) & 0x7FFFFFFF) % 100;
+
         return $bucket < $test->traffic_split_pct ? 'b' : 'a';
     }
 
@@ -337,8 +340,8 @@ class PageRendererService
 
         $slides = $block->slides()
             ->where('is_active', true)
-            ->where(fn($q) => $q->whereNull('visible_from')->orWhere('visible_from', '<=', $now))
-            ->where(fn($q) => $q->whereNull('visible_until')->orWhere('visible_until', '>=', $now))
+            ->where(fn ($q) => $q->whereNull('visible_from')->orWhere('visible_from', '<=', $now))
+            ->where(fn ($q) => $q->whereNull('visible_until')->orWhere('visible_until', '>=', $now))
             ->orderBy('position')
             ->get();
 
@@ -356,7 +359,7 @@ class PageRendererService
             ],
             // desktop_file_id/mobile_file_id are intentionally NEVER exposed —
             // only their resolved URLs (see SliderSlide::getDesktopUrlEnAttribute() etc.).
-            'slides' => $slides->map(fn($s) => [
+            'slides' => $slides->map(fn ($s) => [
                 'desktop_image_url' => Bilingual::pair($s, 'desktop_url'),
                 'mobile_image_url' => Bilingual::pair($s, 'mobile_url'),
                 'title' => Bilingual::pair($s, 'title'),
@@ -468,10 +471,10 @@ class PageRendererService
 
         // Pre-warm the resolver so toMixedCardShape()'s per-item gallery()
         // calls below don't re-query per product (ListingImageResolver).
-        app(\App\Services\Media\ListingImageResolver::class)->forVariants($variantIds);
+        app(ListingImageResolver::class)->forVariants($variantIds);
 
         // ── Resolve buy-box per variant: admin first, vendor fallback ─────────
-        $adminByVariant = \App\Models\AdminListing::query()
+        $adminByVariant = AdminListing::query()
             ->whereIn('product_variant_id', $variantIds)
             ->where('country_id', $country->id)
             ->where('status', 'active')
@@ -505,20 +508,19 @@ class PageRendererService
         foreach ($blockProducts as $bp) {
             $l = $adminByVariant[$bp->product_variant_id] ?? $vendorByVariant[$bp->product_variant_id] ?? null;
             if ($l) {
-                $primeTuples[] = [\App\Services\Customer\PromoBadgeResolver::typeOf($l), $l->id, $bp->productVariant?->product_id];
+                $primeTuples[] = [PromoBadgeResolver::typeOf($l), $l->id, $bp->productVariant?->product_id];
             }
         }
-        \App\Services\Customer\PromoBadgeResolver::instance()->prime($primeTuples);
+        PromoBadgeResolver::instance()->prime($primeTuples);
 
         return $blockProducts
-            ->filter(fn ($bp) =>
-                $bp->productVariant
+            ->filter(fn ($bp) => $bp->productVariant
                 && $bp->productVariant->product_id
-                && !isset($unavailableIds[$bp->productVariant->product_id])
+                && ! isset($unavailableIds[$bp->productVariant->product_id])
             )
             ->map(function ($bp) use ($adminByVariant, $vendorByVariant, $country) {
                 $variantId = $bp->product_variant_id;
-                $product   = $bp->productVariant->product;
+                $product = $bp->productVariant->product;
 
                 // Admin wins; fall back to vendor
                 $isAdmin = isset($adminByVariant[$variantId]);
@@ -552,10 +554,10 @@ class PageRendererService
 
         // Include the selected category AND all its subcategories (same as BrowseController).
         // Without this, products in child categories never appear in the block.
-        if (!empty($cfg['category_id'])) {
-            $rootCategory = \App\Models\Category::find($cfg['category_id']);
+        if (! empty($cfg['category_id'])) {
+            $rootCategory = Category::find($cfg['category_id']);
             $categoryIds = $rootCategory
-                ? app(\App\Services\Customer\CategoryService::class)->getDescendantIds($rootCategory)
+                ? app(CategoryService::class)->getDescendantIds($rootCategory)
                 : [$cfg['category_id']];
         } else {
             $categoryIds = null;
@@ -590,15 +592,14 @@ class PageRendererService
             ->limit($maxProducts)
             ->get();
 
-        app(\App\Services\Media\ListingImageResolver::class)->forVariants(
+        app(ListingImageResolver::class)->forVariants(
             $submissions->pluck('vendorListing.productVariant.id')->filter()->unique()->values()
         );
 
-        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($submissions->pluck('vendorListing')->filter()));
+        PromoBadgeResolver::instance()->prime(PromoBadgeResolver::tuplesForListings($submissions->pluck('vendorListing')->filter()));
 
         return $submissions
-            ->filter(fn ($s) =>
-                $s->vendorListing
+            ->filter(fn ($s) => $s->vendorListing
                 && $s->vendorListing->productVariant
                 && $s->vendorListing->productVariant->product
                 && $s->quantity_remaining > 0
@@ -631,7 +632,7 @@ class PageRendererService
             ->groupBy('product_variant_id')
             ->get()
             ->keyBy('product_variant_id')
-            ->map(fn($row) => [
+            ->map(fn ($row) => [
                 'min_price' => Money::number($row->min_price),
                 'max_price' => Money::number($row->max_price),
                 'seller_count' => (int) $row->seller_count,
@@ -655,18 +656,18 @@ class PageRendererService
                 ->orderBy('sale_ends_at')
                 ->first();
 
-            if (!$flashSale) {
+            if (! $flashSale) {
                 return null;
             }
         } else {
             $flashSale = FlashSale::find($cfg['flash_sale_id']);
 
-            if (!$flashSale) {
+            if (! $flashSale) {
                 return null;
             }
 
             $now = now();
-            if (!($flashSale->sale_starts_at <= $now && $now <= $flashSale->sale_ends_at)) {
+            if (! ($flashSale->sale_starts_at <= $now && $now <= $flashSale->sale_ends_at)) {
                 return null;
             }
         }
@@ -682,14 +683,14 @@ class PageRendererService
             ->limit($maxItems)
             ->get();
 
-        app(\App\Services\Media\ListingImageResolver::class)->forVariants(
+        app(ListingImageResolver::class)->forVariants(
             $submissions->pluck('vendorListing.productVariant.id')->filter()->unique()->values()
         );
 
-        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($submissions->pluck('vendorListing')->filter()));
+        PromoBadgeResolver::instance()->prime(PromoBadgeResolver::tuplesForListings($submissions->pluck('vendorListing')->filter()));
 
         $items = $submissions
-            ->filter(fn($s) => $s->vendorListing)
+            ->filter(fn ($s) => $s->vendorListing)
             ->map(function (FlashSaleSubmission $s) use ($flashSale) {
                 // quantity_remaining is read directly off the model — it's a MySQL
                 // GENERATED VIRTUAL column (max_quantity_total - quantity_sold);
@@ -725,12 +726,12 @@ class PageRendererService
         $cfg = $block->config ?? [];
 
         // Resolve the listing — admin listing takes priority over vendor listing
-        if (!empty($cfg['admin_listing_id'])) {
-            $listing = \App\Models\AdminListing::with('productVariant.product.images')
+        if (! empty($cfg['admin_listing_id'])) {
+            $listing = AdminListing::with('productVariant.product.images')
                 ->where('id', $cfg['admin_listing_id'])
                 ->where('status', 'active')
                 ->first();
-        } elseif (!empty($cfg['vendor_listing_id'])) {
+        } elseif (! empty($cfg['vendor_listing_id'])) {
             $listing = VendorListing::with('productVariant.product.images')
                 ->find($cfg['vendor_listing_id']);
 
@@ -741,7 +742,7 @@ class PageRendererService
             return null;
         }
 
-        if (!$listing) {
+        if (! $listing) {
             return null;
         }
 
@@ -751,13 +752,13 @@ class PageRendererService
         }
 
         $product = $listing->productVariant?->product;
-        if (!$product) {
+        if (! $product) {
             return null;
         }
 
         $variantId = $listing->productVariant?->id;
         $imageUrl = $variantId
-            ? app(\App\Services\Media\ListingImageResolver::class)->primary($variantId)
+            ? app(ListingImageResolver::class)->primary($variantId)
             : null;
         $comparePrice = Money::number($listing->compare_at_price ?? 0);
         $discountPct = $comparePrice > 0
@@ -793,7 +794,7 @@ class PageRendererService
         return [
             'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
             'aspect_ratio' => $cfg['aspect_ratio'] ?? null,
-            'items' => $items->map(fn($i) => [
+            'items' => $items->map(fn ($i) => [
                 'image_url' => Bilingual::pair($i, 'file_url'),
                 'title' => Bilingual::pair($i, 'title'),
                 'link_url' => $i->link_url,
@@ -817,7 +818,7 @@ class PageRendererService
 
         $banner = Banner::with('files')->find($cfg['banner_id']);
 
-        if (!$banner) {
+        if (! $banner) {
             return null;
         }
 
@@ -826,7 +827,7 @@ class PageRendererService
         $mobileImageEn = $banner->files->firstWhere('file_type', 'banner_mobile_en');
         $mobileImageAr = $banner->files->firstWhere('file_type', 'banner_mobile_ar');
 
-        if (!$desktopImageEn && !$desktopImageAr) {
+        if (! $desktopImageEn && ! $desktopImageAr) {
             return null;
         }
 
@@ -861,16 +862,7 @@ class PageRendererService
             ->with('category')
             ->get();
 
-        if ($manual->isNotEmpty()) {
-            $categories = $manual->pluck('category')->filter()->values();
-        } else {
-            $categories = Category::whereNull('parent_id')
-                ->where('is_active', true)
-                ->where('is_visible', true)
-                ->orderBy('sort_order')
-                ->limit($maxItems)
-                ->get();
-        }
+        $categories = app(CategoryService::class)->homepageCategories($country, $manual->pluck('category'), max(1, $maxItems));
 
         return [
             'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
@@ -893,7 +885,7 @@ class PageRendererService
             "category_product_count:{$categoryId}",
             600,
             ['categories'],
-            fn() => (int) Category::where('id', $categoryId)->value('product_count'),
+            fn () => (int) Category::where('id', $categoryId)->value('product_count'),
         );
     }
 
@@ -901,24 +893,24 @@ class PageRendererService
 
     private function hydrateBrandStrip(PageBlock $block): array
     {
-        $cfg      = $block->config ?? [];
+        $cfg = $block->config ?? [];
         $maxItems = (int) ($cfg['max_items'] ?? 10);
 
-        $blockBrands = \App\Models\PageBlockBrand::where('page_block_id', $block->id)
+        $blockBrands = PageBlockBrand::where('page_block_id', $block->id)
             ->orderBy('position')
             ->limit($maxItems)
             ->with('brand')
             ->get();
 
         return [
-            'title'          => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
+            'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
             'show_logo_only' => (bool) ($cfg['show_logo_only'] ?? true),
-            'brands'         => $blockBrands
+            'brands' => $blockBrands
                 ->filter(fn ($bb) => $bb->brand !== null && $bb->brand->is_active)
                 ->map(fn ($bb) => [
-                    'id'       => $bb->brand->id,
-                    'name'     => ['ar' => $bb->brand->name_ar, 'en' => $bb->brand->name_en],
-                    'slug'     => $bb->brand->slug,
+                    'id' => $bb->brand->id,
+                    'name' => ['ar' => $bb->brand->name_ar, 'en' => $bb->brand->name_en],
+                    'slug' => $bb->brand->slug,
                     'logo_url' => $bb->brand->logo_url,
                     'browse_url' => "/browse/brand/{$bb->brand->id}",
                 ])
@@ -931,11 +923,11 @@ class PageRendererService
 
     private function hydrateSearchTrends(PageBlock $block, Country $country): array
     {
-        $cfg      = $block->config ?? [];
+        $cfg = $block->config ?? [];
         $maxTerms = (int) ($cfg['max_terms'] ?? 10);
-        $source   = $cfg['source'] ?? 'auto';
+        $source = $cfg['source'] ?? 'auto';
 
-        if ($source === 'manual' && !empty($cfg['manual_keywords'])) {
+        if ($source === 'manual' && ! empty($cfg['manual_keywords'])) {
             // Admin-defined keywords — no caching needed, served as-is
             $terms = collect(explode("\n", $cfg['manual_keywords']))
                 ->map(fn ($t) => trim($t))
@@ -966,10 +958,10 @@ class PageRendererService
         }
 
         return [
-            'title'                 => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
-            'terms'                 => $terms,
-            'show_icons'            => (bool) ($cfg['show_icons'] ?? true),
-            'show_category_filter'  => (bool) ($cfg['show_category_filter'] ?? false),
+            'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
+            'terms' => $terms,
+            'show_icons' => (bool) ($cfg['show_icons'] ?? true),
+            'show_category_filter' => (bool) ($cfg['show_category_filter'] ?? false),
         ];
     }
 
@@ -1049,19 +1041,19 @@ class PageRendererService
 
     private function hydrateMegaDeals(PageBlock $block, Country $country): array
     {
-        $cfg  = $block->config ?? [];
-        $endsAt = isset($cfg['ends_at']) ? \Carbon\Carbon::parse($cfg['ends_at']) : null;
+        $cfg = $block->config ?? [];
+        $endsAt = isset($cfg['ends_at']) ? Carbon::parse($cfg['ends_at']) : null;
 
         $products = $this->productRowManual($block, $country);
 
         return [
-            'title'          => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
+            'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
             'show_countdown' => (bool) ($cfg['show_countdown'] ?? true),
             'seconds_remaining' => $endsAt ? max(0, now()->diffInSeconds($endsAt, false)) : null,
-            'ends_at'        => $endsAt?->toIso8601String(),
-            'columns'        => (int) ($cfg['columns'] ?? 2),
-            'show_view_all'  => (bool) ($cfg['show_view_all'] ?? true),
-            'products'       => $products,
+            'ends_at' => $endsAt?->toIso8601String(),
+            'columns' => (int) ($cfg['columns'] ?? 2),
+            'show_view_all' => (bool) ($cfg['show_view_all'] ?? true),
+            'products' => $products,
         ];
     }
 
@@ -1069,26 +1061,26 @@ class PageRendererService
 
     private function hydratePromoTiles(PageBlock $block): array
     {
-        $cfg   = $block->config ?? [];
+        $cfg = $block->config ?? [];
         $tiles = collect($cfg['tiles'] ?? [])->map(fn ($tile) => [
-            'label'          => ['ar' => $tile['label_ar'] ?? null,      'en' => $tile['label_en'] ?? null],
-            'badge'          => ['ar' => $tile['badge_label_ar'] ?? null, 'en' => $tile['badge_label_en'] ?? null],
-            'image_url'      => [
+            'label' => ['ar' => $tile['label_ar'] ?? null,      'en' => $tile['label_en'] ?? null],
+            'badge' => ['ar' => $tile['badge_label_ar'] ?? null, 'en' => $tile['badge_label_en'] ?? null],
+            'image_url' => [
                 'en' => $tile['image_url_en'] ?? $tile['image_url'] ?? null,
                 'ar' => $tile['image_url_ar'] ?? ($tile['image_url_en'] ?? $tile['image_url'] ?? null),
             ],
-            'link_url'       => $tile['link_url'] ?? null,
-            'is_paid'        => (bool) ($tile['is_paid'] ?? false),
+            'link_url' => $tile['link_url'] ?? null,
+            'is_paid' => (bool) ($tile['is_paid'] ?? false),
         ])->all();
 
         $gridCols = max(1, min(8, (int) ($cfg['grid_cols'] ?? $cfg['columns'] ?? 2)));
         $gridRows = max(1, min(8, (int) ($cfg['grid_rows'] ?? 2)));
 
         return [
-            'title'     => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
+            'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
             'grid_cols' => $gridCols,
             'grid_rows' => $gridRows,
-            'tiles'     => $tiles,
+            'tiles' => $tiles,
         ];
     }
 
@@ -1103,28 +1095,28 @@ class PageRendererService
             ->orderBy('position')
             ->get()
             ->map(fn ($img) => [
-                'image_url'      => Bilingual::pair($img, 'file_url'),
-                'link_url'       => $img->link_url,
-                'link_new_tab'   => (bool) $img->link_open_new_tab,
-                'title'          => ['ar' => $img->title_ar,    'en' => $img->title_en],
-                'subtitle'       => ['ar' => $img->subtitle_ar, 'en' => $img->subtitle_en],
-                'badge'          => ['ar' => $img->badge_label_ar, 'en' => $img->badge_label_en],
-                'alt'            => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
-                'is_paid'        => (bool) $img->is_paid,
+                'image_url' => Bilingual::pair($img, 'file_url'),
+                'link_url' => $img->link_url,
+                'link_new_tab' => (bool) $img->link_open_new_tab,
+                'title' => ['ar' => $img->title_ar,    'en' => $img->title_en],
+                'subtitle' => ['ar' => $img->subtitle_ar, 'en' => $img->subtitle_en],
+                'badge' => ['ar' => $img->badge_label_ar, 'en' => $img->badge_label_en],
+                'alt' => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
+                'is_paid' => (bool) $img->is_paid,
             ])->all();
 
         return [
-            'title'        => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
-            'columns'      => (int) ($cfg['columns'] ?? 5),
-            'rows'         => (int) ($cfg['rows'] ?? 1),
-            'scrollable'   => (bool) ($cfg['scrollable'] ?? true),
-            'show_label'   => (bool) ($cfg['show_label'] ?? true),
-            'show_badge'   => (bool) ($cfg['show_badge'] ?? false),
-            'image_shape'  => $cfg['image_shape']  ?? 'rounded',
-            'size_preset'  => $cfg['size_preset']  ?? 'medium',
+            'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
+            'columns' => (int) ($cfg['columns'] ?? 5),
+            'rows' => (int) ($cfg['rows'] ?? 1),
+            'scrollable' => (bool) ($cfg['scrollable'] ?? true),
+            'show_label' => (bool) ($cfg['show_label'] ?? true),
+            'show_badge' => (bool) ($cfg['show_badge'] ?? false),
+            'image_shape' => $cfg['image_shape'] ?? 'rounded',
+            'size_preset' => $cfg['size_preset'] ?? 'medium',
             'aspect_ratio' => $cfg['aspect_ratio'] ?? '',
-            'items'        => $items,
-            'total_items'  => count($items),
+            'items' => $items,
+            'total_items' => count($items),
         ];
     }
 
@@ -1132,12 +1124,12 @@ class PageRendererService
 
     private function hydrateSponsoredGrid(PageBlock $block, Country $country): array
     {
-        $cfg         = $block->config ?? [];
-        $source      = $cfg['source'] ?? 'sponsored';
+        $cfg = $block->config ?? [];
+        $source = $cfg['source'] ?? 'sponsored';
         $maxProducts = (int) ($cfg['max_products'] ?? 20);
 
         if ($source === 'sponsored') {
-            $adminListings = \App\Models\AdminListing::where('country_id', $country->id)
+            $adminListings = AdminListing::where('country_id', $country->id)
                 ->where('status', 'active')
                 ->where('search_boost', '>', 0)
                 ->with(['productVariant.product.images', 'productVariant.product.customAttributes', 'primaryShippingMethod'])
@@ -1154,7 +1146,7 @@ class PageRendererService
                 ->limit((int) ceil($maxProducts / 2))
                 ->get();
 
-            \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($adminListings->concat($vendorListings)));
+            PromoBadgeResolver::instance()->prime(PromoBadgeResolver::tuplesForListings($adminListings->concat($vendorListings)));
             $cards = collect();
             foreach ($adminListings as $al) {
                 if ($al->productVariant?->product) {
@@ -1172,10 +1164,10 @@ class PageRendererService
         }
 
         return [
-            'title'                => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
-            'columns'              => (int) ($cfg['columns'] ?? 5),
+            'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
+            'columns' => (int) ($cfg['columns'] ?? 5),
             'show_sponsored_badge' => (bool) ($cfg['show_sponsored_badge'] ?? true),
-            'products'             => $products,
+            'products' => $products,
         ];
     }
 
@@ -1186,15 +1178,15 @@ class PageRendererService
         $cfg = $block->config ?? [];
 
         return [
-            'title'                => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
-            'subtitle'             => Bilingual::pairFromKeys($cfg, 'subtitle_ar', 'subtitle_en'),
-            'background_color'     => $cfg['background_color']     ?? '#FEE200',
+            'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
+            'subtitle' => Bilingual::pairFromKeys($cfg, 'subtitle_ar', 'subtitle_en'),
+            'background_color' => $cfg['background_color'] ?? '#FEE200',
             'background_image_url' => $cfg['background_image_url'] ?? null,
-            'app_store_url'        => $cfg['app_store_url']        ?? null,
-            'play_store_url'       => $cfg['play_store_url']       ?? null,
-            'app_store_badge_url'  => $cfg['app_store_badge_url']  ?? null,
+            'app_store_url' => $cfg['app_store_url'] ?? null,
+            'play_store_url' => $cfg['play_store_url'] ?? null,
+            'app_store_badge_url' => $cfg['app_store_badge_url'] ?? null,
             'play_store_badge_url' => $cfg['play_store_badge_url'] ?? null,
-            'phone_mockup_url'     => $cfg['phone_mockup_url']     ?? null,
+            'phone_mockup_url' => $cfg['phone_mockup_url'] ?? null,
         ];
     }
 
@@ -1211,7 +1203,7 @@ class PageRendererService
     {
         $store = Cache::getStore();
 
-        if ($store instanceof \Illuminate\Cache\TaggableStore) {
+        if ($store instanceof TaggableStore) {
             return Cache::tags($tags)->remember($key, $ttl, $callback);
         }
 

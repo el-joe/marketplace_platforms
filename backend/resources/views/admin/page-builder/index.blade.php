@@ -116,7 +116,7 @@
         </div>
 
         @foreach($blockTypes as $group => $items)
-            <div class="pb-group-title">{{ ucfirst(str_replace('_', ' & ', $group)) }}</div>
+            <div class="pb-group-title">{{ __('admin.page_builder.block_groups.'.$group) === 'admin.page_builder.block_groups.'.$group ? ucfirst(str_replace('_', ' & ', $group)) : __('admin.page_builder.block_groups.'.$group) }}</div>
             <div class="pb-group">
                 @foreach($items as $type)
                     @php
@@ -129,9 +129,9 @@
                                     class="palette-btn"
                                     data-block-type="{{ $type->code }}"
                                     data-max-per-page="{{ $type->max_per_page ?? '' }}"
-                                    title="{{ $type->label_en }}">
+                                    title="{{ localized($type, 'label') }}">
                                 <x-heroicon :name="$type->icon ?? 'cube'" class="w-5 h-5" />
-                                <span class="flex-1">{{ $type->label_en }}</span>
+                                <span class="flex-1">{{ localized($type, 'label') }}</span>
                             </button>
                             @php
                                 $description = app()->getLocale() === 'ar'
@@ -170,11 +170,11 @@
                                     @if($slide->desktopFile)
                                         <img src="{{ $slide->desktopFile->url }}" alt="" class="w-16 h-10 object-cover rounded border border-gray-200">
                                     @else
-                                        <div class="w-16 h-10 rounded border border-dashed border-gray-300 flex items-center justify-center text-[10px] text-gray-400">No image</div>
+                                        <div class="w-16 h-10 rounded border border-dashed border-gray-300 flex items-center justify-center text-[10px] text-gray-400">{{ __('admin.page_builder.cf.no_image') }}</div>
                                     @endif
                                 </div>
                             @empty
-                                <span class="text-xs text-gray-400">No slides</span>
+                                <span class="text-xs text-gray-400">{{ __('admin.page_builder.cf.no_slides') }}</span>
                             @endforelse
                         </div>
                     </div>
@@ -354,6 +354,17 @@
         window.TRANSLATIONS = window.TRANSLATIONS || {};
         Object.assign(window.TRANSLATIONS, {
             dragToReorder: @json(__('admin.page_builder_section.drag_to_reorder')),
+            blockAdded: @json(__('admin.page_builder.block_added')),
+            pbImageDeleteFailed: @json(__('admin.page_builder.js.image_delete_failed')),
+            pbImageSaved: @json(__('admin.page_builder.js.image_saved')),
+            pbAdImagesUpdated: @json(__('admin.page_builder.js.ad_images_updated')),
+            pbEditSection: @json(__('admin.page_builder.js.edit_section')),
+            pbAddSection: @json(__('admin.page_builder.js.add_section')),
+            pbSectionDeleted: @json(__('admin.page_builder.js.section_deleted')),
+            pbSectionUpdated: @json(__('admin.page_builder.js.section_updated')),
+            pbSectionAdded: @json(__('admin.page_builder.js.section_added')),
+            pbCacheCleared: @json(__('admin.page_builder.js.cache_cleared')),
+            pbCacheClearFailed: @json(__('admin.page_builder.js.cache_clear_failed')),
             hidden: @json(__('admin.page_builder_section.hidden')),
             scheduled: @json(__('admin.page_builder_section.scheduled')),
             edit: @json(__('common.edit')),

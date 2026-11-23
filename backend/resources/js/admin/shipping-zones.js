@@ -740,7 +740,7 @@ $(function () {
         );
 
         const filtered = SZ.pendingCity.available.filter(c =>
-            !search || c.name_en.toLowerCase().includes(search)
+            !search || (c.name_en || '').toLowerCase().includes(search) || (c.name_ar || '').includes(search)
         );
         $available.html(
             filtered.map(c => cityChip(c, 'available')).join('') ||

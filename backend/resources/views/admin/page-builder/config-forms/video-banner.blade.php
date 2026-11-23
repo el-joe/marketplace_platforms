@@ -11,16 +11,18 @@
         $posterEn = $config['poster_url_en'] ?? $config['poster_url'] ?? '';
         $posterAr = $config['poster_url_ar'] ?? '';
     @endphp
+    <x-form.media-field context="video-posters" class="mt-3"
+        :label="__('media_library.thumbnail')"
+        :hint="__('admin.page_builder.config_forms.video_banner.thumbnail_url_help')"
+        :locales="['en', 'ar']" name-pattern="poster_url_{locale}"
+        :values="['en' => $posterEn, 'ar' => $posterAr]" />
+
     <x-form.lang-tabs id="video-banner-lang-tabs">
         <x-slot:en>
-            <x-form.input name="poster_url_en" label="{{ __('admin.page_builder.config_forms.video_banner.thumbnail_url') }} (EN)" :value="$posterEn"
-                placeholder="{{ __('admin.page_builder.config_forms.video_banner.thumbnail_url_placeholder') }}" helpText="{{ __('admin.page_builder.config_forms.video_banner.thumbnail_url_help') }}" />
             <x-form.input name="title_en" label="{{ __('admin.page_builder.config_forms.video_banner.overlay_title_en') }}" :value="$config['title_en'] ?? ''" dir="ltr" />
             <x-form.input name="cta_label_en" label="{{ __('admin.page_builder.config_forms.video_banner.cta_label_en') }}" :value="$config['cta_label_en'] ?? ''" dir="ltr" />
         </x-slot:en>
         <x-slot:ar>
-            <x-form.input name="poster_url_ar" label="{{ __('admin.page_builder.config_forms.video_banner.thumbnail_url') }} (AR)" :value="$posterAr"
-                placeholder="{{ __('admin.page_builder.config_forms.video_banner.thumbnail_url_placeholder') }}" helpText="{{ __('admin.page_builder.config_forms.video_banner.thumbnail_url_help') }}" />
             <x-form.input name="title_ar" label="{{ __('admin.page_builder.config_forms.video_banner.overlay_title_ar') }}" :value="$config['title_ar'] ?? ''" dir="rtl" />
             <x-form.input name="cta_label_ar" label="{{ __('admin.page_builder.config_forms.video_banner.cta_label_ar') }}" :value="$config['cta_label_ar'] ?? ''" dir="rtl" />
         </x-slot:ar>

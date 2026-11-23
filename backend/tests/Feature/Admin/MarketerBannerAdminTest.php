@@ -7,6 +7,8 @@ use App\Models\Banner;
 use App\Models\BannerPlacementDefinition;
 use App\Models\Marketer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -18,6 +20,7 @@ class MarketerBannerAdminTest extends TestCase
     {
         parent::setUp();
         $this->withoutVite();
+        Storage::fake('public');
     }
 
     private function admin(array $perms = ['banners.view', 'banners.create', 'banners.edit']): Admin
@@ -42,6 +45,8 @@ class MarketerBannerAdminTest extends TestCase
             'status' => 'active',
             'device_target' => 'all',
             'audience' => 'all',
+            'desktop_image_en' => UploadedFile::fake()->image('desktop.png'),
+            'mobile_image_en' => UploadedFile::fake()->image('mobile.png'),
         ], $extra);
     }
 

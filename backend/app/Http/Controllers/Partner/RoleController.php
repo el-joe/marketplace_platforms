@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
 use App\Models\VendorAdmin;
+use App\Support\PermissionLabels;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,23 +18,6 @@ use Spatie\Permission\PermissionRegistrar;
 class RoleController extends Controller
 {
     private const PROTECTED_ROLES = ['vendor_owner', 'vendor_manager', 'vendor_staff'];
-
-    private const GROUP_LABELS = [
-        'listings' => 'Listings',
-        'orders' => 'Orders',
-        'returns' => 'Returns',
-        'disputes' => 'Disputes',
-        'finance' => 'Finance',
-        'campaigns' => 'Campaigns',
-        'promotions' => 'Promotions',
-        'products' => 'Products',
-        'reviews' => 'Reviews',
-        'customers' => 'Customers',
-        'team' => 'Team',
-        'roles' => 'Roles',
-        'settings' => 'Settings',
-        'documents' => 'Documents',
-    ];
 
     // ─────────────────────────────────────────────────────────────────────────
     // Index
@@ -94,6 +78,7 @@ class RoleController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['message' => __('partner.roles.messages.create_failed')], 500);
             }
+
             return back()->withInput()->withErrors(['error' => __('partner.roles.messages.create_failed')]);
         }
 
@@ -150,6 +135,7 @@ class RoleController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Partner\\RoleController@update failed', ['role' => $role->id, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('partner.roles.messages.update_failed')], 500);
         }
 
@@ -214,21 +200,14 @@ class RoleController extends Controller
         $grouped = [];
         foreach ($permissions as $perm) {
             $prefix = explode('.', $perm->name)[0];
-            $label = self::GROUP_LABELS[$prefix] ?? ucfirst($prefix);
+            $label = PermissionLabels::group($prefix, null, 'vendor');
             $grouped[$prefix] ??= ['label' => $label, 'key' => $prefix, 'permissions' => []];
             $grouped[$prefix]['permissions'][] = [
                 'name' => $perm->name,
-                'label' => $this->formatPermissionLabel($perm->name),
+                'label' => PermissionLabels::label($perm->name, null, 'vendor'),
             ];
         }
 
         return array_values($grouped);
-    }
-
-    private function formatPermissionLabel(string $permission): string
-    {
-        $parts = explode('.', $permission, 2);
-        $action = $parts[1] ?? $parts[0];
-        return ucwords(str_replace(['_', '.'], ' ', $action));
     }
 }

@@ -71,7 +71,7 @@
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div>
                 <h3 class="text-base font-semibold text-gray-900">
-                    {{ $country->name_en }}
+                    {{ localized($country) }}
                     <span class="ml-1 text-sm font-normal text-gray-400">({{ $country->currency_code }})</span>
                 </h3>
                 <p class="text-xs text-gray-400 mt-0.5">{{ $country->countryPaymentGateways->count() }} gateway(s) configured</p>
@@ -79,7 +79,7 @@
             <button type="button"
                 class="btn-add-country-gateway inline-flex items-center gap-1 rounded-lg bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-700 hover:bg-primary-100"
                 data-country-id="{{ $country->id }}"
-                data-country-name="{{ $country->name_en }}"
+                data-country-name="{{ localized($country) }}"
                 data-currency="{{ $country->currency_code }}"
                 data-existing="{{ json_encode($country->countryPaymentGateways->pluck('gateway_id')->all()) }}">
                 <x-heroicon name="plus" class="w-3.5 h-3.5" /> {{ __('admin.static_text.admin_payment_gateways_index.add_gateway') }}

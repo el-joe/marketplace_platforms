@@ -43,7 +43,7 @@
                         {{-- Parent row --}}
                         <tr class="hover:bg-gray-50 bg-gray-50/40" id="cat-row-{{ $category->id }}">
                             <td class="px-4 py-3 text-lg text-center">{{ $category->icon ?? '📁' }}</td>
-                            <td class="px-4 py-3 font-semibold text-gray-900">{{ $category->name_en }}</td>
+                            <td class="px-4 py-3 font-semibold text-gray-900">{{ localized($category) }}</td>
                             <td class="px-4 py-3 text-gray-600" dir="rtl">{{ $category->name_ar }}</td>
                             <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ $category->slug }}</td>
                             <td class="px-4 py-3 text-center text-gray-600">{{ number_format($category->packages_count) }}</td>
@@ -60,7 +60,7 @@
                                         class="text-xs text-primary-600 hover:underline mr-3">+ {{ __('admin.travel.add_child') }}</button>
                                 <button onclick="openEditModal({{ json_encode($category) }})"
                                         class="text-xs text-primary-600 hover:underline mr-3">{{ __('common.edit') }}</button>
-                                <button onclick="deleteCategory('{{ $category->id }}', '{{ addslashes($category->name_en) }}')"
+                                <button onclick="deleteCategory('{{ $category->id }}', '{{ addslashes(localized($category)) }}')"
                                         class="text-xs text-red-600 hover:underline">{{ __('common.delete') }}</button>
                             </td>
                         </tr>
@@ -72,7 +72,7 @@
                                 <span class="text-gray-300 text-xs pl-4">↳</span>
                                 {{ $child->icon ?? '' }}
                             </td>
-                            <td class="px-4 py-3 text-gray-800 pl-8">{{ $child->name_en }}</td>
+                            <td class="px-4 py-3 text-gray-800 pl-8">{{ localized($child) }}</td>
                             <td class="px-4 py-3 text-gray-600" dir="rtl">{{ $child->name_ar }}</td>
                             <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ $child->slug }}</td>
                             <td class="px-4 py-3 text-center text-gray-600">{{ number_format($child->packages_count) }}</td>
@@ -87,7 +87,7 @@
                             <td class="px-4 py-3 text-end whitespace-nowrap">
                                 <button onclick="openEditModal({{ json_encode($child) }})"
                                         class="text-xs text-primary-600 hover:underline mr-3">{{ __('common.edit') }}</button>
-                                <button onclick="deleteCategory('{{ $child->id }}', '{{ addslashes($child->name_en) }}')"
+                                <button onclick="deleteCategory('{{ $child->id }}', '{{ addslashes(localized($child)) }}')"
                                         class="text-xs text-red-600 hover:underline">{{ __('common.delete') }}</button>
                             </td>
                         </tr>
@@ -123,7 +123,7 @@
                 <select id="f-parent" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
                     <option value="">{{ __('admin.travel.top_level') }}</option>
                     @foreach($categories as $cat)
-                        <option value="{{ $cat->id }}">{{ $cat->name_en }}</option>
+                        <option value="{{ $cat->id }}">{{ localized($cat) }}</option>
                     @endforeach
                 </select>
             </div>

@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Route;
 // ── Auth (no guard) ───────────────────────────────────────────────────────
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
 
 // ── Onboarding (authenticated, allowed before onboarding is complete) ─────
 Route::middleware('marketer.api.auth')->prefix('onboarding')->group(function () {

@@ -9,6 +9,8 @@ import { getImageURL } from "@/src/helpers/get-image-url";
 import { getListingImage } from "@/src/types/media";
 import { XIcon } from "lucide-react";
 import { Navigation } from "swiper/modules";
+import { formatDeliveryDate } from "@/src/helpers/delivery-estimate";
+import DistanceDeliveryNote from "@/src/components/shared/distance-delivery-note";
 
 export default function ItemsList({
   shipment_groups,
@@ -37,6 +39,10 @@ const Shipment = ({
 }) => {
   const t = useTranslations("checkout");
   const locale = useLocale();
+  const deliveryDate = formatDeliveryDate(
+    group.shipping_method?.estimated_delivery_date,
+    locale,
+  );
 
   return (
     <div className="bg-white rounded-2xl">
@@ -48,6 +54,7 @@ const Shipment = ({
           {group?.items_count} {t("items")}
         </p>
       </div>
+      <DistanceDeliveryNote pricing={group.distance_pricing} className="px-3" />
       <Swiper
         slidesPerView={group.items_count > 1 ? 2 : 1}
         navigation
@@ -92,11 +99,16 @@ const Shipment = ({
       </Swiper>
 
       <div className="flex justify-between items-center h-12">
-        <div className="h-12 ps-4 pe-10 relative text-sm/[42px] z-1 ">
-          <div className="absolute inset-0 -z-10 bg-border-strip"></div>
-          {t("getItBy")}
-          <span className="font-bold"> no estimated delivery date</span>
-        </div>
+        {deliveryDate ? (
+          <div className="h-12 ps-4 pe-10 relative text-sm/[42px] z-1 ">
+            <div className="absolute inset-0 -z-10 bg-border-strip"></div>
+            {t("getItBy")}{" "}
+            <span className="font-bold">{deliveryDate}</span>
+          </div>
+        ) : (
+          // No estimate from the API: hide the line instead of a placeholder.
+          <span />
+        )}
         <div className="p-3">
           <p
             style={{ backgroundColor: group.shipping_method.badge_color_hex }}

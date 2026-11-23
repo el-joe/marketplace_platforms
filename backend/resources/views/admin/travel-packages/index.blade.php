@@ -67,7 +67,7 @@
                 <select id="filter-country" class="form-input w-full text-sm">
                     <option value="">{{ __('admin.travel.all_destinations') }}</option>
                     @foreach($travelCountries as $c)
-                        <option value="{{ $c->id }}">{{ $c->flag_emoji ? $c->flag_emoji . ' ' : '' }}{{ $c->name_en }}</option>
+                        <option value="{{ $c->id }}">{{ $c->flag_emoji ? $c->flag_emoji . ' ' : '' }}{{ localized($c) }}</option>
                     @endforeach
                 </select>
             </div>

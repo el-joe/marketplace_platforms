@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Marketer;
 use App\Enums\MarketerGender;
 use App\Enums\MarketerType;
 use App\Http\Controllers\Controller;
+use App\Models\Country;
 use App\Models\Marketer;
 use App\Models\MarketerAdmin;
 use App\Models\MarketerJob;
@@ -72,7 +73,7 @@ class AuthController extends Controller
             'email' => 'required|email|unique:marketer_admins,email',
             'password' => 'required|min:8',
             'marketer_type' => ['required', Rule::in(MarketerType::values())],
-            'country_id' => 'required|exists:countries,id',
+            'country_id' => ['required', Country::availableForVendorsRule()],
             'gender' => ['required', Rule::enum(MarketerGender::class)],
             'phone' => 'nullable|string|max:30',
             'whatsapp_for_campaigns' => 'nullable|string|max:30',
@@ -150,6 +151,6 @@ class AuthController extends Controller
         Password::broker('marketer_admins')
             ->sendResetLink($request->only('email'));
 
-        return response()->json(['success' => true, 'message' => 'إذا كان البريد مسجلاً، سيصلك رابط الاستعادة.']);
+        return response()->json(['success' => true, 'message' => __('common.exceptions.auth.reset_link_sent')]);
     }
 }

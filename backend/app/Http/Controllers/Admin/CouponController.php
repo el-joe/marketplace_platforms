@@ -19,6 +19,7 @@ use App\Models\Product;
 use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Services\Admin\CouponService;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -150,8 +151,8 @@ class CouponController extends Controller
                 ['label' => __('admin.nav.coupons'), 'url' => route('admin.coupons.index')],
                 ['label' => __('admin.coupons_section.new_coupon')],
             ],
-            'categories' => Category::query()->where('is_active', true)->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en']),
-            'countries' => Country::query()->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en']),
+            'categories' => Category::query()->where('is_active', true)->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
+            'countries' => Country::query()->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
             'selectedCustomers' => collect(),
             'selectedVendors' => collect(),
             'selectedMarketers' => collect(),
@@ -203,7 +204,7 @@ class CouponController extends Controller
     {
         Gate::forUser(Auth::guard('admin')->user())->authorize('view', $coupon);
 
-        $coupon->load(['vendor:id,store_name', 'category:id,name_en', 'vendors:id,store_name,name', 'marketers:id,name', 'products:id,name_en,name_ar']);
+        $coupon->load(['vendor:id,store_name', 'category:id,name_en,name_ar', 'vendors:id,store_name,name', 'marketers:id,name', 'products:id,name_en,name_ar']);
 
         $totalDiscountGranted = CouponUsage::query()->where('coupon_id', $coupon->id)->sum('discount_amount');
 
@@ -230,10 +231,10 @@ class CouponController extends Controller
             'isAdminManaged' => $isAdminManaged,
             'usageCount' => CouponUsage::query()->where('coupon_id', $coupon->id)->count(),
             'categories' => $isAdminManaged
-                ? Category::query()->where('is_active', true)->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en'])
+                ? Category::query()->where('is_active', true)->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en', 'name_ar'])
                 : collect(),
             'countries' => $isAdminManaged
-                ? Country::query()->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en'])
+                ? Country::query()->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en', 'name_ar'])
                 : collect(),
             'selectedCustomers' => $coupon->eligible_customer_ids
                 ? Customer::query()->whereIn('id', $coupon->eligible_customer_ids)->get(['id', 'name', 'email'])
@@ -274,8 +275,8 @@ class CouponController extends Controller
                 ['label' => __('admin.nav.coupons'), 'url' => route('admin.coupons.index')],
                 ['label' => $model->code],
             ],
-            'categories' => Category::query()->where('is_active', true)->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en']),
-            'countries' => Country::query()->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en']),
+            'categories' => Category::query()->where('is_active', true)->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
+            'countries' => Country::query()->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en', 'name_ar']),
             'selectedCustomers' => $model->eligible_customer_ids
                 ? Customer::query()->whereIn('id', $model->eligible_customer_ids)->get(['id', 'name', 'email'])
                 : collect(),
@@ -497,10 +498,10 @@ class CouponController extends Controller
                 ->pluck('product_variants.product_id'));
         }
 
-        $products = $query->orderBy('name_en')->limit(30)->get(['id', 'name_en', 'name_ar']);
+        $products = $query->orderBy(Bilingual::column('name'))->limit(30)->get(['id', 'name_en', 'name_ar']);
 
         return response()->json([
-            'results' => $products->map(fn ($p) => ['id' => $p->id, 'text' => $p->name_en ?: $p->name_ar]),
+            'results' => $products->map(fn ($p) => ['id' => $p->id, 'text' => localized($p)]),
         ]);
     }
 

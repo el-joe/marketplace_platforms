@@ -13,12 +13,14 @@ use App\Models\Vendor;
 use App\Models\Warehouse;
 use App\Notifications\Admin\NewPackagingOrderReceived;
 use App\Support\Money;
+use App\Support\Timezones;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
@@ -44,7 +46,7 @@ class PackagingSupplyController extends Controller
             ->whereHas('countryPricing', function ($q) use ($countryId) {
                 $q->where('country_id', $countryId)->where('is_active', true);
             })
-            ->with(['countryPricing' => function ($q) use ($countryId) {
+            ->with(['supplyType', 'countryPricing' => function ($q) use ($countryId) {
                 $q->where('country_id', $countryId)->where('is_active', true);
             }])
             ->orderBy('type')
@@ -63,7 +65,7 @@ class PackagingSupplyController extends Controller
             ->whereHas('countryPricing', function ($q) use ($countryId) {
                 $q->where('country_id', $countryId)->where('is_active', true);
             })
-            ->with(['countryPricing' => function ($q) use ($countryId) {
+            ->with(['supplyType', 'countryPricing' => function ($q) use ($countryId) {
                 $q->where('country_id', $countryId)->where('is_active', true);
             }])
             ->orderBy('type')
@@ -171,7 +173,7 @@ class PackagingSupplyController extends Controller
         $vendor = auth('vendor')->user();
 
         $supplyRequests = $this->buildMyRequestsQuery($request)
-            ->with('items.supply')
+            ->with('items.supply.supplyType')
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -191,11 +193,24 @@ class PackagingSupplyController extends Controller
 
         $query = $this->applyFilters($query, $request, [
             'status' => fn ($q, $v) => $q->where('status', $v),
-            'date_from' => fn ($q, $v) => $q->whereDate('created_at', '>=', $v),
-            'date_to' => fn ($q, $v) => $q->whereDate('created_at', '<=', $v),
+            'date_from' => fn ($q, $v) => ($day = $this->vendorDay($v)) ? $q->where('created_at', '>=', $day->copy()->startOfDay()->utc()) : $q,
+            'date_to' => fn ($q, $v) => ($day = $this->vendorDay($v)) ? $q->where('created_at', '<=', $day->copy()->endOfDay()->utc()) : $q,
         ]);
 
         return $query;
+    }
+
+    /**
+     * A "Y-m-d" filter day interpreted in the seller's local timezone (created_at is stored in UTC),
+     * so a request made just after local midnight belongs to that local day. Invalid input is ignored.
+     */
+    private function vendorDay(string $value): ?Carbon
+    {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($value))) {
+            return null;
+        }
+
+        return Carbon::createFromFormat('!Y-m-d', trim($value), Timezones::forCountry(auth('vendor')->user()?->vendor?->country));
     }
 
     private function exportMyRequests(Request $request): StreamedResponse
@@ -230,7 +245,7 @@ class PackagingSupplyController extends Controller
 
         abort_unless($packagingSupplyRequest->vendor_id === $vendor->vendor_id, 403);
 
-        $packagingSupplyRequest->load(['items.supply', 'warehouse']);
+        $packagingSupplyRequest->load(['items.supply.supplyType', 'warehouse']);
 
         return view('partner.packaging-supplies.show-request', ['req' => $packagingSupplyRequest]);
     }

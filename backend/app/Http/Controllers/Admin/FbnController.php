@@ -6,7 +6,9 @@ use App\Enums\FbnInboundRequestStatus;
 use App\Enums\FbnStorageFeeStatus;
 use App\Enums\InventoryMovementReferenceType;
 use App\Enums\MarketplaceShippingRuleCommissionType;
+use App\Exceptions\StorageFeeStatusChangeException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\SaveStorageFeeFreePeriodRuleRequest;
 use App\Jobs\GenerateFbnStorageFeesJob;
 use App\Models\FbnInboundRequest;
 use App\Models\FbnStorageFee;
@@ -14,7 +16,10 @@ use App\Models\MarketplaceShippingRule;
 use App\Models\StorageFeeFreePeriodRule;
 use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
+use App\Services\Fbn\StorageFeeRecalculationService;
+use App\Services\Fbn\StorageFeeStatusService;
 use App\Services\Inventory\InventoryService;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,7 +27,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class FbnController extends Controller
@@ -78,29 +82,27 @@ class FbnController extends Controller
             $query->where('fbn_inbound_requests.warehouse_id', $request->warehouse_id);
         }
 
-        return $this->dataTableResponse($request, $query, [
-            'searchable_columns' => [
-                'fbn_inbound_requests.request_number',
-                'vendors.store_name',
-                'fbn_inbound_requests.tracking_number',
-            ],
-            'orderable_column' => 'fbn_inbound_requests.created_at',
-        ], function ($row) {
+        return $this->dataTableResponse($request, $query, $this->datatableColumns([
+            'fbn_inbound_requests.request_number',
+            'vendors.store_name',
+            'fbn_inbound_requests.tracking_number',
+            'warehouses.name',
+        ], 8, 'fbn_inbound_requests.created_at'), function ($row) {
             $product = $row->vendorListing?->productVariant?->product;
             $statusBadge = '<span class="badge badge-'.$row->statusColor().'">'.$row->statusLabel().'</span>';
 
             $actions = '<div class="flex gap-1 flex-wrap">';
             if ($row->canBeApproved()) {
-                $actions .= '<button class="btn btn-xs btn-success btn-approve-inbound" data-id="'.$row->id.'">Approve</button>';
+                $actions .= '<button class="btn btn-xs btn-success btn-approve-inbound" data-id="'.$row->id.'">'.e(__('admin.fbn_section.action_approve')).'</button>';
             }
             if ($row->canBeRejected()) {
-                $actions .= '<button class="btn btn-xs btn-danger btn-reject-inbound" data-id="'.$row->id.'" data-number="'.$row->request_number.'">Reject</button>';
+                $actions .= '<button class="btn btn-xs btn-danger btn-reject-inbound" data-id="'.$row->id.'" data-number="'.$row->request_number.'">'.e(__('admin.fbn_section.action_reject')).'</button>';
             }
             if ($row->canMarkShipped()) {
-                $actions .= '<button class="btn btn-xs btn-primary btn-update-tracking" data-id="'.$row->id.'">Tracking</button>';
+                $actions .= '<button class="btn btn-xs btn-primary btn-update-tracking" data-id="'.$row->id.'">'.e(__('admin.fbn_section.action_tracking')).'</button>';
             }
             if ($row->canMarkReceived()) {
-                $actions .= '<button class="btn btn-xs btn-success btn-mark-received" data-id="'.$row->id.'" data-max="'.$row->quantity_requested.'">Receive</button>';
+                $actions .= '<button class="btn btn-xs btn-success btn-mark-received" data-id="'.$row->id.'" data-max="'.$row->quantity_requested.'">'.e(__('admin.fbn_section.action_receive')).'</button>';
             }
             $actions .= '</div>';
 
@@ -266,7 +268,7 @@ class FbnController extends Controller
             ->select([
                 'fbn_storage_fees.*',
                 'vendors.store_name as vendor_name',
-                'products.name_en as product_name',
+                Bilingual::column('products.name', null, 'product_name'),
             ])
             ->join('vendors', 'vendors.id', '=', 'fbn_storage_fees.vendor_id')
             ->leftJoin('warehouse_inventories', 'warehouse_inventories.id', '=', 'fbn_storage_fees.warehouse_inventory_id')
@@ -281,15 +283,23 @@ class FbnController extends Controller
             $query->whereDate('fbn_storage_fees.month', $request->month);
         }
 
-        return $this->dataTableResponse($request, $query, [
-            'searchable_columns' => ['vendors.store_name', 'products.name_en'],
-            'orderable_column' => 'fbn_storage_fees.month',
-        ], function ($row) {
-            $actions = '';
-            if ($row->status === FbnStorageFeeStatus::Pending) {
-                $actions = '<button class="btn btn-xs btn-primary btn-mark-invoiced" data-id="'.$row->id.'">Mark Invoiced</button>';
-            } elseif ($row->status === FbnStorageFeeStatus::Invoiced) {
-                $actions = '<button class="btn btn-xs btn-success btn-mark-fee-paid" data-id="'.$row->id.'">Mark Paid</button>';
+        $canRevert = (bool) $request->user('admin')?->can(StorageFeeStatusService::REVERT_PERMISSION);
+
+        return $this->dataTableResponse($request, $query, $this->datatableColumns(
+            ['vendors.store_name', 'products.name_en', 'products.name_ar'],
+            2,
+            'fbn_storage_fees.month',
+        ), function ($row) use ($canRevert) {
+            $actions = match ($row->status) {
+                FbnStorageFeeStatus::Pending => '<button class="btn btn-xs btn-primary btn-mark-invoiced" data-id="'.$row->id.'">'.e(__('admin.fbn_section.mark_invoiced')).'</button>',
+                FbnStorageFeeStatus::Invoiced => '<button class="btn btn-xs btn-success btn-mark-fee-paid" data-id="'.$row->id.'">'.e(__('admin.fbn_section.mark_paid')).'</button>',
+                default => '',
+            };
+            if ($canRevert && $row->status !== FbnStorageFeeStatus::Pending) {
+                $revertLabel = $row->status === FbnStorageFeeStatus::Paid
+                    ? __('admin.fbn_section.revert_to_invoiced')
+                    : __('admin.fbn_section.revert_to_pending');
+                $actions .= ' <button class="btn btn-xs btn-ghost btn-revert-fee" data-id="'.$row->id.'" data-label="'.e($revertLabel).'">'.e($revertLabel).'</button>';
             }
 
             return [
@@ -325,7 +335,7 @@ class FbnController extends Controller
         return response()->json($status ?? ['state' => 'unknown']);
     }
 
-    public function updateStorageFeeStatus(Request $request, FbnStorageFee $fee): JsonResponse
+    public function updateStorageFeeStatus(Request $request, FbnStorageFee $fee, StorageFeeStatusService $statusService): JsonResponse
     {
         $data = $request->validate([
             'status' => ['required', Rule::enum(FbnStorageFeeStatus::class)->only([
@@ -334,18 +344,34 @@ class FbnController extends Controller
             ])],
         ]);
 
-        $newStatus = FbnStorageFeeStatus::from($data['status']);
-
-        if ($newStatus === FbnStorageFeeStatus::Invoiced && $fee->status !== FbnStorageFeeStatus::Pending) {
-            return response()->json(['success' => false, 'message' => 'Only pending fees can be marked invoiced.'], 422);
-        }
-        if ($newStatus === FbnStorageFeeStatus::Paid && $fee->status !== FbnStorageFeeStatus::Invoiced) {
-            return response()->json(['success' => false, 'message' => 'Only invoiced fees can be marked paid.'], 422);
+        try {
+            $statusService->advance($fee, FbnStorageFeeStatus::from($data['status']), $request->user('admin'));
+        } catch (StorageFeeStatusChangeException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
-        $fee->update(['status' => $newStatus]);
+        return response()->json(['success' => true, 'message' => __('admin.fbn_section.status_updated')]);
+    }
 
-        return response()->json(['success' => true, 'message' => 'Storage fee status updated.']);
+    public function revertStorageFeeStatus(Request $request, FbnStorageFee $fee, StorageFeeStatusService $statusService): JsonResponse
+    {
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:1000'],
+        ], [], [
+            'reason' => __('admin.fbn_section.revert_reason'),
+        ]);
+
+        try {
+            $fee = $statusService->revert($fee, $data['reason'], $request->user('admin'));
+        } catch (StorageFeeStatusChangeException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('admin.fbn_section.status_reverted', ['status' => $fee->status->label()]),
+            'status' => $fee->status->value,
+        ]);
     }
 
     public function generateMonthlyFees(Request $request): JsonResponse
@@ -358,7 +384,7 @@ class FbnController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Storage fee generation job queued for '.$data['month'].'.',
+            'message' => __('admin.fbn_section.generation_queued', ['month' => $data['month']]),
         ]);
     }
 
@@ -368,7 +394,7 @@ class FbnController extends Controller
 
     public function freePeriodRulesIndex(): View
     {
-        $rules = StorageFeeFreePeriodRule::orderBy('min_weight_grams')->get();
+        $rules = StorageFeeFreePeriodRule::orderBy('min_weight_grams')->orderBy('effective_from')->get();
 
         return view('admin.fbn.storage-fees.free-period-rules', [
             'breadcrumbs' => [
@@ -381,66 +407,62 @@ class FbnController extends Controller
         ]);
     }
 
-    public function storeFreePeriodRule(Request $request): JsonResponse
+    public function storeFreePeriodRule(SaveStorageFeeFreePeriodRuleRequest $request, StorageFeeRecalculationService $recalculation): JsonResponse
     {
-        $data = $request->validate([
-            'min_weight_grams' => ['required', 'integer', 'min:0'],
-            'max_weight_grams' => ['nullable', 'integer', 'gt:min_weight_grams'],
-            'free_days' => ['required', 'integer', 'min:0'],
+        $rule = StorageFeeFreePeriodRule::create($request->ruleAttributes());
+
+        return response()->json([
+            'success' => true,
+            'message' => __('admin.fbn_section.rule_saved'),
+            'id' => $rule->id,
+            'pending_impact' => $recalculation->preview(),
         ]);
-
-        $this->assertNoFreePeriodRuleOverlap($data);
-
-        $rule = StorageFeeFreePeriodRule::create($data);
-
-        return response()->json(['success' => true, 'message' => 'Free period rule created.', 'id' => $rule->id]);
     }
 
-    public function updateFreePeriodRule(Request $request, StorageFeeFreePeriodRule $freePeriodRule): JsonResponse
+    public function updateFreePeriodRule(SaveStorageFeeFreePeriodRuleRequest $request, StorageFeeFreePeriodRule $freePeriodRule, StorageFeeRecalculationService $recalculation): JsonResponse
     {
-        $data = $request->validate([
-            'min_weight_grams' => ['required', 'integer', 'min:0'],
-            'max_weight_grams' => ['nullable', 'integer', 'gt:min_weight_grams'],
-            'free_days' => ['required', 'integer', 'min:0'],
+        $freePeriodRule->update($request->ruleAttributes($freePeriodRule));
+
+        return response()->json([
+            'success' => true,
+            'message' => __('admin.fbn_section.rule_saved'),
+            'pending_impact' => $recalculation->preview(),
         ]);
-
-        $this->assertNoFreePeriodRuleOverlap($data, $freePeriodRule->id);
-
-        $freePeriodRule->update($data);
-
-        return response()->json(['success' => true, 'message' => 'Free period rule updated.']);
     }
 
-    public function destroyFreePeriodRule(StorageFeeFreePeriodRule $freePeriodRule): JsonResponse
+    public function destroyFreePeriodRule(StorageFeeFreePeriodRule $freePeriodRule, StorageFeeRecalculationService $recalculation): JsonResponse
     {
         $freePeriodRule->delete();
 
-        return response()->json(['success' => true, 'message' => 'Free period rule deleted.']);
+        return response()->json([
+            'success' => true,
+            'message' => __('admin.fbn_section.rule_deleted'),
+            'pending_impact' => $recalculation->preview(),
+        ]);
     }
 
     /**
-     * @param  array{min_weight_grams: int, max_weight_grams: ?int}  $data
+     * How many PENDING fees the current rules would re-price (never invoiced/paid).
      */
-    protected function assertNoFreePeriodRuleOverlap(array $data, ?string $excludeId = null): void
+    public function freePeriodRulesPendingImpact(StorageFeeRecalculationService $recalculation): JsonResponse
     {
-        $min = $data['min_weight_grams'];
-        $max = $data['max_weight_grams'] ?? null;
+        return response()->json(['success' => true, 'pending_impact' => $recalculation->preview()]);
+    }
 
-        $query = StorageFeeFreePeriodRule::query()
-            ->where('min_weight_grams', '<=', $max ?? PHP_INT_MAX)
-            ->where(function ($q) use ($min) {
-                $q->whereNull('max_weight_grams')->orWhere('max_weight_grams', '>=', $min);
-            });
+    /**
+     * Explicit, admin-confirmed re-pricing of PENDING fees under the current rules.
+     */
+    public function recalculatePendingStorageFees(Request $request, StorageFeeRecalculationService $recalculation): JsonResponse
+    {
+        $request->validate(['confirm' => ['accepted']]);
 
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
+        $summary = $recalculation->recalculate($request->user('admin'));
 
-        if ($query->exists()) {
-            throw ValidationException::withMessages([
-                'min_weight_grams' => 'This weight range overlaps with an existing rule.',
-            ]);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => __('admin.fbn_section.pending_recalculated', ['count' => $summary['count']]),
+            'summary' => $summary,
+        ]);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -481,22 +503,23 @@ class FbnController extends Controller
             $query->where('marketplace_shipping_rules.commission_type', $request->commission_type);
         }
 
-        return $this->dataTableResponse($request, $query, [
-            'searchable_columns' => ['vendors.store_name'],
-            'orderable_column' => 'marketplace_shipping_rules.created_at',
-        ], function ($row) {
+        return $this->dataTableResponse($request, $query, $this->datatableColumns(
+            ['vendors.store_name'],
+            0,
+            'marketplace_shipping_rules.created_at',
+        ), function ($row) {
             $product = $row->vendorListing?->productVariant?->product;
             $flags = '';
             if ($row->requires_special_vehicle) {
-                $flags .= '<span class="badge badge-warning text-xs me-1">Special Vehicle</span>';
+                $flags .= '<span class="badge badge-warning text-xs me-1">'.e(__('admin.fbn_section.flag_special_vehicle')).'</span>';
             }
             if ($row->requires_refrigeration) {
-                $flags .= '<span class="badge badge-primary text-xs me-1">Refrigerated</span>';
+                $flags .= '<span class="badge badge-primary text-xs me-1">'.e(__('admin.fbn_section.flag_refrigerated')).'</span>';
             }
 
             $actions = '<div class="flex gap-1">'
-                .'<button class="btn btn-xs btn-ghost btn-edit-rule" data-rule=\''.htmlspecialchars(json_encode($row), ENT_QUOTES).'\'>Edit</button>'
-                .'<button class="btn btn-xs btn-danger btn-delete-rule" data-id="'.$row->id.'">Del</button>'
+                .'<button class="btn btn-xs btn-ghost btn-edit-rule" data-rule=\''.htmlspecialchars(json_encode($row), ENT_QUOTES).'\'>'.e(__('admin.fbn_section.action_edit')).'</button>'
+                .'<button class="btn btn-xs btn-danger btn-delete-rule" data-id="'.$row->id.'">'.e(__('admin.fbn_section.action_delete')).'</button>'
                 .'</div>';
 
             return [
@@ -558,5 +581,21 @@ class FbnController extends Controller
         $rule->delete();
 
         return response()->json(['success' => true, 'message' => 'Marketplace rule deleted.']);
+    }
+
+    /**
+     * Column map for the FBN DataTables: HasDataTable expects one definition per
+     * column index, so the global search columns sit on the first column and the
+     * sort column on the index the table orders by.
+     *
+     * @param  array<int, string>  $searchableColumns
+     * @return array<int, array<string, mixed>>
+     */
+    private function datatableColumns(array $searchableColumns, int $orderIndex, string $orderColumn): array
+    {
+        $columns = [0 => ['searchable_columns' => $searchableColumns]];
+        $columns[$orderIndex] = ($columns[$orderIndex] ?? []) + ['orderable_column' => $orderColumn];
+
+        return $columns;
     }
 }

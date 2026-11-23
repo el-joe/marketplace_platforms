@@ -4,7 +4,7 @@
     @vite(['resources/js/components/datatable.js', 'resources/js/components/column-renderers.js', 'resources/js/admin/countries.js'])
 @endpush
 
-@section('title', __('admin.geography.edit_country_title', ['name' => $country->name_en]))
+@section('title', __('admin.geography.edit_country_title', ['name' => localized($country)]))
 
 @section('content')
     <form id="country-form" method="POST" action="{{ route('admin.countries.update', $country->id) }}" novalidate>

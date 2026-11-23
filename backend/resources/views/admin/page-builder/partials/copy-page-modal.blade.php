@@ -12,7 +12,7 @@
                 @foreach($countries as $c)
                     <label class="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-gray-50" data-country-id="{{ $c->id }}">
                         <input type="checkbox" name="country_ids[]" value="{{ $c->id }}" class="rounded border-gray-300">
-                        <span>{{ $c->name_en }} ({{ $c->site_code ?? '—' }})</span>
+                        <span>{{ localized($c) }} ({{ $c->site_code ?? '—' }})</span>
                     </label>
                 @endforeach
             </div>

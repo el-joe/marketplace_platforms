@@ -11,6 +11,7 @@ use App\Notifications\Customer\WarrantyClaimResolvedNotification;
 use App\Notifications\Customer\WarrantyClaimStatusChanged;
 use App\Services\WalletService;
 use App\Services\WarrantyClaimResolutionService;
+use App\Support\Bilingual;
 use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
@@ -120,7 +121,7 @@ class WarrantyClaimController extends Controller
             ->select(
                 'warranty_claims.*',
                 'customers.name as customer_name',
-                'products.name_en as product_name',
+                Bilingual::column('products.name', null, 'product_name'),
                 'vendors.store_name as vendor_store_name',
                 'orders.order_number as order_number'
             );

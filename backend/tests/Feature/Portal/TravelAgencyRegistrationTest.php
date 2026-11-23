@@ -20,9 +20,10 @@ class TravelAgencyRegistrationTest extends TestCase
         $this->withSession(['locale' => 'ar']);
     }
 
+    /** A launched country: only countries open to vendors can be chosen to register (#23). */
     private function activeCountry(): Country
     {
-        return Country::factory()->create(['is_active' => true]);
+        return Country::factory()->create(['is_active' => true, 'is_launched' => true]);
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Country;
 use App\Models\WarrantyPlan;
 use App\Models\WarrantyPurchase;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -43,7 +44,7 @@ class WarrantyPlanController extends Controller
     {
         $columns = [
             ['title' => 'ID', 'data' => 'id', 'name' => 'id', 'orderable_column' => 'warranty_plans.id'],
-            ['title' => 'Name (EN)', 'data' => 'name_en', 'name' => 'name_en', 'orderable_column' => 'warranty_plans.name_en', 'searchable_columns' => ['warranty_plans.name_en']],
+            ['title' => 'Name (EN)', 'data' => 'name', 'name' => 'name', 'orderable_column' => Bilingual::column('warranty_plans.name'), 'searchable_columns' => ['warranty_plans.name_en', 'warranty_plans.name_ar']],
             ['title' => 'Category', 'data' => 'category_path', 'name' => 'category_path', 'orderable' => false, 'searchable' => false],
             ['title' => 'Duration', 'data' => 'duration_months', 'name' => 'duration_months', 'orderable_column' => 'warranty_plans.duration_months', 'searchable' => false],
             ['title' => 'Price', 'data' => 'price_display', 'name' => 'price_display', 'orderable_column' => 'warranty_plans.price', 'searchable' => false],
@@ -56,6 +57,7 @@ class WarrantyPlanController extends Controller
             ->select([
                 'warranty_plans.id',
                 'warranty_plans.name_en',
+                'warranty_plans.name_ar',
                 'warranty_plans.category_id',
                 'warranty_plans.duration_months',
                 'warranty_plans.price',
@@ -73,6 +75,7 @@ class WarrantyPlanController extends Controller
         return $this->dataTableResponse($request, $query, $columns, function (WarrantyPlan $plan) {
             return [
                 'id' => $plan->id,
+                'name' => e(localized($plan)),
                 'name_en' => e($plan->name_en),
                 'category_path' => e($this->categoryBreadcrumb($plan->category)),
                 'duration_months' => (int) $plan->duration_months,
@@ -260,7 +263,7 @@ class WarrantyPlanController extends Controller
             ->where('is_active', true)
             ->whereNull('deleted_at')
             ->orderBy('lft')
-            ->get(['id', 'name_en', 'depth']);
+            ->get(['id', 'name_en', 'name_ar', 'depth']);
     }
 
     private function categoryBreadcrumb(?Category $category): string
@@ -269,7 +272,7 @@ class WarrantyPlanController extends Controller
             return '';
         }
 
-        $names = $category->ancestors()->get(['name_en'])->pluck('name_en')->push($category->name_en);
+        $names = $category->ancestors()->get(['name_en', 'name_ar'])->map(fn (Category $ancestor) => localized($ancestor))->push(localized($category));
 
         return $names->implode(' / ');
     }

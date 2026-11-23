@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Jobs\LaunchCountryJob;
 use App\Models\Admin;
 use App\Models\Country;
-use App\Jobs\LaunchCountryJob;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -22,11 +22,11 @@ class CountryService
     {
         $errors = [];
 
-        if (!$country->countryPaymentGateways()->where('is_active', true)->exists()) {
+        if (! $country->countryPaymentGateways()->where('is_active', true)->exists()) {
             $errors[] = 'No active payment gateway configured for this country.';
         }
 
-        if (!$country->countryShippingSettings()->where('is_active', true)->exists()) {
+        if (! $country->countryShippingSettings()->where('is_active', true)->exists()) {
             $errors[] = 'No active shipping method configured for this country.';
         }
 
@@ -56,7 +56,7 @@ class CountryService
 
         $errors = $this->validateForLaunch($country);
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             throw new \RuntimeException(implode(' | ', $errors));
         }
 
@@ -111,6 +111,60 @@ class CountryService
         );
     }
 
+    /**
+     * Move a launched (live or hidden) country back to Draft: it leaves the
+     * storefront and, unless it accepts vendors before launch, every vendor
+     * picker. Products, listings and settings are kept so it can be launched
+     * again. Returns false (and logs nothing) when it already is a draft.
+     */
+    public function revertToDraft(Country $country, ?string $adminId = null): bool
+    {
+        if (! $country->is_launched) {
+            return false;
+        }
+
+        DB::transaction(function () use ($country, $adminId): void {
+            $previous = [
+                'was_active' => (bool) $country->is_active,
+                'launched_at' => $country->launched_at?->toIso8601String(),
+            ];
+
+            $country->update([
+                'is_launched' => false,
+                'is_active' => true,
+                'launched_at' => null,
+            ]);
+
+            $this->logActivity(
+                country: $country,
+                description: 'country_reverted_to_draft',
+                event: 'reverted_to_draft',
+                adminId: $adminId,
+                properties: $previous,
+            );
+        });
+
+        return true;
+    }
+
+    /**
+     * Log a change of the "accept vendor registrations / listings before launch" switch.
+     */
+    public function logVendorAccessChange(Country $country, bool $old, bool $new, ?string $adminId = null): void
+    {
+        if ($old === $new) {
+            return;
+        }
+
+        $this->logActivity(
+            country: $country,
+            description: 'vendor_access_before_launch_changed',
+            event: 'updated',
+            adminId: $adminId,
+            properties: ['old_accepts_vendors_before_launch' => $old, 'new_accepts_vendors_before_launch' => $new],
+        );
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Deletion guard
     // ─────────────────────────────────────────────────────────────────────────
@@ -121,7 +175,7 @@ class CountryService
      */
     public function canDelete(Country $country): bool
     {
-        return !DB::table('orders')
+        return ! DB::table('orders')
             ->join('customers', 'customers.id', '=', 'orders.customer_id')
             ->where('customers.country_id', $country->id)
             ->whereNull('orders.deleted_at')

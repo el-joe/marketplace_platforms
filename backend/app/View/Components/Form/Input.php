@@ -2,12 +2,15 @@
 
 namespace App\View\Components\Form;
 
+use Illuminate\Support\Facades\Session;
 use Illuminate\View\Component;
 
 class Input extends Component
 {
     public string $id;
+
     public string $inputClasses;
+
     public bool $hasError;
 
     public function __construct(
@@ -24,15 +27,17 @@ class Input extends Component
         public ?string $suffix = null,
         public ?int $maxlength = null,
         public string $extraClass = '',
+        ?string $id = null,
     ) {
-        $this->id = $name;
-        $this->hasError = \Illuminate\Support\Facades\Session::has('errors')
+        // An explicit id (used by page scripts, e.g. #rule-min-weight) wins over the name-derived default.
+        $this->id = $id ?: $name;
+        $this->hasError = Session::has('errors')
             ? session('errors')->has($name)
             : false;
 
         $base = 'block w-full rounded-lg border px-3 py-2 text-sm text-gray-900 '
-            . 'placeholder-gray-400 transition '
-            . 'focus:outline-none focus:ring-2 focus:ring-offset-0 ';
+            .'placeholder-gray-400 transition '
+            .'focus:outline-none focus:ring-2 focus:ring-offset-0 ';
 
         if ($this->hasError) {
             $base .= 'border-danger-500 focus:border-danger-500 focus:ring-danger-200 ';
@@ -46,7 +51,7 @@ class Input extends Component
             $base .= 'bg-white ';
         }
 
-        $this->inputClasses = trim($base . $extraClass);
+        $this->inputClasses = trim($base.$extraClass);
     }
 
     public function render()

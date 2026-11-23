@@ -12,7 +12,7 @@ export interface ICustomerProfile {
   email_verified: boolean;
   phone_verified: boolean;
   member_since: Date;
-  gender: "male" | "female";
+  gender: "male" | "female" | null;
   nationality: string;
   profile_completion: {
     percentage: number;

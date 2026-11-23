@@ -31,6 +31,7 @@ use App\Services\ProductService;
 use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\VariantSlugService;
 use App\Services\Vendor\ContractAssignmentService;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Database\Eloquent\Builder;
@@ -66,20 +67,14 @@ class ProductController extends Controller
             return $this->exportProducts($request);
         }
 
-        $categories = Category::query()
-            ->where('is_active', true)
-            ->orderBy('name_en')
-            ->pluck('name_en', 'id');
+        $categories = Bilingual::options(Category::query()->where('is_active', true));
 
-        $brands = Brand::query()
-            ->where('is_active', true)
-            ->orderBy('name_en')
-            ->pluck('name_en', 'id');
+        $brands = Bilingual::options(Brand::query()->where('is_active', true));
 
         return view('admin.products.index', [
             'breadcrumbs' => [
-                ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
-                ['label' => 'Products'],
+                ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
+                ['label' => __('admin.products.title')],
             ],
             'categories' => $categories,
             'brands' => $brands,
@@ -112,8 +107,10 @@ class ProductController extends Controller
                 'products.is_featured',
                 'products.total_sold',
                 'products.created_at',
-                'c.name_en as category_name',
-                'b.name_en as brand_name',
+                'c.name_en as category_name_en',
+                'c.name_ar as category_name_ar',
+                'b.name_en as brand_name_en',
+                'b.name_ar as brand_name_ar',
             ])
             ->addSelect([
                 'primary_image' => ProductImage::select('path')
@@ -144,8 +141,7 @@ class ProductController extends Controller
             'category_id' => fn ($q, $v) => $q->where('products.category_id', $v),
             'brand_id' => fn ($q, $v) => $q->where('products.brand_id', $v),
             'search' => fn ($q, $v) => $q->where(function ($sub) use ($v) {
-                $sub->where('products.name_en', 'like', "%{$v}%")
-                    ->orWhere('products.name_ar', 'like', "%{$v}%")
+                Bilingual::whereLike($sub, 'products.name', $v)
                     ->orWhereExists(function ($existsQuery) use ($v) {
                         $existsQuery->select(DB::raw(1))
                             ->from('product_variants')
@@ -194,10 +190,11 @@ class ProductController extends Controller
             return [
                 'id' => $row->id,
                 'image' => $row->primary_image ? Storage::url($row->primary_image) : null,
+                'name' => e(Bilingual::localized($row, 'name')),
                 'name_en' => e($row->name_en),
                 'name_ar' => e($row->name_ar ?? ''),
-                'category' => e($row->category_name ?? '—'),
-                'brand' => e($row->brand_name ?? '—'),
+                'category' => e(Bilingual::localized($row, 'category_name') ?: '—'),
+                'brand' => e(Bilingual::localized($row, 'brand_name') ?: '—'),
                 'status' => $row->status?->value,
                 'is_hidden' => (bool) $row->is_hidden,
                 'is_featured' => (bool) $row->is_featured,
@@ -231,7 +228,7 @@ class ProductController extends Controller
             abort_unless($request->user('admin')?->can(ProductRequestService::REVIEW_PERMISSION), 403);
 
             $productRequest = ProductRequest::query()
-                ->with(['vendor:id,store_name', 'marketer:id,name', 'category:id,name_en', 'brand:id,name_en'])
+                ->with(['vendor:id,store_name', 'marketer:id,name', 'category:id,name_en,name_ar', 'brand:id,name_en,name_ar'])
                 ->find((string) $request->query('product_request'));
 
             if (! $productRequest || ! $productRequest->isPending()) {
@@ -247,9 +244,9 @@ class ProductController extends Controller
                 'name_en' => $productRequest->name_en,
                 'name_ar' => $productRequest->name_ar,
                 'category_id' => $productRequest->category_id,
-                'category_label' => $productRequest->category?->name_en,
+                'category_label' => localized($productRequest->category) ?: null,
                 'brand_id' => $productRequest->brand_id,
-                'brand_label' => $productRequest->brand?->name_en,
+                'brand_label' => localized($productRequest->brand) ?: null,
                 'gtin' => $productRequest->gtin,
                 'model_number' => $productRequest->model_number,
                 'description_en' => $description,
@@ -438,14 +435,14 @@ class ProductController extends Controller
                 ->join('attributes as a', 'a.id', '=', 'ca.attribute_id')
                 ->where('ca.category_id', $productData->category_id)
                 ->where('a.is_variant_attribute', true)
-                ->select('a.id', 'a.name_en')
+                ->select('a.id', 'a.name_en', 'a.name_ar')
                 ->orderBy('a.sort_order')
                 ->get();
 
             $valuesByAttr = DB::table('attribute_values')
                 ->whereIn('attribute_id', $categoryAttributes->pluck('id'))
                 ->orderBy('sort_order')
-                ->get(['id', 'attribute_id', 'value_en'])
+                ->get(['id', 'attribute_id', 'value_en', 'value_ar'])
                 ->groupBy('attribute_id');
 
             $categoryAttributes->each(function ($attr) use ($valuesByAttr) {
@@ -478,9 +475,9 @@ class ProductController extends Controller
 
         return view('admin.products.edit', array_merge($this->formData(), [
             'breadcrumbs' => [
-                ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
-                ['label' => 'Products', 'url' => route('admin.products.index')],
-                ['label' => $productData->name_en],
+                ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
+                ['label' => __('admin.products.title'), 'url' => route('admin.products.index')],
+                ['label' => localized($productData)],
             ],
             'product' => $productData,
             'variants' => $variants,
@@ -712,6 +709,13 @@ class ProductController extends Controller
 
         $ids = $request->input('ids');
         $action = $request->input('action');
+
+        $requiredPermission = match ($action) {
+            'delete' => 'products.delete',
+            'publish', 'archive' => 'products.publish',
+            default => 'products.edit',
+        };
+        abort_unless($request->user('admin')?->can($requiredPermission), 403);
 
         switch ($action) {
             case 'delete':
@@ -1219,12 +1223,12 @@ class ProductController extends Controller
     {
         $items = Product::findOrFail($product)
             ->frequentlyBoughtTogether()
-            ->get(['products.id', 'products.name_en']);
+            ->get(['products.id', 'products.name_en', 'products.name_ar']);
 
         return response()->json([
             'results' => $items->map(fn ($item) => [
                 'id' => $item->id,
-                'text' => $item->name_en,
+                'text' => Bilingual::localized($item, 'name'),
                 'position' => $item->pivot->position,
             ])->values(),
         ]);
@@ -1240,12 +1244,12 @@ class ProductController extends Controller
             ->where('id', '!=', $product)
             ->whereNotIn('id', $existingIds)
             ->whereNull('deleted_at')
-            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => Bilingual::whereLike($query, 'name', $q))
             ->limit(20)
-            ->get(['id', 'name_en']);
+            ->get(['id', 'name_en', 'name_ar']);
 
         return response()->json([
-            'results' => $rows->map(fn ($p) => ['id' => $p->id, 'text' => $p->name_en])->values(),
+            'results' => $rows->map(fn ($p) => ['id' => $p->id, 'text' => Bilingual::localized($p, 'name')])->values(),
         ]);
     }
 
@@ -1270,7 +1274,7 @@ class ProductController extends Controller
         $related = Product::findOrFail($data['related_product_id']);
 
         return response()->json([
-            'item' => ['id' => $related->id, 'text' => $related->name_en, 'position' => $nextPosition],
+            'item' => ['id' => $related->id, 'text' => Bilingual::localized($related, 'name'), 'position' => $nextPosition],
         ]);
     }
 
@@ -1305,15 +1309,9 @@ class ProductController extends Controller
     private function formData(): array
     {
         $data = [
-            'categories' => Category::query()
-                ->where('is_active', true)
-                ->orderBy('name_en')
-                ->pluck('name_en', 'id'),
+            'categories' => Bilingual::options(Category::query()->where('is_active', true)),
 
-            'brands' => Brand::query()
-                ->where('is_active', true)
-                ->orderBy('name_en')
-                ->pluck('name_en', 'id'),
+            'brands' => Bilingual::options(Brand::query()->where('is_active', true)),
 
             'countries' => Country::query()
                 ->where('is_active', true)
@@ -1697,9 +1695,9 @@ class ProductController extends Controller
     {
         return [
             ['title' => '', 'data' => 'image', 'name' => 'image', 'orderable' => false, 'searchable' => false, 'className' => 'w-12 px-2'],
-            ['title' => 'Name', 'data' => 'name_en', 'name' => 'name_en', 'searchable_columns' => ['products.name_en', 'products.name_ar'], 'orderable_column' => 'products.name_en'],
-            ['title' => 'Category', 'data' => 'category', 'name' => 'category', 'orderable_column' => 'c.name_en', 'searchable' => false],
-            ['title' => 'Brand', 'data' => 'brand', 'name' => 'brand', 'orderable_column' => 'b.name', 'searchable' => false],
+            ['title' => 'Name', 'data' => 'name', 'name' => 'name', 'searchable_columns' => ['products.name_en', 'products.name_ar'], 'orderable_column' => Bilingual::column('products.name')],
+            ['title' => 'Category', 'data' => 'category', 'name' => 'category', 'orderable_column' => Bilingual::column('c.name'), 'searchable' => false],
+            ['title' => 'Brand', 'data' => 'brand', 'name' => 'brand', 'orderable_column' => Bilingual::column('b.name'), 'searchable' => false],
             ['title' => 'Status', 'data' => 'status', 'name' => 'status', 'orderable_column' => 'products.status', 'searchable' => false],
             ['title' => 'Hidden', 'data' => 'is_hidden', 'name' => 'is_hidden', 'orderable' => false, 'searchable' => false],
             ['title' => 'Individual contract', 'data' => 'contract', 'name' => 'contract', 'orderable' => false, 'searchable' => false],

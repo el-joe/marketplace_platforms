@@ -8,7 +8,7 @@
     @vite('resources/js/admin/flash-sale-detail.js')
 @endpush
 
-@section('title', __('admin.flash_sales.title') . ': ' . $flashSale->name_en)
+@section('title', __('admin.flash_sales.title') . ': ' . localized($flashSale))
 
 @section('content')
     @php
@@ -380,7 +380,7 @@
                         <div class="grid grid-cols-1 gap-y-4 sm:grid-cols-2 text-sm">
                             <div>
                                 <p class="text-gray-500 text-xs mb-0.5">{{ __('admin.flash_sales.name_en') }}</p>
-                                <p class="font-medium text-gray-900">{{ $flashSale->name_en }}</p>
+                                <p class="font-medium text-gray-900">{{ localized($flashSale) }}</p>
                             </div>
                             <div>
                                 <p class="text-gray-500 text-xs mb-0.5">{{ __('admin.flash_sales.name_ar') }}</p>
@@ -478,7 +478,7 @@
         <div class="w-full lg:w-80 flex-shrink-0 space-y-4 lg:sticky lg:top-20">
 
             {{-- Summary card --}}
-            <x-card title="{{ $flashSale->name_en }}">
+            <x-card title="{{ localized($flashSale) }}">
                 <div class="space-y-2 text-sm">
                     <div class="flex justify-between items-center">
                         <span class="text-gray-500">{{ __('admin.status') }}</span>
@@ -488,7 +488,7 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">{{ __('admin.country') }}</span>
-                        <span class="text-gray-700">{{ $flashSale->country?->name_en ?? __('common.all') }}</span>
+                        <span class="text-gray-700">{{ localized($flashSale->country) ?: __('common.all') }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500">{{ __('admin.flash_sales.approved_slots') }}</span>
@@ -698,7 +698,7 @@
     <x-modal id="cancel-modal" title="{{ __('admin.flash_sales.cancel_flash_sale') }}" size="sm">
         <div class="space-y-3">
             <p class="text-sm text-gray-600">
-                {{ __('admin.flash_sales.cancel_confirm', ['name' => $flashSale->name_en]) }}
+                {{ __('admin.flash_sales.cancel_confirm', ['name' => localized($flashSale)]) }}
             </p>
             <div>
                 <label class="form-label">{{ __('admin.flash_sales.cancellation_reason') }}</label>

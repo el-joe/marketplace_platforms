@@ -80,7 +80,7 @@
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                     @if($selectedVariant)
                         <option value="{{ $selectedVariant->id }}" selected>
-                            {{ $selectedVariant->product?->name_en }} ({{ $selectedVariant->variant_name }}) [{{ $selectedVariant->slug }}] — {{ $selectedVariant->sku }}
+                            {{ localized($selectedVariant->product) }} ({{ $selectedVariant->variant_name }}) [{{ $selectedVariant->slug }}] — {{ $selectedVariant->sku }}
                         </option>
                     @elseif(old('product_variant_id'))
                         {{-- Restore after validation failure — variant UUID preserved via old() --}}
@@ -108,7 +108,7 @@
                     <option value="">{{ __('admin.admin_listings.select_country') }}</option>
                     @foreach($countries as $country)
                         <option value="{{ $country->id }}" {{ $val('country_id') === $country->id ? 'selected' : '' }}>
-                            {{ $country->name_en }}
+                            {{ localized($country) }}
                         </option>
                     @endforeach
                 </select>

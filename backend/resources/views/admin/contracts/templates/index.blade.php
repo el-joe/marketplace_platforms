@@ -47,7 +47,12 @@
         </div>
     @endif
 
-    <form method="GET" class="flex flex-wrap items-end gap-3 rounded-xl border bg-white p-4 text-sm">
+    <form method="GET" class="flex flex-wrap items-end gap-3 rounded-xl border bg-white p-4 text-sm" role="search">
+        <div class="min-w-[12rem]">
+            <label for="contract-template-search" class="mb-1 block text-xs text-gray-600">{{ __('common.search') }}</label>
+            <input id="contract-template-search" type="search" name="search" value="{{ request('search') }}" class="form-input text-sm w-full"
+                placeholder="{{ __('admin.list_search.contract_templates') }}">
+        </div>
         <div>
             <label class="mb-1 block text-xs text-gray-600">{{ __('admin.contracts.col_scope') }}</label>
             <select name="scope" class="form-input text-sm">

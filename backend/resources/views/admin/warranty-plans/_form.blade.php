@@ -44,7 +44,7 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-xl font-semibold text-gray-900">
-                {{ $isEdit ? e($plan->name_en) : __('admin.warranty_plans.new_plan') }}
+                {{ $isEdit ? e(localized($plan)) : __('admin.warranty_plans.new_plan') }}
             </h1>
         </div>
     </div>
@@ -167,7 +167,7 @@
                             <option value="">{{ __('admin.warranty_plans.category') }}</option>
                             @foreach ($categories as $cat)
                                 <option value="{{ $cat->id }}" {{ (string) $val('category_id') === (string) $cat->id ? 'selected' : '' }}>
-                                    {{ str_repeat('— ', $cat->depth ?? 0) . $cat->name_en }}
+                                    {{ str_repeat('— ', $cat->depth ?? 0) . localized($cat) }}
                                 </option>
                             @endforeach
                         </select>
@@ -280,7 +280,7 @@
                         <select id="country_ids" name="country_ids[]" data-select2-init multiple class="input w-full">
                             @foreach ($countries as $country)
                                 <option value="{{ $country->id }}" {{ in_array($country->id, $selectedCountryIds ?? []) ? 'selected' : '' }}>
-                                    {{ $country->name_en }}
+                                    {{ localized($country) }}
                                 </option>
                             @endforeach
                         </select>

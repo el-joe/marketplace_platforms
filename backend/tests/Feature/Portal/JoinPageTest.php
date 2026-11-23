@@ -23,9 +23,10 @@ class JoinPageTest extends TestCase
         $this->withSession(['locale' => 'ar']);
     }
 
+    /** A launched country: only countries open to vendors can be chosen to register (#23). */
     private function activeCountry(): Country
     {
-        return Country::factory()->create(['is_active' => true]);
+        return Country::factory()->create(['is_active' => true, 'is_launched' => true]);
     }
 
     private function activeClassifiedCategory(): ClassifiedCategory
@@ -57,8 +58,11 @@ class JoinPageTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('بائع منتجات');
-        $response->assertSee('السوق المفتوح');
-        $response->assertSee('وكالة سفر');
+        $response->assertSee('الإعلانات المبوبة');
+        // Travel is offered under Classifieds instead of a card of its own.
+        $response->assertSee('وكالات السفر والسياحة');
+        $response->assertDontSee('السوق المفتوح');
+        $response->assertDontSee('وكالة سفر');
         $response->assertSee('مشاهير ومؤثرون ومسوقون بالعمولة');
 
         // No country or specialization pickers on the first screen.
@@ -122,8 +126,8 @@ class JoinPageTest extends TestCase
 
         $this->get(route('portal.join'))
             ->assertOk()
-            ->assertDontSee('وكالة سفر')
-            ->assertSee('السوق المفتوح');
+            ->assertDontSee('وكالات السفر والسياحة')
+            ->assertSee('الإعلانات المبوبة');
 
         $this->from(route('portal.join'))
             ->post(route('portal.join.select'), ['section' => 'travel_agency'])
@@ -179,7 +183,7 @@ class JoinPageTest extends TestCase
         // The landing lists the classified categories that can be published.
         $response->assertSee($category->name_ar);
         // Its navbar belongs to the Open Souq section, not the travel-agency one.
-        $response->assertSee('لماذا تبيع على السوق المفتوح');
+        $response->assertSee('لماذا تنشر في الإعلانات المبوبة');
         $response->assertDontSee('لماذا تبيع السفر');
     }
 

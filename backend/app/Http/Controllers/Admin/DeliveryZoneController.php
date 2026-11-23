@@ -26,7 +26,7 @@ class DeliveryZoneController extends Controller
             ->orderBy('name')
             ->get();
 
-        $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en']);
+        $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
         $cities = City::where('is_active', true)
             ->orderBy('name_en')
             ->get(['id', 'country_id', 'name_en', 'name_ar']);

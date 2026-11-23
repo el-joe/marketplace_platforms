@@ -12,6 +12,7 @@ use App\Services\ListingCertificationGate;
 use App\Services\ListingContractGate;
 use App\Services\Shared\PageCacheService;
 use App\Services\ShippingMethodResolverService;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -27,7 +28,7 @@ class VendorListingController extends Controller
     public function index(): View
     {
         return view('admin.vendor-listings.index', [
-            'countries' => Country::query()->orderBy('name_en')->pluck('name_en', 'id'),
+            'countries' => Bilingual::options(Country::query()),
             'statuses' => collect(VendorListingStatus::cases())
                 ->mapWithKeys(fn ($status) => [$status->value => Str::headline($status->value)]),
             'breadcrumbs' => [
@@ -40,10 +41,10 @@ class VendorListingController extends Controller
     public function datatable(Request $request): JsonResponse
     {
         $columns = [
-            ['searchable_columns' => ['p.name_en', 'p.name_ar', 'pv.sku', 'vendor_listings.vendor_sku'], 'orderable_column' => 'p.name_en'],
+            ['searchable_columns' => ['p.name_en', 'p.name_ar', 'pv.sku', 'vendor_listings.vendor_sku'], 'orderable_column' => Bilingual::column('p.name')],
             ['orderable_column' => 'pv.variant_name'],
             ['searchable_columns' => ['v.business_name'], 'orderable_column' => 'v.business_name'],
-            ['searchable_columns' => ['co.name_en'], 'orderable_column' => 'co.name_en'],
+            ['searchable_columns' => ['co.name_en', 'co.name_ar'], 'orderable_column' => Bilingual::column('co.name')],
             ['orderable_column' => 'vendor_listings.currency'],
             ['orderable_column' => 'vendor_listings.price'],
             ['orderable_column' => 'vendor_listings.status'],
@@ -70,10 +71,12 @@ class VendorListingController extends Controller
                 'vendor_listings.currency',
                 'vendor_listings.status',
                 'vendor_listings.created_at',
-                'p.name_en as product_name',
+                'p.name_en as product_name_en',
+                'p.name_ar as product_name_ar',
                 'pv.sku as variant_sku',
                 'pv.variant_name as variant_name',
-                'co.name_en as country_name',
+                'co.name_en as country_name_en',
+                'co.name_ar as country_name_ar',
                 'v.business_name as vendor_name',
                 'dsm.name as default_shipping_method_name',
                 'dsm.badge_label_en as default_shipping_badge_label',
@@ -87,6 +90,8 @@ class VendorListingController extends Controller
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
+            $productName = Bilingual::localized($row, 'product_name');
+
             $effectiveMethod = $row->primaryShippingMethod ?? ($row->default_shipping_method_name ? (object) [
                 'name' => $row->default_shipping_method_name,
                 'badge_label_en' => $row->default_shipping_badge_label,
@@ -96,11 +101,11 @@ class VendorListingController extends Controller
 
             return [
                 'id' => $row->id,
-                'product_name' => e($row->product_name),
+                'product_name' => e($productName),
                 'variant_name' => e($row->variant_name),
-                'display_name' => e(trim($row->product_name.' '.$row->variant_name)),
+                'display_name' => e(trim($productName.' '.$row->variant_name)),
                 'vendor_name' => e($row->vendor_name),
-                'country' => e($row->country_name),
+                'country' => e(Bilingual::localized($row, 'country_name')),
                 'currency' => e($row->currency),
                 'price' => $row->price,
                 'status' => $row->status?->value,
@@ -143,7 +148,7 @@ class VendorListingController extends Controller
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => 'Vendor Listings', 'url' => route('admin.vendor-listings.index')],
-                ['label' => $vendorListing->productVariant->product->name_en],
+                ['label' => $vendorListing->productVariant->product->localized_name],
             ],
         ]);
     }
@@ -169,7 +174,7 @@ class VendorListingController extends Controller
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => 'Vendor Listings', 'url' => route('admin.vendor-listings.index')],
-                ['label' => $vendorListing->productVariant->product->name_en, 'url' => route('admin.vendor-listings.show', $vendorListing)],
+                ['label' => $vendorListing->productVariant->product->localized_name, 'url' => route('admin.vendor-listings.show', $vendorListing)],
                 ['label' => 'Edit'],
             ],
         ]);

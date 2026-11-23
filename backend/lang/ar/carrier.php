@@ -230,6 +230,7 @@ return [
         'status_picked_up' => 'محمول',
         'status_delivered' => 'مسلّم',
         'status_failed' => 'فاشل',
+        'status_cancelled' => 'ملغى',
         'no_assignments' => 'لا توجد طلبات.',
         'no_unassigned' => 'لا توجد شحنات غير معينة.',
         'no_carriers_linked_title' => 'لا توجد شركات شحن مرتبطة بشركتك',

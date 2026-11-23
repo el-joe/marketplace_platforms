@@ -37,7 +37,7 @@
                     @foreach($countries as $c)
                         <option value="{{ $c->id }}"
                             {{ $defaultCountryId == $c->id ? 'selected' : '' }}>
-                            {{ $c->flag_emoji }} {{ $c->name_en }} ({{ $c->currency_code }})
+                            {{ $c->flag_emoji }} {{ localized($c) }} ({{ $c->currency_code }})
                         </option>
                     @endforeach
                 </select>

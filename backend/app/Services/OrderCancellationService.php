@@ -2,25 +2,32 @@
 
 namespace App\Services;
 
-use App\Support\Money;
 use App\DTOs\Refund\RefundScope;
 use App\Enums\CancelActor;
+use App\Enums\OrderPaymentStatus;
+use App\Enums\PaymentTransactionStatus;
+use App\Exceptions\OrderNotCancellableException;
 use App\Models\Admin;
 use App\Models\Customer;
+use App\Models\DeliveryAssignment;
 use App\Models\LedgerEntry;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\PaymentTransaction;
+use App\Models\Refund;
 use App\Models\SubOrder;
 use App\Models\WarrantyPurchase;
+use App\Notifications\Admin\OrderCancelledByCustomer as AdminOrderCancelledByCustomer;
 use App\Notifications\Customer\OrderCancelled as CustomerOrderCancelled;
+use App\Notifications\Customer\OrderRefundProcessed;
 use App\Notifications\Vendor\OrderCancelledByAdmin;
 use App\Notifications\Vendor\SubOrderCancelledByCustomer;
 use App\Services\Checkout\CouponUsageService;
 use App\Services\Customer\CheckoutWalletService;
 use App\Services\Customer\LoyaltyService;
 use App\Services\Inventory\InventoryService;
+use App\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -89,76 +96,153 @@ class OrderCancellationService
         private readonly MarketerConversionReversalService $marketerConversionReversalService = new MarketerConversionReversalService,
     ) {}
 
+    /** Sub-order statuses that are final: nothing is left to cancel or reverse. */
+    private const TERMINAL_SUB_ORDER_STATUSES = ['cancelled', 'refunded', 'completed', 'returned'];
+
     /**
+     * Cancel an order, one sub-order or a set of items. Safe to call repeatedly: items already cancelled
+     * are skipped, so stock, refunds, COD and delivery side effects happen exactly once.
+     *
+     * Cascade rules: an item scope that leaves a sub-order with no live item cancels that sub-order; a
+     * cancellation that leaves no live sub-order cancels the master order. A sub-order left open with
+     * every item already cancelled (state written before this cascade existed) is closed as well.
+     *
      * @param  Order|SubOrder|Collection<int, OrderItem>|array<int, OrderItem>  $scope
+     *
+     * @throws OrderNotCancellableException when a targeted sub-order is past the actor's cancellation boundary
      */
     public function cancel(
         Order|SubOrder|Collection|array $scope,
         CancelActor $actor,
         string $reason,
         bool $force = false,
+        ?string $changedByAdminId = null,
     ): Order {
         [$order, $targetItems] = $this->resolveScope($scope);
 
-        return DB::transaction(function () use ($order, $targetItems, $actor, $reason, $force) {
+        $outcome = DB::transaction(function () use ($order, $targetItems, $actor, $reason, $force, $changedByAdminId) {
             $order = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
-            $order->loadMissing('subOrders.items', 'customer');
+            $order->load('subOrders.items', 'customer');
+            $statusBefore = $order->status?->value;
 
             // Only items not already cancelled — makes the whole call idempotent.
             $itemIds = $targetItems->pluck('id')->all();
+            $scopeSubOrderIds = $targetItems->pluck('sub_order_id')->unique()->values();
             $items = $order->items()->whereIn('id', $itemIds)
                 ->where('fulfillment_status', '!=', 'cancelled')
                 ->get();
 
             if ($items->isEmpty()) {
-                // Nothing left to do — either already cancelled or an empty scope.
-                return $order->fresh(['subOrders.items', 'statusHistories']);
+                // Nothing left to reverse; only close sub-orders/order whose items were all cancelled
+                // without the status cascading (e.g. by the pre-WS2 admin "cancel selected items").
+                $closedSubOrders = $this->closeFullyCancelledSubOrders($order, $scopeSubOrderIds, $reason, $actor, $changedByAdminId);
+
+                if ($closedSubOrders->isEmpty()) {
+                    return null;
+                }
+
+                $isFullOrderCancel = $order->subOrders()->whereNotIn('status', ['cancelled', 'refunded'])->doesntExist();
+                $this->settlePendingCodTransactions($order, 0, $isFullOrderCancel);
+                $this->cancelOpenDeliveryAssignments($closedSubOrders, $actor);
+
+                if ($isFullOrderCancel) {
+                    $this->couponUsageService->releaseForOrder($order);
+                    $this->reverseLedgerIfCaptured($order, $reason);
+                }
+
+                $this->finaliseOrderStatus($order, $statusBefore, $isFullOrderCancel, $reason, $actor, $itemIds, $changedByAdminId);
+
+                return ['order' => $order, 'items' => collect(), 'closed' => $closedSubOrders, 'refund' => null];
             }
 
             $this->assertCancellable($order, $items, $actor, $force);
 
-            $this->releaseStock($order, $items, $reason);
+            $this->releaseStock($order, $items, $reason, $actor, $changedByAdminId);
             $this->cancelWarrantyPurchases($items);
             $this->voidMarketerConversions($items);
 
-            $cancelledAmount = Money::number(round((float) $items->sum('line_total'), 2));
+            $cancelledAmount = Money::number(round((float) $items->sum('line_total'), 4));
             $orderTotal = max(0.01, (float) $order->total);
             $isFullOrderCancel = $order->items()->where('fulfillment_status', '!=', 'cancelled')->count() === $items->count();
 
-            $this->markItemsAndSubOrdersCancelled($order, $items, $reason, $actor);
+            OrderItem::whereIn('id', $items->pluck('id'))->update(['fulfillment_status' => 'cancelled']);
+            $closedSubOrders = $this->closeFullyCancelledSubOrders($order, $items->pluck('sub_order_id')->unique(), $reason, $actor, $changedByAdminId);
 
-            $this->refundTenders($order, $cancelledAmount, $orderTotal, $reason, $actor);
+            $refund = $this->refundTenders($order, $cancelledAmount, $orderTotal, $reason, $actor, $isFullOrderCancel);
             $this->restoreLoyalty($order, $cancelledAmount, $orderTotal);
+            $this->settlePendingCodTransactions($order, $cancelledAmount, $isFullOrderCancel);
+            $this->cancelOpenDeliveryAssignments($closedSubOrders, $actor);
 
             if ($isFullOrderCancel) {
                 $this->couponUsageService->releaseForOrder($order);
                 $this->reverseLedgerIfCaptured($order, $reason);
             }
 
-            $order->syncStatusFromSubOrders();
-            $order->refresh();
+            $this->finaliseOrderStatus($order, $statusBefore, $isFullOrderCancel, $reason, $actor, $itemIds, $changedByAdminId);
 
-            if ($isFullOrderCancel && $order->status?->value !== 'cancelled') {
-                // syncStatusFromSubOrders only flips to 'cancelled' when every
-                // sub-order is cancelled/refunded — true here since $isFullOrderCancel.
-                $order->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+            return ['order' => $order, 'items' => $items, 'closed' => $closedSubOrders, 'refund' => $refund];
+        });
+
+        if ($outcome !== null) {
+            $this->notify($outcome['order'], $outcome['items'], $outcome['closed'], $outcome['refund'], $reason, $actor);
+        }
+
+        return $order->fresh(['subOrders.items', 'statusHistories']);
+    }
+
+    /**
+     * Cancel one whole sub-order on behalf of a person (vendor or admin) and guarantee the request had an
+     * effect: an already-cancelled sub-order, or one past the actor's boundary, is refused with a localized
+     * message instead of reporting success for a no-op.
+     *
+     * @throws OrderNotCancellableException
+     */
+    public function cancelSubOrder(SubOrder $subOrder, CancelActor $actor, string $reason, bool $force = false, ?string $changedByAdminId = null): SubOrder
+    {
+        $status = $subOrder->status instanceof \BackedEnum ? $subOrder->status->value : $subOrder->status;
+
+        if (in_array($status, ['cancelled', 'refunded'], true)) {
+            throw OrderNotCancellableException::alreadyCancelled();
+        }
+
+        $this->cancel($subOrder, $actor, $reason, $force, $changedByAdminId);
+
+        $subOrder->refresh();
+
+        if (($subOrder->status instanceof \BackedEnum ? $subOrder->status->value : $subOrder->status) !== 'cancelled') {
+            throw OrderNotCancellableException::noEffect();
+        }
+
+        return $subOrder;
+    }
+
+    /**
+     * Admin "cancel the whole order": every sub-order still open is cancelled (and with it its items,
+     * stock, COD collection, delivery and refunds). Without $force, a sub-order already shipped refuses
+     * the whole request before anything is changed.
+     *
+     * @throws OrderNotCancellableException
+     */
+    public function cancelOrder(Order $order, CancelActor $actor, string $reason, bool $force = false, ?string $changedByAdminId = null): Order
+    {
+        return DB::transaction(function () use ($order, $actor, $reason, $force, $changedByAdminId) {
+            $order = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
+            $openSubOrders = $order->subOrders()->with('items')->get()
+                ->reject(fn (SubOrder $subOrder) => in_array($subOrder->status->value, ['cancelled', 'refunded'], true));
+
+            if ($openSubOrders->isEmpty() && $order->status?->value === 'cancelled') {
+                throw OrderNotCancellableException::alreadyCancelled();
             }
 
-            OrderStatusHistory::create([
-                'order_id' => $order->id,
-                'sub_order_id' => null,
-                'from_status' => $order->getOriginal('status'),
-                'to_status' => $order->status?->value ?? $order->status,
-                'reason' => "[{$actor->value}] {$reason}",
-                'metadata' => [
-                    'action' => 'order_cancellation',
-                    'actor' => $actor->value,
-                    'item_ids' => $itemIds,
-                    'full_order' => $isFullOrderCancel,
-                ],
-            ]);
+            foreach ($openSubOrders as $subOrder) {
+                $this->cancel($subOrder, $actor, $reason, $force, $changedByAdminId);
+            }
 
-            $this->notify($order, $items, $reason, $actor);
+            $order->refresh();
+            if ($order->status?->value !== 'cancelled'
+                && $order->subOrders()->whereNotIn('status', ['cancelled', 'refunded'])->doesntExist()) {
+                $order->update(['status' => 'cancelled', 'cancelled_at' => $order->cancelled_at ?? now()]);
+            }
 
             return $order->fresh(['subOrders.items', 'statusHistories']);
         });
@@ -214,9 +298,7 @@ class OrderCancellationService
                 : in_array($status, SubOrder::BLOCK_CANCEL_STATUSES, true);
 
             if ($blocked) {
-                throw new \DomainException(
-                    "Sub-order {$subOrder->sub_order_number} cannot be cancelled by {$actor->value} from status '{$status}'."
-                );
+                throw OrderNotCancellableException::pastCancellationBoundary($subOrder->sub_order_number, $status);
             }
         }
     }
@@ -227,10 +309,12 @@ class OrderCancellationService
      * listing" / "the sub-order's warehouse_id" — the sub-order's items
      * can now be reserved across more than one warehouse row).
      */
-    private function releaseStock(Order $order, Collection $items, string $reason): void
+    private function releaseStock(Order $order, Collection $items, string $reason, CancelActor $actor, ?string $changedByAdminId): void
     {
         $items->loadMissing('allocations');
         $inventoryService = app(InventoryService::class);
+        $actorType = $actor->value;
+        $actorId = $changedByAdminId ?? ($actor === CancelActor::Customer ? $order->customer_id : null);
 
         foreach ($items as $item) {
             $subOrder = $order->subOrders->firstWhere('id', $item->sub_order_id);
@@ -244,12 +328,12 @@ class OrderCancellationService
             $committedAllocations = $item->allocations->where('status', 'committed');
 
             if ($reservedAllocations->isNotEmpty()) {
-                $inventoryService->release($reservedAllocations, 'order', $order->id, actorType: 'customer', actorId: $order->customer_id, reason: $reason);
+                $inventoryService->release($reservedAllocations, 'order', $order->id, actorType: $actorType, actorId: $actorId, reason: $reason);
             }
 
             if ($wasShipped && $committedAllocations->isNotEmpty()) {
                 foreach ($committedAllocations as $allocation) {
-                    $inventoryService->restock($allocation->warehouse_inventory_id, (int) $allocation->quantity, 'order', $order->id, actorType: 'customer', actorId: $order->customer_id, reason: $reason, allocation: $allocation);
+                    $inventoryService->restock($allocation->warehouse_inventory_id, (int) $allocation->quantity, 'order', $order->id, actorType: $actorType, actorId: $actorId, reason: $reason, allocation: $allocation);
                 }
             }
         }
@@ -286,27 +370,29 @@ class OrderCancellationService
         $this->marketerConversionReversalService->reverseForOrderItemIds($items->pluck('id')->all());
     }
 
-    private function markItemsAndSubOrdersCancelled(Order $order, Collection $items, string $reason, CancelActor $actor): void
+    /**
+     * Cancel every sub-order (among $subOrderIds) that has no live item left. Returns the sub-orders closed now.
+     *
+     * @param  Collection<int, string>  $subOrderIds
+     * @return Collection<int, SubOrder>
+     */
+    private function closeFullyCancelledSubOrders(Order $order, Collection $subOrderIds, string $reason, CancelActor $actor, ?string $changedByAdminId): Collection
     {
-        OrderItem::whereIn('id', $items->pluck('id'))->update(['fulfillment_status' => 'cancelled']);
-
-        $subOrderIds = $items->pluck('sub_order_id')->unique();
+        $closed = collect();
 
         foreach ($subOrderIds as $subOrderId) {
-            $subOrder = $order->subOrders->firstWhere('id', $subOrderId);
+            $subOrder = SubOrder::where('id', $subOrderId)->where('order_id', $order->id)->lockForUpdate()->first();
             if (! $subOrder) {
                 continue;
             }
 
-            $remaining = $subOrder->items()->where('fulfillment_status', '!=', 'cancelled')->count();
-            if ($remaining > 0) {
-                // Partial cancellation within the sub-order — leave its own
-                // status alone; only the items are cancelled.
+            $previousStatus = $subOrder->status instanceof \BackedEnum ? $subOrder->status->value : $subOrder->status;
+            if (in_array($previousStatus, self::TERMINAL_SUB_ORDER_STATUSES, true)) {
                 continue;
             }
 
-            $previousStatus = $subOrder->status instanceof \BackedEnum ? $subOrder->status->value : $subOrder->status;
-            if ($previousStatus === 'cancelled') {
+            if ($subOrder->items()->where('fulfillment_status', '!=', 'cancelled')->exists()) {
+                // Partial cancellation within the sub-order — it keeps its status; only items are cancelled.
                 continue;
             }
 
@@ -321,17 +407,118 @@ class OrderCancellationService
                 'sub_order_id' => $subOrder->id,
                 'from_status' => $previousStatus,
                 'to_status' => 'cancelled',
+                'changed_by_admin_id' => $changedByAdminId,
                 'reason' => "[{$actor->value}] {$reason}",
+            ]);
+
+            $closed->push($subOrder);
+        }
+
+        return $closed;
+    }
+
+    /**
+     * Roll the master order up from its sub-orders and record the cancellation in its history.
+     *
+     * @param  array<int, string>  $itemIds
+     */
+    private function finaliseOrderStatus(Order $order, ?string $statusBefore, bool $isFullOrderCancel, string $reason, CancelActor $actor, array $itemIds, ?string $changedByAdminId): void
+    {
+        $order->unsetRelation('subOrders');
+        $order->syncStatusFromSubOrders($changedByAdminId);
+        $order->refresh();
+
+        if ($isFullOrderCancel && $order->status?->value !== 'cancelled') {
+            // Every item is cancelled but the roll-up left the order elsewhere (e.g. a refunded sub-order).
+            $order->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+        }
+
+        OrderStatusHistory::create([
+            'order_id' => $order->id,
+            'sub_order_id' => null,
+            'from_status' => $statusBefore,
+            'to_status' => $order->status?->value,
+            'changed_by_admin_id' => $changedByAdminId,
+            'reason' => "[{$actor->value}] {$reason}",
+            'metadata' => [
+                'action' => 'order_cancellation',
+                'actor' => $actor->value,
+                'item_ids' => $itemIds,
+                'full_order' => $isFullOrderCancel,
+            ],
+        ]);
+    }
+
+    /**
+     * COD money is only collected on delivery, so cancelling never refunds it: the still-pending COD
+     * transaction is cancelled for a full cancel, or reduced by the cancelled value for a partial one.
+     */
+    private function settlePendingCodTransactions(Order $order, int|float $cancelledAmount, bool $isFullOrderCancel): void
+    {
+        if ($order->payment_method !== 'cod') {
+            return;
+        }
+
+        $pending = PaymentTransaction::where('order_id', $order->id)
+            ->where('gateway', 'cod')
+            ->where('status', PaymentTransactionStatus::Pending)
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($pending as $transaction) {
+            if ($isFullOrderCancel) {
+                $transaction->update([
+                    'status' => PaymentTransactionStatus::Cancelled,
+                    'processed_at' => now(),
+                    'note' => trim(($transaction->note ?? '')."\nCancelled with the order; nothing to collect."),
+                ]);
+
+                continue;
+            }
+
+            if ($cancelledAmount <= 0) {
+                continue;
+            }
+
+            $remaining = Money::number(max(0, round((float) $transaction->amount - (float) $cancelledAmount, 4)));
+            $transaction->update([
+                'amount' => $remaining,
+                'note' => trim(($transaction->note ?? '')."\nReduced by ".Money::format($cancelledAmount).' for cancelled items.'),
             ]);
         }
     }
 
     /**
-     * Refund per tender, in reverse order of use: gift card -> wallet -> card.
-     * Pro-rated for a partial scope by the cancelled-items' share of the
-     * order total.
+     * Close open rider assignments of the sub-orders that were just cancelled. A system cancel comes from
+     * the delivery lifecycle itself (RTO after a refused COD delivery) whose return-to-origin assignment
+     * must stay open so the parcel travels back, so it is left alone.
+     *
+     * @param  Collection<int, SubOrder>  $subOrders
      */
-    private function refundTenders(Order $order, int|float $cancelledAmount, int|float $orderTotal, string $reason, CancelActor $actor): void
+    private function cancelOpenDeliveryAssignments(Collection $subOrders, CancelActor $actor): void
+    {
+        if ($subOrders->isEmpty() || $actor === CancelActor::System) {
+            return;
+        }
+
+        DeliveryAssignment::whereIn('sub_order_id', $subOrders->pluck('id'))
+            ->whereIn('status', DeliveryAssignment::OPEN_STATUSES)
+            ->update([
+                'status' => DeliveryAssignment::STATUS_CANCELLED,
+                'cancelled_at' => now(),
+                'updated_at' => now(),
+            ]);
+    }
+
+    /**
+     * Refund per tender, in reverse order of use: gift card -> wallet -> collected payment.
+     * Pro-rated for a partial scope by the cancelled-items' share of the order total. Only money
+     * that was actually taken is given back: an unpaid COD order or an authorised-but-uncaptured
+     * card refunds nothing (and so gets no refund record and no refund notification).
+     *
+     * @return Refund|null the refund record created for the collected-payment share, if any
+     */
+    private function refundTenders(Order $order, int|float $cancelledAmount, int|float $orderTotal, string $reason, CancelActor $actor, bool $isFullOrderCancel): ?Refund
     {
         $fraction = $cancelledAmount / $orderTotal;
 
@@ -343,72 +530,55 @@ class OrderCancellationService
         // would refund money that was never actually taken.
 
         $walletUsed = (float) $order->wallet_amount_used;
-        $walletPortion = $walletUsed > 0 ? Money::number(round($walletUsed * $fraction, 2)) : 0;
+        $walletPortion = $walletUsed > 0 ? Money::number(round($walletUsed * $fraction, 4)) : 0;
 
         if ($walletPortion > 0) {
             $this->checkoutWalletService->refundToWallet($order->customer, $order, $walletPortion);
         }
 
-        $cardPortion = Money::number(round($cancelledAmount - $walletPortion, 2));
+        $collectedPortion = Money::number(round($cancelledAmount - $walletPortion, 4));
 
-        if ($cardPortion <= 0) {
-            return;
+        if ($collectedPortion <= 0) {
+            return null;
         }
 
-        $isCod = $order->payment_method === 'cod';
-        if ($isCod) {
-            // Nothing was ever captured for the COD share — no gateway
-            // refund transaction exists to reverse and nothing was
-            // collected, so there's nothing to refund back.
-            return;
+        if (! in_array($order->payment_status, [OrderPaymentStatus::Captured, OrderPaymentStatus::PartiallyRefunded], true)) {
+            // Unpaid COD (cash is only collected on delivery) or a card that
+            // was never captured: nothing was charged, so nothing is refunded.
+            return null;
         }
 
-        if ($order->payment_status?->value !== 'captured' && $order->payment_status?->value !== 'partially_refunded') {
-            // Card authorized but never captured — nothing was actually
-            // charged, so there's no refund to issue.
-            return;
-        }
-
-        $originalTransaction = PaymentTransaction::where('order_id', $order->id)
-            ->whereIn('type', ['authorization', 'capture', 'sale'])
-            ->where('status', 'succeeded')
-            ->where('gateway', '!=', 'cod')
-            ->latest('created_at')
-            ->first();
-
-        if (! $originalTransaction) {
-            Log::warning('OrderCancellationService: no captured transaction found to refund against.', ['order_id' => $order->id]);
-
-            return;
-        }
-
-        // enhancement.md P-07 task 5: route through the single RefundService
-        // instead of calling PaymentService::refund() directly (P-06's
-        // stopgap, kept only long enough to avoid P-07's now-fixed
-        // double-refund bug in RefundProcessingJob). $reverseLedger: false
-        // because this cancellation, being a full-order cancel (only path
-        // that reaches here with a non-zero $cardPortion — COD/uncaptured
-        // orders return earlier above), posts its own full
-        // reverseOrderCapture() right after this via reverseLedgerIfCaptured().
+        // enhancement.md P-07 task 5: route through the single RefundService.
+        // A card order refunds through the gateway; a COD order already
+        // collected on delivery refunds to the wallet ('original' resolves
+        // to the wallet when there is no gateway transaction). A whole-order
+        // cancel posts its own full reverseOrderCapture() afterwards, so the
+        // refund must not also reverse the ledger; a partial cancel lets the
+        // refund post its proportional reversal.
         try {
-            $this->refundService->refund(
+            $refund = $this->refundService->refund(
                 order: $order,
-                scope: RefundScope::amount($cardPortion),
+                scope: RefundScope::amount($collectedPortion),
                 reason: 'customer_request',
                 liability: 'customer',
                 destination: 'original',
-                initiatedBy: ['type' => $actor->value === 'customer' ? 'customer' : $actor->value, 'id' => $actor === CancelActor::Customer ? $order->customer_id : null],
+                initiatedBy: ['type' => $actor->value, 'id' => $actor === CancelActor::Customer ? $order->customer_id : null],
                 reasonNotes: $reason,
-                reverseLedger: false,
+                reverseLedger: ! $isFullOrderCancel,
             );
 
-            $newPayStatus = ($cardPortion + $walletPortion + 0.00005) >= (float) $order->total ? 'refunded' : 'partially_refunded';
-            $order->update(['payment_status' => $newPayStatus]);
+            if ($isFullOrderCancel && $refund->status?->value === 'completed') {
+                $order->update(['payment_status' => 'refunded']);
+            }
+
+            return $refund;
         } catch (\Throwable $e) {
             Log::error('OrderCancellationService: refund via RefundService failed.', [
                 'order_id' => $order->id,
                 'exception' => $e->getMessage(),
             ]);
+
+            return null;
         }
     }
 
@@ -466,30 +636,46 @@ class OrderCancellationService
         $this->ledgerService->reverseOrderCapture($order, $reason);
     }
 
-    private function notify(Order $order, Collection $items, string $reason, CancelActor $actor): void
+    /**
+     * Customer: one "cancelled" notice per touched sub-order (no money promise), plus a refund notice
+     * only when a refund record was created and settled. Vendor: told unless the vendor cancelled it.
+     * Sent after commit so a rolled-back cancellation never notifies anyone.
+     *
+     * @param  Collection<int, OrderItem>  $items
+     * @param  Collection<int, SubOrder>  $closedSubOrders
+     */
+    private function notify(Order $order, Collection $items, Collection $closedSubOrders, ?Refund $refund, string $reason, CancelActor $actor): void
     {
-        $subOrderIds = $items->pluck('sub_order_id')->unique();
-
-        foreach ($subOrderIds as $subOrderId) {
-            $subOrder = $order->subOrders->firstWhere('id', $subOrderId);
-            if (! $subOrder) {
-                continue;
-            }
-
+        DB::afterCommit(function () use ($order, $items, $closedSubOrders, $refund, $reason, $actor) {
             try {
-                if ($order->customer) {
-                    $order->customer->notify(new CustomerOrderCancelled($subOrder, $reason));
-                }
+                $order->refresh()->load('customer', 'subOrders.vendor.vendorAdmins');
+                $closedIds = $closedSubOrders->pluck('id');
+                $touchedIds = $items->pluck('sub_order_id')->merge($closedIds)->unique();
 
-                if ($subOrder->vendor_id) {
-                    $subOrder->loadMissing('vendor.vendorAdmins');
-                    if ($subOrder->vendor) {
+                foreach ($touchedIds as $subOrderId) {
+                    $subOrder = $order->subOrders->firstWhere('id', $subOrderId);
+                    if (! $subOrder) {
+                        continue;
+                    }
+
+                    $isWholeSubOrder = $subOrder->status?->value === 'cancelled';
+                    $order->customer?->notify(new CustomerOrderCancelled(
+                        $subOrder,
+                        $reason,
+                        $isWholeSubOrder ? 0 : $items->where('sub_order_id', $subOrderId)->count(),
+                    ));
+
+                    if ($actor !== CancelActor::Vendor && $subOrder->vendor) {
                         $vendorNotification = $actor === CancelActor::Customer
                             ? new SubOrderCancelledByCustomer($subOrder, $reason)
                             : new OrderCancelledByAdmin($subOrder, $reason);
 
                         Notification::send($subOrder->vendor->vendorAdmins, $vendorNotification);
                     }
+                }
+
+                if ($refund && $refund->status?->value === 'completed' && $order->customer) {
+                    $order->customer->notify(new OrderRefundProcessed($refund));
                 }
 
                 if ($actor === CancelActor::Customer) {
@@ -501,6 +687,6 @@ class OrderCancellationService
                     'exception' => $e->getMessage(),
                 ]);
             }
-        }
+        });
     }
 }

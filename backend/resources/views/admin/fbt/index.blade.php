@@ -9,7 +9,7 @@
 @section('content')
     @php
         $columns = [
-            ['title' => __('admin.product_relations_section.product'), 'data' => 'name_en', 'name' => 'name_en'],
+            ['title' => __('admin.product_relations_section.product'), 'data' => 'name', 'name' => 'name'],
             ['title' => __('admin.product_relations_section.sku'), 'data' => 'sku', 'name' => 'sku'],
             [
                 'title' => __('admin.product_relations_section.related_count'),

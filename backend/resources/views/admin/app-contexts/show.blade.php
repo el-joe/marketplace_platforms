@@ -4,7 +4,7 @@
     @vite(['resources/js/admin/app-contexts.js'])
 @endpush
 
-@section('title', $context->name_en)
+@section('title', localized($context))
 
 @section('content')
 <div class="p-6">
@@ -28,12 +28,12 @@
                     <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($context->icon_path) }}"
                          class="w-10 h-10 object-contain">
                 @else
-                    <span class="text-white font-bold text-2xl">{{ mb_substr($context->name_en, 0, 1) }}</span>
+                    <span class="text-white font-bold text-2xl">{{ mb_substr(localized($context), 0, 1) }}</span>
                 @endif
             </div>
             <div>
                 <div class="flex items-center gap-2">
-                    <h1 class="text-2xl font-bold text-gray-900">{{ $context->name_en }}</h1>
+                    <h1 class="text-2xl font-bold text-gray-900">{{ localized($context) }}</h1>
                     <span class="badge {{ $context->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
                         {{ $context->is_active ? __('admin.app_contexts.active') : __('admin.app_contexts.inactive') }}
                     </span>
@@ -145,7 +145,7 @@
                                 @php $assignment = $assignments->get($country->id) @endphp
                                 <tr class="js-country-row" data-country-id="{{ $country->id }}">
                                     <td class="font-medium text-gray-800">
-                                        {{ $country->flag_emoji ? $country->flag_emoji . ' ' : '' }}{{ $country->name_en }}
+                                        {{ $country->flag_emoji ? $country->flag_emoji . ' ' : '' }}{{ localized($country) }}
                                     </td>
                                     <td>
                                         <input type="checkbox" class="js-country-active rounded border-gray-300 text-primary-600"
@@ -221,7 +221,7 @@
             saveCountryUrl: @json(route('admin.app-contexts.countries.save', $context)),
             saveNavUrl: @json(route('admin.app-contexts.nav.save', $context)),
             updateNavUrlBase: @json(route('admin.app-contexts.nav.save', $context)),
-            countries: @json($countries->map(fn ($c) => ['id' => $c->id, 'name_en' => $c->name_en])->values()),
+            countries: @json($countries->map(fn ($c) => ['id' => $c->id, 'name_en' => localized($c)])->values()),
         };
     </script>
 

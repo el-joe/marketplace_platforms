@@ -59,7 +59,7 @@
             <dl class="text-sm divide-y divide-gray-100">
                 <div class="flex justify-between py-2">
                     <dt class="text-gray-500">{{ __('admin.warranty_purchases_section.plan_col') }}</dt>
-                    <dd class="font-medium">{{ $snapshot['name_en'] ?? $warrantyPurchase->plan?->name_en ?? '—' }}</dd>
+                    <dd class="font-medium">{{ $snapshot['name_en'] ?? localized($warrantyPurchase->plan) ?: '—' }}</dd>
                 </div>
                 <div class="flex justify-between py-2">
                     <dt class="text-gray-500">{{ __('admin.warranty_purchases_section.duration_col') }}</dt>

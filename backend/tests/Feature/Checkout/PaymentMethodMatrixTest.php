@@ -285,7 +285,10 @@ class PaymentMethodMatrixTest extends TestCase
         $admin = Admin::factory()->create();
         Permission::findOrCreate('transactions.view', 'admin');
         Permission::findOrCreate('vendors.assigned_only', 'admin');
-        $admin->givePermissionTo('transactions.view');
+        foreach (['transactions.view', 'transactions.edit'] as $permission) {
+            Permission::findOrCreate($permission, 'admin');
+        }
+        $admin->givePermissionTo(['transactions.view', 'transactions.edit']);
         $this->actingAs($admin, 'admin');
 
         $confirm = $this->postJson(route('admin.transactions.confirm-bank-transfer', $transaction->id));
@@ -332,7 +335,10 @@ class PaymentMethodMatrixTest extends TestCase
         $admin = Admin::factory()->create();
         Permission::findOrCreate('transactions.view', 'admin');
         Permission::findOrCreate('vendors.assigned_only', 'admin');
-        $admin->givePermissionTo('transactions.view');
+        foreach (['transactions.view', 'transactions.edit'] as $permission) {
+            Permission::findOrCreate($permission, 'admin');
+        }
+        $admin->givePermissionTo(['transactions.view', 'transactions.edit']);
         $this->actingAs($admin, 'admin');
 
         $this->postJson(route('admin.transactions.confirm-bank-transfer', $transaction->id))->assertOk();

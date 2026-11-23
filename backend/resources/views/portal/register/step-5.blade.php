@@ -126,8 +126,55 @@
         </div>
     @endforeach
 
-    @if (! empty($agreementDocs))
-        <div x-show="agreementId" x-cloak class="space-y-3 rounded-xl border border-gray-700 bg-gray-800/40 p-4">
+    {{-- Contract of the Classifieds section chosen on /join, for the seller's country. Signed with the same name. --}}
+    @foreach (($categoryContractDocs ?? []) as $templateId => $entry)
+        @php($sectionContract = $entry['template'])
+        @php($sectionDoc = $entry['doc'])
+        @php($sectionName = $isAr ? $classifiedCategory->name_ar : ($classifiedCategory->name_en ?: $classifiedCategory->name_ar))
+        <div x-show="categoryContractId === '{{ $templateId }}'" x-cloak data-testid="category-contract" data-template-id="{{ $templateId }}" class="space-y-3 rounded-xl border border-[#0F807E]/50 bg-gray-800/40 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h3 class="text-sm font-semibold text-white">{{ __('portal.registration.category_contract_title', ['category' => $sectionName]) }}</h3>
+                    <p class="mt-0.5 text-xs text-gray-400">{{ $sectionContract->name }} · v{{ $sectionContract->version }}</p>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" @click="form.agreement_language = 'ar'" :class="form.agreement_language === 'ar' ? 'bg-[#0F807E] text-gray-900' : 'bg-gray-700 text-gray-300'" class="rounded px-3 py-1 text-xs font-medium">AR</button>
+                    <button type="button" @click="form.agreement_language = 'en'" :class="form.agreement_language === 'en' ? 'bg-[#0F807E] text-gray-900' : 'bg-gray-700 text-gray-300'" class="rounded px-3 py-1 text-xs font-medium">EN</button>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400">{{ __('portal.registration.category_contract_intro') }}</p>
+
+            <div class="rounded-lg bg-white p-3 text-gray-800">
+                @if ($sectionDoc['content_mode'] === 'file')
+                    @foreach (['ar', 'en'] as $language)
+                        @php($sectionFile = $sectionDoc['files'][$language] ?? ($sectionDoc['files']['ar'] ?? $sectionDoc['files']['en'] ?? null))
+                        <div x-show="form.agreement_language === '{{ $language }}'" @if ($language !== 'ar') x-cloak @endif>
+                            @if ($sectionFile)
+                                @if ($sectionFile['inline'])
+                                    <iframe src="{{ $sectionFile['url'] }}" title="{{ $sectionFile['name'] }}" class="h-96 w-full rounded border"></iframe>
+                                @endif
+                                <a href="{{ $sectionFile['url'] }}?download=1" target="_blank" class="mt-2 inline-block text-xs font-medium text-[#0F807E] hover:underline">{{ __('portal.registration.agreement_download') }} · {{ $sectionFile['name'] }}</a>
+                            @endif
+                        </div>
+                    @endforeach
+                @else
+                    <div x-show="form.agreement_language === 'ar'" dir="rtl" class="max-h-96 overflow-y-auto whitespace-pre-line text-sm leading-relaxed">{!! $sectionDoc['content_ar'] !!}</div>
+                    <div x-show="form.agreement_language === 'en'" x-cloak dir="ltr" class="max-h-96 overflow-y-auto whitespace-pre-line text-sm leading-relaxed">{!! $sectionDoc['content_en'] !!}</div>
+                @endif
+            </div>
+
+            <label class="flex cursor-pointer items-start gap-3">
+                <input type="checkbox" x-model="form.category_contract_agreed"
+                    class="mt-0.5 h-4 w-4 rounded border-gray-600 bg-gray-800 text-[#0F807E] focus:ring-[#feee00] focus:ring-offset-gray-900">
+                <span class="text-sm leading-relaxed text-gray-300">{{ __('portal.registration.category_contract_agree', ['category' => $sectionName]) }}</span>
+            </label>
+            <p x-show="errors.category_contract_agreed" x-text="errors.category_contract_agreed?.[0]" class="text-xs text-red-400" x-cloak></p>
+            <p x-show="errors.category_contract_template_id" x-text="errors.category_contract_template_id?.[0]" class="text-xs text-red-400" x-cloak></p>
+        </div>
+    @endforeach
+
+    @if (! empty($agreementDocs) || ! empty($categoryContractDocs ?? []))
+        <div x-show="agreementId || categoryContractId" x-cloak class="space-y-3 rounded-xl border border-gray-700 bg-gray-800/40 p-4">
             <div>
                 <label class="mb-1 block text-xs font-medium text-gray-300">{{ __('portal.registration.signature_name_label') }}</label>
                 <input type="text" x-model="form.signature_name" maxlength="150" autocomplete="name"

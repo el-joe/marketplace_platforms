@@ -14,7 +14,7 @@
         ]" />
 
         <x-form.select name="country_id" label="{{ __('common.country') }}" required placeholder="{{ __('admin.page_builder.create_page_modal.select_placeholder') }}"
-            :options="$countries->mapWithKeys(fn($c) => [$c->id => $c->name_en . ' (' . ($c->site_code ?? '—') . ')'])" />
+            :options="$countries->mapWithKeys(fn($c) => [$c->id => localized($c) . ' (' . ($c->site_code ?? '—') . ')'])" />
 
         <div data-reference-field="category" class="hidden">
             <x-form.async-select name="reference_category_id" label="{{ __('admin.page_builder.create_page_modal.types.category') }}"

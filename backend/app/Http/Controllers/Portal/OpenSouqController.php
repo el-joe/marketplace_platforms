@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClassifiedCategory;
 use App\Services\Portal\JoinService;
 use Illuminate\View\View;
 
@@ -22,12 +23,35 @@ class OpenSouqController extends Controller
 
     public function landing(): View
     {
+        return $this->render(null);
+    }
+
+    /**
+     * GET /companies/open-souq/{category} — the landing of one classified section (real estate, cars, ...),
+     * reached from its sub-option on /join. Its registration link carries the category so the wizard shows and
+     * collects that section's contract. Unknown, inactive or sub-categories are not found.
+     */
+    public function category(string $category): View
+    {
         $countries = $this->joinService->headerCountries();
+        $selected = $this->joinService->findJoinableClassifiedCategory($category, $this->joinService->headerCountry($countries));
+
+        abort_unless($selected !== null, 404);
+
+        return $this->render($selected);
+    }
+
+    private function render(?ClassifiedCategory $selectedCategory): View
+    {
+        $countries = $this->joinService->headerCountries();
+        $currentCountry = $this->joinService->headerCountry($countries);
 
         return view('portal.open-souq', [
             'countries' => $countries,
-            'currentCountry' => $this->joinService->headerCountry($countries),
-            'categories' => $this->joinService->classifiedCategories(),
+            'currentCountry' => $currentCountry,
+            'categories' => $this->joinService->joinableClassifiedCategories($currentCountry),
+            'selectedCategory' => $selectedCategory,
+            'travelFolded' => $this->joinService->travelFoldedIntoClassifieds(),
         ]);
     }
 }

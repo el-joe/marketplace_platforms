@@ -2,18 +2,21 @@
 
 namespace Tests\Feature\Ads;
 
+use App\Jobs\Ads\PaidAdSchedulerJob;
 use App\Models\Admin;
+use App\Models\Country;
 use App\Models\PaidAdBooking;
 use App\Models\PaidAdCreative;
 use App\Models\PaidAdSlot;
+use App\Models\VendorListing;
 use App\Models\Wallet;
 use App\Services\Ads\AdBookingService;
 use App\Services\Ads\AdSlotQuoteService;
+use Carbon\Carbon;
 use Database\Seeders\NawiAdsSlotSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\Support\MarketplaceScenario;
-use App\Models\Country;
 use Tests\TestCase;
 
 class NawiAdsLifecycleTest extends TestCase
@@ -22,6 +25,10 @@ class NawiAdsLifecycleTest extends TestCase
 
     private function setUpSeeded(string $slotCode): array
     {
+        // Bookings are validated against the country's calendar day (Asia/Muscat) while the test builds
+        // dates with UTC today(): pin the clock to midday so both calendars agree whatever the wall time.
+        Carbon::setTestNow(today()->setTime(8, 0));
+
         $s = MarketplaceScenario::make()->build();
         Admin::factory()->create();
         $this->seed(NawiAdsSlotSeeder::class);
@@ -92,7 +99,7 @@ class NawiAdsLifecycleTest extends TestCase
         $this->assertNotNull($listing->ad_boost_expires_at);
 
         // Boosted listing sorts before the non-boosted ones.
-        $first = \App\Models\VendorListing::orderByRaw('is_ad_boosted DESC')->first();
+        $first = VendorListing::orderByRaw('is_ad_boosted DESC')->first();
         $this->assertSame($listing->id, $first->id);
 
         $this->runSchedulerAt($b->booked_until->copy()->addDay()->setTime(12, 0));
@@ -132,15 +139,15 @@ class NawiAdsLifecycleTest extends TestCase
     }
 
     /** Move the clock and run the real scheduler job (scheduled -> active / active -> completed). */
-    private function runSchedulerAt(\Carbon\Carbon $when): void
+    private function runSchedulerAt(Carbon $when): void
     {
-        \Carbon\Carbon::setTestNow($when);
-        (new \App\Jobs\Ads\PaidAdSchedulerJob)->handle(app(AdBookingService::class));
+        Carbon::setTestNow($when);
+        (new PaidAdSchedulerJob)->handle(app(AdBookingService::class));
     }
 
     protected function tearDown(): void
     {
-        \Carbon\Carbon::setTestNow();
+        Carbon::setTestNow();
         parent::tearDown();
     }
 
@@ -168,9 +175,9 @@ class NawiAdsLifecycleTest extends TestCase
         }
     }
 
-    private function popupUrl(?\App\Models\Country $country = null): string
+    private function popupUrl(?Country $country = null): string
     {
-        $country ??= \App\Models\Country::query()->first() ?? MarketplaceScenario::make()->build()->country;
+        $country ??= Country::query()->first() ?? MarketplaceScenario::make()->build()->country;
         if (! $country->site_code) {
             $country->update(['site_code' => 'c'.strtolower(Str::random(5))]);
         }

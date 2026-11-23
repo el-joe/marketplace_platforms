@@ -359,6 +359,10 @@ return [
             'launch_label' => 'Launch',
             'delete_country_confirm' => 'Permanently delete "{name}"? This cannot be undone.',
             'save_btn_label' => 'Save',
+            'revert_to_draft_title' => 'Move {name} back to Draft?',
+            'revert_to_draft_confirm' => 'It disappears from the storefront and from seller pickers (unless "accept sellers before launch" is on). Products, listings and settings are kept; you can launch it again later.',
+            'revert_to_draft_button' => 'Yes, move to Draft',
+            'revert_to_draft_failed' => 'Could not move the country back to Draft.',
         ],
 
         'coupons' => [

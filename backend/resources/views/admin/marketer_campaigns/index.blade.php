@@ -57,7 +57,7 @@
                 <option value="">{{ __('admin.marketer_campaigns.all_countries') }}</option>
                 @foreach($countries as $country)
                     <option value="{{ $country->id }}" {{ (string) request('country_id') === (string) $country->id ? 'selected' : '' }}>
-                        {{ $country->name_en }}
+                        {{ localized($country) }}
                     </option>
                 @endforeach
             </select>
@@ -98,7 +98,7 @@
                         $product = $campaign->vendorListing?->productVariant?->product
                             ?? $campaign->adminListing?->productVariant?->product
                             ?? $campaign->marketerListing?->productVariant?->product;
-                        $productName = $product?->name_en
+                        $productName = localized($product)
                             ?? $campaign->travelPackage?->title_en
                             ?? $campaign->classifiedListing?->title_en
                             ?? '—';
@@ -115,7 +115,7 @@
                         </td>
                         <td class="py-2 pr-4">{{ $marketerName }}</td>
                         <td class="py-2 pr-4">{{ $productName }}</td>
-                        <td class="py-2 pr-4">{{ $campaign->country?->name_en ?? '—' }}</td>
+                        <td class="py-2 pr-4">{{ localized($campaign->country) ?: '—' }}</td>
                         <td class="py-2 pr-4">{{ $campaign->budgetLabel() }}</td>
                         <td class="py-2 pr-4">
                             <x-badge :color="$statusColors[$campaign->status] ?? 'gray'">

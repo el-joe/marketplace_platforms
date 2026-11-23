@@ -86,6 +86,7 @@
                                 label="{{ __('admin.helpcenter.body') }} ({{ __('common.english') }})"
                                 :required="true"
                                 profile="full"
+                                :upload-url="route('admin.media.upload', ['context' => 'help-center-articles'])"
                                 :minHeight="400"
                                 :value="old('body_en', '')"
                             />
@@ -98,6 +99,7 @@
                                 label="{{ __('admin.helpcenter.body') }} ({{ __('common.arabic') }})"
                                 :required="true"
                                 profile="full"
+                                :upload-url="route('admin.media.upload', ['context' => 'help-center-articles'])"
                                 :minHeight="400"
                                 :value="old('body_ar', '')"
                             />

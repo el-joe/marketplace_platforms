@@ -106,7 +106,7 @@
                             __('admin.delivery_section.field_name')                    => $agent->name,
                             __('admin.delivery_section.field_email')                   => $agent->email,
                             __('admin.delivery_section.field_phone')                   => $agent->phone,
-                            __('admin.delivery_section.field_country')                 => $agent->country?->name_en ?? '—',
+                            __('admin.delivery_section.field_country')                 => localized($agent->country) ?: '—',
                             __('admin.delivery_section.field_zone')                    => $agent->zone?->name ?? '—',
                             __('admin.delivery_section.field_agent_type')              => $agent->agent_type->label(),
                             __('admin.delivery_section.field_vehicle_type')            => $agent->vehicle_type->label(),

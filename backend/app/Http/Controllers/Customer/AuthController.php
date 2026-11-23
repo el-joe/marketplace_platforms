@@ -15,14 +15,14 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Admin;
 use App\Models\Country;
 use App\Models\Customer;
-use App\Models\CustomerOtpToken;
 use App\Models\DeviceToken;
 use App\Notifications\Admin\NewCustomerRegistered;
+use App\Services\Customer\CustomerPasswordResetService;
 use App\Services\Customer\ReferralService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Password;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
@@ -31,7 +31,10 @@ class AuthController extends Controller
 
     private const REFRESH_TTL_MINUTES = 43200; // 30 days
 
-    public function __construct(private readonly ReferralService $referralService) {}
+    public function __construct(
+        private readonly ReferralService $referralService,
+        private readonly CustomerPasswordResetService $passwordResetService,
+    ) {}
 
     // ── Register ──────────────────────────────────────────────────────────────
 
@@ -46,6 +49,7 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => $request->password,
+                'gender' => $request->validated('gender'),
                 'country_id' => $country->id,
                 'referral_code' => $this->referralService->generateUniqueCode(),
                 'status' => CustomerStatus::Active,
@@ -171,28 +175,16 @@ class AuthController extends Controller
 
     public function forgotPassword(ForgotPasswordRequest $request, $country): JsonResponse
     {
-        $credential = $request->email_or_phone;
-        $field = filter_var($credential, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+        /** @var Country $country */
+        $country = $request->attributes->get('country');
 
-        // Always return 200 to prevent user enumeration
-        $customer = Customer::where($field, $credential)->where('status', CustomerStatus::Active)->first();
+        $this->passwordResetService->sendResetLink(
+            (string) $request->input('email_or_phone'),
+            $country,
+            $request->resolvedLocale(),
+        );
 
-        if ($customer) {
-            $customer->otpTokens()
-                ->where('type', 'password_reset')
-                ->whereNull('used_at')
-                ->delete();
-
-            CustomerOtpToken::create([
-                'customer_id' => $customer->id,
-                'token' => Str::random(64),
-                'type' => 'password_reset',
-                'expires_at' => now()->addHours(1),
-            ]);
-
-            // TODO: dispatch SendPasswordResetEmailJob / SMS job
-        }
-
+        // Same response whether or not the account exists (no user enumeration).
         return ApiResponse::success(null, __('common.exceptions.auth.reset_link_sent'));
     }
 
@@ -200,17 +192,13 @@ class AuthController extends Controller
 
     public function resetPassword(ResetPasswordRequest $request, $country): JsonResponse
     {
-        $otp = CustomerOtpToken::where('token', $request->token)
-            ->where('type', 'password_reset')
-            ->whereNull('used_at')
-            ->first();
+        $status = $this->passwordResetService->reset(
+            $request->only('email', 'token', 'password', 'password_confirmation'),
+        );
 
-        if (! $otp || ! $otp->isValid()) {
+        if ($status !== Password::PASSWORD_RESET) {
             return ApiResponse::error(__('common.exceptions.auth.invalid_reset_token'), [], 422);
         }
-
-        $otp->update(['used_at' => now()]);
-        $otp->customer->update(['password' => $request->password]);
 
         return ApiResponse::success(null, __('common.exceptions.auth.password_reset'));
     }

@@ -13,7 +13,7 @@
             <h1 class="text-2xl font-bold text-gray-900">{{ __('admin.customers_section.title') }}</h1>
             <p class="text-sm text-gray-500 mt-0.5">{{ __('admin.customers_section.manage_subtitle') }}</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3" id="customers-export">
             <x-export-dropdown />
         </div>
     </div>
@@ -53,19 +53,47 @@
                     <option value="">{{ __('admin.customers_section.all_countries') }}</option>
                     @foreach($countries as $country)
                         <option value="{{ $country->id }}">
-                            {{ $country->flag_emoji ? $country->flag_emoji . ' ' : '' }}{{ $country->name_en }}
+                            {{ $country->flag_emoji ? $country->flag_emoji . ' ' : '' }}{{ localized($country) }}
                         </option>
                     @endforeach
                 </select>
             </div>
-            <div class="w-36">
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.customers_section.from_label') }}</label>
-                <input type="date" id="filter-date-from" class="form-input w-full text-sm">
+            <div class="w-44">
+                <label for="filter-gender" class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.customers_section.gender_column') }}</label>
+                <select id="filter-gender" class="form-input w-full text-sm">
+                    <option value="">{{ __('admin.customers_section.all_genders') }}</option>
+                    @foreach(\App\Enums\Gender::cases() as $gender)
+                        <option value="{{ $gender->value }}">{{ $gender->label() }}</option>
+                    @endforeach
+                    <option value="unspecified">{{ __('admin.customers_section.gender_unspecified') }}</option>
+                </select>
             </div>
-            <div class="w-36">
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.customers_section.to_label') }}</label>
-                <input type="date" id="filter-date-to" class="form-input w-full text-sm">
-            </div>
+            <fieldset class="flex gap-2 items-end">
+                <legend class="block text-xs font-semibold text-gray-700 mb-1">{{ __('admin.customers_section.joined_between') }}</legend>
+                <div class="w-36">
+                    <label for="filter-date-from" class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.customers_section.joined_from') }}</label>
+                    <input type="date" id="filter-date-from" class="form-input w-full text-sm">
+                </div>
+                <div class="w-36">
+                    <label for="filter-date-to" class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.customers_section.joined_to') }}</label>
+                    <input type="date" id="filter-date-to" class="form-input w-full text-sm">
+                </div>
+            </fieldset>
+            <fieldset class="flex gap-2 items-end">
+                <legend class="block text-xs font-semibold text-gray-700 mb-1" title="{{ __('admin.customers_section.activity_hint') }}">
+                    {{ __('admin.customers_section.activity_between') }}
+                    <span class="text-gray-400 cursor-help" aria-hidden="true">ⓘ</span>
+                </legend>
+                <div class="w-36">
+                    <label for="filter-activity-from" class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.customers_section.activity_from') }}</label>
+                    <input type="date" id="filter-activity-from" class="form-input w-full text-sm" aria-describedby="activity-hint">
+                </div>
+                <div class="w-36">
+                    <label for="filter-activity-to" class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.customers_section.activity_to') }}</label>
+                    <input type="date" id="filter-activity-to" class="form-input w-full text-sm" aria-describedby="activity-hint">
+                </div>
+                <p id="activity-hint" class="sr-only">{{ __('admin.customers_section.activity_hint') }}</p>
+            </fieldset>
             <div class="w-28">
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.customers_section.min_orders') }}</label>
                 <input type="number" id="filter-min-orders" min="0" class="form-input w-full text-sm" placeholder="0">
@@ -104,10 +132,11 @@
                         <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.customers_section.email_column') }}</th>
                         <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.customers_section.phone_column') }}</th>
                         <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.customers_section.country_column') }}</th>
+                        <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.customers_section.gender_column') }}</th>
                         <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.customers_section.status_column') }}</th>
-                        <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.customers_section.orders_column') }}</th>
-                        <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.customers_section.spent_column') }}</th>
-                        <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.customers_section.points_column') }}</th>
+                        <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase cursor-help" title="{{ __('admin.customers_section.metrics_tooltip') }}">{{ __('admin.customers_section.orders_column') }} <span class="text-gray-400" aria-hidden="true">ⓘ</span></th>
+                        <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase cursor-help" title="{{ __('admin.customers_section.metrics_tooltip') }}">{{ __('admin.customers_section.spent_column') }} <span class="text-gray-400" aria-hidden="true">ⓘ</span></th>
+                        <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase cursor-help" title="{{ __('admin.customers_section.points_tooltip') }}">{{ __('admin.customers_section.points_column') }} <span class="text-gray-400" aria-hidden="true">ⓘ</span></th>
                         <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.customers_section.joined_column') }}</th>
                         <th class="py-2 text-xs font-medium text-gray-500 uppercase text-end">{{ __('admin.actions') }}</th>
                     </tr>

@@ -86,6 +86,7 @@
                                 label="{{ __('admin.adsupport.body') }} (English)"
                                 :required="true"
                                 profile="full"
+                                :upload-url="route('admin.media.upload', ['context' => 'ad-support-articles'])"
                                 :minHeight="400"
                                 :value="old('body_en', '')"
                             />
@@ -98,6 +99,7 @@
                                 label="{{ __('admin.adsupport.body') }} (Arabic)"
                                 :required="true"
                                 profile="full"
+                                :upload-url="route('admin.media.upload', ['context' => 'ad-support-articles'])"
                                 :minHeight="400"
                                 :value="old('body_ar', '')"
                             />

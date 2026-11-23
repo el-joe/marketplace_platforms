@@ -51,7 +51,7 @@
                     <tr class="hover:bg-gray-50" id="country-row-{{ $country->id }}">
                         <td class="px-4 py-3 text-2xl">{{ $country->flag_emoji }}</td>
                         <td class="px-4 py-3">
-                            <div class="font-medium text-gray-900">{{ $country->name_en }}</div>
+                            <div class="font-medium text-gray-900">{{ localized($country) }}</div>
                             <div class="text-gray-400 text-xs" dir="rtl">{{ $country->name_ar }}</div>
                         </td>
                         <td class="px-4 py-3 font-mono text-xs text-gray-600">
@@ -70,7 +70,7 @@
                         <td class="px-4 py-3 text-end whitespace-nowrap">
                             <button onclick="openEditModal({{ json_encode($country) }})"
                                     class="text-primary-600 hover:underline text-xs mr-3">{{ __('common.edit') }}</button>
-                            <button onclick="deleteCountry('{{ $country->id }}', '{{ addslashes($country->name_en) }}')"
+                            <button onclick="deleteCountry('{{ $country->id }}', '{{ addslashes(localized($country)) }}')"
                                     class="text-red-600 hover:underline text-xs">{{ __('common.delete') }}</button>
                         </td>
                     </tr>

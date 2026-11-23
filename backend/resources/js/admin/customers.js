@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify(body),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw data;
+        if (!res.ok) throw Object.assign(data, { httpStatus: res.status });
         return data;
     }
 
@@ -43,6 +43,24 @@ document.addEventListener('DOMContentLoaded', () => {
      * ─────────────────────────────────────────────────────────────────────── */
 
     const customersTable = document.getElementById('customers-table');
+
+    /** Filter values shared by the DataTable request and the export links. */
+    function currentFilters() {
+        const value = id => document.getElementById(id)?.value || '';
+
+        return {
+            status: value('filter-status'),
+            country_id: value('filter-country'),
+            gender: value('filter-gender'),
+            date_from: value('filter-date-from'),
+            date_to: value('filter-date-to'),
+            activity_from: value('filter-activity-from'),
+            activity_to: value('filter-activity-to'),
+            min_orders: value('filter-min-orders'),
+            verified_only: document.getElementById('filter-verified')?.checked ? '1' : '',
+        };
+    }
+
     if (customersTable && window.customersTableUrl) {
         const dt = $(customersTable).DataTable({
             processing: true,
@@ -52,12 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 type: 'POST',
                 headers: { 'X-CSRF-TOKEN': csrfToken },
                 data(d) {
-                    d.status = document.getElementById('filter-status')?.value || '';
-                    d.country_id = document.getElementById('filter-country')?.value || '';
-                    d.date_from = document.getElementById('filter-date-from')?.value || '';
-                    d.date_to = document.getElementById('filter-date-to')?.value || '';
-                    d.min_orders = document.getElementById('filter-min-orders')?.value || '';
-                    d.verified_only = document.getElementById('filter-verified')?.checked ? '1' : '';
+                    Object.assign(d, currentFilters());
                 },
             },
             columns: [
@@ -70,7 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 { data: 'name' },
                 { data: 'email' },
                 { data: 'phone' },
-                { data: 'country' },
+                { data: 'country', orderable: false },
+                { data: 'gender' },
                 { data: 'status' },
                 { data: 'total_orders' },
                 { data: 'total_spent' },
@@ -78,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { data: 'created_at' },
                 { data: 'actions', orderable: false, searchable: false, className: 'text-right' },
             ],
-            order: [[9, 'desc']],
+            order: [[10, 'desc']],
             pageLength: 25,
             language: { search: '', searchPlaceholder: t('shared.table_search_placeholder') },
         });
@@ -96,21 +110,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Filter controls
-        ['filter-status', 'filter-country'].forEach(id => {
+        const selectFilterIds = ['filter-status', 'filter-country', 'filter-gender'];
+        const inputFilterIds = ['filter-date-from', 'filter-date-to', 'filter-activity-from', 'filter-activity-to', 'filter-min-orders'];
+        [...selectFilterIds, ...inputFilterIds].forEach(id => {
             document.getElementById(id)?.addEventListener('change', () => dt.draw());
         });
-        ['filter-date-from', 'filter-date-to', 'filter-min-orders'].forEach(id => {
-            document.getElementById(id)?.addEventListener('change', () => dt.draw());
+
+        // Export links follow the on-screen filters + search (the page URL itself never changes).
+        document.getElementById('customers-export')?.addEventListener('click', event => {
+            const link = event.target.closest('a[href*="export="]');
+            if (!link) return;
+            const url = new URL(link.href, window.location.origin);
+            const params = { ...currentFilters(), search: dt.search() || '' };
+            Object.entries(params).forEach(([key, val]) => {
+                if (val) url.searchParams.set(key, val);
+                else url.searchParams.delete(key);
+            });
+            link.href = url.toString();
         });
         document.getElementById('filter-verified')?.addEventListener('change', () => dt.draw());
 
         // Reset filters
         document.getElementById('clear-filters')?.addEventListener('click', () => {
-            ['filter-status', 'filter-country'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.value = '';
-            });
-            ['filter-date-from', 'filter-date-to', 'filter-min-orders'].forEach(id => {
+            [...selectFilterIds, ...inputFilterIds].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = '';
             });
@@ -523,12 +545,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const data = await postJson(url, { direction, amount, note });
-            window.Toast?.success(window.TRANSLATIONS?.walletAdjusted || 'Wallet adjusted successfully.');
+            window.Toast?.success(data.message || window.TRANSLATIONS?.walletAdjusted || 'Wallet adjusted successfully.');
 
             const balanceEl = document.getElementById('wallet-current-balance');
             if (balanceEl && typeof data.new_balance !== 'undefined') {
-                const currencySuffix = balanceEl.textContent.trim().split(' ').slice(1).join(' ');
-                balanceEl.textContent = `${Number(data.new_balance).toLocaleString()} ${currencySuffix}`.trim();
+                const currency = (data.currency_code || balanceEl.textContent.trim().split(' ').slice(1).join(' ')).toUpperCase();
+                const formatted = Number(data.new_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                balanceEl.textContent = `${formatted} ${currency}`.trim();
             }
 
             document.getElementById('wallet-adjust-amount').value = '';
@@ -538,7 +561,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 $('#wallet-transactions-datatable').DataTable().draw(false);
             }
         } catch (err) {
-            const msg = err?.message || Object.values(err?.errors || {}).flat().join(' ') || window.TRANSLATIONS?.actionFailed || 'Action failed.';
+            // Only validation (4xx) messages are user-safe; a server error gets the generic message.
+            const failed = window.TRANSLATIONS?.walletAdjustFailed || 'The wallet adjustment failed and the balance was not changed.';
+            const msg = (err?.httpStatus && err.httpStatus < 500)
+                ? (Object.values(err?.errors || {}).flat().join(' ') || err?.message || failed)
+                : failed;
             window.Toast?.error(msg);
         } finally {
             setLoading(this, false, window.TRANSLATIONS?.submitAdjustment || 'Submit Adjustment');
@@ -552,6 +579,25 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ─────────────────────────────────────────────────────────────────────────
      * REGENERATE QR CODE
      * ─────────────────────────────────────────────────────────────────────── */
+
+    /* ─────────────────────────────────────────────────────────────────────────
+     * SHOW PAGE — gender (optional; empty = not specified)
+     * ─────────────────────────────────────────────────────────────────────── */
+
+    document.getElementById('customer-gender-select')?.addEventListener('change', async function () {
+        const url = this.dataset.url;
+        if (!url) return;
+
+        this.disabled = true;
+        try {
+            await postJson(url, { _method: 'PUT', gender: this.value || null });
+            window.Toast?.success(window.TRANSLATIONS?.genderSaved || 'Gender updated.');
+        } catch (err) {
+            window.Toast?.error(err?.message || window.TRANSLATIONS?.actionFailed || 'Action failed.');
+        } finally {
+            this.disabled = false;
+        }
+    });
 
     document.getElementById('regenerate-qr-btn')?.addEventListener('click', async function () {
         const url = this.dataset.url;

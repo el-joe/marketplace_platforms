@@ -54,6 +54,11 @@
 
     {{-- ─── Filters ─────────────────────────────────────────────────────────────── --}}
     <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-4 flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-[12rem]">
+            <label for="filter-search" class="label-sm">{{ __('admin.search') }}</label>
+            <input id="filter-search" type="search" autocomplete="off" class="form-input text-sm py-1.5 w-full"
+                placeholder="{{ __('admin.fbn_section.search_placeholder') }}">
+        </div>
         <div>
             <label class="label-sm">{{ __('admin.fbn_section.status') }}</label>
             <select id="filter-status" class="form-select text-sm py-1.5 pr-8">
@@ -129,6 +134,24 @@
         </div>
     </div>
 
+    {{-- ─── Revert Modal ────────────────────────────────────────────────────────── --}}
+    <div id="revert-modal" class="modal" style="display:none;">
+        <div class="modal-box max-w-md">
+            <h3 class="font-bold text-lg mb-2">{{ __('admin.fbn_section.revert_title') }}</h3>
+            <p class="text-sm text-gray-500 mb-1">{{ __('admin.fbn_section.revert_desc') }}</p>
+            <p id="revert-action-label" class="text-sm font-semibold text-gray-700 mb-3"></p>
+            <div>
+                <label for="revert-reason" class="label-sm">{{ __('admin.fbn_section.revert_reason') }} <span class="text-red-500">*</span></label>
+                <textarea id="revert-reason" rows="3" maxlength="1000" class="form-input w-full text-sm"
+                          placeholder="{{ __('admin.fbn_section.revert_reason_placeholder') }}"></textarea>
+            </div>
+            <div class="flex gap-3 justify-end mt-5 pt-4 border-t">
+                <button type="button" id="revert-close" class="btn btn-ghost btn-sm">{{ __('admin.fbn_section.cancel') }}</button>
+                <button type="button" id="revert-confirm" class="btn btn-warning btn-sm">{{ __('admin.fbn_section.revert_confirm') }}</button>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('scripts')
@@ -141,7 +164,12 @@
             generationInProgress: @json(__('admin.fbn_section.generation_in_progress')),
             generationComplete: @json(__('admin.fbn_section.generation_complete')),
             generationFailed: @json(__('admin.fbn_section.generation_failed')),
+            reasonRequired: @json(__('validation.required', ['attribute' => __('admin.fbn_section.revert_reason')])),
         });
+        const FEE_ROUTES = {
+            status: @json(route('admin.fbn.storage-fees.status', ['fee' => '__ID__'])),
+            revert: @json(route('admin.fbn.storage-fees.revert-status', ['fee' => '__ID__'])),
+        };
 
         document.addEventListener('DOMContentLoaded', function () {
             const tok = '{{ csrf_token() }}';
@@ -151,7 +179,8 @@
                 serverSide: true,
                 processing: true,
                 pageLength: 25,
-                order: [[1, 'desc']],
+                dom: 'lrtip',
+                order: [[2, 'desc']],
                 ajax: {
                     url: '{{ route('admin.fbn.storage-fees.datatable') }}',
                     type: 'POST',
@@ -181,24 +210,53 @@
             });
 
             $('#filter-status, #filter-month').on('change', () => tbl.ajax.reload());
+            let searchTimer;
+            $('#filter-search').on('input', function () {
+                clearTimeout(searchTimer);
+                const term = this.value;
+                searchTimer = setTimeout(() => tbl.search(term).draw(), 300);
+            });
 
             function jsonPost(url, body, onSuccess) {
-                fetch(url, {
+                return fetch(url, {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': tok, 'Content-Type': 'application/json' },
+                    headers: { 'X-CSRF-TOKEN': tok, 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify(body),
-                }).then(r => r.json()).then(data => {
-                    if (data.success) { window.Toast.success(data.message); onSuccess?.(); tbl.ajax.reload(); }
-                    else { window.Toast.error(data.message ?? T.error); }
-                });
+                }).then(r => r.json().catch(() => ({}))).then(data => {
+                    if (data.success) { window.Toast.success(data.message); onSuccess?.(); tbl.ajax.reload(); return true; }
+                    const firstError = data.errors ? Object.values(data.errors)[0]?.[0] : null;
+                    window.Toast.error(firstError ?? data.message ?? T.error);
+                    return false;
+                }).catch(() => { window.Toast.error(T.error); return false; });
             }
+
+            const feeUrl = (template, id) => template.replace('__ID__', id);
 
             // ── Status updates ─────────────────────────────────────────────────────────
             $(document).on('click', '.btn-mark-invoiced', function () {
-                jsonPost(`/fbn/storage-fees/${$(this).data('id')}/status`, { status: 'invoiced' });
+                jsonPost(feeUrl(FEE_ROUTES.status, $(this).data('id')), { status: 'invoiced' });
             });
             $(document).on('click', '.btn-mark-fee-paid', function () {
-                jsonPost(`/fbn/storage-fees/${$(this).data('id')}/status`, { status: 'paid' });
+                jsonPost(feeUrl(FEE_ROUTES.status, $(this).data('id')), { status: 'paid' });
+            });
+
+            // ── Revert (permission-gated server-side; reason required) ─────────────────
+            let revertFeeId = null;
+            $(document).on('click', '.btn-revert-fee', function () {
+                revertFeeId = $(this).data('id');
+                $('#revert-action-label').text($(this).data('label'));
+                $('#revert-reason').val('');
+                $('#revert-modal').show();
+                $('#revert-reason').trigger('focus');
+            });
+            $('#revert-close').on('click', () => $('#revert-modal').hide());
+            $('#revert-confirm').on('click', async function () {
+                const reason = $('#revert-reason').val().trim();
+                if (!reason) { window.Toast.error(T.reasonRequired); return; }
+                const $btn = $(this).prop('disabled', true);
+                const ok = await jsonPost(feeUrl(FEE_ROUTES.revert, revertFeeId), { reason });
+                $btn.prop('disabled', false);
+                if (ok) { $('#revert-modal').hide(); }
             });
 
             // ── Generate monthly fees ──────────────────────────────────────────────────
@@ -218,7 +276,8 @@
                             window.Toast.success(T.generationComplete
                                 .replace(':created', status.created)
                                 .replace(':free', status.free)
-                                .replace(':skipped', status.skipped));
+                                .replace(':skipped', status.skipped)
+                                .replace(':locked', status.locked ?? 0));
                             tbl.ajax.reload();
                         } else if (status.state === 'failed') {
                             stopGenPolling();

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AdminListingStatus;
 use App\Enums\ProductStatus;
 use App\Enums\VendorListingStatus;
+use App\Models\Concerns\HasLocalizedName;
 use App\Services\Customer\CategoryService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,7 +19,7 @@ use Illuminate\Support\Facades\DB;
 
 class Product extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasLocalizedName, HasUuids, SoftDeletes;
 
     protected $fillable = [
         'category_id',

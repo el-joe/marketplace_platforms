@@ -7,6 +7,7 @@
 <div class="mb-6">
     <h1 class="text-xl font-semibold text-gray-900">{{ __('admin.nav.my_acquisition_commissions') }}</h1>
     <p class="text-sm text-gray-500">{{ __('admin.vendors.my_acquisition_commissions_hint') }}</p>
+    <p class="text-xs text-gray-400 mt-1">{{ __('admin.static_text.admin_vendor_acquisition_my_commissions.processed_month_hint', ['month' => $processedMonthLabel]) }}</p>
 </div>
 
 <x-card>
@@ -16,8 +17,8 @@
                 <tr class="text-left text-gray-500 border-b border-gray-100">
                     <th class="py-2 pr-4">{{ __('admin.vendors.title') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.vendors.commission_rate') }}</th>
-                    <th class="py-2 pr-4">{{ __('admin.static_text.admin_vendor_acquisition_my_commissions.sales_this_month') }}</th>
-                    <th class="py-2 pr-4">{{ __('admin.static_text.admin_vendor_acquisition_my_commissions.earned_this_month') }}</th>
+                    <th class="py-2 pr-4">{{ __('admin.static_text.admin_vendor_acquisition_my_commissions.sales_in_month', ['month' => $processedMonthLabel]) }}</th>
+                    <th class="py-2 pr-4">{{ __('admin.static_text.admin_vendor_acquisition_my_commissions.earned_in_month', ['month' => $processedMonthLabel]) }}</th>
                     <th class="py-2 pr-4">{{ __('admin.vendors.total_earned') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.vendors.expires_on') }}</th>
                 </tr>
@@ -27,8 +28,8 @@
                     <tr class="border-b border-gray-50">
                         <td class="py-2 pr-4 font-medium text-gray-900">{{ $row['vendor_name'] }}</td>
                         <td class="py-2 pr-4">{{ number_format($row['commission_rate'] / 100, 2) }}%</td>
-                        <td class="py-2 pr-4">{{ $row['sales_this_month'] }}</td>
-                        <td class="py-2 pr-4">{{ \App\Support\Money::format($row['earned_this_month']) }} {{ $row['currency'] }}</td>
+                        <td class="py-2 pr-4">{{ $row['sales_processed_month'] }}</td>
+                        <td class="py-2 pr-4">{{ \App\Support\Money::format($row['earned_processed_month']) }} {{ $row['currency'] }}</td>
                         <td class="py-2 pr-4">{{ \App\Support\Money::format($row['total_earned']) }} {{ $row['currency'] }}</td>
                         <td class="py-2 pr-4">{{ \Illuminate\Support\Carbon::parse($row['expires_on'])->format('d M Y') }}</td>
                     </tr>

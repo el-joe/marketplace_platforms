@@ -14,25 +14,37 @@ use DOMNode;
  * only known-safe tags, attributes, URL schemes and inline-style properties.
  * Unknown tags are unwrapped (their text is kept); dangerous containers such as
  * <script>, <style> and <iframe> are dropped together with their content.
+ *
+ * Used for static pages and the portal blog / help-center / ad-support article bodies
+ * (cleaned on save and again on render).
  */
 class HtmlSanitizer
 {
     /** @var array<string, list<string>> tag => tag-specific allowed attributes */
     private const ALLOWED_TAGS = [
         'p' => [], 'br' => [], 'hr' => [], 'div' => [], 'span' => [],
-        'h1' => [], 'h2' => [], 'h3' => [], 'h4' => [], 'h5' => [], 'h6' => [],
+        'h1' => ['id'], 'h2' => ['id'], 'h3' => ['id'], 'h4' => ['id'], 'h5' => ['id'], 'h6' => ['id'],
         'b' => [], 'strong' => [], 'i' => [], 'em' => [], 'u' => [], 's' => [], 'strike' => [], 'del' => [],
         'sub' => [], 'sup' => [], 'small' => [], 'mark' => [],
         'ul' => [], 'ol' => ['start', 'type'], 'li' => [],
         'blockquote' => [], 'pre' => [], 'code' => [],
         'a' => ['href', 'title', 'target', 'rel'],
-        'img' => ['src', 'alt', 'title', 'width', 'height'],
+        'img' => ['src', 'alt', 'title', 'width', 'height', 'loading'],
         'table' => [], 'thead' => [], 'tbody' => [], 'tfoot' => [], 'tr' => [],
         'th' => ['colspan', 'rowspan', 'scope'], 'td' => ['colspan', 'rowspan'], 'caption' => [],
     ];
 
     /** Attributes allowed on every allowed tag. */
-    private const GLOBAL_ATTRIBUTES = ['dir', 'style'];
+    private const GLOBAL_ATTRIBUTES = ['dir', 'style', 'class'];
+
+    /**
+     * Only content classes styled by the portal article layouts survive (`hc-callout`, `hc-table`, …);
+     * layout/utility classes could otherwise be used to overlay or hide page chrome.
+     */
+    private const ALLOWED_CLASS_PATTERN = '/^hc-[a-z0-9-]{1,40}$/';
+
+    /** Heading anchors used by the help-center / ad-support table of contents. */
+    private const ALLOWED_ID_PATTERN = '/^[A-Za-z][A-Za-z0-9_-]{0,99}$/';
 
     /** Removed together with everything inside them. */
     private const DROP_WITH_CONTENT = [
@@ -141,6 +153,9 @@ class HtmlSanitizer
                 'style' => static::safeStyle($value),
                 'dir' => in_array(strtolower($value), ['rtl', 'ltr', 'auto'], true) ? strtolower($value) : null,
                 'target' => in_array($value, ['_blank', '_self'], true) ? $value : null,
+                'id' => preg_match(self::ALLOWED_ID_PATTERN, $value) ? $value : null,
+                'class' => static::safeClass($value),
+                'loading' => in_array(strtolower($value), ['lazy', 'eager'], true) ? strtolower($value) : null,
                 'width', 'height', 'colspan', 'rowspan', 'start' => preg_match('/^\d{1,4}(%|px)?$/', $value) ? $value : null,
                 default => $value,
             };
@@ -180,6 +195,16 @@ class HtmlSanitizer
         }
 
         return $url;
+    }
+
+    private static function safeClass(string $classes): ?string
+    {
+        $kept = array_filter(
+            preg_split('/\s+/', $classes) ?: [],
+            fn (string $class) => preg_match(self::ALLOWED_CLASS_PATTERN, $class) === 1,
+        );
+
+        return $kept === [] ? null : implode(' ', array_unique($kept));
     }
 
     private static function safeStyle(string $style): ?string

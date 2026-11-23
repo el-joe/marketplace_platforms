@@ -54,7 +54,7 @@
                                 : $item->productVariant?->images->first()?->url;
                             $title = $item->classifiedListing
                                 ? ($item->classifiedListing->title_en ?? '—')
-                                : ($product->name_en ?? '—');
+                                : (localized($product) ?: '—');
                         @endphp
                         <tr class="border-b border-gray-50">
                             <td class="py-2 pr-4">

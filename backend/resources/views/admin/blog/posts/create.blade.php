@@ -106,6 +106,7 @@
                                     label="{{ __('admin.blog.body_en') }}"
                                     :required="true"
                                     profile="full"
+                                    :upload-url="route('admin.media.upload', ['context' => 'blog-posts'])"
                                     :minHeight="350"
                                     :value="old('body_en', '')"
                                 />
@@ -118,6 +119,7 @@
                                     label="{{ __('admin.blog.body_ar') }}"
                                     :required="true"
                                     profile="full"
+                                    :upload-url="route('admin.media.upload', ['context' => 'blog-posts'])"
                                     :minHeight="350"
                                     :value="old('body_ar', '')"
                                 />
@@ -200,13 +202,13 @@
                             <select name="blog_category_id" class="form-input w-full text-sm @error('blog_category_id') is-invalid @enderror">
                                 <option value="">{{ __('admin.blog.select_category') }}</option>
                                 @foreach($categories as $parent)
-                                    <optgroup label="{{ $parent->name_en }}">
+                                    <optgroup label="{{ localized($parent) }}">
                                         <option value="{{ $parent->id }}" {{ old('blog_category_id') == $parent->id ? 'selected' : '' }}>
-                                            {{ $parent->name_en }}
+                                            {{ localized($parent) }}
                                         </option>
                                         @foreach($parent->children as $child)
                                             <option value="{{ $child->id }}" {{ old('blog_category_id') == $child->id ? 'selected' : '' }}>
-                                                ↳ {{ $child->name_en }}
+                                                ↳ {{ localized($child) }}
                                             </option>
                                         @endforeach
                                     </optgroup>
@@ -221,7 +223,7 @@
                                 <option value="">{{ __('common.all') }} {{ __('common.country') }}</option>
                                 @foreach($countries as $c)
                                     <option value="{{ $c->id }}" {{ old('country_id') == $c->id ? 'selected' : '' }}>
-                                        {{ $c->flag_emoji ? $c->flag_emoji . ' ' : '' }}{{ $c->name_en }}
+                                        {{ $c->flag_emoji ? $c->flag_emoji . ' ' : '' }}{{ localized($c) }}
                                     </option>
                                 @endforeach
                             </select>

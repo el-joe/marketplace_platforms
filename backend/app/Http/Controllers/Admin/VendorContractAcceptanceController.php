@@ -17,12 +17,12 @@ class VendorContractAcceptanceController extends Controller
     public function index(Vendor $vendor): View
     {
         $contracts = VendorContract::where('vendor_id', $vendor->id)
-            ->with(['contractTemplate', 'classifiedCategory', 'productCategory', 'product:id,name_en', 'signedByVendorAdmin:id,name'])
+            ->with(['contractTemplate', 'classifiedCategory', 'productCategory', 'product:id,name_en,name_ar', 'signedByVendorAdmin:id,name'])
             ->orderByDesc('signed_at')
             ->paginate(30);
 
         $enrollments = VendorCategoryEnrollment::where('vendor_id', $vendor->id)
-            ->with(['classifiedCategory:id,name_en', 'productCategory:id,name_en'])
+            ->with(['classifiedCategory:id,name_en,name_ar', 'productCategory:id,name_en,name_ar'])
             ->orderBy('status')
             ->get();
 

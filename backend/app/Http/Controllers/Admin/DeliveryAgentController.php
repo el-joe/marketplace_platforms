@@ -14,6 +14,7 @@ use App\Models\DeliveryAgent;
 use App\Models\DeliveryAgentDocument;
 use App\Models\DeliveryZone;
 use App\Models\ShippingCompany;
+use App\Support\Bilingual;
 use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
@@ -41,7 +42,7 @@ class DeliveryAgentController extends Controller
             return $this->exportDeliveryAgents($request);
         }
 
-        $countries = Country::orderBy('name_en')->get(['id', 'name_en']);
+        $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
         $zones = DeliveryZone::where('is_active', true)->orderBy('name')->get(['id', 'name', 'country_id']);
         $shippingCompanies = ShippingCompany::where('status', ShippingCompanyStatus::Active)
             ->orderBy('name')
@@ -91,7 +92,7 @@ class DeliveryAgentController extends Controller
                 'delivery_agents.zone_id',
                 'delivery_agents.national_id',
                 'delivery_agents.vehicle_plate',
-                'countries.name_en as country_name',
+                Bilingual::column('countries.name', null, 'country_name'),
                 'delivery_zones.name as zone_name',
             ]);
 

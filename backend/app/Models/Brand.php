@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasLocalizedName;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,7 +12,8 @@ use Illuminate\Support\Facades\Storage;
 
 class Brand extends Model
 {
-    use HasUuids, SoftDeletes;
+    use HasLocalizedName, HasUuids, SoftDeletes;
+
     protected $fillable = [
         'name_ar',
         'name_en',
@@ -54,7 +56,7 @@ class Brand extends Model
 
     public function getLogoUrlAttribute(): ?string
     {
-        if (!$this->logo_media_id) {
+        if (! $this->logo_media_id) {
             return null;
         }
 

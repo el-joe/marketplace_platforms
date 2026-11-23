@@ -33,7 +33,7 @@ class AuthController extends Controller
 
     public function showRegister(Request $request): View
     {
-        $countries = Country::where('is_active', true)->orderBy('name_ar')->get();
+        $countries = Country::availableForVendors()->orderBy('name_ar')->get();
 
         // Optional preselection handed over from the public portal /join page.
         // Unknown values are ignored rather than trusted.
@@ -43,7 +43,7 @@ class AuthController extends Controller
         }
 
         $selectedCountryId = $request->query('country_id');
-        if (! is_string($selectedCountryId) || ! Country::where('id', $selectedCountryId)->where('is_active', true)->exists()) {
+        if (! is_string($selectedCountryId) || ! Country::availableForVendors()->whereKey($selectedCountryId)->exists()) {
             $selectedCountryId = null;
         }
 
@@ -59,7 +59,7 @@ class AuthController extends Controller
             'marketer_type' => ['required', Rule::in(MarketerType::values())],
             'phone' => ['nullable', 'string', 'max:30'],
             'whatsapp_for_campaigns' => ['nullable', 'string', 'max:30'],
-            'country_id' => ['required', 'exists:countries,id'],
+            'country_id' => ['required', Country::availableForVendorsRule()],
             'gender' => ['required', Rule::enum(MarketerGender::class)],
         ], [
             'email.unique' => __('marketer.msg.email_taken'),
@@ -166,17 +166,13 @@ class AuthController extends Controller
 
     public function sendResetLink(Request $request): RedirectResponse
     {
-        $request->validate(['email' => ['required', 'email']]);
+        $request->validate(['email' => ['required', 'email', 'max:255']]);
 
-        $status = Password::broker('marketer_admins')->sendResetLink(
-            $request->only('email')
-        );
+        // Same answer whether or not the address exists (no account enumeration). An unknown
+        // email (INVALID_USER) and the broker's own per-account throttle are deliberately silent.
+        Password::broker('marketer_admins')->sendResetLink($request->only('email'));
 
-        if ($status === Password::RESET_LINK_SENT) {
-            return back()->with('status', __('marketer.msg.reset_link_sent'));
-        }
-
-        throw ValidationException::withMessages(['email' => __($status)]);
+        return back()->with('status', __('marketer.msg.reset_link_sent'));
     }
 
     public function resetPassword(Request $request): View

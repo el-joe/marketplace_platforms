@@ -6,4 +6,5 @@ return [
     'picked_up' => 'تم الاستلام',
     'delivered' => 'تم التوصيل',
     'failed' => 'فشل',
+    'cancelled' => 'ملغى',
 ];

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Partner;
 
 use App\Enums\CancelActor;
 use App\Enums\SubOrderStatus;
+use App\Exceptions\OrderNotCancellableException;
 use App\Http\Controllers\Controller;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
@@ -413,24 +414,22 @@ class OrderController extends Controller
 
         $subOrder = $this->vendorSubOrder($subOrderNumber);
 
-        $nonCancellableStatuses = ['shipped', 'delivered', 'completed', 'cancelled', 'return_requested', 'returned'];
-        if (in_array($subOrder->status->value, $nonCancellableStatuses)) {
-            return response()->json(['success' => false, 'message' => 'لا يمكن إلغاء هذا الطلب في حالته الحالية.'], 422);
-        }
-
         $reason = trim($request->input('reason').' '.($request->input('reason_notes') ?? ''));
 
         try {
-            // The single cancellation engine: state-machine transition + history, stock released from the
-            // reserved allocations, order roll-up and any payment/coupon/loyalty reversal.
-            app(OrderCancellationService::class)->cancel($subOrder, CancelActor::Vendor, $reason);
+            // The single cancellation engine: items, sub-order and order roll-up, reserved stock, pending
+            // COD collection, open deliveries and any refund of collected money. Refuses (localized) when
+            // the sub-order is already cancelled, already shipped, or the cancel would have no effect.
+            app(OrderCancellationService::class)->cancelSubOrder($subOrder, CancelActor::Vendor, $reason);
+        } catch (OrderNotCancellableException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Throwable $e) {
             Log::error('Cancel order failed', ['error' => $e->getMessage(), 'sub_order' => $subOrderNumber]);
 
-            return response()->json(['success' => false, 'message' => 'حدث خطأ أثناء إلغاء الطلب.'], 500);
+            return response()->json(['success' => false, 'message' => __('common.exceptions.order.cancel_failed')], 500);
         }
 
-        return response()->json(['success' => true, 'message' => 'تم إلغاء الطلب بنجاح.']);
+        return response()->json(['success' => true, 'message' => __('common.exceptions.order.cancelled')]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

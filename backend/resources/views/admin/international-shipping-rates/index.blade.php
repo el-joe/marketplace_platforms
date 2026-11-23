@@ -16,6 +16,9 @@
         </a>
     </div>
 
+    <x-filter.bar class="mb-4" :statuses="['active' => __('common.active'), 'inactive' => __('common.inactive')]"
+        :search-placeholder="__('admin.list_search.international_shipping_rates')" />
+
     <x-card padding="none">
         <div class="table-responsive">
             <table class="table-base w-full">
@@ -35,8 +38,8 @@
                 <tbody>
                     @forelse($rates as $rate)
                         <tr>
-                            <td class="font-medium text-gray-900">{{ $rate->originCountry->name_en ?? '—' }}</td>
-                            <td class="font-medium text-gray-900">{{ $rate->destinationCountry->name_en ?? '—' }}</td>
+                            <td class="font-medium text-gray-900">{{ localized($rate->originCountry) ?: '—' }}</td>
+                            <td class="font-medium text-gray-900">{{ localized($rate->destinationCountry) ?: '—' }}</td>
                             <td>{{ $rate->carrier->name ?? __('admin.international_shipping.generic_fallback') }}</td>
                             <td class="text-end">{{ \App\Support\Money::format($rate->base_fee) }}</td>
                             <td class="text-end">{{ \App\Support\Money::format($rate->rate_per_kg) }}</td>

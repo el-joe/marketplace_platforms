@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\AdImageItem;
 use App\Models\Admin;
-use App\Models\AdminListing;
+use App\Models\AppContextCountry;
 use App\Models\BlockType;
 use App\Models\Brand;
 use App\Models\Category;
@@ -20,6 +20,7 @@ use App\Models\PageRevision;
 use App\Models\PageSection;
 use App\Models\SliderSlide;
 use App\Models\Vendor;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -42,13 +43,13 @@ class PageBuilderService
             ->where('page_id', $pageId)
             ->orderBy('position')
             ->get()
-            ->map(fn(PageBlock $b) => $this->serializeBlock($b))
+            ->map(fn (PageBlock $b) => $this->serializeBlock($b))
             ->all();
 
         $sections = PageSection::where('page_id', $pageId)
             ->orderBy('position')
             ->get()
-            ->map(fn(PageSection $s) => [
+            ->map(fn (PageSection $s) => [
                 'id' => $s->id,
                 'name' => $s->name,
                 'name_en' => $s->name_en,
@@ -86,7 +87,7 @@ class PageBuilderService
                 'app_context_key' => $page->app_context_key,
                 'app_context_name' => optional($page->appContext)->name_en,
                 'app_context_color' => optional($page->appContext)->color_hex,
-                'home_for' => $page->homeFor->map(fn($assignment) => [
+                'home_for' => $page->homeFor->map(fn ($assignment) => [
                     'context_name' => optional($assignment->appContext)->name_en,
                     'country_name' => optional($assignment->country)->name_en,
                 ])->values(),
@@ -102,7 +103,7 @@ class PageBuilderService
      */
     private function resolveReferenceName(string $pageType, ?string $referenceId): ?string
     {
-        if (!$referenceId) {
+        if (! $referenceId) {
             return null;
         }
 
@@ -138,7 +139,7 @@ class PageBuilderService
             'category' => Category::whereKey($referenceId)->value('slug') ?? 'category',
             'brand' => Brand::whereKey($referenceId)->value('slug') ?? 'brand',
             'vendor' => Vendor::whereKey($referenceId)->value('store_slug') ?? 'vendor',
-            'custom_page' => \App\Models\CustomPage::whereKey($referenceId)->first()?->slugRecord?->slug_url ?? 'custom-page',
+            'custom_page' => CustomPage::whereKey($referenceId)->first()?->slugRecord?->slug_url ?? 'custom-page',
             default => Str::slug($pageType),
         };
 
@@ -160,11 +161,11 @@ class PageBuilderService
     public function addBlock(Page $page, string $blockTypeCode, int $position, Admin $admin, ?string $sectionId = null, ?int $columnIndex = null): PageBlock
     {
         $type = BlockType::where('code', $blockTypeCode)->where('is_active', true)->first();
-        if (!$type) {
+        if (! $type) {
             throw ValidationException::withMessages(['block_type_code' => 'Unknown or inactive block type.']);
         }
 
-        if ($type->requires_permission && !$admin->hasPermissionTo($type->requires_permission)) {
+        if ($type->requires_permission && ! $admin->hasPermissionTo($type->requires_permission)) {
             throw ValidationException::withMessages(['block_type_code' => 'You do not have permission to add this block type.']);
         }
 
@@ -235,7 +236,7 @@ class PageBuilderService
     {
         DB::transaction(function () use ($orderedBlocks) {
             foreach ($orderedBlocks as $item) {
-                if (!isset($item['id'], $item['position'])) {
+                if (! isset($item['id'], $item['position'])) {
                     continue;
                 }
                 $update = ['position' => (int) $item['position']];
@@ -251,7 +252,7 @@ class PageBuilderService
     {
         DB::transaction(function () use ($orderedSections) {
             foreach ($orderedSections as $item) {
-                if (!isset($item['id'], $item['position'])) {
+                if (! isset($item['id'], $item['position'])) {
                     continue;
                 }
                 PageSection::whereKey($item['id'])->update(['position' => (int) $item['position']]);
@@ -296,8 +297,8 @@ class PageBuilderService
             PageRevision::create([
                 'page_id' => $page->id,
                 'version' => $page->version,
-                'blocks_snapshot' => $blocks->map(fn(PageBlock $b) => $this->serializeBlock($b, true))->all(),
-                'sections_snapshot' => $sections->map(fn(PageSection $s) => $this->serializeSection($s))->all(),
+                'blocks_snapshot' => $blocks->map(fn (PageBlock $b) => $this->serializeBlock($b, true))->all(),
+                'sections_snapshot' => $sections->map(fn (PageSection $s) => $this->serializeSection($s))->all(),
                 'published_by_admin_id' => $admin->id,
                 'publish_reason' => $reason !== '' ? $reason : null,
             ]);
@@ -371,7 +372,7 @@ class PageBuilderService
                 'blocks_snapshot' => $snapshot,
                 'sections_snapshot' => $sectionsSnapshot,
                 'published_by_admin_id' => $admin->id,
-                'publish_reason' => 'Restored from version ' . $revision->version,
+                'publish_reason' => 'Restored from version '.$revision->version,
             ]);
 
             $this->flushPageCache($page);
@@ -388,7 +389,7 @@ class PageBuilderService
             $block->updated_by_admin_id = $admin->id;
             $block->save();
 
-            $this->writeBlockRevision($block, $admin, 'config_updated', 'Restored from revision #' . $revision->revision_number);
+            $this->writeBlockRevision($block, $admin, 'config_updated', 'Restored from revision #'.$revision->revision_number);
             $this->touchPage($block->page, $admin);
         });
     }
@@ -416,7 +417,7 @@ class PageBuilderService
 
     private function touchPage(?Page $page, Admin $admin): void
     {
-        if (!$page) {
+        if (! $page) {
             return;
         }
         $page->forceFill(['last_edited_by_admin_id' => $admin->id])->save();
@@ -439,8 +440,9 @@ class PageBuilderService
             'cache_ttl_seconds' => (int) $block->cache_ttl_seconds,
         ];
 
-        if (!$forSnapshot) {
+        if (! $forSnapshot) {
             $base['label_en'] = optional($block->blockType)->label_en ?? $block->block_type;
+            $base['label'] = localized($block->blockType, 'label') ?: $block->block_type;
             $base['icon'] = optional($block->blockType)->icon ?? 'cube';
             $base['preview_text'] = $block->getPreviewText();
         }
@@ -519,6 +521,7 @@ class PageBuilderService
         if ($slideId) {
             $slide = SliderSlide::where('page_block_id', $block->id)->findOrFail($slideId);
             $slide->update($payload);
+
             return $slide;
         }
 
@@ -562,6 +565,7 @@ class PageBuilderService
         if ($itemId) {
             $item = AdImageItem::where('page_block_id', $block->id)->findOrFail($itemId);
             $item->update($payload);
+
             return $item;
         }
 
@@ -661,8 +665,8 @@ class PageBuilderService
     {
         return DB::transaction(function () use ($page, $admin) {
             $newPage = $page->replicate();
-            $newPage->name = $page->name . ' (Copy)';
-            $newPage->slug = $page->slug . '-copy-' . now()->timestamp;
+            $newPage->name = $page->name.' (Copy)';
+            $newPage->slug = $page->slug.'-copy-'.now()->timestamp;
             $newPage->status = 'draft';
             $newPage->version = 1;
             $newPage->is_default = false;
@@ -732,7 +736,7 @@ class PageBuilderService
             throw ValidationException::withMessages(['page' => [__('admin.page_builder.copy_to_country.type_not_supported')]]);
         }
         if ($page->app_context_key) {
-            $active = \App\Models\AppContextCountry::where('country_id', $target->id)
+            $active = AppContextCountry::where('country_id', $target->id)
                 ->where('is_active', true)
                 ->whereHas('appContext', fn ($q) => $q->where('key', $page->app_context_key))
                 ->exists();
@@ -781,6 +785,7 @@ class PageBuilderService
                 foreach ($block->slides()->get() as $slide) {
                     if ($slide->is_paid) {
                         $warnings[] = __('admin.page_builder.copy_to_country.skipped_paid');
+
                         continue;
                     }
                     $copy = $slide->replicate();
@@ -791,6 +796,7 @@ class PageBuilderService
                 foreach ($block->adImageItems()->get() as $item) {
                     if ($item->is_paid) {
                         $warnings[] = __('admin.page_builder.copy_to_country.skipped_paid');
+
                         continue;
                     }
                     $copy = $item->replicate();
@@ -820,6 +826,7 @@ class PageBuilderService
                 foreach ($block->blockSellers()->with('seller')->get() as $row) {
                     if (! $row->seller || (string) $row->seller->country_id !== (string) $target->id) {
                         $warnings[] = __('admin.page_builder.copy_to_country.skipped_seller', ['name' => $row->seller?->store_name ?? $row->seller_id]);
+
                         continue;
                     }
                     $copy = $row->replicate();
@@ -864,7 +871,7 @@ class PageBuilderService
     // Storefront rendering
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function renderBlock(PageBlock $block, ?Country $country = null): \Illuminate\Contracts\View\View|string
+    public function renderBlock(PageBlock $block, ?Country $country = null): View|string
     {
         switch ($block->block_type) {
             default:
@@ -885,4 +892,3 @@ class PageBuilderService
         });
     }
 }
-

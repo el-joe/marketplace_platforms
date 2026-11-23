@@ -6,11 +6,13 @@ use App\Enums\RegistrationFlow;
 use App\Enums\VendorDocumentRequirementLevel;
 use App\Enums\VendorType;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Portal\Concerns\KeepsWizardPasswordHashed;
 use App\Mail\NewVendorApplicationAdminMail;
 use App\Mail\VendorApplicationReceivedMail;
 use App\Models\Address;
 use App\Models\Admin;
 use App\Models\City;
+use App\Models\ClassifiedCategory;
 use App\Models\Country;
 use App\Models\Vendor;
 use App\Models\VendorAdmin;
@@ -19,14 +21,15 @@ use App\Models\VendorDocument;
 use App\Models\VendorDocumentType;
 use App\Notifications\Admin\NewVendorApplicationSubmitted;
 use App\Services\ActivityLoggerService;
+use App\Services\Portal\JoinService;
 use App\Services\PortalAnalytics\PortalTracker;
 use App\Services\Vendor\CategoryContractService;
 use App\Services\Vendor\ContractResolver;
 use App\Services\Vendor\SellerAgreementService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -37,11 +40,14 @@ use Illuminate\View\View;
 
 class RegistrationController extends Controller
 {
+    use KeepsWizardPasswordHashed;
+
     public function __construct(
         private readonly SellerAgreementService $agreements,
         private readonly CategoryContractService $contracts,
         private readonly ContractResolver $resolver,
         private readonly PortalTracker $tracker,
+        private readonly JoinService $joinService,
     ) {}
 
     // ── Step validation rule sets ─────────────────────────────────────────
@@ -51,13 +57,11 @@ class RegistrationController extends Controller
         return match ($step) {
             1 => [
                 'name' => 'required|string|max:255',
-                'email' => 'required|email|max:255|unique:vendors,email',
-                'phone' => 'required|string|max:30',
+                'email' => 'required|email|max:255|unique:vendors,email|unique:vendor_admins,email',
+                'phone' => 'required|string|max:30|unique:vendors,phone',
                 'gender' => 'required|in:male,female',
-                'country_id' => 'required|exists:countries,id',
-                'password' => 'required|min:8|confirmed',
-                'password_confirmation' => 'required',
-            ],
+                'country_id' => ['required', Country::availableForVendorsRule()],
+            ] + $this->wizardPasswordRules(session('reg_data.step1', [])),
             2 => [
                 'store_name' => 'required|string|max:255|unique:vendors,store_name',
                 'store_slug' => 'required|string|max:120|alpha_dash|unique:vendors,store_slug',
@@ -88,6 +92,7 @@ class RegistrationController extends Controller
         if ($step === 1) {
             return [
                 'email.unique' => __('portal.registration.email_unique'),
+                'phone.unique' => __('portal.registration.phone_unique'),
                 'password.min' => __('portal.registration.password_min'),
                 'password.confirmed' => __('portal.registration.password_confirmed'),
             ];
@@ -116,9 +121,16 @@ class RegistrationController extends Controller
         session(['reg_data.vendor_type' => $vendorType->value]);
         $isClassifiedAccount = $vendorType === VendorType::ClassifiedVendor;
 
-        $countries = Country::where('is_active', true)->orderBy('name_ar')->get();
+        // A Classifieds section landing passes its category (?category=slug): the wizard then shows and collects
+        // that section's contract too. Anything else (no category, unknown, inactive, sub-category) clears it.
+        $classifiedCategory = $isClassifiedAccount && is_string($request->query('category'))
+            ? $this->joinService->findJoinableClassifiedCategory($request->query('category'), null)
+            : null;
+        session(['reg_data.classified_category_id' => $classifiedCategory?->id]);
+
+        $countries = Country::availableForVendors()->orderBy('name_ar')->get();
         $currentStep = session('reg_data.current_step', 1);
-        $savedData = session('reg_data', []);
+        $savedData = $this->wizardDataForView(session('reg_data', []));
 
         // Carry the portal country chosen earlier into the country field, unless
         // the applicant already saved a different one.
@@ -143,11 +155,27 @@ class RegistrationController extends Controller
             }
         }
 
+        // The chosen section's own contract, per country (same resolution as when listing in it: the category's
+        // country assignment, its parents', then the country default). Null where none applies or none is configured.
+        $categoryContractByCountry = [];
+        $categoryContractDocs = [];
+
+        if ($classifiedCategory) {
+            foreach ($countries as $country) {
+                $template = $this->contracts->templateFor($classifiedCategory, $country);
+                $categoryContractByCountry[$country->id] = $template?->id;
+
+                if ($template && ! isset($categoryContractDocs[$template->id])) {
+                    $categoryContractDocs[$template->id] = ['template' => $template, 'doc' => $this->contracts->presentPublic($template)];
+                }
+            }
+        }
+
         // Registration is never blocked for a country that has no Seller Agreement; its agreement step is skipped.
         $agreementEnforced = false;
         $agreementNotConfiguredMessage = __('contracts.api.not_configured', ['country' => ':country']);
 
-        return view('portal.register', compact('countries', 'currentStep', 'savedData', 'agreementByCountry', 'agreementDocs', 'agreementEnforced', 'agreementNotConfiguredMessage', 'isClassifiedAccount'));
+        return view('portal.register', compact('countries', 'currentStep', 'savedData', 'agreementByCountry', 'agreementDocs', 'agreementEnforced', 'agreementNotConfiguredMessage', 'isClassifiedAccount', 'classifiedCategory', 'categoryContractByCountry', 'categoryContractDocs'));
     }
 
     /**
@@ -182,7 +210,12 @@ class RegistrationController extends Controller
             ], 422);
         }
 
-        session(["reg_data.step{$step}" => $validator->validated()]);
+        $data = $validator->validated();
+        if ($step === 1) {
+            $data = $this->hashWizardPassword($data, session('reg_data.step1', []));
+        }
+
+        session(["reg_data.step{$step}" => $data]);
         session(['reg_data.current_step' => $step + 1]);
         $this->tracker->stepCompleted(RegistrationFlow::Vendor, $step);
 
@@ -307,6 +340,21 @@ class RegistrationController extends Controller
     // ── Final submission ──────────────────────────────────────────────────
 
     /**
+     * The Classifieds section this applicant chose on /join (carried into the wizard as ?category=), re-read from
+     * the database so a section deactivated meanwhile is ignored. Only a classified-ads account has one.
+     */
+    private function registeringClassifiedCategory(): ?ClassifiedCategory
+    {
+        $categoryId = session('reg_data.classified_category_id');
+
+        if (! is_string($categoryId) || session('reg_data.vendor_type') !== VendorType::ClassifiedVendor->value) {
+            return null;
+        }
+
+        return $this->joinService->findJoinableClassifiedCategory($categoryId, null);
+    }
+
+    /**
      * POST /register/complete
      */
     public function complete(Request $request): JsonResponse
@@ -323,10 +371,22 @@ class RegistrationController extends Controller
             'privacy_agreed' => 'required|accepted',
         ];
 
-        if ($agreement) {
+        // The Classifieds section chosen on /join brings its own contract, decided here for the seller's country.
+        $classifiedCategory = $this->registeringClassifiedCategory();
+        $categoryContract = $classifiedCategory ? $this->contracts->templateFor($classifiedCategory, $country) : null;
+
+        if ($agreement || $categoryContract) {
             $rules['signature_name'] = 'required|string|min:3|max:150';
             $rules['agreement_language'] = 'required|in:ar,en';
+        }
+
+        if ($agreement) {
             $rules['agreement_template_id'] = ['required', 'in:'.$agreement->id];
+        }
+
+        if ($categoryContract) {
+            $rules['category_contract_template_id'] = ['required', 'in:'.$categoryContract->id];
+            $rules['category_contract_agreed'] = 'required|accepted';
         }
 
         $validator = Validator::make($request->all(), $rules, [
@@ -335,6 +395,10 @@ class RegistrationController extends Controller
             'signature_name.required' => __('portal.registration.signature_name_required'),
             'signature_name.min' => __('portal.registration.signature_name_required'),
             'agreement_template_id.in' => __('portal.registration.agreement_changed'),
+            'category_contract_template_id.required' => __('portal.registration.category_contract_changed'),
+            'category_contract_template_id.in' => __('portal.registration.category_contract_changed'),
+            'category_contract_agreed.required' => __('portal.registration.category_contract_required'),
+            'category_contract_agreed.accepted' => __('portal.registration.category_contract_required'),
         ]);
 
         if ($validator->fails()) {
@@ -354,7 +418,9 @@ class RegistrationController extends Controller
         $docExpiries = $request->input('doc_expiries', []);
 
         // Guard: all steps must be present
-        if (empty($step1['email']) || empty($step2['store_name']) || empty($step3['street_address'])) {
+        $passwordHash = $this->wizardPasswordHash($step1);
+
+        if (empty($step1['email']) || $passwordHash === null || empty($step2['store_name']) || empty($step3['street_address'])) {
             $this->tracker->stepFailed(RegistrationFlow::Vendor, 5);
 
             return response()->json([
@@ -364,7 +430,7 @@ class RegistrationController extends Controller
         }
 
         // Validate required documents against country's document requirements
-        $country = Country::find($step1['country_id'] ?? null);
+        $country = Country::availableForVendors()->find($step1['country_id'] ?? null);
         if (! $country) {
             $this->tracker->stepFailed(RegistrationFlow::Vendor, 5);
 
@@ -397,161 +463,193 @@ class RegistrationController extends Controller
         // Build the set of acceptable doc codes for this country (mandatory + optional)
         $acceptableCodes = $requiredDocs->pluck('type.code')->flip()->all();
 
+        // Steps 1–2 were validated when entered, but another account may have taken the same
+        // email, phone, store name or slug since then: re-check before writing anything.
+        if ($conflict = $this->uniquenessConflict($step1, $step2)) {
+            $this->tracker->stepFailed(RegistrationFlow::Vendor, 5);
+
+            return $conflict;
+        }
+
         $signedContract = null;
         $confirmationEmailFailed = false;
         $createdVendor = null;
 
-        // try {
-        DB::transaction(function () use ($request, $agreement, &$signedContract, &$confirmationEmailFailed, &$createdVendor, $step1, $step2, $step3, $docs, $docExpiries, $acceptableCodes, $vendorType) {
-            // ① Create Vendor
-            $vendor = Vendor::create([
-                'name' => $step1['name'],
-                'email' => $step1['email'],
-                'phone' => $step1['phone'],
-                'gender' => $step1['gender'],
-                'password' => Hash::make($step1['password']),
-                'country_id' => $step1['country_id'],
-                'store_name' => $step2['store_name'],
-                'store_slug' => $step2['store_slug'],
-                'store_description' => $step2['store_description'] ?? null,
-                'business_type' => $step2['business_type'],
-                'business_name' => $step2['business_name'],
-                'business_registration_number' => $step2['business_registration_number'] ?? null,
-                'tax_id' => $step2['tax_id'] ?? null,
-                'contact_email' => $step3['contact_email'],
-                'contact_phone' => $step3['contact_phone'],
-                'whatsapp_number' => $step3['whatsapp_number'] ?? null,
-                'global_status' => 'pending',
-                'vendor_type' => $vendorType,
-                // 'approved_at' => 0,
-            ]);
-            $createdVendor = $vendor;
+        try {
+            DB::transaction(function () use ($request, $passwordHash, $agreement, $classifiedCategory, $categoryContract, &$signedContract, &$confirmationEmailFailed, &$createdVendor, $step1, $step2, $step3, $docs, $docExpiries, $acceptableCodes, $vendorType) {
+                // ① Create Vendor
+                $vendor = Vendor::create([
+                    'name' => $step1['name'],
+                    'email' => $step1['email'],
+                    'phone' => $step1['phone'],
+                    'gender' => $step1['gender'],
+                    'password' => $passwordHash,
+                    'country_id' => $step1['country_id'],
+                    'store_name' => $step2['store_name'],
+                    'store_slug' => $step2['store_slug'],
+                    'store_description' => $step2['store_description'] ?? null,
+                    'business_type' => $step2['business_type'],
+                    'business_name' => $step2['business_name'],
+                    'business_registration_number' => $step2['business_registration_number'] ?? null,
+                    'tax_id' => $step2['tax_id'] ?? null,
+                    'contact_email' => $step3['contact_email'],
+                    'contact_phone' => $step3['contact_phone'],
+                    'whatsapp_number' => $step3['whatsapp_number'] ?? null,
+                    'global_status' => 'pending',
+                    'vendor_type' => $vendorType,
+                    // 'approved_at' => 0,
+                ]);
+                $createdVendor = $vendor;
 
-            // ② Create billing address (polymorphic)
-            $address = Address::create([
-                'addressable_type' => Vendor::class,
-                'addressable_id' => $vendor->id,
-                'address_type' => 'billing',
-                'country_id' => $step1['country_id'],
-                'city_id' => $step3['city_id'],
-                'area' => $step3['area'] ?? null,
-                'street_address' => $step3['street_address'],
-                'building' => $step3['building'] ?? null,
-                'floor' => $step3['floor'] ?? null,
-                'apartment' => $step3['apartment'] ?? null,
-                'postal_code' => $step3['postal_code'] ?? null,
-                'recipient_name' => $step1['name'],
-                'recipient_phone' => $step3['contact_phone'],
-                'is_default' => true,
-            ]);
+                // ② Create billing address (polymorphic)
+                $address = Address::create([
+                    'addressable_type' => Vendor::class,
+                    'addressable_id' => $vendor->id,
+                    'address_type' => 'billing',
+                    'country_id' => $step1['country_id'],
+                    'city_id' => $step3['city_id'],
+                    'area' => $step3['area'] ?? null,
+                    'street_address' => $step3['street_address'],
+                    'building' => $step3['building'] ?? null,
+                    'floor' => $step3['floor'] ?? null,
+                    'apartment' => $step3['apartment'] ?? null,
+                    'postal_code' => $step3['postal_code'] ?? null,
+                    'recipient_name' => $step1['name'],
+                    'recipient_phone' => $step3['contact_phone'],
+                    'is_default' => true,
+                ]);
 
-            // ③ Link address back to vendor
-            $vendor->update(['business_address_id' => $address->id]);
+                // ③ Link address back to vendor
+                $vendor->update(['business_address_id' => $address->id]);
 
-            // ④ Create VendorAdmin (owner)
-            $owner = VendorAdmin::create([
-                'vendor_id' => $vendor->id,
-                'name' => $step1['name'],
-                'email' => $step1['email'],
-                'password' => Hash::make($step1['password']),
-                'role' => 'owner',
-                'is_active' => 1,
-            ]);
-
-            // ④b Sign the Seller Agreement: typed name + agreement, frozen with IP and time
-            if ($agreement) {
-                $signedContract = $this->agreements->sign(
-                    vendor: $vendor,
-                    signer: $owner,
-                    template: $agreement,
-                    language: (string) $request->input('agreement_language'),
-                    signerName: (string) $request->input('signature_name'),
-                    ipAddress: $request->ip(),
-                    userAgent: $request->userAgent() ?? '',
-                    method: 'registration',
-                );
-            }
-
-            // ⑤ Move temp documents → permanent, create VendorDocument records
-            // Only process docs that are applicable for this country (skip not_applicable)
-            $submittedCodes = array_intersect_key($docs, $acceptableCodes);
-
-            $docTypeMap = VendorDocumentType::whereIn('code', array_keys($submittedCodes))
-                ->pluck('id', 'code');
-
-            $docTypeDetails = VendorDocumentType::whereIn('code', array_keys($submittedCodes))
-                ->get()->keyBy('code');
-
-            foreach ($submittedCodes as $docCode => $tempPath) {
-                $ext = pathinfo($tempPath, PATHINFO_EXTENSION);
-                $permPath = "vendor-docs/{$vendor->id}/{$docCode}.{$ext}";
-
-                if (Storage::disk('public')->exists($tempPath)) {
-                    Storage::disk('public')->move($tempPath, $permPath);
-                }
-
-                $typeRecord = $docTypeDetails[$docCode] ?? null;
-                $expiresAt = null;
-                if ($typeRecord?->requires_expiry_date && ! empty($docExpiries[$docCode])) {
-                    $expiresAt = $docExpiries[$docCode];
-                }
-
-                VendorDocument::create([
+                // ④ Create VendorAdmin (owner)
+                $owner = VendorAdmin::create([
                     'vendor_id' => $vendor->id,
-                    'vendor_document_type_id' => $docTypeMap[$docCode],
-                    'file_path' => $permPath,
-                    'status' => 'pending',
-                    'expires_at' => $expiresAt,
+                    'name' => $step1['name'],
+                    'email' => $step1['email'],
+                    'password' => $passwordHash,
+                    'role' => 'owner',
+                    'is_active' => 1,
                 ]);
-            }
 
-            // ⑥ Confirmation email: the application is already saved, so a mail failure must not
-            // lose it, but it is logged with context and shown to the applicant on the success page.
-            try {
-                Mail::to($vendor->email)->send(new VendorApplicationReceivedMail($vendor));
-            } catch (\Throwable $e) {
-                $confirmationEmailFailed = true;
-                Log::error('Credential email failed', [
-                    'flow' => 'vendor_application_received',
-                    'recipient' => $vendor->email,
-                    'mailer' => config('mail.default'),
-                    'exception' => $e::class,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            // ⑧ Notify admins of new application (in-app + email)
-            try {
-                $admins = Admin::permission('vendors.approve')->get();
-
-                Notification::send($admins, new NewVendorApplicationSubmitted($vendor));
-
-                foreach ($admins as $admin) {
-                    Mail::to($admin->email)->queue(new NewVendorApplicationAdminMail($vendor));
+                // ④b Sign the Seller Agreement: typed name + agreement, frozen with IP and time
+                if ($agreement) {
+                    $signedContract = $this->agreements->sign(
+                        vendor: $vendor,
+                        signer: $owner,
+                        template: $agreement,
+                        language: (string) $request->input('agreement_language'),
+                        signerName: (string) $request->input('signature_name'),
+                        ipAddress: $request->ip(),
+                        userAgent: $request->userAgent() ?? '',
+                        method: 'registration',
+                    );
                 }
-            } catch (\Throwable $e) {
-                Log::error('Admin vendor application notification/email failed', [
-                    'flow' => 'vendor_application_admin_notice',
-                    'vendor_id' => $vendor->id,
-                    'exception' => $e::class,
-                    'error' => $e->getMessage(),
-                ]);
-            }
 
-            // ⑦ Activity log (non-blocking)
-            try {
-                app(ActivityLoggerService::class)->log(
-                    'New vendor registration submitted',
-                    $vendor,
-                    null,
-                    ['email' => $vendor->email, 'store' => $vendor->store_name],
-                    'vendor',
-                    'created'
-                );
-            } catch (\Throwable $e) {
-                Log::warning('Activity log failed after vendor registration: '.$e->getMessage());
-            }
-        });
+                // ④c Sign the chosen Classifieds section's contract with the same typed name. The service resolves the
+                // template again from the new vendor's country, so it is always the one shown in step 5.
+                if ($classifiedCategory && $categoryContract) {
+                    $this->contracts->sign(
+                        vendor: $vendor,
+                        signer: $owner,
+                        scope: CategoryContractService::SCOPE_CLASSIFIED,
+                        categoryId: $classifiedCategory->id,
+                        language: (string) $request->input('agreement_language'),
+                        signerName: (string) $request->input('signature_name'),
+                        ipAddress: $request->ip() ?? '',
+                        userAgent: $request->userAgent() ?? '',
+                    );
+                }
+
+                // ⑤ Move temp documents → permanent, create VendorDocument records
+                // Only process docs that are applicable for this country (skip not_applicable)
+                $submittedCodes = array_intersect_key($docs, $acceptableCodes);
+
+                $docTypeMap = VendorDocumentType::whereIn('code', array_keys($submittedCodes))
+                    ->pluck('id', 'code');
+
+                $docTypeDetails = VendorDocumentType::whereIn('code', array_keys($submittedCodes))
+                    ->get()->keyBy('code');
+
+                foreach ($submittedCodes as $docCode => $tempPath) {
+                    $ext = pathinfo($tempPath, PATHINFO_EXTENSION);
+                    $permPath = "vendor-docs/{$vendor->id}/{$docCode}.{$ext}";
+
+                    if (Storage::disk('public')->exists($tempPath)) {
+                        Storage::disk('public')->move($tempPath, $permPath);
+                    }
+
+                    $typeRecord = $docTypeDetails[$docCode] ?? null;
+                    $expiresAt = null;
+                    if ($typeRecord?->requires_expiry_date && ! empty($docExpiries[$docCode])) {
+                        $expiresAt = $docExpiries[$docCode];
+                    }
+
+                    VendorDocument::create([
+                        'vendor_id' => $vendor->id,
+                        'vendor_document_type_id' => $docTypeMap[$docCode],
+                        'file_path' => $permPath,
+                        'status' => 'pending',
+                        'expires_at' => $expiresAt,
+                    ]);
+                }
+
+                // ⑥ Confirmation email: the application is already saved, so a mail failure must not
+                // lose it, but it is logged with context and shown to the applicant on the success page.
+                try {
+                    Mail::to($vendor->email)->send(new VendorApplicationReceivedMail($vendor));
+                } catch (\Throwable $e) {
+                    $confirmationEmailFailed = true;
+                    Log::error('Credential email failed', [
+                        'flow' => 'vendor_application_received',
+                        'recipient' => $vendor->email,
+                        'mailer' => config('mail.default'),
+                        'exception' => $e::class,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                // ⑧ Notify admins of new application (in-app + email)
+                try {
+                    $admins = Admin::permission('vendors.approve')->get();
+
+                    Notification::send($admins, new NewVendorApplicationSubmitted($vendor));
+
+                    foreach ($admins as $admin) {
+                        Mail::to($admin->email)->queue(new NewVendorApplicationAdminMail($vendor));
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('Admin vendor application notification/email failed', [
+                        'flow' => 'vendor_application_admin_notice',
+                        'vendor_id' => $vendor->id,
+                        'exception' => $e::class,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                // ⑦ Activity log (non-blocking)
+                try {
+                    app(ActivityLoggerService::class)->log(
+                        'New vendor registration submitted',
+                        $vendor,
+                        null,
+                        ['email' => $vendor->email, 'store' => $vendor->store_name],
+                        'vendor',
+                        'created'
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning('Activity log failed after vendor registration: '.$e->getMessage());
+                }
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            // A concurrent registration won the race for a unique column. Never echo the exception:
+            // its message carries the SQL, the submitted values and the password hash.
+            $field = $this->fieldForUniqueViolation($e);
+            Log::warning('Vendor registration hit a unique constraint', ['field' => $field]);
+            $this->tracker->stepFailed(RegistrationFlow::Vendor, 5);
+
+            return $this->conflictResponse($field ? [$field => [$this->uniqueMessage($field)]] : []);
+        }
 
         session()->forget('reg_data');
 
@@ -571,16 +669,61 @@ class RegistrationController extends Controller
             'success' => true,
             'redirect' => route('portal.register.success'),
         ]);
-        // } catch (\Throwable $e) {
-        //     Log::error('Vendor registration DB error: ' . $e->getMessage(), [
-        //         'trace' => $e->getTraceAsString(),
-        //     ]);
+    }
 
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => 'حدث خطأ أثناء التسجيل. حاول مرة أخرى أو تواصل مع الدعم.',
-        //     ], 500);
-        // }
+    // ── Uniqueness guards ─────────────────────────────────────────────────
+
+    /**
+     * Re-validates the unique fields saved in the session, returning a 422 response on conflict.
+     *
+     * @param  array<string, mixed>  $step1
+     * @param  array<string, mixed>  $step2
+     */
+    private function uniquenessConflict(array $step1, array $step2): ?JsonResponse
+    {
+        $rules = array_intersect_key(
+            $this->stepRules(1) + $this->stepRules(2),
+            array_flip(['email', 'phone', 'store_name', 'store_slug'])
+        );
+
+        $validator = Validator::make($step1 + $step2, $rules, $this->stepMessages(1) + $this->stepMessages(2));
+
+        return $validator->fails() ? $this->conflictResponse($validator->errors()->toArray()) : null;
+    }
+
+    /**
+     * @param  array<string, list<string>>  $errors
+     */
+    private function conflictResponse(array $errors): JsonResponse
+    {
+        $storeFields = ['store_name', 'store_slug'];
+        $step = array_intersect(array_keys($errors), $storeFields) && ! array_diff(array_keys($errors), $storeFields) ? 2 : 1;
+        session(['reg_data.current_step' => $step]);
+
+        return response()->json([
+            'success' => false,
+            'message' => __('portal.registration.account_conflict'),
+            'errors' => $errors,
+            'step' => $step,
+        ], 422);
+    }
+
+    private function fieldForUniqueViolation(UniqueConstraintViolationException $e): ?string
+    {
+        $detail = (string) ($e->errorInfo[2] ?? '');
+
+        foreach (['vendors_phone_unique' => 'phone', 'vendors_email_unique' => 'email', 'vendor_admins_email_unique' => 'email', 'vendors_store_name_unique' => 'store_name', 'vendors_store_slug_unique' => 'store_slug'] as $index => $field) {
+            if (str_contains($detail, $index)) {
+                return $field;
+            }
+        }
+
+        return null;
+    }
+
+    private function uniqueMessage(string $field): string
+    {
+        return ($this->stepMessages(1) + $this->stepMessages(2))[$field.'.unique'];
     }
 
     // ── AJAX helpers ──────────────────────────────────────────────────────

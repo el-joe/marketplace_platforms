@@ -40,7 +40,7 @@ class WantedListingController extends Controller
     {
         $data = $request->validate([
             'classified_category_id' => ['required', 'uuid', 'exists:classified_categories,id'],
-            'country_id' => ['required', 'uuid', 'exists:countries,id'],
+            'country_id' => ['required', 'uuid', Country::availableForVendorsRule()],
             'title_ar' => ['required', 'string', 'max:255'],
             'title_en' => ['nullable', 'string', 'max:255'],
             'description_ar' => ['nullable', 'string'],
@@ -51,7 +51,7 @@ class WantedListingController extends Controller
         $country = Country::findOrFail($data['country_id']);
 
         $w = ClassifiedWantedListing::create($data + [
-            'listing_number' => 'WL-' . strtoupper(Str::random(8)),
+            'listing_number' => 'WL-'.strtoupper(Str::random(8)),
             'marketer_id' => $this->marketerId(),
             'currency' => $country->currency_code,
             'status' => 'active',

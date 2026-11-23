@@ -10,13 +10,14 @@ use App\Models\AdImageItem;
 use App\Models\BannerPlacementDefinition;
 use App\Models\Country;
 use App\Models\Currency;
+use App\Models\PageBlock;
 use App\Models\PaidAdSlot;
 use App\Models\SliderSlide;
 use App\Traits\HasDataTable;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class AdSlotController extends Controller
 {
@@ -24,7 +25,7 @@ class AdSlotController extends Controller
 
     // ─── Index ────────────────────────────────────────────────────────────────
 
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ad_slots.view'), 403);
@@ -34,7 +35,7 @@ class AdSlotController extends Controller
             'available' => PaidAdSlot::where('is_available', true)->count(),
         ];
 
-        $countries = Country::orderBy('name_en')->where('is_launched', true)->get(['id', 'name_en']);
+        $countries = Country::orderBy('name_en')->where('is_launched', true)->get(['id', 'name_en', 'name_ar']);
 
         return view('admin.ad-slots.index', compact('stats', 'countries'));
     }
@@ -49,9 +50,9 @@ class AdSlotController extends Controller
         $query = PaidAdSlot::query()->with(['placementDefinition', 'country']);
 
         $query = $this->applyFilters($query, $request, [
-            'is_available' => fn($q, $v) => $q->where('is_available', (int) $v),
-            'country_id' => fn($q, $v) => $q->where('country_id', $v),
-            'target_type' => fn($q, $v) => $q->where('target_type', $v),
+            'is_available' => fn ($q, $v) => $q->where('is_available', (int) $v),
+            'country_id' => fn ($q, $v) => $q->where('country_id', $v),
+            'target_type' => fn ($q, $v) => $q->where('target_type', $v),
         ]);
 
         $columns = [
@@ -69,31 +70,31 @@ class AdSlotController extends Controller
 
         return $this->dataTableResponse($request, $query, $columns, function (PaidAdSlot $row) use ($canEdit) {
             $isAvailBadge = $row->is_available
-                ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700">' . __('admin.ad_campaigns.available_badge') . '</span>'
-                : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">' . __('admin.ad_campaigns.unavailable_badge') . '</span>';
+                ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700">'.__('admin.ad_campaigns.available_badge').'</span>'
+                : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">'.__('admin.ad_campaigns.unavailable_badge').'</span>';
 
-            $rate = number_format($row->base_rate) . ' ' . strtoupper($row->currency ?? '');
+            $rate = number_format($row->base_rate).' '.strtoupper($row->currency ?? '');
             $pricingModelLabel = ucwords(str_replace('_', '/', $row->pricing_model->value));
 
             $editUrl = route('admin.ad-slots.edit', $row->id);
             $bookingsUrl = route('admin.ad-slots.bookings', $row->id);
 
             $actions = '<div class="flex items-center gap-1">';
-            $actions .= "<a href=\"{$bookingsUrl}\" class=\"btn btn-xs btn-secondary\">" . __('admin.ad_campaigns.bookings_link') . "</a>";
+            $actions .= "<a href=\"{$bookingsUrl}\" class=\"btn btn-xs btn-secondary\">".__('admin.ad_campaigns.bookings_link').'</a>';
             if ($canEdit) {
-                $actions .= "<a href=\"{$editUrl}\" class=\"btn btn-xs btn-ghost\">" . __('admin.edit') . "</a>";
+                $actions .= "<a href=\"{$editUrl}\" class=\"btn btn-xs btn-ghost\">".__('admin.edit').'</a>';
             }
             $actions .= '</div>';
 
             return [
-                'name' => e($row->name) . '<br><span class="text-xs text-gray-400 font-mono">' . e($row->slot_code) . '</span>',
+                'name' => e($row->name).'<br><span class="text-xs text-gray-400 font-mono">'.e($row->slot_code).'</span>',
                 'placement' => e($row->placementDefinition?->name ?? '—'),
                 'country' => $row->country
-                    ? ($row->country->flag_emoji ? $row->country->flag_emoji . ' ' : '') . e($row->country->name_en)
-                    : '<span class="text-gray-400 text-xs">' . __('admin.ad_campaigns.global_label') . '</span>',
+                    ? ($row->country->flag_emoji ? $row->country->flag_emoji.' ' : '').e($row->country->name_en)
+                    : '<span class="text-gray-400 text-xs">'.__('admin.ad_campaigns.global_label').'</span>',
                 'pricing_model' => $pricingModelLabel,
-                'base_rate' => $rate . ' <span class="text-xs text-gray-400">/ ' . strtolower($row->pricing_model->value) . '</span>',
-                'booking_days' => $row->min_booking_days . ' – ' . ($row->max_booking_days ?? '∞') . ' days',
+                'base_rate' => $rate.' <span class="text-xs text-gray-400">/ '.strtolower($row->pricing_model->value).'</span>',
+                'booking_days' => $row->min_booking_days.' – '.($row->max_booking_days ?? '∞').' days',
                 'is_available' => $isAvailBadge,
                 'actions' => $actions,
                 'DT_RowData' => ['id' => $row->id],
@@ -103,7 +104,7 @@ class AdSlotController extends Controller
 
     // ─── Create ───────────────────────────────────────────────────────────────
 
-    public function create(): \Illuminate\View\View
+    public function create(): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ad_slots.create'), 403);
@@ -133,7 +134,7 @@ class AdSlotController extends Controller
             'country_id' => ['required', 'uuid', 'exists:countries,id'],
             'pricing_model' => ['required', Rule::enum(PaidAdSlotPricingModel::class)],
             'base_rate_display' => ['required', 'numeric', 'min:0'],
-                        'min_booking_days' => ['required', 'integer', 'min:1'],
+            'min_booking_days' => ['required', 'integer', 'min:1'],
             'max_booking_days' => ['nullable', 'integer', 'min:1'],
             'max_concurrent' => ['nullable', 'integer', 'min:1', 'max:4294967295'],
             'is_available' => ['boolean'],
@@ -184,7 +185,7 @@ class AdSlotController extends Controller
 
     // ─── Edit ─────────────────────────────────────────────────────────────────
 
-    public function edit(PaidAdSlot $adSlot): \Illuminate\View\View
+    public function edit(PaidAdSlot $adSlot): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ad_slots.edit'), 403);
@@ -214,7 +215,7 @@ class AdSlotController extends Controller
             'country_id' => ['required', 'uuid', 'exists:countries,id'],
             'pricing_model' => ['required', Rule::enum(PaidAdSlotPricingModel::class)],
             'base_rate_display' => ['required', 'numeric', 'min:0'],
-                        'min_booking_days' => ['required', 'integer', 'min:1'],
+            'min_booking_days' => ['required', 'integer', 'min:1'],
             'max_booking_days' => ['nullable', 'integer', 'min:1'],
             'max_concurrent' => ['nullable', 'integer', 'min:1', 'max:4294967295'],
             'is_available' => ['boolean'],
@@ -302,7 +303,7 @@ class AdSlotController extends Controller
             return null;
         }
 
-        $block = \App\Models\PageBlock::find($pageBlockId);
+        $block = PageBlock::find($pageBlockId);
         if (! $block) {
             return null;
         }
@@ -320,7 +321,7 @@ class AdSlotController extends Controller
 
     // ─── Bookings for slot ────────────────────────────────────────────────────
 
-    public function bookings(PaidAdSlot $adSlot): \Illuminate\View\View
+    public function bookings(PaidAdSlot $adSlot): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ad_slots.view'), 403);

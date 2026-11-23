@@ -7,7 +7,7 @@
                 <select name="country_id" class="input" data-select2-init required>
                     <option value="">{{ __('admin.app_contexts.select_country') }}</option>
                     @foreach ($countries as $country)
-                        <option value="{{ $country->id }}">{{ $country->name_en }}</option>
+                        <option value="{{ $country->id }}">{{ localized($country) }}</option>
                     @endforeach
                 </select>
             </div>

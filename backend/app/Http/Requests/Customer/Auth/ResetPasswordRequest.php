@@ -11,10 +11,14 @@ class ResetPasswordRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
-            'token' => ['required', 'string', 'size:64'],
+            'token' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }

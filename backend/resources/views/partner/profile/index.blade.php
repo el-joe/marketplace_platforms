@@ -4,7 +4,7 @@
 @section('page-title', __('partner.profile.title'))
 
 @push('scripts')
-    @vite('resources/js/partner/profile.js')
+    @vite(['resources/js/partner/profile.js', 'resources/js/components/location-picker.js'])
     <script>
         window.PROFILE = {
             csrf:               '{{ csrf_token() }}',
@@ -343,6 +343,12 @@ $businessTypeLabels = [
                 @endif
             </div>
         </div>
+
+        {{-- Store location (distance-based delivery origin) --}}
+        <x-store-location-form class="mt-6"
+            :location="$storeLocation"
+            :url="route('partner.profile.location.update')"
+            :can-edit="$admin->can('settings.edit')" />
 
         {{-- Branded QR Code --}}
         @if($vendor->qr_code_path)

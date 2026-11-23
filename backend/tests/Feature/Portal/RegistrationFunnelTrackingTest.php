@@ -236,7 +236,7 @@ class RegistrationFunnelTrackingTest extends TestCase
 
     public function test_travel_agency_wizard_is_tracked_as_its_own_flow_and_linked_on_completion(): void
     {
-        $country = Country::factory()->create(['is_active' => true]);
+        $country = Country::factory()->create(['is_active' => true, 'is_launched' => true]);
 
         $this->get(route('portal.companies.travel-agency.register.show'))->assertOk();
         $this->postJson(route('portal.companies.travel-agency.register.step', 1), [

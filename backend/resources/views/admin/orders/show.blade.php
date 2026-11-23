@@ -319,6 +319,10 @@
                                                         <br>
                                                         <span class="text-danger-600 font-medium">=
                                                             {{ $fmt($item->commission_amount) }}</span>
+                                                        @if($item->source_link_channel)
+                                                            <br>
+                                                            <span class="text-success-600">{{ __('product_link.order.badge_admin') }} ({{ strtoupper($item->source_link_channel) }})@if((float) $item->source_link_discount > 0): −{{ $fmt($item->source_link_discount) }}@endif</span>
+                                                        @endif
                                                         @if($item->vendor_coupon_cost > 0)
                                                             <br>
                                                             <span class="text-gray-400">{{ __('admin.orders.vendor_coupon_cost') }}:
@@ -364,6 +368,9 @@
                     ? admin_tz(\Carbon\Carbon::parse($subOrder->estimated_delivery_date))->format('M j, Y')
                     : '—' }}
                                     </div>
+                                    @if($subOrder->distance_pricing)
+                                        @include('admin.orders._distance-pricing')
+                                    @endif
                                     @if($subOrder->sla_ship_deadline)
                                         <div class="col-span-3 {{ $subOrder->sla_breached ? 'text-red-600 font-medium' : '' }}">
                                             <span class="font-medium">{{ __('admin.orders.sla_ship_deadline') }}:</span>

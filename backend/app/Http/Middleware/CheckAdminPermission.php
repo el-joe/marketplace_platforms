@@ -13,12 +13,13 @@ class CheckAdminPermission
      * Handle an incoming request.
      *
      * Usage in routes:  ->middleware('admin.permission:orders.view')
+     * Any-of (OR):       ->middleware('admin.permission:products.create|products.edit')
      */
     public function handle(Request $request, Closure $next, string $permission): Response
     {
         $admin = Auth::guard('admin')->user();
 
-        if (!$admin || !$admin->can($permission)) {
+        if (! $admin || ! $admin->canAny(explode('|', $permission))) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Forbidden.'], 403);
             }

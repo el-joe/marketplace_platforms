@@ -39,6 +39,9 @@
 </div>
 
 {{-- ─── Table ───────────────────────────────────────────────────────────────── --}}
+<x-filter.bar class="mb-4" :statuses="collect(\App\Enums\ShippingCompanyStatus::cases())->mapWithKeys(fn ($case) => [$case->value => __('admin.shipping_section.company_status_'.$case->value)])->all()"
+    :search-placeholder="__('admin.list_search.shipping_companies')" />
+
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
     <div class="table-responsive">
         <table class="w-full text-sm">
@@ -65,7 +68,7 @@
                         <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700">{{ __('admin.shipping_section.private_to_vendor') }}: {{ $company->owner?->name ?? '—' }}</span>
                         @endif
                     </td>
-                    <td class="px-6 py-4 text-gray-600">{{ $company->country?->name_en ?? '—' }}</td>
+                    <td class="px-6 py-4 text-gray-600">{{ localized($company->country) ?: '—' }}</td>
                     <td class="px-6 py-4">
                         <div class="text-gray-700">{{ $company->contact_email }}</div>
                         @if($company->contact_phone)
@@ -214,7 +217,7 @@
                             <select name="country_id" id="field-country" class="form-input w-full">
                                 <option value="">— {{ __('admin.shipping_section.select_country') }} —</option>
                                 @foreach($countries as $country)
-                                    <option value="{{ $country->id }}">{{ $country->name_en }}</option>
+                                    <option value="{{ $country->id }}">{{ localized($country) }}</option>
                                 @endforeach
                             </select>
                             <p class="text-xs text-gray-400 mt-1">{{ __('admin.shipping_section.home_country_note') }}</p>
@@ -237,7 +240,7 @@
                                     multiple class="form-input w-full" style="min-height: 100px;">
                                 @foreach($countries as $country)
                                     <option value="{{ $country->id }}">
-                                        {{ $country->name_en }} ({{ $country->currency_code }})
+                                        {{ localized($country) }} ({{ $country->currency_code }})
                                     </option>
                                 @endforeach
                             </select>

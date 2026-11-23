@@ -28,7 +28,7 @@
                     placeholder="{{ __('admin.marketer_campaigns.select_vendor') }}" />
 
                 <x-form.select name="country_id" label="{{ __('admin.marketer_campaigns.country_column') }}" :select2="true" required
-                    :options="$countries->mapWithKeys(fn($c) => [$c->id => $c->name_en])->toArray()"
+                    :options="$countries->mapWithKeys(fn($c) => [$c->id => localized($c)])->toArray()"
                     placeholder="{{ __('admin.marketer_campaigns.select_country') }}" />
 
                 <div class="sm:col-span-2">
@@ -39,7 +39,7 @@
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500">
                         @if($oldVendorListing)
                             <option value="{{ $oldVendorListing->id }}" selected>
-                                {{ $oldVendorListing->productVariant?->product?->name_en ?? '—' }} — {{ $oldVendorListing->id }}
+                                {{ localized($oldVendorListing->productVariant?->product) ?: '—' }} — {{ $oldVendorListing->id }}
                             </option>
                         @endif
                     </select>

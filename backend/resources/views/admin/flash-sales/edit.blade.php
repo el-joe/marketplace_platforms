@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', $sale->name_en)
+@section('title', localized($sale))
 
 @push('styles')
     @vite(['resources/js/components/flatpickr.js', 'resources/js/components/select2.js', 'resources/js/components/datatable.js', 'resources/js/components/column-renderers.js'])
@@ -84,7 +84,7 @@
                             <x-form-textarea name="description_ar" label="{{ __('admin.flash_sales.description_ar') }}" :value="$sale->description_ar" dir="rtl" rows="3" :disabled="!$isEditable" />
                         </div>
                         <x-form-select name="country_id" label="{{ __('admin.country') }}"
-                            :options="$countries->mapWithKeys(fn($c) => [$c->id => $c->name_en])->toArray()"
+                            :options="$countries->mapWithKeys(fn($c) => [$c->id => localized($c)])->toArray()"
                             :selected="$sale->country_id" :nullable="true" placeholder="{{ __('admin.flash_sales.all_countries') }}" :disabled="!$isEditable" />
                         <div class="flex items-end gap-6 pb-1">
                             <x-form-toggle name="is_featured"  label="{{ __('admin.flash_sales.featured') }}"  :value="$sale->is_featured"  :disabled="!$isEditable" />
@@ -155,7 +155,7 @@
                 <x-card title="{{ __('admin.flash_sales.eligible_categories') }}">
                     <x-form-checkbox-group name="eligible_categories"
                         label="{{ __('admin.flash_sales.limit_to_categories') }}"
-                        :options="$categories->mapWithKeys(fn($c) => [$c->id => $c->name_en])->toArray()"
+                        :options="$categories->mapWithKeys(fn($c) => [$c->id => localized($c)])->toArray()"
                         :values="$sale->eligible_categories ?? []" :disabled="!$isEditable" />
                 </x-card>
 
@@ -458,7 +458,7 @@
             <dl class="space-y-2 text-sm">
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.country') }}</dt>
-                    <dd class="font-medium">{{ $sale->country?->name_en ?? __('admin.flash_sales.all_countries') }}</dd>
+                    <dd class="font-medium">{{ localized($sale->country) ?: __('admin.flash_sales.all_countries') }}</dd>
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.flash_sales.duration') }}</dt>

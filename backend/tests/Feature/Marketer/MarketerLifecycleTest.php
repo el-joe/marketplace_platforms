@@ -74,7 +74,7 @@ class MarketerLifecycleTest extends TestCase
         Permission::firstOrCreate(['name' => 'marketers.view', 'guard_name' => 'admin']);
         Permission::firstOrCreate(['name' => 'marketers.manage', 'guard_name' => 'admin']);
         $admin = Admin::factory()->create();
-        $admin->givePermissionTo(['marketers.view', 'marketers.manage']);
+        $admin->givePermissionTo(['marketers.view', 'marketers.manage', 'wallets.view', 'wallets.manage']);
 
         return $admin;
     }

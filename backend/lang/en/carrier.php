@@ -230,6 +230,7 @@ return [
         'status_picked_up' => 'Picked Up',
         'status_delivered' => 'Delivered',
         'status_failed' => 'Failed',
+        'status_cancelled' => 'Cancelled',
         'no_assignments' => 'No assignments found.',
         'no_unassigned' => 'No unassigned shipments.',
         'no_carriers_linked_title' => 'No carriers linked to your company',

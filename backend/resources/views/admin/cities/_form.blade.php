@@ -33,7 +33,7 @@ Shared City form partial.
         <div class="flex gap-2">
             @if ($isEdit)
                 <button type="button" id="btn-delete-city" data-city-id="{{ $city->id }}"
-                    data-city-name="{{ $city->name_en }}" data-url="{{ route('admin.cities.destroy', $city->id) }}"
+                    data-city-name="{{ localized($city) }}" data-url="{{ route('admin.cities.destroy', $city->id) }}"
                     class="btn btn-danger-ghost">
                     <x-heroicon name="trash" class="w-4 h-4" />
                 </button>

@@ -54,7 +54,7 @@
                 <select id="filter-country" class="form-input w-full text-sm">
                     <option value="">{{ __('admin.vendors.all_countries') }}</option>
                     @foreach($countries as $country)
-                        <option value="{{ $country->id }}">{{ $country->name_en }}</option>
+                        <option value="{{ $country->id }}">{{ localized($country) }}</option>
                     @endforeach
                 </select>
             </div>

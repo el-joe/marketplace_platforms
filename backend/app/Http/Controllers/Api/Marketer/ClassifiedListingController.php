@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Api\Marketer;
 
-use App\Support\Money;
-use App\Enums\ClassifiedInquiryStatus;
 use App\Enums\ClassifiedListingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ClassifiedListing;
@@ -13,6 +11,7 @@ use App\Models\ExclusiveContract;
 use App\Models\Marketer;
 use App\Models\MarketerListing;
 use App\Models\OpenMarketListingPrice;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -45,15 +44,15 @@ class ClassifiedListingController extends Controller
     private function present(ClassifiedListing $l, bool $full = false): array
     {
         $out = [
-            'id'             => $l->id,
+            'id' => $l->id,
             'listing_number' => $l->listing_number,
-            'title_ar'       => $l->title_ar,
-            'price'          => Money::number($l->price),
-            'currency'       => $l->currency,
-            'status'         => $l->status instanceof \BackedEnum ? $l->status->value : $l->status,
-            'views_count'    => (int) ($l->views_count ?? 0),
-            'category'       => $l->classifiedCategory ? ['id' => $l->classifiedCategory->id, 'name_ar' => $l->classifiedCategory->name_ar] : null,
-            'images'         => $l->images->map(fn ($i) => ['id' => $i->id, 'url' => Storage::url($i->file_path), 'is_primary' => (bool) $i->is_primary])->values(),
+            'title_ar' => $l->title_ar,
+            'price' => Money::number($l->price),
+            'currency' => $l->currency,
+            'status' => $l->status instanceof \BackedEnum ? $l->status->value : $l->status,
+            'views_count' => (int) ($l->views_count ?? 0),
+            'category' => $l->classifiedCategory ? ['id' => $l->classifiedCategory->id, 'name_ar' => $l->classifiedCategory->name_ar] : null,
+            'images' => $l->images->map(fn ($i) => ['id' => $i->id, 'url' => Storage::url($i->file_path), 'is_primary' => (bool) $i->is_primary])->values(),
             'exclusive_contract' => $this->contractFor($l, $this->marketer()),
         ];
         if ($full) {
@@ -94,7 +93,7 @@ class ClassifiedListingController extends Controller
 
         $listing = DB::transaction(function () use ($request, $marketer, $data, $price, $country) {
             $listing = ClassifiedListing::create([
-                'listing_number' => 'CL-' . strtoupper(Str::random(8)),
+                'listing_number' => 'CL-'.strtoupper(Str::random(8)),
                 'seller_type' => Marketer::class, 'seller_id' => $marketer->id,
                 'classified_category_id' => $data['classified_category_id'], 'country_id' => $data['country_id'],
                 'listing_purpose' => $data['listing_purpose'],
@@ -108,7 +107,7 @@ class ClassifiedListingController extends Controller
             MarketerListing::create([
                 'marketer_id' => $marketer->id, 'listing_category' => 'classified', 'classified_listing_id' => $listing->id,
                 'country_id' => $data['country_id'], 'price' => $price, 'currency' => $country->currency_code,
-                'status' => 'active', 'referral_code' => 'CLM-' . strtoupper(Str::random(10)),
+                'status' => 'active', 'referral_code' => 'CLM-'.strtoupper(Str::random(10)),
             ]);
             $this->storeImages($request, $listing);
 
@@ -178,7 +177,7 @@ class ClassifiedListingController extends Controller
     {
         $rules = [
             'classified_category_id' => ['required', 'uuid', 'exists:classified_categories,id'],
-            'country_id' => ['required', 'uuid', 'exists:countries,id'],
+            'country_id' => ['required', 'uuid', Country::availableForVendorsRule()],
             'title_ar' => ['required', 'string', 'max:255'],
             'title_en' => ['nullable', 'string', 'max:255'],
             'description_ar' => ['nullable', 'string'],
@@ -197,14 +196,14 @@ class ClassifiedListingController extends Controller
         if ($rule && ! $rule->allow_marketer_override) {
             $forced = Money::number($rule->base_price);
         } else {
-            $rules['price'] = ['required', 'numeric', 'decimal:0,2', 'min:' . max(0, (float) ($rule?->min_price ?? 0))];
+            $rules['price'] = ['required', 'numeric', 'decimal:0,2', 'min:'.max(0, (float) ($rule?->min_price ?? 0))];
             if ($rule?->max_price) {
-                $rules['price'][] = 'max:' . Money::number($rule->max_price);
+                $rules['price'][] = 'max:'.Money::number($rule->max_price);
             }
         }
         $data = $request->validate($rules);
 
-        return [$data, $forced ?? \App\Support\Money::number($data['price'])];
+        return [$data, $forced ?? Money::number($data['price'])];
     }
 
     private function storeImages(Request $request, ClassifiedListing $listing): void

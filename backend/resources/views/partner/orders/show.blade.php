@@ -129,6 +129,12 @@
                                         {{ __('partner.orders.commission') }}: −{{ number_format($item->commission_amount, 2) }} {{ $currency }}
                                     </p>
                                 @endif
+                                @if($item->source_link_channel)
+                                    <p class="mt-1"><span class="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700">{{ __('product_link.order.badge') }}</span></p>
+                                    @if((float) $item->source_link_discount > 0)
+                                        <p class="text-xs text-green-600 mt-0.5">{{ __('product_link.order.discount') }}: +{{ number_format((float) $item->source_link_discount, 2) }} {{ $currency }}</p>
+                                    @endif
+                                @endif
                             </div>
                         </div>
                     @endforeach
@@ -266,6 +272,13 @@
                         <span class="text-red-500">- {{ number_format($subOrder->platform_commission, 2) }}
                             {{ $currency }}</span>
                     </div>
+                    @php($sourceLinkDiscount = (float) $subOrder->items->sum('source_link_discount'))
+                    @if($sourceLinkDiscount > 0)
+                        <div class="flex justify-between text-xs text-green-600">
+                            <span>{{ __('product_link.order.discount') }} ({{ __('product_link.order.badge') }})</span>
+                            <span>{{ number_format($sourceLinkDiscount, 2) }} {{ $currency }}</span>
+                        </div>
+                    @endif
                     @if((float) $subOrder->commission_vat > 0)
                         <div class="flex justify-between text-gray-600">
                             <span>{{ __('partner.orders.commission_vat') }} ({{ (float) $subOrder->commission_vat_rate }}%)</span>

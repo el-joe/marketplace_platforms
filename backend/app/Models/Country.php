@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Casts\DecimalMoney;
 use App\Http\Middleware\SetPortalCountry;
+use App\Models\Concerns\HasLocalizedName;
+use App\Rules\CountryAvailableForVendors;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +19,7 @@ use Stevebauman\Location\Facades\Location;
 
 class Country extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasLocalizedName, SoftDeletes;
 
     protected $keyType = 'string';
 
@@ -39,6 +41,7 @@ class Country extends Model
         'vat_rate',
         'is_active',
         'is_launched',
+        'accepts_vendors_before_launch',
         'cod_available',
         'cod_max_amount',
         'cod_supermall_max_amount',
@@ -49,6 +52,7 @@ class Country extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'is_launched' => 'boolean',
+        'accepts_vendors_before_launch' => 'boolean',
         'cod_available' => 'boolean',
         'cod_max_amount' => DecimalMoney::class,
         'cod_supermall_max_amount' => DecimalMoney::class,
@@ -65,6 +69,15 @@ class Country extends Model
 
     /** Countries always offered in the portal switcher even before `is_launched` (ISO 3166-1 alpha-2). */
     public const PORTAL_ALWAYS_SELECTABLE_ISO = ['OM'];
+
+    /** Visibility states shown in admin (see {@see self::visibilityStatus()}). */
+    public const STATUS_DRAFT = 'draft';
+
+    public const STATUS_LIVE = 'live';
+
+    public const STATUS_HIDDEN = 'hidden';
+
+    public const STATUS_DELETED = 'deleted';
 
     /** Seconds a successful IP geo lookup is cached. */
     private const GEO_CACHE_TTL = 86400;
@@ -89,6 +102,61 @@ class Country extends Model
                 $q->where('is_launched', true)
                     ->orWhereIn('iso_code_2', self::PORTAL_ALWAYS_SELECTABLE_ISO);
             });
+    }
+
+    /**
+     * Countries vendors, marketers and travel agencies may register in or list
+     * in: active and launched, plus active drafts the admin explicitly opened
+     * with "accept vendor registrations / listings before launch". Hidden
+     * (deactivated) and plain draft countries are excluded. This is the single
+     * rule behind every vendor-facing country picker and its server-side check
+     * ({@see self::availableForVendorsRule()}).
+     *
+     * @param  Builder<Country>  $query
+     * @return Builder<Country>
+     */
+    public function scopeAvailableForVendors(Builder $query): Builder
+    {
+        return $query->where('is_active', true)
+            ->where(function (Builder $q): void {
+                $q->where('is_launched', true)
+                    ->orWhere('accepts_vendors_before_launch', true);
+            });
+    }
+
+    /**
+     * Validation rule accepting only a country id that {@see self::scopeAvailableForVendors()} allows.
+     */
+    public static function availableForVendorsRule(): CountryAvailableForVendors
+    {
+        return new CountryAvailableForVendors;
+    }
+
+    /**
+     * Whether vendors may register in / list in this country right now.
+     */
+    public function isAvailableForVendors(): bool
+    {
+        return ! $this->trashed()
+            && $this->is_active
+            && ($this->is_launched || $this->accepts_vendors_before_launch);
+    }
+
+    /**
+     * Real visibility state, distinct from the setup flags:
+     *  - draft:   never launched (or reverted to draft), not on the storefront;
+     *  - live:    launched and active, visible on the storefront;
+     *  - hidden:  launched before but deactivated, not on the storefront;
+     *  - deleted: soft-deleted.
+     */
+    public function visibilityStatus(): string
+    {
+        return match (true) {
+            $this->trashed() => self::STATUS_DELETED,
+            ! $this->is_launched => self::STATUS_DRAFT,
+            $this->is_active => self::STATUS_LIVE,
+            default => self::STATUS_HIDDEN,
+        };
     }
 
     /**

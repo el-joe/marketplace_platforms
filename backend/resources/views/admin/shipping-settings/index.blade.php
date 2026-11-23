@@ -193,7 +193,7 @@
                         @foreach($countries as $country)
                             <tr>
                                 <td class="font-medium text-gray-900 whitespace-nowrap">
-                                    {{ $country->name_en }}
+                                    {{ localized($country) }}
                                     <span class="text-xs text-gray-400 ml-1">{{ $country->iso_code_2 }}</span>
                                 </td>
                                 @foreach($methods as $method)
@@ -262,7 +262,7 @@
                     <x-form-select name="country_id" label="{{ __('admin.shipping_section.carrier_country') }}">
                         <option value="">{{ __('admin.shipping_section.carrier_country_any') }}</option>
                         @foreach($countries as $country)
-                            <option value="{{ $country->id }}">{{ $country->name_en }}</option>
+                            <option value="{{ $country->id }}">{{ localized($country) }}</option>
                         @endforeach
                     </x-form-select>
                     <p class="text-xs text-gray-400 mt-1">{{ __('admin.shipping_section.carrier_country_note') }}</p>

@@ -27,11 +27,14 @@
             @foreach($contexts as $c)
                 <a href="{{ route('admin.faqs.index', ['context' => $c]) }}"
                    class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium {{ $context === $c ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                    {{ ucwords(str_replace('_', ' ', $c)) }}
+                    {{ __('admin.faqs.contexts.'.$c) }}
                 </a>
             @endforeach
         </nav>
     </div>
+
+    <x-filter.bar class="mb-4" :statuses="['active' => __('common.active'), 'inactive' => __('common.inactive')]"
+        :search-placeholder="__('admin.list_search.faqs')" />
 
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div class="table-responsive">
@@ -92,7 +95,7 @@
             <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.faqs.context') }}</label>
             <select name="context" id="f-context" class="form-input w-full text-sm">
                 @foreach($contexts as $c)
-                    <option value="{{ $c }}" {{ $c === $context ? 'selected' : '' }}>{{ ucwords(str_replace('_', ' ', $c)) }}</option>
+                    <option value="{{ $c }}" {{ $c === $context ? 'selected' : '' }}>{{ __('admin.faqs.contexts.'.$c) }}</option>
                 @endforeach
             </select>
         </div>

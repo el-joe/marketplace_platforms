@@ -95,7 +95,7 @@
             <div class="px-8 pb-8">
                 <div class="blog-prose {{ $locale === 'ar' ? 'text-right' : '' }}"
                      dir="{{ $locale === 'ar' ? 'rtl' : 'ltr' }}">
-                    {!! $post->{'body_' . $locale} !!}
+                    {!! $post->safeBody($locale) !!}
                 </div>
             </div>
 

@@ -40,10 +40,10 @@
                                  class="w-16 h-16 object-cover rounded-xl shrink-0">
                         @else
                             <div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 shrink-0 text-2xl">
-                                @if($supply->type === \App\Enums\PackagingSupplyType::Box) 📦
-                                @elseif($supply->type === \App\Enums\PackagingSupplyType::Bag) 🛍
-                                @elseif($supply->type === \App\Enums\PackagingSupplyType::Label) 🏷
-                                @elseif($supply->type === \App\Enums\PackagingSupplyType::Tape) 🎗
+                                @if($supply->type === 'box') 📦
+                                @elseif($supply->type === 'bag') 🛍
+                                @elseif($supply->type === 'label') 🏷
+                                @elseif($supply->type === 'tape') 🎗
                                 @else 📋
                                 @endif
                             </div>
@@ -54,7 +54,7 @@
                                     <p class="font-semibold text-gray-900 text-sm">{{ $supply->name_en }}</p>
                                     <p class="text-xs text-gray-400 font-arabic">{{ $supply->name_ar }}</p>
                                 </div>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $supply->typeBadgeClass() }} shrink-0">{{ ucfirst($supply->type->value) }}</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $supply->typeBadgeClass() }} shrink-0">{{ $supply->typeName() }}</span>
                             </div>
                             @if($supply->size)
                                 <p class="text-xs text-gray-500 mt-1">{{ $supply->size }}</p>

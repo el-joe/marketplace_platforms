@@ -88,6 +88,31 @@
         </a>
     </div>
 
+    {{-- WS12 #24: the vendor's own product link / QR code --}}
+    <details class="bg-white rounded-xl border border-gray-200 mb-4" data-product-link>
+        <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-gray-800">{{ __('product_link.partner.button') }}</summary>
+        <div class="p-4 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
+            <img src="{{ $productLink['qr'] }}" alt="QR" class="w-40 h-40 border border-gray-100 rounded-lg shrink-0">
+            <div class="space-y-3 text-sm text-gray-700 min-w-0">
+                <h3 class="font-semibold text-gray-900">{{ __('product_link.partner.title') }}</h3>
+                <p>{{ __('product_link.partner.intro') }}</p>
+                <p class="text-xs text-gray-500">
+                    @if($productLink['rule'] && $productLink['rule']->appliesTo($fulfillmentKey))
+                        {{ __('product_link.partner.rule_active', ['discount' => $productLink['rule']->describe($listing->country?->currency_code), 'days' => $productLink['rule']->attribution_window_days]) }}
+                    @else
+                        {{ __('product_link.partner.rule_inactive') }}
+                    @endif
+                </p>
+                <div class="flex flex-wrap items-center gap-2">
+                    <input type="text" readonly value="{{ $productLink['url'] }}" dir="ltr" class="form-input text-xs flex-1 min-w-0" data-product-link-url>
+                    <button type="button" class="px-3 py-2 rounded-lg bg-primary-600 text-white text-xs font-medium"
+                        onclick="navigator.clipboard?.writeText(this.closest('[data-product-link]').querySelector('[data-product-link-url]').value).then(() => window.Toast?.success(@js(__('product_link.partner.copied'))))">{{ __('product_link.partner.copy') }}</button>
+                    <a href="{{ $productLink['qr'] }}" download="product-qr-{{ $listing->id }}.svg" class="px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium">{{ __('product_link.partner.download_qr') }}</a>
+                </div>
+            </div>
+        </div>
+    </details>
+
     <details class="bg-white rounded-xl border border-gray-200 mb-4">
         <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-gray-800">{{ __('partner.promo_badges_title') }}</summary>
         <form method="POST" action="{{ route('partner.listings.promo-badges.update', $listing) }}" class="p-4 border-t border-gray-100 space-y-4">

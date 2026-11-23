@@ -8,7 +8,7 @@
             <option value="">{{ __('admin.page_builder.config_forms.flash_sale.select_placeholder') }}</option>
             @foreach ($flashSales as $fs)
                 <option value="{{ $fs->id }}" {{ ($config['flash_sale_id'] ?? '') == $fs->id ? 'selected' : '' }}>
-                    {{ $fs->name_en }}
+                    {{ localized($fs) }}
                 </option>
             @endforeach
         </select>

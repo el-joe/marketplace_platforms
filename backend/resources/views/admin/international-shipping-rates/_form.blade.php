@@ -29,7 +29,7 @@
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option value="">{{ __('admin.international_shipping.select_country') }}</option>
                 @foreach($countries as $country)
-                    <option value="{{ $country->id }}" {{ $val('origin_country_id') === $country->id ? 'selected' : '' }}>{{ $country->name_en }}</option>
+                    <option value="{{ $country->id }}" {{ $val('origin_country_id') === $country->id ? 'selected' : '' }}>{{ localized($country) }}</option>
                 @endforeach
             </select>
             @error('origin_country_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
@@ -41,7 +41,7 @@
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option value="">{{ __('admin.international_shipping.select_country') }}</option>
                 @foreach($countries as $country)
-                    <option value="{{ $country->id }}" {{ $val('destination_country_id') === $country->id ? 'selected' : '' }}>{{ $country->name_en }}</option>
+                    <option value="{{ $country->id }}" {{ $val('destination_country_id') === $country->id ? 'selected' : '' }}>{{ localized($country) }}</option>
                 @endforeach
             </select>
             @error('destination_country_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror

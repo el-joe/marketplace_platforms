@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use App\Enums\FbnStorageFeeStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,9 @@ class FbnStorageFee extends Model
         'total_fee',
         'currency',
         'status',
+        'payout_id',
+        'invoiced_at',
+        'paid_at',
     ];
 
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
@@ -38,8 +42,10 @@ class FbnStorageFee extends Model
         'units_stored' => 'integer',
         'stored_since' => 'date',
         'within_free_period' => 'boolean',
-        'rate_per_unit' => \App\Casts\DecimalMoney::class,
-        'total_fee' => \App\Casts\DecimalMoney::class,
+        'invoiced_at' => 'datetime',
+        'paid_at' => 'datetime',
+        'rate_per_unit' => DecimalMoney::class,
+        'total_fee' => DecimalMoney::class,
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────
@@ -47,6 +53,12 @@ class FbnStorageFee extends Model
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    /** The vendor payout that deducted this fee (see GenerateVendorPayoutsJob). */
+    public function payout(): BelongsTo
+    {
+        return $this->belongsTo(Payout::class);
     }
 
     public function warehouseInventory(): BelongsTo

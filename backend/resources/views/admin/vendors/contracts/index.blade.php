@@ -25,7 +25,7 @@
                         @php($category = $enrollment->category_scope === 'product' ? $enrollment->productCategory : $enrollment->classifiedCategory)
                         <tr>
                             <td class="px-4 py-3">{{ __('admin.contracts.scope_' . $enrollment->category_scope) }}</td>
-                            <td class="px-4 py-3">{{ $category?->name_en ?? '—' }}</td>
+                            <td class="px-4 py-3">{{ localized($category) ?: '—' }}</td>
                             <td class="px-4 py-3">{{ __('admin.vendor_contracts.enrollment_' . $enrollment->status) }}</td>
                             <td class="px-4 py-3">{{ format_tz(admin_tz($enrollment->signed_at), 'd/m/Y H:i') ?: '—' }}</td>
                         </tr>
@@ -63,7 +63,7 @@
                             <td class="px-4 py-3">{{ $contract->contractTemplate?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-center">v{{ $contract->template_version }}</td>
                             <td class="px-4 py-3">{{ __('admin.contracts.scope_' . $contract->category_scope) }}</td>
-                            <td class="px-4 py-3">{{ $contract->product?->name_en ?? $category?->name_en ?? "—" }}</td>
+                            <td class="px-4 py-3">{{ localized($contract->product) ?: localized($category) ?: "—" }}</td>
                             <td class="px-4 py-3 uppercase">{{ $contract->language_signed }}</td>
                             <td class="px-4 py-3">{{ $contract->signer_name }}</td>
                             <td class="px-4 py-3">{{ format_tz(admin_tz($contract->signed_at), 'd/m/Y H:i') }}</td>

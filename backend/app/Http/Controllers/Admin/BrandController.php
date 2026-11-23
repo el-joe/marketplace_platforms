@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateBrandRequest;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Services\BrandService;
+use App\Support\Bilingual;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -259,14 +260,14 @@ class BrandController extends Controller
                 $q->where('name_en', 'like', "%{$term}%")
                     ->orWhere('name_ar', 'like', "%{$term}%");
             })
-            ->orderBy('name_en')
+            ->orderBy(Bilingual::column('name'))
             ->limit(30)
             ->get(['id', 'name_en', 'name_ar']);
 
         return response()->json([
             'results' => $brands->map(fn ($b) => [
                 'id' => $b->id,
-                'text' => $b->name_en.($b->name_ar ? " / {$b->name_ar}" : ''),
+                'text' => localized($b),
             ]),
         ]);
     }
@@ -278,7 +279,7 @@ class BrandController extends Controller
     private function columnDefinitions(): array
     {
         return [
-            ['title' => 'Name (EN)', 'data' => 'name_en', 'name' => 'name_en', 'orderable_column' => 'brands.name_en'],
+            ['title' => 'Name (EN)', 'data' => 'name_en', 'name' => 'name_en', 'orderable_column' => 'brands.name_en', 'searchable_columns' => ['brands.name_en', 'brands.name_ar', 'brands.slug']],
             ['title' => 'Name (AR)', 'data' => 'name_ar', 'name' => 'name_ar', 'orderable_column' => 'brands.name_ar', 'searchable' => false],
             ['title' => 'Verified', 'data' => 'is_verified', 'name' => 'is_verified', 'orderable_column' => 'brands.is_verified', 'searchable' => false],
             ['title' => 'Restricted', 'data' => 'is_restricted', 'name' => 'is_restricted', 'orderable_column' => 'brands.is_restricted', 'searchable' => false],

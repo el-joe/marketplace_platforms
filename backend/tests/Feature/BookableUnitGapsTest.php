@@ -37,7 +37,7 @@ class BookableUnitGapsTest extends TestCase
         Permission::firstOrCreate(['name' => 'travel.manage', 'guard_name' => 'admin']);
         Permission::firstOrCreate(['name' => 'travel.reject', 'guard_name' => 'admin']);
         $admin = Admin::factory()->create();
-        $admin->givePermissionTo(['travel.view', 'travel.manage']);
+        $admin->givePermissionTo(['travel.view', 'travel.manage', 'travel.reject']);
 
         return $admin;
     }

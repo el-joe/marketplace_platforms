@@ -236,7 +236,7 @@ class CategoryContractTest extends TestCase
     {
         $scenario = $this->activeScenario();
         $admin = Admin::factory()->create();
-        $admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only']);
+        $admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only', 'contracts.view', 'contracts.manage']);
 
         $classifiedDraft = $this->template('classified', 'Classified terms', 1, false, $admin);
         $productTemplate = $this->template('product', 'Product terms', 1, true, $admin);
@@ -274,6 +274,7 @@ class CategoryContractTest extends TestCase
             ->get(route('admin.vendors.contracts.index', $scenario->vendor))
             ->assertOk();
     }
+
     public function test_preview_fills_every_variable_and_history_opens_the_signed_text(): void
     {
         $scenario = $this->activeScenario();
@@ -305,15 +306,16 @@ class CategoryContractTest extends TestCase
             ->get(route('partner.contracts.signed', $contract))
             ->assertNotFound();
     }
+
     public function test_admin_edit_page_uses_the_rich_editor_and_vendor_values_are_escaped_in_contracts(): void
     {
         $scenario = $this->activeScenario();
         $scenario->vendor->update(['store_name' => '<img src=x onerror=alert(1)>']);
         $admin = Admin::factory()->create();
-        $admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only']);
+        $admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only', 'contracts.view', 'contracts.manage']);
         $template = ClassifiedContractTemplate::create([
             'name' => 'Editor terms', 'category_scope' => 'product', 'version' => 1,
-            'content_en' => "<p>Store: {{vendor.store_name}}</p>", 'content_ar' => '<p>AR</p>',
+            'content_en' => '<p>Store: {{vendor.store_name}}</p>', 'content_ar' => '<p>AR</p>',
             'is_active' => true, 'is_published' => true, 'created_by_admin_id' => $admin->id,
         ]);
         $scenario->category->update(['contract_template_id' => $template->id]);

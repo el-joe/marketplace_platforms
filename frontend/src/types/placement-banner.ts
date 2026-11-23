@@ -18,4 +18,8 @@ export interface PlacementBanner {
   is_external?: boolean;
   is_paid?: boolean;
   ad?: PaidAdMeta | null;
+  /** all | desktop | mobile — already applied to the image URLs by the API. */
+  device_target?: string | null;
+  /** Set when a different banner wins the mobile slot (e.g. separate desktop-only and mobile-only banners). */
+  mobile_variant?: PlacementBanner | null;
 }

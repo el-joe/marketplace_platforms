@@ -52,7 +52,7 @@
                 <select id="filter-plan" class="form-select text-sm py-1.5 pr-8">
                     <option value="">{{ __('admin.subscriptions.all_plans') }}</option>
                     @foreach($plans as $plan)
-                        <option value="{{ $plan->id }}">{{ $plan->name_en }}</option>
+                        <option value="{{ $plan->id }}">{{ localized($plan) }}</option>
                     @endforeach
                 </select>
             </div>
@@ -96,7 +96,7 @@
                     <select id="sv-plan-id" class="form-select w-full text-sm">
                         <option value="">{{ __('admin.subscriptions.select_plan') }}</option>
                         @foreach($plans as $plan)
-                            <option value="{{ $plan->id }}">{{ $plan->name_en }} — {{ \App\Support\Money::format($plan->price) }}
+                            <option value="{{ $plan->id }}">{{ localized($plan) }} — {{ \App\Support\Money::format($plan->price) }}
                                 {{ $plan->currency }}/mo</option>
                         @endforeach
                     </select>

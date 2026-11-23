@@ -6,6 +6,11 @@ import { apiBaseUrlGlobal } from "@/src/lib/utils";
 import { PlacementBanner } from "@/src/types/placement-banner";
 import { SponsoredLink } from "@/src/components/shared/sponsored-link";
 import resolveCookie from "@/src/helpers/resolveCookie";
+import {
+  deviceVisibilityClass,
+  placementBannerImages,
+} from "@/src/helpers/placement-banner-images";
+import { cn } from "@/src/lib/utils";
 
 interface Props {
   banner: PlacementBanner;
@@ -15,13 +20,28 @@ export default function InlineBannerSlot({ banner }: Props) {
   const locale = useLocale();
   const isAr = locale === "ar";
 
-  const desktopSrc =
-    (isAr && banner.desktop_image_url_ar) || banner.desktop_image_url;
-  const mobileSrc =
-    (isAr && banner.mobile_image_url_ar) || banner.mobile_image_url;
-  const imgSrc = desktopSrc || mobileSrc;
+  // A different banner won the mobile slot: desktop banner + mobile banner, each hidden on the other device.
+  if (banner.mobile_variant) {
+    return (
+      <>
+        <InlineBannerSlot banner={{ ...banner, mobile_variant: null }} />
+        <InlineBannerSlot banner={banner.mobile_variant} />
+      </>
+    );
+  }
 
-  if (!imgSrc) return null;
+  // URLs are already resolved per locale × device (and device targeting) by the API.
+  const { desktop: desktopSrc, mobile: mobileSrc } = placementBannerImages(
+    banner,
+    locale,
+  );
+  const imgSrc = desktopSrc || mobileSrc;
+  const visibility = deviceVisibilityClass({
+    desktop: desktopSrc,
+    mobile: mobileSrc,
+  });
+
+  if (!imgSrc || visibility === null) return null;
 
   const title = isAr
     ? banner.title_ar || banner.title_en
@@ -86,7 +106,7 @@ export default function InlineBannerSlot({ banner }: Props) {
   }
 
   return (
-    <div onClick={trackLegacyClick}>
+    <div onClick={trackLegacyClick} className={visibility}>
       <SponsoredLink
         href={banner.cta_url}
         isExternal={banner.is_external}
@@ -94,18 +114,30 @@ export default function InlineBannerSlot({ banner }: Props) {
         isPaid={banner.is_paid}
         className="rounded-xl overflow-hidden"
       >
-        <picture>
-          {mobileSrc && (
-            <source media="(max-width: 767px)" srcSet={mobileSrc} />
-          )}
+        {desktopSrc && (
           <Image
-            src={imgSrc}
+            src={desktopSrc}
             alt={title || ""}
             width={1200}
             height={150}
-            className="w-full h-auto object-cover"
+            className={cn(
+              "w-full h-auto object-cover",
+              mobileSrc ? "hidden md:block" : "block",
+            )}
           />
-        </picture>
+        )}
+        {mobileSrc && (
+          <Image
+            src={mobileSrc}
+            alt={title || ""}
+            width={750}
+            height={200}
+            className={cn(
+              "w-full h-auto object-cover",
+              desktopSrc ? "md:hidden" : "block",
+            )}
+          />
+        )}
       </SponsoredLink>
     </div>
   );

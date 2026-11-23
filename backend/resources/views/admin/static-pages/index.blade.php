@@ -44,7 +44,7 @@
                     <option value="">{{ __('admin.static_pages.any_country') }}</option>
                     <option value="global">{{ __('admin.static_pages.all_countries') }}</option>
                     @foreach($countries as $country)
-                        <option value="{{ $country->id }}">{{ trim(($country->flag_emoji ?? '').' '.$country->name_en) }}</option>
+                        <option value="{{ $country->id }}">{{ trim(($country->flag_emoji ?? '').' '.localized($country)) }}</option>
                     @endforeach
                 </select>
             </div>

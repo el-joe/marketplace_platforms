@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** Optional on sign-up; omitted = not specified. */
+export const GENDERS = ["male", "female"] as const;
+
 export function getRegisterSchema(
   t: (key: string, optional?: Record<string, string>) => string,
 ) {
@@ -23,6 +26,7 @@ export function getRegisterSchema(
         .string()
         .trim()
         .min(8, t("passwordMinLengthErr", { value: "8" })),
+      gender: z.enum(GENDERS).optional(),
       marketingCommunicationsConfirm: z.boolean().refine((val) => val, {
         message: t("marketingCommunicationConfirmErr"),
       }),

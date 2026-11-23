@@ -10,6 +10,7 @@ class OrderCancelled extends BaseCustomerNotification
     public function __construct(
         private readonly SubOrder $subOrder,
         private readonly ?string $reason = null,
+        private readonly int $cancelledItemCount = 0,
     ) {}
 
     public function notificationType(): string
@@ -19,22 +20,31 @@ class OrderCancelled extends BaseCustomerNotification
 
     public function notificationData(object $notifiable): array
     {
-        $message = "Your order #{$this->subOrder->sub_order_number} has been cancelled.";
-        $messageAr = "تم إلغاء طلبك رقم #{$this->subOrder->sub_order_number}.";
+        // A positive item count means only part of the sub-order was cancelled; the rest stays active.
+        $isPartial = $this->cancelledItemCount > 0;
+        $number = $this->subOrder->sub_order_number;
+
+        $message = $isPartial
+            ? "{$this->cancelledItemCount} item(s) in your order #{$number} have been cancelled. The rest of your order is still being processed."
+            : "Your order #{$number} has been cancelled.";
+        $messageAr = $isPartial
+            ? "تم إلغاء {$this->cancelledItemCount} من المنتجات في طلبك رقم #{$number}. باقي الطلب لا يزال قيد التنفيذ."
+            : "تم إلغاء طلبك رقم #{$number}.";
         if ($this->reason) {
             $message .= " Reason: {$this->reason}";
             $messageAr .= " السبب: {$this->reason}";
         }
 
         return [
-            'title' => 'Order Cancelled',
-            'title_ar' => 'تم إلغاء الطلب',
+            'title' => $isPartial ? 'Items Cancelled' : 'Order Cancelled',
+            'title_ar' => $isPartial ? 'تم إلغاء منتجات من طلبك' : 'تم إلغاء الطلب',
             'message' => $message,
             'message_ar' => $messageAr,
             'url' => route('customer.orders.show', ['country' => $this->subOrder->order->country?->site_code, 'order_number' => $this->subOrder->order->order_number]),
             'sub_order_id' => $this->subOrder->id,
             'sub_order_number' => $this->subOrder->sub_order_number,
             'reason' => $this->reason,
+            'partial' => $isPartial,
         ];
     }
 

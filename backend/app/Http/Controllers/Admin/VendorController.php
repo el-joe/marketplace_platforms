@@ -12,6 +12,7 @@ use App\Http\Requests\Admin\IssueVendorStrikeRequest;
 use App\Http\Requests\Admin\RejectVendorRequest;
 use App\Http\Requests\Admin\UpdateVendorRequest;
 use App\Http\Requests\Admin\VerifyVendorDocumentRequest;
+use App\Http\Requests\Vendor\UpdateStoreLocationRequest;
 use App\Models\Activity;
 use App\Models\Admin;
 use App\Models\Country;
@@ -23,6 +24,7 @@ use App\Models\VendorDocument;
 use App\Services\ActivityLoggerService;
 use App\Services\Vendor\OwnerEmailConflictException;
 use App\Services\Vendor\VendorOwnerService;
+use App\Services\Vendor\VendorStoreLocationService;
 use App\Services\VendorApprovalService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
@@ -40,6 +42,7 @@ class VendorController extends Controller
         private VendorApprovalService $approvalService,
         private ActivityLoggerService $activityLogger,
         private VendorOwnerService $owners,
+        private VendorStoreLocationService $storeLocations,
     ) {}
 
     // ── Index ─────────────────────────────────────────────────────────────────
@@ -60,7 +63,7 @@ class VendorController extends Controller
         $pendingCount = $pendingCountQuery->count();
 
         $admins = Admin::orderBy('name')->get(['id', 'name']);
-        $countries = Country::orderBy('name_en')->get(['id', 'name_en']);
+        $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'name_ar']);
 
         return view('admin.vendors.index', compact('pendingCount', 'admins', 'countries', 'isScopedAdmin'));
     }
@@ -214,6 +217,7 @@ class VendorController extends Controller
 
         $vendor->load([
             'country',
+            'businessAddress',
             'approvedByAdmin',
             'accountManagerAdmin',
             'documents',
@@ -243,8 +247,27 @@ class VendorController extends Controller
 
         $admins = Admin::orderBy('name')->get(['id', 'name']);
         $accountManagerCandidates = Admin::role('vendor_relations_admin')->orderBy('name')->get(['id', 'name', 'email']);
+        // Any active staff member can be the employee who brought the vendor (not only vendor-relations admins).
+        $acquisitionAgentCandidates = Admin::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'email']);
 
-        return view('admin.vendors.show', compact('vendor', 'subOrders', 'payouts', 'activityLog', 'admins', 'accountManagerCandidates', 'citySurcharges', 'sectionLocks'));
+        $storeLocation = $this->storeLocations->present($vendor);
+
+        return view('admin.vendors.show', compact('vendor', 'subOrders', 'payouts', 'activityLog', 'admins', 'accountManagerCandidates', 'acquisitionAgentCandidates', 'citySurcharges', 'sectionLocks', 'storeLocation'));
+    }
+
+    /**
+     * Store location (business address + pin) — distance-pricing origin of last resort (client item #19).
+     * Logged on the vendor activity tab.
+     */
+    public function updateLocation(UpdateStoreLocationRequest $request, Vendor $vendor): JsonResponse
+    {
+        if ($request->attributes->get('is_scoped_admin')) {
+            abort_unless(in_array($vendor->id, $request->attributes->get('scoped_vendor_ids') ?? [], true), 403);
+        }
+
+        $location = $this->storeLocations->update($vendor->loadMissing('businessAddress'), $request->validated(), auth('admin')->user());
+
+        return response()->json(['message' => __('store_location.saved'), 'data' => $location]);
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
@@ -588,8 +611,15 @@ class VendorController extends Controller
             'vendor_ids' => ['required', 'array', 'min:1'],
         ]);
 
-        $vendors = Vendor::whereIn('id', $request->input('vendor_ids'))->get();
         $admin = auth('admin')->user();
+        $requiredPermission = match ($request->input('action')) {
+            'suspend', 'reactivate' => 'vendors.suspend',
+            'place_hold' => 'vendors.payouts.hold',
+            default => 'vendors.edit',
+        };
+        abort_unless($admin->can($requiredPermission), 403);
+
+        $vendors = Vendor::whereIn('id', $request->input('vendor_ids'))->get();
         $count = 0;
 
         foreach ($vendors as $vendor) {

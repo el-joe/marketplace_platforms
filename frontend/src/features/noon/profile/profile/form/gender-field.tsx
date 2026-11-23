@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { User } from "lucide-react";
 import type { ProfileFormValues } from "../helpers/profile.schema";
@@ -9,33 +10,50 @@ type Props = {
   label: string;
   maleLabel: string;
   femaleLabel: string;
+  unspecifiedLabel: string;
 };
 
-export default function GenderField({ label, maleLabel, femaleLabel }: Props) {
+/** Optional gender: male | female | null ("not specified"). Exposed as an ARIA radio group. */
+export default function GenderField({
+  label,
+  maleLabel,
+  femaleLabel,
+  unspecifiedLabel,
+}: Props) {
   const { control } = useFormContext<ProfileFormValues>();
+  const labelId = useId();
+
+  const options = [
+    { value: "male" as const, label: maleLabel, icon: true },
+    { value: "female" as const, label: femaleLabel, icon: true },
+    { value: null, label: unspecifiedLabel, icon: false },
+  ];
 
   return (
     <div>
-      <label className="text-sm mb-1.5 block">{label}</label>
+      <span id={labelId} className="text-sm mb-1.5 block">
+        {label}
+      </span>
       <Controller
         control={control}
         name="gender"
         render={({ field }) => (
-          <div className="flex items-center gap-3">
-            <ToggleButton
-              active={field.value === "male"}
-              onClick={() => field.onChange("male")}
-            >
-              <User className="size-4" />
-              {maleLabel}
-            </ToggleButton>
-            <ToggleButton
-              active={field.value === "female"}
-              onClick={() => field.onChange("female")}
-            >
-              <User className="size-4" />
-              {femaleLabel}
-            </ToggleButton>
+          <div
+            role="radiogroup"
+            aria-labelledby={labelId}
+            className="flex flex-wrap items-center gap-3"
+          >
+            {options.map((option) => (
+              <ToggleButton
+                key={option.value ?? "unspecified"}
+                role="radio"
+                active={(field.value ?? null) === option.value}
+                onClick={() => field.onChange(option.value)}
+              >
+                {option.icon && <User className="size-4" aria-hidden="true" />}
+                {option.label}
+              </ToggleButton>
+            ))}
           </div>
         )}
       />

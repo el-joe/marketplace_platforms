@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Customer\Auth;
 
+use App\Enums\Gender;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class RegisterRequest extends FormRequest
 {
@@ -19,6 +21,7 @@ class RegisterRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:20', 'unique:customers,phone'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'referral_code' => ['nullable', 'string', 'size:8'],
+            'gender' => ['nullable', Rule::enum(Gender::class)],
         ];
     }
 }

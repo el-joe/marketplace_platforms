@@ -1,16 +1,5 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
-@push('head')
-<style>
-    @keyframes wavyText {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-5px); }
-    }
-    .animate-wavy {
-        animation: wavyText 0.6s ease-in-out forwards;
-    }
-</style>
-@endpush
 
 {{-- Fulfilled by Nawy --}}
 <section data-portal-section="fbn" id="fbn" class="bg-[#1c1c1c] pt-8 pb-10 lg:pb-12 md:py-10 lg:py-12">
@@ -112,7 +101,6 @@
         @php($fbpHighlight = portal_content('fulfillment', 'fbp', 'title_highlight', 'Built for Flexibility', 'مصمم للمرونة'))
         <h2 class="text-2xl sm:text-[32px] font-extrabold mb-6 lg:mb-8"
              x-data="{
-                 text: @js($fbpHighlight),
                  play: true,
                  triggerAnimation() {
                      this.play = false;
@@ -121,14 +109,7 @@
              }"
              @hashchange.window="if (location.hash === '#fbp') triggerAnimation()">
             <span class="text-[#0F807E]">{{ portal_content('fulfillment', 'fbp', 'title_prefix', 'Fulfilled by partner: ', 'التنفيذ من قبل الشريك: ') }}</span>
-            <span class="inline-block">
-                <template x-for="(char, index) in text.split('')" :key="index">
-                    <span class="inline-block text-white"
-                          :class="play ? 'animate-wavy' : ''"
-                          :style="play ? `animation-delay: ${index * 0.05}s;` : ''"
-                          x-text="char === ' ' ? '\u00A0' : char"></span>
-                </template>
-            </span>
+            <x-portal.wavy-text class="text-white" :text="$fbpHighlight" />
         </h2>
 
         <div class="md:grid md:grid-cols-[1.5fr_2fr] md:gap-10 lg:gap-14">

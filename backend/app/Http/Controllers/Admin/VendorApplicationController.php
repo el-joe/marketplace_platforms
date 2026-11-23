@@ -235,12 +235,12 @@ class VendorApplicationController extends Controller
         $onboardingComplete = (bool) $vendor->onboarding_completed_at;
 
         $checklist = [
-            'business_info' => ['label' => 'Business info complete', 'pass' => $businessInfoComplete],
-            'docs_uploaded' => ['label' => 'All required docs uploaded', 'pass' => $allRequiredUploaded],
-            'docs_verified' => ['label' => 'All required docs verified', 'pass' => $allRequiredVerified],
-            'onboarding' => ['label' => 'Onboarding completed', 'pass' => $onboardingComplete, 'required' => false],
-            'bank_account' => ['label' => 'Bank account added', 'pass' => $hasBankAccount, 'required' => false],
-            'store_profile' => ['label' => 'Store profile complete', 'pass' => $storeProfileComplete],
+            'business_info' => ['label' => __('admin.vendor_applications.checklist_business_info'), 'pass' => $businessInfoComplete],
+            'docs_uploaded' => ['label' => __('admin.vendor_applications.checklist_docs_uploaded'), 'pass' => $allRequiredUploaded],
+            'docs_verified' => ['label' => __('admin.vendor_applications.checklist_docs_verified'), 'pass' => $allRequiredVerified],
+            'onboarding' => ['label' => __('admin.vendor_applications.checklist_onboarding'), 'pass' => $onboardingComplete, 'required' => false],
+            'bank_account' => ['label' => __('admin.vendor_applications.checklist_bank_account'), 'pass' => $hasBankAccount, 'required' => false],
+            'store_profile' => ['label' => __('admin.vendor_applications.checklist_store_profile'), 'pass' => $storeProfileComplete],
         ];
 
         $canApprove = collect($checklist)

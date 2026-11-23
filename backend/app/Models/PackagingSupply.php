@@ -2,19 +2,24 @@
 
 namespace App\Models;
 
-use App\Enums\PackagingSupplyType;
+use App\Casts\DecimalMoney;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PackagingSupply extends Model
 {
+    use HasFactory;
     use HasUuids;
 
     protected $fillable = [
         'name_en',
         'name_ar',
         'type',
+        'packaging_supply_type_id',
         'size',
         'description_en',
         'description_ar',
@@ -29,12 +34,37 @@ class PackagingSupply extends Model
     protected function casts(): array
     {
         return [
-            'unit_cost'  => \App\Casts\DecimalMoney::class,
-            'stock_available'  => 'integer',
-            'is_active'        => 'boolean',
-            'sort_order'       => 'integer',
-            'type'             => PackagingSupplyType::class,
+            'unit_cost' => DecimalMoney::class,
+            'stock_available' => 'integer',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer',
         ];
+    }
+
+    /**
+     * `type` is the legacy code column; it is kept in sync with the selected
+     * admin-managed type so anything still reading it sees the same code.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (PackagingSupply $supply) {
+            if ($supply->isDirty('packaging_supply_type_id') && $supply->packaging_supply_type_id) {
+                $supply->type = PackagingSupplyType::whereKey($supply->packaging_supply_type_id)->value('code') ?? $supply->type;
+            }
+        });
+    }
+
+    public function supplyType(): BelongsTo
+    {
+        return $this->belongsTo(PackagingSupplyType::class, 'packaging_supply_type_id');
+    }
+
+    /**
+     * Localized type name; falls back to the legacy code when no type row is linked.
+     */
+    public function typeName(): string
+    {
+        return $this->supplyType?->localizedName() ?? (string) $this->type;
     }
 
     public function scopeActive($query)
@@ -85,7 +115,7 @@ class PackagingSupply extends Model
             return 'Free';
         }
 
-        return \App\Support\Money::format($this->unit_cost) . ' ' . ($this->currency ?? config('app.currency', 'SAR'));
+        return Money::format($this->unit_cost).' '.($this->currency ?? config('app.currency', 'SAR'));
     }
 
     public function isFree(): bool
@@ -95,13 +125,6 @@ class PackagingSupply extends Model
 
     public function typeBadgeClass(): string
     {
-        return match ($this->type) {
-            PackagingSupplyType::Box        => 'bg-blue-100 text-blue-800',
-            PackagingSupplyType::Bag        => 'bg-green-100 text-green-800',
-            PackagingSupplyType::Tape       => 'bg-orange-100 text-orange-800',
-            PackagingSupplyType::Label      => 'bg-purple-100 text-purple-800',
-            PackagingSupplyType::BubbleWrap => 'bg-gray-100 text-gray-800',
-            default => 'bg-gray-100 text-gray-800',
-        };
+        return $this->supplyType?->badgeClass() ?? 'bg-gray-100 text-gray-800';
     }
 }

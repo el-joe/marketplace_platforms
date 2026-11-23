@@ -17,6 +17,7 @@ use App\Services\Marketer\MarketerCommissionCalculator;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
 use App\Services\ReferralCodeResolver;
+use App\Support\Bilingual;
 use App\Support\Marketer\CampaignBudgetRules;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
@@ -313,14 +314,14 @@ class MarketerCampaignController extends Controller
             ->where('vendor_id', $request->vendor_id)
             ->where('status', 'active')
             ->whereIn('fulfillment_model', (array) setting('marketer_campaign_allowed_fulfilment_models', MarketerCampaignService::DEFAULT_ALLOWED_FULFILMENT_MODELS))
-            ->when($request->filled('search'), fn ($q) => $q->whereHas('productVariant.product', fn ($q2) => $q2->where('name_en', 'like', "%{$request->search}%")
+            ->when($request->filled('search'), fn ($q) => $q->whereHas('productVariant.product', fn ($q2) => Bilingual::whereLike($q2, 'name', (string) $request->search)
             )
             )
             ->limit(20)
             ->get()
             ->map(fn ($l) => [
                 'id' => $l->id,
-                'text' => ($l->productVariant?->product?->name_en ?? '—').' — '.$l->id,
+                'text' => (localized($l->productVariant?->product) ?: '—').' — '.$l->id,
             ]);
 
         return response()->json(['results' => $listings]);

@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasContractRequirement;
+use App\Models\Concerns\HasLocalizedName;
 use App\Services\Customer\CategoryService;
 use App\Services\Customer\UnifiedCategoryService;
 use App\Services\FooterService;
+use App\Support\Bilingual;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +21,7 @@ use Kalnoy\Nestedset\NodeTrait;
 
 class Category extends Model
 {
-    use HasContractRequirement, HasFactory, NodeTrait, SoftDeletes;
+    use HasContractRequirement, HasFactory, HasLocalizedName, NodeTrait, SoftDeletes;
 
     // Override kalnoy/nestedset defaults (_lft/_rgt) to match actual DB columns
     public function getLftName(): string
@@ -120,9 +122,7 @@ class Category extends Model
 
     public function getNameAttribute(): string
     {
-        $locale = app()->getLocale();
-
-        return $this->{'name_'.$locale} ?? $this->name_en ?? '';
+        return Bilingual::localized($this, 'name');
     }
 
     /**

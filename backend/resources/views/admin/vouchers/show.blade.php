@@ -62,7 +62,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-500">{{ __('admin.vouchers_section.country') }}</p>
-                    <p class="font-medium text-gray-900">{{ $voucher->country->name_en ?? __('admin.vouchers_section.all_countries') }}</p>
+                    <p class="font-medium text-gray-900">{{ localized($voucher->country) ?: __('admin.vouchers_section.all_countries') }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-500">{{ __('admin.vouchers_section.customer_eligibility') }}</p>

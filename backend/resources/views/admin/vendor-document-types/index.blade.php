@@ -16,6 +16,9 @@
     </div>
 
     {{-- ─── Matrix Table ────────────────────────────────────────────────────────── --}}
+    <x-filter.bar class="mb-4" :statuses="['active' => __('common.active'), 'inactive' => __('common.inactive')]"
+        :search-placeholder="__('admin.list_search.vendor_document_types')" />
+
     <div class="table-responsive card">
         <table class="w-full text-sm" id="doc-types-table">
             <thead>
@@ -25,7 +28,7 @@
                     <th class="px-3 py-3 text-center font-semibold text-gray-700 text-xs">{{ __('admin.vendor_document_types.status_column') }}</th>
                     @foreach($countries as $country)
                         <th class="px-2 py-3 text-center font-semibold text-gray-700 text-xs min-w-[110px]">
-                            <span title="{{ $country->name_en }}">
+                            <span title="{{ localized($country) }}">
                                 {{ $country->flag_emoji ?? '' }} {{ $country->iso_code_2 }}
                             </span>
                         </th>
@@ -39,7 +42,7 @@
                         data-type-id="{{ $type->id }}">
                         {{-- Name + code --}}
                         <td class="px-4 py-3">
-                            <div class="font-medium text-gray-900">{{ $type->name_en }}</div>
+                            <div class="font-medium text-gray-900">{{ localized($type) }}</div>
                             <div class="text-xs text-gray-400 font-mono mt-0.5">{{ $type->code }}</div>
                             @if($type->name_ar)
                                 <div class="text-xs text-gray-500 mt-0.5 font-medium" dir="rtl">{{ $type->name_ar }}</div>
@@ -115,7 +118,7 @@
                                 @endif
                             </button>
                             <button type="button" class="btn-icon text-gray-400 hover:text-red-600 ml-1" title="{{ __('admin.vendor_document_types.delete') }}"
-                                onclick="deleteType('{{ $type->id }}', '{{ addslashes($type->name_en) }}')">
+                                onclick="deleteType('{{ $type->id }}', '{{ addslashes(localized($type)) }}')">
                                 <x-heroicon name="trash" class="w-4 h-4" />
                             </button>
                         </td>

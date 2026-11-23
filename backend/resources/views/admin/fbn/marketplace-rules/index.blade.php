@@ -40,6 +40,11 @@
     {{-- ─── Filter ───────────────────────────────────────────────────────────────── --}}
     <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
         <div class="flex flex-wrap gap-3 items-end">
+            <div class="flex-1 min-w-[12rem]">
+                <label for="filter-search" class="label-sm">{{ __('admin.search') }}</label>
+                <input id="filter-search" type="search" autocomplete="off" class="form-input text-sm py-1.5 w-full"
+                    placeholder="{{ __('admin.fbn_section.search_placeholder') }}">
+            </div>
             <div>
                 <label class="label-sm">{{ __('admin.fbn_section.commission_type') }}</label>
                 <select id="filter-commission-type" class="form-select text-sm py-1.5 pr-8">
@@ -162,6 +167,7 @@
                 serverSide: true,
                 processing: true,
                 pageLength: 25,
+                dom: 'lrtip',
                 order: [[0, 'desc']],
                 ajax: {
                     url: '{{ route('admin.fbn.marketplace.datatable') }}',
@@ -183,6 +189,12 @@
             });
 
             $('#filter-commission-type').on('change', () => tbl.ajax.reload());
+            let searchTimer;
+            $('#filter-search').on('input', function () {
+                clearTimeout(searchTimer);
+                const term = this.value;
+                searchTimer = setTimeout(() => tbl.search(term).draw(), 300);
+            });
 
             function clearModal() {
                 $('#rm-id').val('');

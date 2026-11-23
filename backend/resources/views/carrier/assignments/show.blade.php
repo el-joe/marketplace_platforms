@@ -18,6 +18,7 @@
         'picked_up' => __('carrier.assignments.status_picked_up'),
         'delivered' => __('carrier.assignments.status_delivered'),
         'failed'    => __('carrier.assignments.status_failed'),
+        'cancelled' => __('carrier.assignments.status_cancelled'),
     ];
     $failureReasonLabels = [
         'customer_unavailable' => __('carrier.assignment_detail.failure_reasons.customer_unavailable'),
