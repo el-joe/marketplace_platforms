@@ -277,8 +277,8 @@ Object.assign(window.TRANSLATIONS, {
 });
 
 (function () {
-    const SETTLE_URL  = @json(route('admin.delivery.cod-settlements.settle', $settlement));
-    const DISPUTE_URL = @json(route('admin.delivery.cod-settlements.dispute', $settlement));
+    const SETTLE_URL  = {{ Js::from(route('admin.delivery.cod-settlements.settle', $settlement)) }};
+    const DISPUTE_URL = {{ Js::from(route('admin.delivery.cod-settlements.dispute', $settlement)) }};
 
     function token() { return document.querySelector('meta[name="csrf-token"]').content; }
 

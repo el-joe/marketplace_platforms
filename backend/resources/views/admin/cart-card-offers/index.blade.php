@@ -100,7 +100,7 @@
 
         window.tableActions.delete = async function (id, row) {
             const name = row.card_name || window.TRANSLATIONS.defaultOfferLabel;
-            const message = @json(__('admin.cart_card_offers_section.delete_offer_confirm', ['name' => '%NAME%'])).replace('%NAME%', name);
+            const message = {{ Js::from(__('admin.cart_card_offers_section.delete_offer_confirm', ['name' => '%NAME%'])) }}.replace('%NAME%', name);
             const confirmed = window.confirmDelete
                 ? await window.confirmDelete(message, { title: window.TRANSLATIONS.deleteOfferTitle })
                 : confirm(message);

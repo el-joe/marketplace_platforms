@@ -427,7 +427,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var warehousesData = @json($platformWarehouses->map(fn($w) => ['id' => $w->id, 'name' => $w->name, 'country_id' => $w->country_id])->values());
+        var warehousesData = {{ Js::from($platformWarehouses->map(fn($w) => ['id' => $w->id, 'name' => $w->name, 'country_id' => $w->country_id])->values()) }};
         var selectedWarehouseId = @json($val('warehouse_id'));
         var $warehouseSelect = window.jQuery ? jQuery('[name="warehouse_id"]') : null;
         var $warningBox = document.getElementById('no-warehouses-warning');

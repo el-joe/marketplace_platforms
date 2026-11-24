@@ -19,7 +19,7 @@ class ChangeRequestApproved extends BaseDatabaseBroadcastNotification
         return [
             'title' => 'Change Request Approved',
             'message' => "Your change request for {$this->changeRequest->section} has been approved.",
-            'url' => route('partner.change-requests.show', $this->changeRequest->id),
+            'url' => route('partner.change-requests.index'),
             'change_request_id' => $this->changeRequest->id,
         ];
     }

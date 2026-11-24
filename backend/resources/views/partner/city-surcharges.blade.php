@@ -82,8 +82,8 @@
         window.CITY_SURCHARGE_ROUTES = {
             index: @json(route('partner.city-surcharges.index')),
             store: @json(route('partner.city-surcharges.store')),
-            update: @json(route('partner.city-surcharges.update', ['surcharge' => '__ID__'])),
-            toggleActive: @json(route('partner.city-surcharges.toggle-active', ['surcharge' => '__ID__'])),
+            update: {{ Js::from(route('partner.city-surcharges.update', ['surcharge' => '__ID__'])) }},
+            toggleActive: {{ Js::from(route('partner.city-surcharges.toggle-active', ['surcharge' => '__ID__'])) }},
         };
     </script>
 @endpush

@@ -329,9 +329,13 @@
                 @endif
             </div>
 
-            @if(!$subOrder->cod_remittance_confirmed && $order->payment_method === 'cod')
+            @if($subOrder->codCollectionStatus($order) === \App\Models\SubOrder::COD_COLLECTION_PENDING)
                 <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
                     <strong>{{ __('partner.orders.alert') }}:</strong> {{ __('partner.orders.cod_pending_notice', ['amount' => number_format($subOrder->vendor_payout, 2) . ' ' . $currency]) }}
+                </div>
+            @elseif($subOrder->codCollectionStatus($order) === \App\Models\SubOrder::COD_COLLECTION_CANCELLED)
+                <div class="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-700">
+                    {{ __('partner.orders.cod_cancelled_nothing_to_collect') }}
                 </div>
             @endif
 

@@ -21,7 +21,7 @@
             storeUrl:           "{{ route('partner.classifieds.store') }}",
             stepLabelsFull:     @json(__('partner.classifieds_extra.wizard.step_labels_full')),
             stepLabelsNoContract: @json(__('partner.classifieds_extra.wizard.step_labels_no_contract')),
-            countryCurrencyMap: @json($countries->pluck('currency_code', 'id')),
+            countryCurrencyMap: {{ Js::from($countries->pluck('currency_code', 'id')) }},
             selectCountryFirstLabel: '{{ __('partner.classifieds_extra.wizard.select_country_first') }}',
             attachmentsI18n: @json($json),
         };

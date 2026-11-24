@@ -164,11 +164,11 @@
             generationInProgress: @json(__('admin.fbn_section.generation_in_progress')),
             generationComplete: @json(__('admin.fbn_section.generation_complete')),
             generationFailed: @json(__('admin.fbn_section.generation_failed')),
-            reasonRequired: @json(__('validation.required', ['attribute' => __('admin.fbn_section.revert_reason')])),
+            reasonRequired: {{ Js::from(__('validation.required', ['attribute' => __('admin.fbn_section.revert_reason')])) }},
         });
         const FEE_ROUTES = {
-            status: @json(route('admin.fbn.storage-fees.status', ['fee' => '__ID__'])),
-            revert: @json(route('admin.fbn.storage-fees.revert-status', ['fee' => '__ID__'])),
+            status: {{ Js::from(route('admin.fbn.storage-fees.status', ['fee' => '__ID__'])) }},
+            revert: {{ Js::from(route('admin.fbn.storage-fees.revert-status', ['fee' => '__ID__'])) }},
         };
 
         document.addEventListener('DOMContentLoaded', function () {

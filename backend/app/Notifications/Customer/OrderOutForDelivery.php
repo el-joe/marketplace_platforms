@@ -3,6 +3,7 @@
 namespace App\Notifications\Customer;
 
 use App\Models\SubOrder;
+use App\Support\StorefrontUrl;
 use Illuminate\Broadcasting\PrivateChannel;
 
 class OrderOutForDelivery extends BaseCustomerNotification
@@ -32,7 +33,7 @@ class OrderOutForDelivery extends BaseCustomerNotification
             'title_ar' => 'الطلب في الطريق إليك',
             'message' => $message,
             'message_ar' => $messageAr,
-            'url' => route('customer.orders.show', ['country' => $this->subOrder->order->country?->site_code, 'order_number' => $this->subOrder->order->order_number]),
+            'url' => StorefrontUrl::order($this->subOrder->order, StorefrontUrl::languageOf($notifiable)),
             'sub_order_id' => $this->subOrder->id,
             'sub_order_number' => $this->subOrder->sub_order_number,
             'delivery_otp' => $this->deliveryOtp,

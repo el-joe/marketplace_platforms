@@ -1,0 +1,66 @@
+[      96ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://admin.noon.loc/_boost/browser-logs @ http://admin.noon.loc/login:16
+[     676ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://admin.noon.loc/_boost/browser-logs @ http://admin.noon.loc/:44
+[     739ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[     854ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://admin.noon.loc/_boost/browser-logs @ http://admin.noon.loc/packaging/types:44
+[     883ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[    1117ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://admin.noon.loc/_boost/browser-logs @ http://admin.noon.loc/orders/01a111ff-5e0a-7163-b532-9eee65d79a06:44
+[    1149ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[    3139ms] [ERROR] WebSocket connection to 'wss://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   16140ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   17927ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://admin.noon.loc/_boost/browser-logs @ http://admin.noon.loc/delivery/zones:44
+[   17943ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   19939ms] [ERROR] WebSocket connection to 'wss://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   32944ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   34947ms] [ERROR] WebSocket connection to 'wss://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   51916ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://admin.noon.loc/_boost/browser-logs @ http://admin.noon.loc/delivery/zones:44
+[   51995ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   54054ms] [ERROR] WebSocket connection to 'wss://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   60717ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://admin.noon.loc/_boost/browser-logs @ http://admin.noon.loc/shipping-zones?tab=distance:44
+[   61139ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   61164ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://admin.noon.loc/_boost/browser-logs @ http://admin.noon.loc/shipping-zones:44
+[   61350ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://admin.noon.loc/_boost/browser-logs @ http://admin.noon.loc/categories:44
+[   62337ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   64737ms] [ERROR] WebSocket connection to 'wss://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://admin.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   68701ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://portal.noon.loc/_boost/browser-logs @ http://portal.noon.loc/fulfillment:62
+[   68702ms] [WARNING] Unrecognized feature: 'web-share'. @ http://portal.noon.loc/fulfillment:943
+[   69884ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://portal.noon.loc/ar/fulfillment:1
+[   76738ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://portal.noon.loc/_boost/browser-logs @ http://portal.noon.loc/fulfillment:62
+[   76739ms] [WARNING] Unrecognized feature: 'web-share'. @ http://portal.noon.loc/fulfillment:943
+[   81538ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://portal.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   82548ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://portal.noon.loc/_boost/browser-logs @ http://portal.noon.loc/fulfillment:62
+[   82549ms] [WARNING] Unrecognized feature: 'web-share'. @ http://portal.noon.loc/fulfillment#:943
+[   82940ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://portal.noon.loc/_boost/browser-logs @ http://portal.noon.loc/fulfillment:62
+[   82941ms] [WARNING] Unrecognized feature: 'web-share'. @ http://portal.noon.loc/fulfillment:943
+[   83500ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://portal.noon.loc/_boost/browser-logs @ http://portal.noon.loc/fulfillment:62
+[   83500ms] [WARNING] Unrecognized feature: 'web-share'. @ http://portal.noon.loc/fulfillment#:943
+[   84756ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://portal.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[   88973ms] [ERROR] WebSocket connection to 'wss://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://portal.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  101461ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://portal.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  103071ms] [ERROR] WebSocket connection to 'wss://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://portal.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  128520ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://portal.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  130520ms] [ERROR] WebSocket connection to 'wss://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://portal.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  181571ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://partner.noon.loc/_boost/browser-logs @ http://partner.noon.loc/login:17
+[  181585ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "username"): (More info: https://goo.gl/9p2vKq) %o @ http://partner.noon.loc/login:1
+[  181586ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://partner.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  181955ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://partner.noon.loc/_boost/browser-logs @ http://partner.noon.loc/dashboard:38
+[  182004ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://partner.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  183475ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://partner.noon.loc/_boost/browser-logs @ http://partner.noon.loc/ad-slots:38
+[  183488ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://partner.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  183552ms] [LOG] 🔍 Browser logger active (MCP server detected). Posting to: http://partner.noon.loc/_boost/browser-logs @ http://partner.noon.loc/ad-slots/01a111ff-37a4-7118-82c4-0f285fdace61:38
+[  183568ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://partner.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  185561ms] [ERROR] WebSocket connection to 'wss://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://partner.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  198565ms] [ERROR] WebSocket connection to 'ws://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://partner.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  200574ms] [ERROR] WebSocket connection to 'wss://localhost:8080/app/1jfmcnevze6w3iapmdau?protocol=7&client=js&version=8.6.0&flash=false' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://partner.noon.loc/build/assets/echo-setup-A5YTFYVS.js:6
+[  203088ms] [ERROR] Access to fetch at 'http://admin.noon.loc/api/customer/v1/countries' from origin 'http://localhost:3100' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:3100/uae-en/cart:1
+[  203089ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://admin.noon.loc/api/customer/v1/countries:1
+[  203101ms] TypeError: Failed to fetch
+    at http://localhost:3100/_next/static/chunks/0_j81awagjcc2.js:1:14666
+    at u.a (http://localhost:3100/_next/static/chunks/turbopack-0gj0ilsjyz9ss.js:1:4070)
+    at module evaluation (http://localhost:3100/_next/static/chunks/0_j81awagjcc2.js:1:14589)
+    at W (http://localhost:3100/_next/static/chunks/turbopack-0gj0ilsjyz9ss.js:1:7614)
+    at B (http://localhost:3100/_next/static/chunks/turbopack-0gj0ilsjyz9ss.js:1:7155)
+    at s.w [as i] (http://localhost:3100/_next/static/chunks/turbopack-0gj0ilsjyz9ss.js:1:2591)
+    at http://localhost:3100/_next/static/chunks/0fd1fuy53ute_.js:1:38346
+    at u.a (http://localhost:3100/_next/static/chunks/turbopack-0gj0ilsjyz9ss.js:1:4070)
+    at module evaluation (http://localhost:3100/_next/static/chunks/0fd1fuy53ute_.js:1:38291)
+    at W (http://localhost:3100/_next/static/chunks/turbopack-0gj0ilsjyz9ss.js:1:7614)

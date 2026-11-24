@@ -27,9 +27,8 @@ export function getRegisterSchema(
         .trim()
         .min(8, t("passwordMinLengthErr", { value: "8" })),
       gender: z.enum(GENDERS).optional(),
-      marketingCommunicationsConfirm: z.boolean().refine((val) => val, {
-        message: t("marketingCommunicationConfirmErr"),
-      }),
+      /** Optional opt-in: never gates sign-up (client retest R7). */
+      marketingCommunicationsConfirm: z.boolean().optional(),
     })
     .refine((data) => data.password === data.password_confirmation, {
       message: t("passwordDontMatchErr"),

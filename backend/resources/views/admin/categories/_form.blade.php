@@ -114,7 +114,8 @@
                 @foreach([
                     ['name' => 'is_active',   'label' => __('common.active'),                          'hint' => __('category_form.flags.active_hint'),   'default' => true],
                     ['name' => 'is_visible',  'label' => __('admin.is_visible'),                       'hint' => __('category_form.flags.visible_hint'),  'default' => true],
-                    ['name' => 'is_featured', 'label' => __('admin.categories.featured_homepage'),     'hint' => __('category_form.flags.featured_hint', ['max' => $maxFeatured]), 'default' => false],
+                    ['name' => 'is_featured', 'label' => __('admin.categories.featured_homepage'),     'hint' => __('category_form.flags.featured_hint', ['max' => $maxFeatured]), 'default' => false,
+                        'link' => auth('admin')->user()?->can('pages.view') ? ['href' => route('admin.page-builder.index'), 'label' => __('category_form.flags.featured_link')] : null],
                     ['name' => 'has_filters', 'label' => __('admin.categories.has_filters'),           'hint' => __('category_form.flags.has_filters_hint'), 'default' => false],
                 ] as $flag)
                     <div class="rounded-lg border border-gray-100 bg-gray-50/60 p-4">
@@ -122,6 +123,12 @@
                         <input type="hidden" name="{{ $flag['name'] }}" value="0">
                         <x-form.toggle :name="$flag['name']" :label="$flag['label']" :value="$bool($flag['name'], $flag['default'])" />
                         <p class="mt-2 text-xs leading-relaxed text-gray-500">{{ $flag['hint'] }}</p>
+                        @if(! empty($flag['link']))
+                            <a href="{{ $flag['link']['href'] }}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:underline">
+                                {{ $flag['link']['label'] }}
+                                <x-heroicon name="chevron-right" class="h-3.5 w-3.5 rtl:rotate-180" />
+                            </a>
+                        @endif
                     </div>
                 @endforeach
             </div>

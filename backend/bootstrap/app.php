@@ -34,6 +34,8 @@ use App\Http\Middleware\VendorOnboarded;
 use App\Http\Middleware\VendorPermissionMiddleware;
 use App\Http\Middleware\VendorTokenAuth;
 use App\Http\Middleware\VendorTypeMiddleware;
+use App\Support\GuestRedirect;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -111,6 +113,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'webhooks/payment/*',
         ]);
 
+        // R4 (retest 2026-11-24): the framework default sends guests to route('login'), which does not
+        // exist here, so a browser opening an API link (e.g. an old email button) got a 500 with a stack
+        // trace. API requests never redirect (JSON 401, see withExceptions); panels go to their own login.
+        $middleware->redirectGuestsTo(fn (Request $request): ?string => GuestRedirect::loginUrlFor($request));
+
         $middleware->alias([
             'auth.admin' => AdminAuth::class,
             'auth.optional' => OptionalCustomerAuth::class,
@@ -146,6 +153,21 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // R4: anything under /api (or on the api.* host) always answers JSON, whatever the Accept header.
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request, Throwable $e): bool => GuestRedirect::isApiRequest($request) || $request->expectsJson()
+        );
+
+        // R4 safety net: a guest with nowhere to be redirected gets a JSON 401, never route('login') → 500.
+        // (JSON requests keep the framework's own {"message":"Unauthenticated."} 401.)
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            if (GuestRedirect::isApiRequest($request) || $request->expectsJson() || $e->redirectTo($request) !== null) {
+                return null;
+            }
+
+            return response()->json(['message' => $e->getMessage()], 401);
+        });
+
         // Tampered / expired WhatsApp accept-reject links: friendly page instead of a bare 403.
         $exceptions->render(function (InvalidSignatureException $e, Request $request) {
             if (str_starts_with((string) $request->route()?->getName(), 'marketer.invitations.whatsapp.')) {

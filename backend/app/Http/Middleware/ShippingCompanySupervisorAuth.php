@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\ShippingCompanyStatus;
+use App\Support\GuestRedirect;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,7 +13,7 @@ class ShippingCompanySupervisorAuth
     public function handle(Request $request, Closure $next): Response
     {
         if (! auth()->guard('shipping_supervisor')->check()) {
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || GuestRedirect::isApiRequest($request)) {
                 return response()->json(['message' => 'Unauthenticated.'], 401);
             }
 

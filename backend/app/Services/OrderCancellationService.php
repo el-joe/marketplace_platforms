@@ -532,20 +532,26 @@ class OrderCancellationService
         $walletUsed = (float) $order->wallet_amount_used;
         $walletPortion = $walletUsed > 0 ? Money::number(round($walletUsed * $fraction, 4)) : 0;
 
+        $initiatedBy = ['type' => $actor->value, 'id' => $actor === CancelActor::Customer ? $order->customer_id : null];
+        $paymentStatusBefore = $order->payment_status;
+        $walletRefund = null;
+
         if ($walletPortion > 0) {
-            $this->checkoutWalletService->refundToWallet($order->customer, $order, $walletPortion);
+            // R2: recorded as a refund (refunds row + refund transaction + payment_status), not a silent re-credit.
+            $walletRefund = $this->refundService->refundWalletTender($order, $walletPortion, null, $reason, $initiatedBy, $isFullOrderCancel);
+            $order->refresh();
         }
 
         $collectedPortion = Money::number(round($cancelledAmount - $walletPortion, 4));
 
         if ($collectedPortion <= 0) {
-            return null;
+            return $walletRefund;
         }
 
-        if (! in_array($order->payment_status, [OrderPaymentStatus::Captured, OrderPaymentStatus::PartiallyRefunded], true)) {
+        if (! in_array($paymentStatusBefore, [OrderPaymentStatus::Captured, OrderPaymentStatus::PartiallyRefunded], true)) {
             // Unpaid COD (cash is only collected on delivery) or a card that
             // was never captured: nothing was charged, so nothing is refunded.
-            return null;
+            return $walletRefund;
         }
 
         // enhancement.md P-07 task 5: route through the single RefundService.
@@ -562,7 +568,7 @@ class OrderCancellationService
                 reason: 'customer_request',
                 liability: 'customer',
                 destination: 'original',
-                initiatedBy: ['type' => $actor->value, 'id' => $actor === CancelActor::Customer ? $order->customer_id : null],
+                initiatedBy: $initiatedBy,
                 reasonNotes: $reason,
                 reverseLedger: ! $isFullOrderCancel,
             );
@@ -578,7 +584,7 @@ class OrderCancellationService
                 'exception' => $e->getMessage(),
             ]);
 
-            return null;
+            return $walletRefund;
         }
     }
 

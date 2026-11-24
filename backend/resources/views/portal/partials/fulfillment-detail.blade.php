@@ -51,7 +51,7 @@
                         'شحن وارد سريع، تخزين شهري في منشآت متطورة، خدمات إزالة المنتجات، ومعالجة المرتجعات.') }}
                 </p>
 
-                <p class="mt-4 text-[#0F807E] font-black text-xs uppercase tracking-wider">{{ portal_content('fulfillment', 'fbn', 'ideal_label', 'Ideal for:', 'مثالي لـ:') }}</p>
+                <p class="mt-4 text-[#0F807E] font-black text-xs uppercase tracking-wider">{{ portal_content('fulfillment', 'fbn', 'ideal_label', 'Ideal for:', 'مثالي لك:') }}</p>
                 <p class="mt-1 text-gray-300 font-medium">
                     {{ portal_content('fulfillment', 'fbn', 'ideal_text', 'Best-selling products, new products, and any seller ready to grow.', 'المنتجات الأكثر مبيعا، المنتجات الجديدة، وكل بائع جاهز للنمو.') }}
                 </p>
@@ -139,7 +139,7 @@
                     @endforeach
                 </ul>
 
-                <p class="mt-5 text-[#0F807E] font-black text-xs uppercase tracking-wider">{{ portal_content('fulfillment', 'fbp', 'ideal_label', 'Ideal for:', 'مثالي لـ:') }}</p>
+                <p class="mt-5 text-[#0F807E] font-black text-xs uppercase tracking-wider">{{ portal_content('fulfillment', 'fbp', 'ideal_label', 'Ideal for:', 'مثالي لك:') }}</p>
                 <p class="mt-1 text-gray-300 font-medium">
                     {{ portal_content('fulfillment', 'fbp', 'ideal_text', 'Heavy, bulky, or specialized products that require a personal touch.', 'المنتجات الثقيلة، الكبيرة، أو المتخصصة التي تتطلب لمسة شخصية.') }}
                 </p>

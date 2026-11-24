@@ -21,6 +21,13 @@
         @endcan
     </div>
 
+    {{-- Product link / QR (barcode) commission is not a plan setting (client retest R11): point to its page --}}
+    <x-info-callout class="mb-6"
+        :href="auth('admin')->user()?->can('product_link_commission.view') ? route('admin.product-link-commission.index') : null"
+        :link-label="__('admin.subscriptions.product_link_pointer_link')">
+        {{ __('admin.subscriptions.product_link_pointer_body') }}
+    </x-info-callout>
+
     {{-- ─── Plans Grid ──────────────────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8" id="plans-grid">
         @forelse($plans as $plan)

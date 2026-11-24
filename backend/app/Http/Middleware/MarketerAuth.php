@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\GuestRedirect;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -11,7 +12,7 @@ class MarketerAuth
     public function handle(Request $request, Closure $next): Response
     {
         if (! auth()->guard('marketer')->check()) {
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || GuestRedirect::isApiRequest($request)) {
                 return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
             }
 
@@ -43,7 +44,7 @@ class MarketerAuth
 
         if ($marketer->needsOnboarding()
             && ! $request->routeIs('marketer.onboarding.*', 'marketer.logout')) {
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || GuestRedirect::isApiRequest($request)) {
                 return response()->json(['success' => false, 'message' => 'Onboarding required.'], 403);
             }
 

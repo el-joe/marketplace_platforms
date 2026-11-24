@@ -8,6 +8,7 @@ use App\Models\DeliveryAssignment;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentTransaction;
+use App\Models\Refund;
 use App\Models\Review;
 use App\Models\Shipment;
 use App\Models\ShipmentTrackingEvent;
@@ -89,7 +90,43 @@ class OrderTrackingService
                 fn (SubOrder $subOrder) => $this->buildSubOrder($subOrder, $reviewedItemIds)
             )->all(),
             'bank_transfer_details' => $this->buildBankTransferDetails($order),
+            'refunds' => $this->buildRefunds($order),
         ];
+    }
+
+    /**
+     * R2 (retest 2026-11-24): refunds on the customer's order page — amount, where the money went
+     * (wallet / original card; null while not yet settled), date and status.
+     *
+     * @return list<array{amount: int|float, currency: string, method: ?string, status: string, refunded_at: ?string}>
+     */
+    private function buildRefunds(Order $order): array
+    {
+        return $order->refunds()
+            ->with('refundTransaction:id,gateway')
+            ->whereNotIn('status', ['rejected'])
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn (Refund $refund) => [
+                'amount' => $refund->amount,
+                'currency' => $refund->currency ?? $order->currency,
+                'method' => $this->refundMethod($refund),
+                'status' => $refund->status->value,
+                'refunded_at' => ($refund->status->value === 'completed' ? $refund->updated_at : $refund->created_at)?->toIso8601String(),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function refundMethod(Refund $refund): ?string
+    {
+        $gateway = $refund->refundTransaction?->gateway;
+
+        if ($gateway === 'wallet') {
+            return 'wallet';
+        }
+
+        return $gateway !== null ? 'card' : null;
     }
 
     /**

@@ -358,7 +358,7 @@
                 async accept() {
                     this.loading = true;
                     try {
-                        const res = await fetch(@json(route('delivery.assignments.accept', $assignment->id)), {
+                        const res = await fetch({{ Js::from(route('delivery.assignments.accept', $assignment->id)) }}, {
                             method: 'POST',
                             headers: { 'X-CSRF-TOKEN': @json(csrf_token()), 'Accept': 'application/json', 'Content-Type': 'application/json' },
                         });
@@ -377,7 +377,7 @@
                     this.loading = true;
                     const loc = await this.getLocation();
                     try {
-                        const res = await fetch(@json(route('delivery.assignments.picked-up', $assignment->id)), {
+                        const res = await fetch({{ Js::from(route('delivery.assignments.picked-up', $assignment->id)) }}, {
                             method: 'POST',
                             headers: { 'X-CSRF-TOKEN': @json(csrf_token()), 'Accept': 'application/json', 'Content-Type': 'application/json' },
                             body: JSON.stringify(loc),
@@ -427,7 +427,7 @@
                     }
 
                     try {
-                        const res = await fetch(@json(route('delivery.assignments.deliver', $assignment->id)), {
+                        const res = await fetch({{ Js::from(route('delivery.assignments.deliver', $assignment->id)) }}, {
                             method: 'POST',
                             headers: { 'Accept': 'application/json' },
                             body: form,
@@ -456,7 +456,7 @@
                     this.loading = true;
                     const loc = await this.getLocation();
                     try {
-                        const res = await fetch(@json(route('delivery.assignments.fail', $assignment->id)), {
+                        const res = await fetch({{ Js::from(route('delivery.assignments.fail', $assignment->id)) }}, {
                             method: 'POST',
                             headers: { 'X-CSRF-TOKEN': @json(csrf_token()), 'Accept': 'application/json', 'Content-Type': 'application/json' },
                             body: JSON.stringify({

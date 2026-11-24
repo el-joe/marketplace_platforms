@@ -168,4 +168,19 @@ class PackagingSupplyTypeAdminTest extends TestCase
             ->assertSee('حقيبة صغيرة')
             ->assertSee('صندوق خشبي '.__('admin.packaging_catalog.type_inactive_suffix', [], 'ar'));
     }
+
+    public function test_types_page_renders_rows_with_edit_payload_escaped_for_the_attribute(): void
+    {
+        $type = PackagingSupplyType::factory()->create([
+            'name_en' => "Kid's mailer",
+            'name_ar' => 'ظرف أطفال',
+            'sort_order' => 7,
+        ]);
+
+        $response = $this->actingAs($this->admin, 'admin')->get(route('admin.packaging.types.index'));
+
+        $response->assertOk()->assertSee("Kid's mailer");
+        $payload = json_encode($type->only(['id', 'code', 'name_en', 'name_ar', 'is_active', 'sort_order']));
+        $response->assertSee("data-type='".e($payload)."'", false);
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Notifications\Customer;
 
 use App\Models\TravelBooking;
+use App\Support\StorefrontUrl;
 use Illuminate\Broadcasting\PrivateChannel;
 
 class TravelBookingCancelled extends BaseCustomerNotification
@@ -37,7 +38,7 @@ class TravelBookingCancelled extends BaseCustomerNotification
             'title_ar'       => 'تم إلغاء الحجز',
             'message'        => "Your travel booking #{$this->booking->booking_number} for \"{$this->booking->package->title}\" has been cancelled {$byWhom}.",
             'message_ar'     => "تم إلغاء حجز السفر رقم #{$this->booking->booking_number} الخاص بـ \"{$this->booking->package->title}\" {$byWhomAr}.",
-            'url'            => route('customer.account.travel-bookings.show', ['country' => $notifiable->country?->site_code, 'id' => $this->booking->id]),
+            'url'            => StorefrontUrl::to($notifiable->country, 'my-bookings/'.$this->booking->id, StorefrontUrl::languageOf($notifiable)),
             'booking_id'     => $this->booking->id,
             'booking_number' => $this->booking->booking_number,
             'package_title'  => $this->booking->package->title,

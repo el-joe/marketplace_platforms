@@ -5,6 +5,7 @@ namespace App\Notifications\Customer;
 use App\Models\ClassifiedInquiry;
 use App\Models\Customer;
 use App\Notifications\BaseDatabaseBroadcastNotification;
+use App\Support\StorefrontUrl;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Notifications\Messages\MailMessage;
 
@@ -85,9 +86,9 @@ class ClassifiedInquiryReceived extends BaseDatabaseBroadcastNotification
     private function resolveListingUrl(object $notifiable): string
     {
         if ($notifiable instanceof Customer) {
-            return route('customer.account.classified-listings.inquiries', [
-                'listing_number' => $this->inquiry->listing->listing_number,
-            ]);
+            $listing = $this->inquiry->listing;
+
+            return StorefrontUrl::to($notifiable->country, 'classified/find/'.rawurlencode((string) ($listing->slug ?? $listing->id)), StorefrontUrl::languageOf($notifiable));
         }
 
         // Vendor — route to partner classifieds if available

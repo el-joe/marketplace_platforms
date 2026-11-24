@@ -28,7 +28,8 @@ return [
     'flags' => [
         'active_hint' => 'Off = the category is switched off on the storefront: its page returns "not found" (also by direct link), its subcategories go with it, and products are not listed under it.',
         'visible_hint' => 'Off = hidden from menus, navigation and category lists, but the page still opens by direct link (while Active is on).',
-        'featured_hint' => 'On = shown in the homepage "category pills" section when that block has no hand-picked categories (max :max featured). Needs Active and Visible.',
+        'featured_hint' => 'On = shown on the storefront home page ONLY inside a "Category Pills" block (Page Builder → country home page → Discovery → Category Pills) that has no hand-picked categories. Without that block, Featured has no visible effect. Max :max featured; needs Active and Visible.',
+        'featured_link' => 'Open Page Builder',
         'has_filters_hint' => 'Shows the filter sidebar (price, brand, attributes) on this category\'s page.',
     ],
 

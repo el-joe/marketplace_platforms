@@ -179,8 +179,8 @@
         window.SHIPPING_WEIGHT_SLABS_ROUTES = {
             datatable: @json(route('admin.shipping.weight-slabs.datatable')),
             store: @json(route('admin.shipping.weight-slabs.store')),
-            update: @json(route('admin.shipping.weight-slabs.update', ['slab' => '__ID__'])),
-            destroy: @json(route('admin.shipping.weight-slabs.destroy', ['slab' => '__ID__'])),
+            update: {{ Js::from(route('admin.shipping.weight-slabs.update', ['slab' => '__ID__'])) }},
+            destroy: {{ Js::from(route('admin.shipping.weight-slabs.destroy', ['slab' => '__ID__'])) }},
         };
     </script>
 @endpush

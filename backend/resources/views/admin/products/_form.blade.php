@@ -499,9 +499,7 @@
                     </div>
                     <p class="text-xs text-gray-400">{{ __('admin.products.slug_help') }}</p>
                     <script>
-                        window.__initialVariantAttributes = @json(
-                            collect($variants ?? [])->mapWithKeys(fn ($variant, $vi) => [$vi => $variant->attribute_values ?? []])
-                        );
+                        window.__initialVariantAttributes = {{ Js::from(collect($variants ?? [])->mapWithKeys(fn ($variant, $vi) => [$vi => $variant->attribute_values ?? []])) }};
                     </script>
                 </div>
             </div>
@@ -713,7 +711,7 @@
                 <script>
                     {{-- FilePond.create() replaces the input above, so cache its upload/delete URLs before that happens --}}
                     window.__productImagesUploadUrl = @json(route('admin.products.upload-image'));
-                    window.__productImagesDeleteUrlBase = @json(Str::beforeLast(route('admin.products.delete-image', ['mediaId' => '__id__']), '/__id__'));
+                    window.__productImagesDeleteUrlBase = {{ Js::from(Str::beforeLast(route('admin.products.delete-image', ['mediaId' => '__id__']), '/__id__')) }};
                 </script>
                 {{-- Existing images (edit mode) rendered as FilePond mock files via JS --}}
                 @if($isEdit && isset($images) && count($images) > 0)

@@ -55,7 +55,9 @@ export default async function OrderSummary({ order }: Props) {
         <PaymentDetailsCard
           orderNumber={order.order_number}
           paymentMethod={order.payment_method}
+          paymentStatus={order.payment_status}
           bankTransferDetails={order.bank_transfer_details}
+          refunds={order.refunds}
         />
         <InvoiceCard orderNumber={order.order_number} status={order.status} />
       </div>

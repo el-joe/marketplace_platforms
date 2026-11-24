@@ -5,7 +5,7 @@
 @push('scripts')
     <script>
         window.AD_SLOT_CONFIG = {
-            slot: {!! json_encode([
+            slot: {{ Js::from([
                 'id' => $slot->id,
                 'name' => $slot->name,
                 'target_type' => $slot->target_type->value,
@@ -19,7 +19,7 @@
                 'allowed_destination_types' => $slot->allowed_destination_types ?? null,
                 'creative_spec' => $slot->creativeSpec(),
                 'vendor_type' => auth('vendor')->user()->vendor->vendor_type->value ?? 'product_vendor',
-            ]) !!},
+            ]) }},
             calendarUrl: "{{ route('partner.ad-slots.calendar', $slot->id) }}",
             quoteUrl: "{{ route('partner.ad-slots.quote', $slot->id) }}",
             destinationsUrl: "{{ route('partner.ad-slots.destinations') }}",

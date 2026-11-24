@@ -123,7 +123,7 @@
         if (m.sender_type !== 'customer') return;
         if (e.conversation_id === activeId) {
             bubble(m);
-            fetch(@json($active ? route('marketer.conversations.show', $active->id) : ''), { headers: { 'Accept': 'text/html' } }).catch(() => {});
+            fetch({{ Js::from($active ? route('marketer.conversations.show', $active->id) : '') }}, { headers: { 'Accept': 'text/html' } }).catch(() => {});
         }
         updateRow(e.conversation_id, m.body, true);
     });

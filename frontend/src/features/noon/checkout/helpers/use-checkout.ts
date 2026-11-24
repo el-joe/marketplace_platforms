@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useRouter } from "@/i18n/navigation";
 import { IPrepareCheckout } from "../types/checkout.type";
 import { getMarketerContract } from "../api/get";
+import { resolveWalletDeduction } from "./wallet-deduction";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
 import { useAddressesContext } from "@/src/providers/addresses-provider";
@@ -186,6 +187,8 @@ export const useCheckout = () => {
     .map((g) => contractAcceptances[g.marketer_id])
     .filter((id): id is string => !!id);
 
+  const walletDeduction = resolveWalletDeduction(checkoutData);
+
   const createOrder = () => {
     if (!selectedAddress || !selectedGatewayId) return;
 
@@ -234,11 +237,7 @@ export const useCheckout = () => {
             .join(", ")
         : undefined,
       coupon_code: checkoutData?.coupon?.code ?? null,
-      wallet_amount_to_use: checkoutData?.wallet_applicable
-        ? checkoutData.wallet_balance > 0
-          ? checkoutData.wallet_balance
-          : null
-        : null,
+      wallet_amount_to_use: walletDeduction > 0 ? walletDeduction : null,
       warranty_selections:
         warrantySelections.length > 0 ? warrantySelections : null,
       contract_acceptance_id: acceptanceIds[0] ?? null,
@@ -257,6 +256,7 @@ export const useCheckout = () => {
   return {
     createPrepareCheckout: prepareCheckout.mutateAsync,
     checkoutData,
+    walletDeduction,
     emptyCart: prepareCheckout.error?.message
       .toLowerCase()
       .includes("cart is empty"),

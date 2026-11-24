@@ -187,6 +187,6 @@ window._agreementMap = @json($agreementByCountry);
 window._agreementEnforced = @json($agreementEnforced);
 window._categoryContractMap = @json((object) ($categoryContractByCountry ?? []));
 window._countryNames = @json($countries->mapWithKeys(fn ($country) => [$country->id => app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en]));
-window._agreementNotConfigured = @json(__('contracts.api.not_configured', ['country' => ':country']));
+window._agreementNotConfigured = {{ Js::from(__('contracts.api.not_configured', ['country' => ':country'])) }};
 </script>
 @endsection

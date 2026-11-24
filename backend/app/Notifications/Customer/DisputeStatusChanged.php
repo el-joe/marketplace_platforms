@@ -3,6 +3,7 @@
 namespace App\Notifications\Customer;
 
 use App\Models\Dispute;
+use App\Support\StorefrontUrl;
 use Illuminate\Broadcasting\PrivateChannel;
 
 class DisputeStatusChanged extends BaseCustomerNotification
@@ -45,7 +46,7 @@ class DisputeStatusChanged extends BaseCustomerNotification
             'title_ar' => 'تحديث حالة النزاع',
             'message' => "Your dispute #{$this->dispute->dispute_number} status changed to: {$newLabel}.",
             'message_ar' => "تم تغيير حالة نزاعك رقم #{$this->dispute->dispute_number} إلى: {$newLabelAr}.",
-            'url' => route('customer.disputes.show', ['country' => $this->dispute->order?->country?->site_code, 'dispute_number' => $this->dispute->dispute_number]),
+            'url' => StorefrontUrl::to($this->dispute->order?->country, 'disputes/'.rawurlencode($this->dispute->dispute_number), StorefrontUrl::languageOf($notifiable)),
             'dispute_id' => $this->dispute->id,
             'dispute_number' => $this->dispute->dispute_number,
             'status' => $this->dispute->status->value,

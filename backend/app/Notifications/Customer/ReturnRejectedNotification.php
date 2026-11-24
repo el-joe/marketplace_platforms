@@ -4,6 +4,7 @@ namespace App\Notifications\Customer;
 
 use App\Models\ReturnRequest;
 use App\Notifications\BaseDatabaseBroadcastNotification;
+use App\Support\StorefrontUrl;
 use Illuminate\Broadcasting\PrivateChannel;
 
 class ReturnRejectedNotification extends BaseDatabaseBroadcastNotification
@@ -21,7 +22,7 @@ class ReturnRejectedNotification extends BaseDatabaseBroadcastNotification
             'title' => 'Return Request Rejected',
             'message' => "Your return request ({$this->returnRequest->return_number}) was rejected: "
                 .($this->returnRequest->rejection_reason ?? ''),
-            'url' => route('customer.returns.show', ['country' => $this->returnRequest->order?->country?->site_code, 'return_number' => $this->returnRequest->return_number]),
+            'url' => StorefrontUrl::to($this->returnRequest->order?->country, 'returns/'.rawurlencode($this->returnRequest->return_number), StorefrontUrl::languageOf($notifiable)),
             'return_request_id' => $this->returnRequest->id,
         ];
     }

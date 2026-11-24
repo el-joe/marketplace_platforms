@@ -96,10 +96,10 @@
         @vite(['resources/js/components/datatable.js', 'resources/js/admin/cost-references.js'])
         <script type="module">
             window.COST_REFERENCE_ROUTES = {
-                datatable: @json(route('admin.admin-listings.cost-references.datatable', $listing)),
-                store: @json(route('admin.admin-listings.cost-references.store', $listing)),
-                update: @json(route('admin.admin-listings.cost-references.update', [$listing, '__ID__'])),
-                destroy: @json(route('admin.admin-listings.cost-references.destroy', [$listing, '__ID__'])),
+                datatable: {{ Js::from(route('admin.admin-listings.cost-references.datatable', $listing)) }},
+                store: {{ Js::from(route('admin.admin-listings.cost-references.store', $listing)) }},
+                update: {{ Js::from(route('admin.admin-listings.cost-references.update', [$listing, '__ID__'])) }},
+                destroy: {{ Js::from(route('admin.admin-listings.cost-references.destroy', [$listing, '__ID__'])) }},
             };
         </script>
     @endpush

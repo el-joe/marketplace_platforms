@@ -59,12 +59,13 @@ export async function getDisputes(): Promise<DisputeDetails[]> {
   return data.data.items;
 }
 
+/** GET /disputes/:dispute_number (the route segment is the dispute number, not the id). */
 export async function getDisputeById(
-  id: string,
+  disputeNumber: string,
 ): Promise<DisputeDetails | undefined> {
   try {
     const { data } = await axiosInstance.get<{ data: DisputeDetails }>(
-      `/disputes/${id}`,
+      `/disputes/${encodeURIComponent(disputeNumber)}`,
     );
     return data.data;
   } catch {

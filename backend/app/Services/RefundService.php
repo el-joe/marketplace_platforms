@@ -16,6 +16,7 @@ use App\Support\Money;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * enhancement.md P-07 task 1: the single refund engine. Every refund path
@@ -245,11 +246,13 @@ class RefundService
                 // would not match any real driver.
                 $refund->update(['status' => 'completed', 'refund_transaction_id' => $refundTransaction?->id]);
             } elseif ($resolvedDestination === 'wallet') {
+                $refundTransaction = null;
                 if ($netAmount > 0) {
                     $this->checkoutWalletService->refundToWallet($order->customer, $order, $netAmount);
+                    $refundTransaction = $this->recordWalletRefundTransaction($order, $netAmount);
                     $order->customer->notify(new WalletCredited($netAmount, 'Refund for order #'.$order->order_number, $order->customer->id));
                 }
-                $refund->update(['status' => 'completed']);
+                $refund->update(['status' => 'completed', 'refund_transaction_id' => $refundTransaction?->id]);
             } else { // 'bank' — manual payout, no automation exists.
                 $refund->update(['status' => 'pending']);
                 Log::warning('RefundService: refund requires a manual bank payout — no automated bank-payout driver exists.', [
@@ -278,6 +281,75 @@ class RefundService
         if ($reverseLedger) {
             $this->postLedgerReversal($refund, $order);
         }
+    }
+
+    /**
+     * R2 (retest 2026-11-24): give back the wallet tender of a cancelled order as a visible refund — a
+     * completed `refunds` row (admin "Refunds" card, customer order page), a `refund` payment
+     * transaction next to the original sale (admin payment box) and the order's payment_status
+     * (refunded / partially_refunded). Before, the wallet was re-credited silently and the order kept
+     * showing only the original "succeeded" sale.
+     *
+     * The ledger is left to the caller (OrderCancellationService reverses the whole capture on a
+     * full cancel), exactly as the silent re-credit did before.
+     *
+     * @param  array{type: string, id: ?string}  $initiatedBy
+     */
+    public function refundWalletTender(Order $order, int|float $amount, ?string $subOrderId, string $reasonNotes, array $initiatedBy, bool $isFullOrderCancel): Refund
+    {
+        $amount = Money::number($amount);
+
+        return DB::transaction(function () use ($order, $amount, $subOrderId, $reasonNotes, $initiatedBy, $isFullOrderCancel) {
+            $this->checkoutWalletService->refundToWallet($order->customer, $order, $amount);
+
+            $originalTransaction = PaymentTransaction::where('order_id', $order->id)
+                ->where('gateway', 'wallet')
+                ->where('type', 'sale')
+                ->latest('created_at')
+                ->first();
+            $refundTransaction = $this->recordWalletRefundTransaction($order, $amount);
+
+            $refund = Refund::create([
+                'order_id' => $order->id,
+                'sub_order_id' => $subOrderId,
+                'original_transaction_id' => $originalTransaction?->id,
+                'refund_transaction_id' => $refundTransaction->id,
+                'amount' => $amount,
+                'currency' => $order->currency,
+                'reason' => 'customer_request',
+                'reason_notes' => $reasonNotes,
+                'refund_type' => $isFullOrderCancel && abs($amount - (float) $order->wallet_amount_used) < 0.00005 ? 'full' : 'partial',
+                'initiated_by_customer_id' => $initiatedBy['type'] === 'customer' ? ($initiatedBy['id'] ?? $order->customer_id) : null,
+                'initiated_by_type' => $initiatedBy['type'],
+                'initiated_by_id' => $initiatedBy['id'] ?? null,
+                'vendor_charged_back' => false,
+                'status' => 'completed',
+                'gateway_fee_deducted' => 0,
+                'tax_deducted' => 0,
+            ]);
+
+            $this->updateOrderPaymentStatus($order);
+
+            return $refund->fresh();
+        });
+    }
+
+    private function recordWalletRefundTransaction(Order $order, int|float $amount): PaymentTransaction
+    {
+        return PaymentTransaction::create([
+            'id' => (string) Str::uuid(),
+            'order_id' => $order->id,
+            'customer_id' => $order->customer_id,
+            'type' => 'refund',
+            'gateway' => 'wallet',
+            'gateway_transaction_id' => 'WALLET-REFUND-'.Str::upper(Str::random(12)),
+            'idempotency_key' => (string) Str::uuid(),
+            // Same sign convention as PaymentService::refund() for gateway refunds.
+            'amount' => -Money::number($amount),
+            'currency' => $order->currency,
+            'status' => 'succeeded',
+            'processed_at' => now(),
+        ]);
     }
 
     private function resolveDestination(Order $order, string $destination, bool $isElectronic): string

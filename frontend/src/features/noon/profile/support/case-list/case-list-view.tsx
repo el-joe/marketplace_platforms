@@ -126,7 +126,8 @@ export default function CaseListView(props: Props) {
       secondaryFilterKey="reason"
       getStatus={(row) => row.status}
       getSecondary={(row) => row.reason}
-      getHref={(row) => `/disputes/${row.id}`}
+      // The customer API looks disputes up by dispute_number, not id.
+      getHref={(row) => `/disputes/${encodeURIComponent(row.dispute_number)}`}
     />
   );
 }

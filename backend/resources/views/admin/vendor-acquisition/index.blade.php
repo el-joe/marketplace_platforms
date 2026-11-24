@@ -70,7 +70,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('acquisition.fields.vendor') }} <span class="text-danger-500">*</span></label>
                 <select name="vendor_id" class="form-input w-full" required data-async-select
-                        data-config='@json(['url' => route('admin.acquisition-commissions.vendors.search'), 'placeholder' => __('acquisition.fields.vendor_placeholder')])'></select>
+                        data-config='{{ json_encode(['url' => route('admin.acquisition-commissions.vendors.search'), 'placeholder' => __('acquisition.fields.vendor_placeholder')]) }}'></select>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.vendors.select_admin_staff') }} <span class="text-danger-500">*</span></label>
@@ -125,7 +125,7 @@
     const form = document.getElementById('acquisition-assign-form');
     if (!form) return;
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-    const storeUrlTemplate = @json(route('admin.vendors.acquisition-agent.store', ['vendor' => '__VENDOR__']));
+    const storeUrlTemplate = {{ Js::from(route('admin.vendors.acquisition-agent.store', ['vendor' => '__VENDOR__'])) }};
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\TravelAgencyStatus;
+use App\Support\GuestRedirect;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,7 +13,7 @@ class TravelAgencyAuth
     public function handle(Request $request, Closure $next): Response
     {
         if (!auth()->guard('travel_agency')->check()) {
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || GuestRedirect::isApiRequest($request)) {
                 return response()->json(['message' => 'Unauthenticated.'], 401);
             }
 

@@ -131,7 +131,15 @@
                                     data-max-per-page="{{ $type->max_per_page ?? '' }}"
                                     title="{{ localized($type, 'label') }}">
                                 <x-heroicon :name="$type->icon ?? 'cube'" class="w-5 h-5" />
-                                <span class="flex-1">{{ localized($type, 'label') }}</span>
+                                @if($type->code === 'category_pills')
+                                    {{-- Featured categories only show through this block: say so in the palette itself --}}
+                                    <span class="flex-1 min-w-0">
+                                        <span class="block">{{ localized($type, 'label') }}</span>
+                                        <span class="block text-[11px] font-normal leading-snug text-gray-400 whitespace-normal">{{ __('admin.page_builder.category_pills_palette_hint') }}</span>
+                                    </span>
+                                @else
+                                    <span class="flex-1">{{ localized($type, 'label') }}</span>
+                                @endif
                             </button>
                             @php
                                 $description = app()->getLocale() === 'ar'

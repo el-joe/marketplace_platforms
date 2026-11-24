@@ -252,7 +252,7 @@
         document.getElementById('activate-batch-btn')?.addEventListener('click', function () {
             if (!confirm(@json(__('admin.gift_cards_section.activate_confirm')))) return;
 
-            fetch(@json(route('admin.gift-cards.batches.activate', $batch->id)), {
+            fetch({{ Js::from(route('admin.gift-cards.batches.activate', $batch->id)) }}, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

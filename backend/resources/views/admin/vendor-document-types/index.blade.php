@@ -203,7 +203,7 @@
             cancelBtn: @json(__('admin.vendor_document_types.cancel')),
             deactivateConfirm: @json(__('admin.vendor_document_types.deactivate_confirm')),
             activateConfirm: @json(__('admin.vendor_document_types.activate_confirm')),
-            deleteConfirmTemplate: @json(__('admin.vendor_document_types.delete_confirm', ['name' => '__NAME__'])),
+            deleteConfirmTemplate: {{ Js::from(__('admin.vendor_document_types.delete_confirm', ['name' => '__NAME__'])) }},
         });
 
         document.addEventListener('DOMContentLoaded', () => {

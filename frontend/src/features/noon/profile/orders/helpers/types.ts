@@ -199,6 +199,15 @@ export type OrderDetail = {
     proof_file_path: string | null;
     proof_uploaded_at: string | null;
   } | null;
+  refunds?: OrderRefund[];
+};
+
+export type OrderRefund = {
+  amount: number;
+  currency: string;
+  method: "wallet" | "card" | null;
+  status: "pending" | "approved" | "processing" | "completed" | "failed" | "rejected";
+  refunded_at: string | null;
 };
 
 // ---- Get Order Invoice (GET /orders/:order_number/invoice) ----

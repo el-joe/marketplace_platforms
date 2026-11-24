@@ -173,9 +173,9 @@
         window.SHIPPING_SUBSIDY_ROUTES = {
             index: @json(route('admin.shipping-subsidies.index')),
             store: @json(route('admin.shipping-subsidies.store')),
-            update: @json(route('admin.shipping-subsidies.update', ['subsidy' => '__ID__'])),
-            destroy: @json(route('admin.shipping-subsidies.destroy', ['subsidy' => '__ID__'])),
+            update: {{ Js::from(route('admin.shipping-subsidies.update', ['subsidy' => '__ID__'])) }},
+            destroy: {{ Js::from(route('admin.shipping-subsidies.destroy', ['subsidy' => '__ID__'])) }},
         };
-        window.CURRENCY_SYMBOLS = @json($currencies->pluck('symbol', 'code'));
+        window.CURRENCY_SYMBOLS = {{ Js::from($currencies->pluck('symbol', 'code')) }};
     </script>
 @endpush

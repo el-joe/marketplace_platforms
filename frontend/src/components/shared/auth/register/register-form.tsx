@@ -18,12 +18,23 @@ export default function RegisterForm() {
 
   const form = useForm<registerFormValues>({
     resolver: zodResolver(getRegisterSchema(t)),
+    // Empty strings (not undefined) so an untouched field shows its own localized message on submit.
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      password_confirmation: "",
+      marketingCommunicationsConfirm: false,
+    },
   });
 
   const {
     handleSubmit,
-    formState: { isDirty, isValid },
+    formState: { errors, isSubmitted },
   } = form;
+  // Continue stays clickable; on submit each invalid field shows its reason and the first one gets focus.
+  const hasErrors = isSubmitted && Object.keys(errors).length > 0;
   const onSubmit = (data: registerFormValues) => {
     register(data);
   };
@@ -80,16 +91,21 @@ export default function RegisterForm() {
         <FormCheckbox
           id="terms-checkbox-basic"
           name="marketingCommunicationsConfirm"
-          label={t("marketingCommunicationsCheckbox")}
+          label={t("marketingCommunicationsCheckboxOptional")}
         />
         <Button
           className={"h-12 bg-gray-2 w-full cursor-pointer"}
-          disabled={!isDirty || !isValid || isRegistering}
+          disabled={isRegistering}
           type="submit"
         >
           {t("continue")}
           {isRegistering && <Spinner />}
         </Button>
+        {hasErrors && (
+          <p role="alert" className="text-xs text-destructive mt-1.5">
+            {t("registerFixErrors")}
+          </p>
+        )}
         {registerIsError && (
           <p className="text-xs text-destructive mt-1.5">
             {registerError?.message}

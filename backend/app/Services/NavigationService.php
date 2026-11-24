@@ -718,6 +718,14 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
+                        // Client retest R11: admins look for commissions under Finance; same page as Vendors → Product link / QR commission.
+                        'label' => __('product_link.nav'),
+                        'route' => 'admin.product-link-commission.index',
+                        'icon' => 'percent-badge',
+                        'permission' => 'product_link_commission.view',
+                        'badge' => null,
+                    ],
+                    [
                         'label' => __('admin.nav.subscriptions'),
                         'route' => 'admin.subscriptions.index',
                         'icon' => 'banknotes',
@@ -866,6 +874,15 @@ class NavigationService
                         'label' => __('admin.nav.shipping_zones'),
                         'route' => 'admin.shipping-zones.index',
                         'icon' => 'truck',
+                        'permission' => 'settings.view',
+                        'badge' => null,
+                    ],
+                    [
+                        // Client retest R10: distance pricing is a per-zone tab on Shipping zones; give it its own entry.
+                        'label' => __('admin.nav.distance_pricing'),
+                        'route' => 'admin.shipping-zones.index',
+                        'route_params' => ['tab' => 'distance'],
+                        'icon' => 'globe-alt',
                         'permission' => 'settings.view',
                         'badge' => null,
                     ],
@@ -1094,6 +1111,55 @@ class NavigationService
         }
 
         return request()->routeIs($routeName) || request()->routeIs(rtrim($routeName, '.index').'.*');
+    }
+
+    /**
+     * Whether a sidebar item is the current page. Two items may share a route and differ only by query
+     * parameters (Shipping zones vs Distance-based pricing = shipping-zones?tab=distance): an item with
+     * `route_params` is active only when the request carries those values, and an item without them steps
+     * aside when a sibling on the same route matches the request more specifically.
+     *
+     * @param  array<string, mixed>  $item
+     * @param  array<int, array<string, mixed>>  $siblings  the other items rendered in the same group
+     */
+    public static function isItemActive(array $item, array $siblings = []): bool
+    {
+        if (! self::isActive($item['route'])) {
+            return false;
+        }
+
+        $params = $item['route_params'] ?? [];
+
+        if ($params !== []) {
+            return self::requestMatchesParams($params);
+        }
+
+        foreach ($siblings as $sibling) {
+            if ($sibling !== $item
+                && ($sibling['route'] ?? null) === $item['route']
+                && ! empty($sibling['route_params'])
+                && self::requestMatchesParams($sibling['route_params'])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     */
+    private static function requestMatchesParams(array $params): bool
+    {
+        foreach ($params as $key => $value) {
+            $actual = request()->query($key) ?? request()->route($key);
+
+            if (! is_scalar($actual) || (string) $actual !== (string) $value) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

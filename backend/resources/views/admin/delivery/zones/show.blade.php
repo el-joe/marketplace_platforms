@@ -208,7 +208,7 @@
 @push('scripts')
 <script>
 const ZONE_ID    = @json($zone->id);
-const ASSIGN_URL = @json(route('admin.delivery.zones.assign-agents', $zone->id));
+const ASSIGN_URL = {{ Js::from(route('admin.delivery.zones.assign-agents', $zone->id)) }};
 const CSRFTOKEN  = () => document.querySelector('meta[name="csrf-token"]').content;
 
 // ── Bulk assign ──────────────────────────────────────────────────────────

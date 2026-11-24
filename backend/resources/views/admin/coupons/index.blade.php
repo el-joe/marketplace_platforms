@@ -231,7 +231,7 @@
 
         window.tableActions.delete = async function (id, row) {
             const code = row.code || window.TRANSLATIONS.defaultCouponLabel;
-            const message = @json(__('admin.coupons_section.delete_coupon_confirm', ['code' => '%CODE%'])).replace('%CODE%', code);
+            const message = {{ Js::from(__('admin.coupons_section.delete_coupon_confirm', ['code' => '%CODE%'])) }}.replace('%CODE%', code);
             const confirmed = window.confirmDelete
                 ? await window.confirmDelete(message, { title: window.TRANSLATIONS.deleteCouponTitle })
                 : confirm(message);

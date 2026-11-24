@@ -13,6 +13,14 @@
         <button type="button" id="add-zone-btn" class="btn btn-primary btn-sm">{{ __('admin.delivery_section.add_zone') }}</button>
     </div>
 
+    {{-- Distance pricing lives on Shipping zones (client retest R10): point there --}}
+    <x-info-callout class="mb-6"
+        :title="__('admin.delivery_section.distance_pricing_pointer_title')"
+        :href="auth('admin')->user()?->can('settings.view') ? route('admin.shipping-zones.index', ['tab' => 'distance']) : null"
+        :link-label="__('admin.delivery_section.distance_pricing_pointer_link')">
+        {{ __('admin.delivery_section.distance_pricing_pointer_body') }}
+    </x-info-callout>
+
     {{-- ─── Zone Cards ──────────────────────────────────────────────────────────── --}}
     @php
         $byCountry = $zones->groupBy(fn($z) => localized($z->country) ?: __('admin.delivery_section.unknown_country'));

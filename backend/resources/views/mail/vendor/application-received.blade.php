@@ -137,8 +137,11 @@
                 </li>
             </ul>
 
-            <p>{{ __('mail.vendor_application_received.contact') }} <a href="mailto:vendors@noon.com"
-                    style="color:#f0b429;">vendors@noon.com</a></p>
+            {{-- R12: was a hard-coded mailto:vendors@noon.com (template leftover, not this platform). --}}
+            @if(config('app.partner_support_email'))
+                <p>{{ __('mail.vendor_application_received.contact') }} <a href="mailto:{{ config('app.partner_support_email') }}"
+                        style="color:#f0b429;">{{ config('app.partner_support_email') }}</a></p>
+            @endif
 
             <p style="margin-top:24px;">{!! __('mail.vendor_application_received.closing') !!}</p>
         </div>

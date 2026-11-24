@@ -22,7 +22,7 @@ class ChangeRequestRejected extends BaseDatabaseBroadcastNotification
         return [
             'title' => 'Change Request Rejected',
             'message' => "Your change request for {$this->changeRequest->section} was rejected." . ($this->reason ? " Reason: {$this->reason}" : ''),
-            'url' => route('partner.change-requests.show', $this->changeRequest->id),
+            'url' => route('partner.change-requests.index'),
             'change_request_id' => $this->changeRequest->id,
         ];
     }

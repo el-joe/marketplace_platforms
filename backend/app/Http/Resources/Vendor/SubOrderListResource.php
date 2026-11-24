@@ -35,6 +35,7 @@ class SubOrderListResource extends JsonResource
             'status' => $this->status?->value,
             'fulfillment_model' => $this->fulfillment_model,
             'cod_remittance_confirmed' => (bool) $this->cod_remittance_confirmed,
+            'cod_collection_status' => $this->codCollectionStatus(),
             'tracking_number' => $this->tracking_number,
             'sla_ship_deadline' => $this->sla_ship_deadline?->toIso8601String(),
             'sla_breached' => (bool) $this->sla_breached,

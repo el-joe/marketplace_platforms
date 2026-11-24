@@ -22,9 +22,9 @@ class PayoutBatchReadyForApproval extends BaseDatabaseBroadcastNotification
     public function notificationData(object $notifiable): array
     {
         $label = $this->batchType === 'marketer' ? 'Marketer' : 'Vendor';
-        $link  = $this->batchType === 'marketer'
-            ? route('admin.marketers.payouts.index')
-            : route('admin.payouts.index');
+        // R12: 'admin.marketers.payouts.index' does not exist (building this notification threw); both
+        // batch types are reviewed on the admin payouts page.
+        $link = route('admin.payouts.index');
 
         return [
             'title'        => "{$label} Payout Batch Ready",

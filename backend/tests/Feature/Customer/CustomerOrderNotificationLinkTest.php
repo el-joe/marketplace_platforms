@@ -13,9 +13,9 @@ use Tests\Support\MarketplaceScenario;
 use Tests\TestCase;
 
 /**
- * Customer order notifications link to /api/customer/v1/{country}/orders/{order_number}. They passed only
- * the order number, which filled {country}, so building the notification threw UrlGenerationException and
- * every queued "order cancelled" notification failed.
+ * Customer order notifications must build a link for the order's own country (they once threw
+ * UrlGenerationException). R4 (retest 2026-11-24): that link is the storefront order page
+ * (FRONTEND_URL/{site_code}-{lang}/orders/{number}), never the customer JSON API.
  */
 class CustomerOrderNotificationLinkTest extends TestCase
 {
@@ -42,15 +42,31 @@ class CustomerOrderNotificationLinkTest extends TestCase
         ])->assertCreated()->json('data.order_number');
 
         $order = Order::where('order_number', $orderNumber)->firstOrFail();
-        $expected = route('customer.orders.show', ['country' => $scenario->country->site_code, 'order_number' => $orderNumber]);
+        config(['app.frontend_url' => 'https://shop.example.test/']);
+        $scenario->customer->forceFill(['locale' => 'en'])->save();
+        $siteCode = $scenario->country->site_code;
+        $expected = "https://shop.example.test/{$siteCode}-en/orders/{$orderNumber}";
 
         $cancelled = (new OrderCancelled($order->subOrders()->firstOrFail()))->notificationData($scenario->customer);
         $this->assertSame($expected, $cancelled['url']);
+
+        $mail = (new OrderCancelled($order->subOrders()->firstOrFail()))->toMail($scenario->customer);
+        $this->assertSame($expected, $mail->actionUrl);
+        $this->assertStringNotContainsString('/api/', (string) $mail->render());
+
+        $scenario->customer->forceFill(['locale' => 'ar'])->save();
+        $this->assertSame(
+            "https://shop.example.test/{$siteCode}-ar/orders/{$orderNumber}",
+            (new OrderCancelled($order->subOrders()->firstOrFail()))->notificationData($scenario->customer->fresh())['url'],
+        );
 
         $refund = $order->refunds()->create([
             'amount' => 1, 'currency' => $order->currency, 'reason' => 'customer_request',
             'refund_type' => 'partial', 'vendor_charged_back' => false, 'status' => 'completed',
         ]);
-        $this->assertSame($expected, (new OrderRefundProcessed($refund))->notificationData($scenario->customer)['url']);
+        $this->assertSame(
+            "https://shop.example.test/{$siteCode}-ar/orders/{$orderNumber}/summary",
+            (new OrderRefundProcessed($refund))->notificationData($scenario->customer->fresh())['url'],
+        );
     }
 }

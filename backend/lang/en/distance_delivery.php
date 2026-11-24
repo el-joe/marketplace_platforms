@@ -9,6 +9,7 @@ return [
 
     'admin' => [
         'tab' => 'Distance pricing',
+        'select_zone_for_distance' => 'Distance pricing is set per shipping zone: pick a zone on the left, the Distance pricing tab opens for it.',
         'intro' => 'Charge delivery by straight-line distance from the store / fulfilling warehouse to the customer pin. Order-amount free shipping of the zone rate still wins. Without coordinates on either side the normal zone rate applies.',
         'method' => 'Shipping method',
         'select_method' => 'Select a method',

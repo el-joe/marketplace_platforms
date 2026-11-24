@@ -2,6 +2,7 @@
 
 namespace App\Notifications\Customer;
 
+use App\Support\StorefrontUrl;
 use Illuminate\Broadcasting\PrivateChannel;
 
 class WalletCredited extends BaseCustomerNotification
@@ -30,7 +31,7 @@ class WalletCredited extends BaseCustomerNotification
             'title' => 'Wallet Credited',
             'title_ar' => 'تم إضافة رصيد للمحفظة',
             'message' => "Your wallet has been credited with {$amountFormatted}. {$this->reason}",
-            'url' => '#',
+            'url' => StorefrontUrl::to($notifiable->country ?? null, 'noon-credits', StorefrontUrl::languageOf($notifiable)),
             'amount_cents' => \App\Support\Money::number($this->amountCents),
             'amount_formatted' => $amountFormatted,
             'reason' => $this->reason,

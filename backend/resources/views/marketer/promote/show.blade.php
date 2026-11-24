@@ -5,7 +5,7 @@
 @push('scripts')
     <script>
         window.AD_SLOT_CONFIG = {
-            slot: {!! json_encode([
+            slot: {{ Js::from([
                 'id' => $slot->id,
                 'name' => $slot->name,
                 'currency' => $slot->country?->currency_code,
@@ -14,7 +14,7 @@
                 'max_booking_days' => $slot->max_booking_days,
                 'min_budget' => $slot->min_budget,
                 'creative_spec' => $slot->creativeSpec(),
-            ]) !!},
+            ]) }},
             calendarUrl: "{{ route('marketer.promote.calendar', $slot->id) }}",
             quoteUrl: "{{ route('marketer.promote.quote', $slot->id) }}",
             destinationsUrl: "{{ route('marketer.promote.destinations') }}",

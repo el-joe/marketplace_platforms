@@ -31,6 +31,7 @@ class SubOrderDetailResource extends JsonResource
             'carrier_name' => $this->carrier?->name,
             'currency' => $this->order?->currency,
             'cod_remittance_confirmed' => (bool) $this->cod_remittance_confirmed,
+            'cod_collection_status' => $this->codCollectionStatus(),
             'sla_ship_deadline' => $this->sla_ship_deadline?->toIso8601String(),
             'sla_breached' => (bool) $this->sla_breached,
             'estimated_delivery' => $this->estimated_delivery_date?->toIso8601String(),

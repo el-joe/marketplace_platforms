@@ -64,7 +64,7 @@
     <script>
         window.DISTANCE_PRICING = {
             i18n: @json(__('distance_delivery.admin')),
-            currency: @json($countries->firstWhere('id', $activeCountryId)?->currency_code),
+            currency: {{ Js::from($countries->firstWhere('id', $activeCountryId)?->currency_code) }},
             mapsKey: @json(config('services.google.maps_key') ?: null),
             canEdit: @json((bool) auth('admin')->user()?->can('settings.edit')),
         };
@@ -128,7 +128,7 @@
     </div>
 
     {{-- Two-panel layout --}}
-    <div class="grid grid-cols-12 gap-6 pb-12" x-data="{ selectedZone: null, activeTab: 'rates' }">
+    <div class="grid grid-cols-12 gap-6 pb-12" x-data="{ selectedZone: null, activeTab: {{ Js::from(request('tab') === 'distance' ? 'distance' : 'rates') }} }">
 
         {{-- ══ LEFT: Zones list (4/12) ══ --}}
         <div class="col-span-12 lg:col-span-4">
@@ -256,6 +256,9 @@
                 x-show="!selectedZone">
                 <p class="text-5xl mb-4 opacity-30">🗺️</p>
                 <p class="text-sm">{{ __('admin.shipping_section.select_zone_to_view') }}</p>
+                @if(request('tab') === 'distance')
+                    <p class="mt-2 max-w-sm px-4 text-center text-xs text-gray-500">{{ __('distance_delivery.admin.select_zone_for_distance') }}</p>
+                @endif
             </div>
 
             {{-- Zone detail panel --}}

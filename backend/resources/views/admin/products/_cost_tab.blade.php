@@ -331,7 +331,7 @@ Only rendered when the logged-in admin has 'products.cost_data.view'.
     <script>
         window.TRANSLATIONS = window.TRANSLATIONS || {};
         Object.assign(window.TRANSLATIONS, {
-            vendorBelowCostBody: @json(__('admin.products.vendor_below_cost_body', ['price' => '__PRICE__'])),
+            vendorBelowCostBody: {{ Js::from(__('admin.products.vendor_below_cost_body', ['price' => '__PRICE__'])) }},
             costRefLoadError: @json(__('admin.products.cost_ref_load_error')),
             costSaveFailed: @json(__('admin.products.cost_save_failed')),
             networkError: @json(__('admin.products.network_error')),

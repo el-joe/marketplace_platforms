@@ -49,7 +49,7 @@
                             <td class="px-4 py-3">
                                 <div class="flex justify-end gap-3">
                                     <button type="button" class="js-edit-type text-primary-600 hover:underline text-xs font-medium"
-                                        data-type='@json($type->only(['id', 'code', 'name_en', 'name_ar', 'is_active', 'sort_order']))'>{{ __('admin.packaging_types.edit') }}</button>
+                                        data-type='{{ json_encode($type->only(['id', 'code', 'name_en', 'name_ar', 'is_active', 'sort_order'])) }}'>{{ __('admin.packaging_types.edit') }}</button>
                                     @if($type->supplies_count === 0)
                                         <button type="button" class="js-delete-type text-red-500 hover:underline text-xs font-medium" data-id="{{ $type->id }}">{{ __('admin.packaging_types.delete') }}</button>
                                     @endif

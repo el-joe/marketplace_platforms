@@ -395,13 +395,13 @@ Object.assign(window.TRANSLATIONS, {
 
 document.addEventListener('DOMContentLoaded', function () {
     const agentId        = @json($agent->id);
-    const UPDATE_URL     = @json(route('admin.delivery.agents.update', $agent->id));
-    const SUSPEND_URL    = @json(route('admin.delivery.agents.suspend', $agent->id));
-    const ACTIVATE_URL   = @json(route('admin.delivery.agents.activate', $agent->id));
-    const RESET_PWD_URL  = @json(route('admin.delivery.agents.reset-password', $agent->id));
-    const ZONE_URL       = @json(route('admin.delivery.agents.assign-zone', $agent->id));
-    const ASSIGN_DT_URL  = @json(route('admin.delivery.agents.assignments.datatable', $agent->id));
-    const EARNINGS_URL   = @json(route('admin.delivery.agents.earnings-summary', $agent->id));
+    const UPDATE_URL     = {{ Js::from(route('admin.delivery.agents.update', $agent->id)) }};
+    const SUSPEND_URL    = {{ Js::from(route('admin.delivery.agents.suspend', $agent->id)) }};
+    const ACTIVATE_URL   = {{ Js::from(route('admin.delivery.agents.activate', $agent->id)) }};
+    const RESET_PWD_URL  = {{ Js::from(route('admin.delivery.agents.reset-password', $agent->id)) }};
+    const ZONE_URL       = {{ Js::from(route('admin.delivery.agents.assign-zone', $agent->id)) }};
+    const ASSIGN_DT_URL  = {{ Js::from(route('admin.delivery.agents.assignments.datatable', $agent->id)) }};
+    const EARNINGS_URL   = {{ Js::from(route('admin.delivery.agents.earnings-summary', $agent->id)) }};
     const VERIFY_BASE    = @json(url('delivery/documents'));
     const token          = () => $('meta[name=csrf-token]').attr('content');
 
@@ -487,14 +487,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ── Zone Form ─────────────────────────────────────────────────────────────
-    const zoneCapacities = @json(
-        $zones->mapWithKeys(fn($z) => [
+    const zoneCapacities = {{ Js::from($zones->mapWithKeys(fn($z) => [
             $z->id => [
                 'max'   => $z->max_active_agents,
                 'count' => $z->agents_count,
             ]
-        ])
-    );
+        ])) }};
 
     $('#zone-select').on('change', function () {
         const id   = this.value;

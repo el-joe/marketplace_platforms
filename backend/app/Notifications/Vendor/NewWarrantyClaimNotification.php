@@ -19,7 +19,7 @@ class NewWarrantyClaimNotification extends BaseDatabaseBroadcastNotification
         return [
             'title' => 'New Warranty Claim',
             'message' => "A customer has submitted a warranty claim ({$this->warrantyClaim->claim_number}) for one of your orders.",
-            'url' => '/partner/warranty-claims/' . $this->warrantyClaim->id,
+            'url' => route('partner.warranty-claims.show', $this->warrantyClaim->id),
             'warranty_claim_id' => $this->warrantyClaim->id,
         ];
     }

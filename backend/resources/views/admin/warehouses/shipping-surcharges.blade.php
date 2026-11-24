@@ -79,8 +79,8 @@
         window.WAREHOUSE_SURCHARGE_ROUTES = {
             index: @json(route('admin.warehouses.shipping-surcharges.index')),
             store: @json(route('admin.warehouses.shipping-surcharges.store')),
-            update: @json(route('admin.warehouses.shipping-surcharges.update', ['surcharge' => '__ID__'])),
-            toggleActive: @json(route('admin.warehouses.shipping-surcharges.toggle-active', ['surcharge' => '__ID__'])),
+            update: {{ Js::from(route('admin.warehouses.shipping-surcharges.update', ['surcharge' => '__ID__'])) }},
+            toggleActive: {{ Js::from(route('admin.warehouses.shipping-surcharges.toggle-active', ['surcharge' => '__ID__'])) }},
         };
     </script>
 @endpush

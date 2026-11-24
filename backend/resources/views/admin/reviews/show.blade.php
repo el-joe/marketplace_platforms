@@ -362,9 +362,9 @@
         });
 
         window.reviewShow = {
-            approveUrl: @json(route('admin.reviews.approve', $review->id)),
-            rejectUrl: @json(route('admin.reviews.reject', $review->id)),
-            deleteUrl: @json(route('admin.reviews.delete', $review->id)),
+            approveUrl: {{ Js::from(route('admin.reviews.approve', $review->id)) }},
+            rejectUrl: {{ Js::from(route('admin.reviews.reject', $review->id)) }},
+            deleteUrl: {{ Js::from(route('admin.reviews.delete', $review->id)) }},
             indexUrl: @json(route('admin.reviews.index')),
         };
     </script>

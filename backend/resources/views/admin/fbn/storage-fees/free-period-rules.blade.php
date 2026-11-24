@@ -133,8 +133,8 @@
     <script type="module">
         window.FREE_PERIOD_RULES_ROUTES = {
             store: @json(route('admin.fbn.storage-fees.free-period-rules.store')),
-            update: @json(route('admin.fbn.storage-fees.free-period-rules.update', ['freePeriodRule' => '__ID__'])),
-            destroy: @json(route('admin.fbn.storage-fees.free-period-rules.destroy', ['freePeriodRule' => '__ID__'])),
+            update: {{ Js::from(route('admin.fbn.storage-fees.free-period-rules.update', ['freePeriodRule' => '__ID__'])) }},
+            destroy: {{ Js::from(route('admin.fbn.storage-fees.free-period-rules.destroy', ['freePeriodRule' => '__ID__'])) }},
             pendingImpact: @json(route('admin.fbn.storage-fees.free-period-rules.pending-impact')),
             recalculatePending: @json(route('admin.fbn.storage-fees.free-period-rules.recalculate-pending')),
         };

@@ -97,10 +97,10 @@ const ctx = document.getElementById('earningsChart').getContext('2d');
 new Chart(ctx, {
     type: 'bar',
     data: {
-        labels: @json(array_column($stats['monthlyEarnings'], 'month')),
+        labels: {{ Js::from(array_column($stats['monthlyEarnings'], 'month')) }},
         datasets: [{
             label: '{{ __('marketer.dashboard.earnings_chart_label') }}',
-            data: @json(array_column($stats['monthlyEarnings'], 'total')),
+            data: {{ Js::from(array_column($stats['monthlyEarnings'], 'total')) }},
             backgroundColor: 'rgba(234, 179, 8, 0.7)',
             borderColor: 'rgb(234, 179, 8)',
             borderWidth: 1,

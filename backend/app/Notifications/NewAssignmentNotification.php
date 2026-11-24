@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\DeliveryAssignment;
+use App\Models\ShippingCompanySupervisor;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -27,7 +28,18 @@ class NewAssignmentNotification extends Notification implements ShouldQueue
             ->subject('طلب توصيل جديد #' . $this->assignment->id)
             ->line('لديك طلب توصيل جديد تم تعيينه.')
             ->line('رقم الطلب: ' . $this->assignment->id)
-            ->action('عرض الطلب', url('/'));
+            ->action('عرض الطلب', $this->assignmentUrl($notifiable));
+    }
+
+    /**
+     * R12: the button pointed at url('/') — the API host root in production. Riders open the delivery
+     * panel, shipping-company supervisors the carrier panel.
+     */
+    private function assignmentUrl(object $notifiable): string
+    {
+        return $notifiable instanceof ShippingCompanySupervisor
+            ? route('carrier.assignments.show', $this->assignment->id)
+            : route('delivery.assignments.show', $this->assignment->id);
     }
 
     public function toArray(object $notifiable): array

@@ -3,6 +3,7 @@
 namespace App\Notifications\Customer;
 
 use App\Models\SubOrder;
+use App\Support\StorefrontUrl;
 use Illuminate\Broadcasting\PrivateChannel;
 
 class OrderDelivered extends BaseCustomerNotification
@@ -21,7 +22,7 @@ class OrderDelivered extends BaseCustomerNotification
             'title_ar' => 'تم تسليم الطلب',
             'message' => "Your order #{$this->subOrder->sub_order_number} has been delivered. Enjoy your purchase!",
             'message_ar' => "تم تسليم طلبك رقم #{$this->subOrder->sub_order_number}. نتمنى أن ينال إعجابك!",
-            'url' => route('customer.orders.show', ['country' => $this->subOrder->order->country?->site_code, 'order_number' => $this->subOrder->order->order_number]),
+            'url' => StorefrontUrl::order($this->subOrder->order, StorefrontUrl::languageOf($notifiable)),
             'sub_order_id' => $this->subOrder->id,
             'sub_order_number' => $this->subOrder->sub_order_number,
         ];

@@ -1024,7 +1024,16 @@ class CheckoutController extends Controller
         // Same wallet-amount resolution place-order uses later (line ~1032)
         // to decide how much of the order is actually settled through the
         // card gateway (D4: gateway fee is only charged on that portion).
-        $walletAmountForGatewayCents = Money::number($validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $pricedCart->total : 0));
+        // R1: the requested wallet amount is clamped to min(requested, payable total, balance) —
+        // the storefront used to send the whole balance (20 for a 15.75 order) and was rejected.
+        $requestedWalletAmount = $validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $pricedCart->total : 0);
+        $checkoutWalletBalance = (float) $requestedWalletAmount > 0
+            ? Wallet::where('owner_type', WalletOwnerType::Customer)
+                ->where('owner_id', $customer->id)
+                ->where('currency', $summary['currency'])
+                ->value('balance')
+            : 0;
+        $walletAmountForGatewayCents = $this->checkoutWalletService->resolveAmountToUse($requestedWalletAmount, $pricedCart->total, $checkoutWalletBalance);
         $amountDueGatewayCents = ($isCod || $isWallet) ? 0 : Money::number(max(0, $pricedCart->total - $walletAmountForGatewayCents));
 
         // WS12 #24: lines bought after a click on the vendor's own product link / QR code (same session id the
@@ -1552,8 +1561,9 @@ class CheckoutController extends Controller
                     $subOrders[] = $subOrder;
                 }
 
-                $walletAmountToUse = Money::number($validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $order->total : 0));
-                if ($walletAmountToUse > 0) {
+                $requestedWalletAmount = $validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $order->total : 0);
+                $walletAmountToUse = 0;
+                if ((float) $requestedWalletAmount > 0) {
                     $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
                         ->where('owner_id', $customer->id)
                         ->where('currency', $order->currency)
@@ -1564,9 +1574,12 @@ class CheckoutController extends Controller
                         );
                     }
 
-                    if ($walletAmountToUse > $order->total) {
-                        throw new \InvalidArgumentException(__('common.exceptions.checkout.wallet_exceeds_total'));
-                    }
+                    // R1: authoritative clamp against the persisted order total (incl. VAT, shipping,
+                    // coupon, loyalty) and the wallet balance — never reject a balance above the total.
+                    $walletAmountToUse = $this->checkoutWalletService->resolveAmountToUse($requestedWalletAmount, $order->total, $wallet->balance);
+                }
+
+                if ($walletAmountToUse > 0) {
 
                     // enhancement.md P-05 task 7: COD does not support a
                     // partial wallet top-up — cash is collected at delivery

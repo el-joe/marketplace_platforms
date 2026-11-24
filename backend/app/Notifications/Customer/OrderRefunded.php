@@ -3,6 +3,7 @@
 namespace App\Notifications\Customer;
 
 use App\Models\SubOrder;
+use App\Support\StorefrontUrl;
 use Illuminate\Broadcasting\PrivateChannel;
 
 class OrderRefunded extends BaseCustomerNotification
@@ -21,7 +22,7 @@ class OrderRefunded extends BaseCustomerNotification
             'title_ar' => 'تمت معالجة المبلغ المسترد',
             'message' => "A refund for your order #{$this->subOrder->sub_order_number} has been processed. Please allow a few business days for it to appear.",
             'message_ar' => "تمت معالجة المبلغ المسترد لطلبك رقم #{$this->subOrder->sub_order_number}. يرجى الانتظار بضعة أيام عمل حتى يظهر المبلغ.",
-            'url' => route('customer.orders.show', ['country' => $this->subOrder->order->country?->site_code, 'order_number' => $this->subOrder->order->order_number]),
+            'url' => StorefrontUrl::order($this->subOrder->order, StorefrontUrl::languageOf($notifiable)),
             'sub_order_id' => $this->subOrder->id,
             'sub_order_number' => $this->subOrder->sub_order_number,
         ];

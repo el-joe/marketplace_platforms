@@ -12,15 +12,32 @@ use Illuminate\Support\Facades\DB;
 
 class CheckoutWalletService
 {
+    /**
+     * R1 (retest 2026-11-24): the storefront asks to "use the wallet" by sending an amount (it used
+     * to send the whole balance, e.g. 20 for a 15.75 order). The amount actually debited is always
+     * min(requested, payable total, wallet balance), so a balance above the total never rejects
+     * the order and float/DECIMAL(19,4) rounding can never push the debit past the total.
+     */
+    public function resolveAmountToUse(int|float|string|null $requested, int|float|string|null $payableTotal, int|float|string|null $walletBalance): int|float
+    {
+        $requested = (float) ($requested ?? 0);
+
+        if ($requested <= 0) {
+            return 0;
+        }
+
+        return Money::number(max(0, min($requested, (float) ($payableTotal ?? 0), (float) ($walletBalance ?? 0))));
+    }
+
     public function applyWalletToOrder(Customer $customer, Order $order, int|float $walletAmountToUse): void
     {
-        $walletAmountToUse = Money::round($walletAmountToUse);
+        $walletAmountToUse = Money::number($walletAmountToUse);
 
         if ($walletAmountToUse <= 0) {
             throw new \InvalidArgumentException('Wallet amount to use must be greater than zero.');
         }
 
-        if ($walletAmountToUse > $order->total) {
+        if (round($walletAmountToUse - (float) $order->total, 4) > 0) {
             throw new \DomainException('Wallet amount cannot exceed the order total.');
         }
 
@@ -35,7 +52,7 @@ class CheckoutWalletService
                 throw new \DomainException('Wallet currency does not match order currency.');
             }
 
-            $wallet->update(['balance' => Money::round($wallet->balance - $walletAmountToUse)]);
+            $wallet->update(['balance' => Money::number($wallet->balance - $walletAmountToUse)]);
 
             WalletTransaction::create([
                 'wallet_id' => $wallet->id,
@@ -58,14 +75,14 @@ class CheckoutWalletService
 
             $order->update([
                 'wallet_amount_used' => $walletAmountToUse,
-                'payment_method' => abs($walletAmountToUse - (float) $order->total) < 0.005 ? 'wallet' : $order->payment_method,
+                'payment_method' => abs($walletAmountToUse - (float) $order->total) < 0.00005 ? 'wallet' : $order->payment_method,
             ]);
         });
     }
 
     public function refundToWallet(Customer $customer, Order $order, int|float $refundAmount): void
     {
-        $refundAmount = Money::round($refundAmount);
+        $refundAmount = Money::number($refundAmount);
 
         if ($refundAmount <= 0) {
             throw new \InvalidArgumentException('Refund amount must be greater than zero.');
@@ -84,7 +101,7 @@ class CheckoutWalletService
                 ]);
             }
 
-            $wallet->update(['balance' => Money::round($wallet->balance + $refundAmount)]);
+            $wallet->update(['balance' => Money::number($wallet->balance + $refundAmount)]);
 
             WalletTransaction::create([
                 'wallet_id' => $wallet->id,

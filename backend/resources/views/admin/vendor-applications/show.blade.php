@@ -508,11 +508,11 @@
     {{-- Data for JS --}}
     <script>
         window.vendorApp = {
-            approveUrl:       @json(route('admin.vendor-applications.approve', $vendor->id)),
-            rejectUrl:        @json(route('admin.vendor-applications.reject', $vendor->id)),
-            requestInfoUrl:   @json(route('admin.vendor-applications.request-info', $vendor->id)),
-            startReviewUrl:   @json(route('admin.vendor-applications.start-review', $vendor->id)),
-            assignMeUrl:      @json(route('admin.vendor-applications.assign-me', $vendor->id)),
+            approveUrl:       {{ Js::from(route('admin.vendor-applications.approve', $vendor->id)) }},
+            rejectUrl:        {{ Js::from(route('admin.vendor-applications.reject', $vendor->id)) }},
+            requestInfoUrl:   {{ Js::from(route('admin.vendor-applications.request-info', $vendor->id)) }},
+            startReviewUrl:   {{ Js::from(route('admin.vendor-applications.start-review', $vendor->id)) }},
+            assignMeUrl:      {{ Js::from(route('admin.vendor-applications.assign-me', $vendor->id)) }},
             canApprove:       {{ $canApprove ? 'true' : 'false' }},
         };
     </script>

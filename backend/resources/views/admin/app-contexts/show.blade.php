@@ -218,10 +218,10 @@
     <script>
         window.APP_CONTEXT = {
             key: @json($context->key),
-            saveCountryUrl: @json(route('admin.app-contexts.countries.save', $context)),
-            saveNavUrl: @json(route('admin.app-contexts.nav.save', $context)),
-            updateNavUrlBase: @json(route('admin.app-contexts.nav.save', $context)),
-            countries: @json($countries->map(fn ($c) => ['id' => $c->id, 'name_en' => localized($c)])->values()),
+            saveCountryUrl: {{ Js::from(route('admin.app-contexts.countries.save', $context)) }},
+            saveNavUrl: {{ Js::from(route('admin.app-contexts.nav.save', $context)) }},
+            updateNavUrlBase: {{ Js::from(route('admin.app-contexts.nav.save', $context)) }},
+            countries: {{ Js::from($countries->map(fn ($c) => ['id' => $c->id, 'name_en' => localized($c)])->values()) }},
         };
     </script>
 

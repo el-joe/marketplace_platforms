@@ -143,6 +143,7 @@ return [
         'your_share_of_gap' => 'Your share of gap (deducted from payout)',
         'alert' => 'Alert',
         'cod_pending_notice' => 'Awaiting confirmation of cash-on-delivery (COD) collection from the courier',
+        'cod_cancelled_nothing_to_collect' => 'Order cancelled — nothing to collect from the courier.',
         'current_status' => 'Current Status',
         'update_out_for_delivery' => 'Update out for delivery',
         'no_actions_available' => 'No actions available',

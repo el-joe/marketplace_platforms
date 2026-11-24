@@ -3,6 +3,7 @@
 namespace App\Notifications\Customer;
 
 use App\Models\Refund;
+use App\Support\StorefrontUrl;
 use Illuminate\Broadcasting\PrivateChannel;
 
 class OrderRefundProcessed extends BaseCustomerNotification
@@ -38,7 +39,7 @@ class OrderRefundProcessed extends BaseCustomerNotification
             'title_ar' => 'تمت معالجة المبلغ المسترد',
             'message' => $message,
             'message_ar' => $messageAr,
-            'url' => route('customer.orders.show', ['country' => $order->country?->site_code, 'order_number' => $order->order_number]),
+            'url' => StorefrontUrl::orderSummary($order, StorefrontUrl::languageOf($notifiable)),
             'refund_id' => $this->refund->id,
             'order_id' => $order->id,
         ];

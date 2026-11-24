@@ -4,6 +4,7 @@ namespace App\Notifications\Customer;
 
 use App\Models\ReturnRequest;
 use App\Notifications\BaseDatabaseBroadcastNotification;
+use App\Support\StorefrontUrl;
 use Illuminate\Broadcasting\PrivateChannel;
 
 class ReturnStatusChangedNotification extends BaseDatabaseBroadcastNotification
@@ -21,7 +22,7 @@ class ReturnStatusChangedNotification extends BaseDatabaseBroadcastNotification
             'title' => 'Return Request Update',
             'message' => "Your return request ({$this->returnRequest->return_number}) status changed to "
                 .str_replace('_', ' ', $this->returnRequest->status->value).'.',
-            'url' => route('customer.returns.show', ['country' => $this->returnRequest->order?->country?->site_code, 'return_number' => $this->returnRequest->return_number]),
+            'url' => StorefrontUrl::to($this->returnRequest->order?->country, 'returns/'.rawurlencode($this->returnRequest->return_number), StorefrontUrl::languageOf($notifiable)),
             'return_request_id' => $this->returnRequest->id,
             'status' => $this->returnRequest->status->value,
         ];

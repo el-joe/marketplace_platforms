@@ -784,9 +784,13 @@
                 <div class="border-t border-gray-100 mt-3 pt-3 flex items-center justify-between text-xs">
                     <span
                         class="text-gray-500">{{ $payMethodLabels[$order->payment_method] ?? $order->payment_method }}</span>
-                    <x-badge :color="$payStatusColors[$order->payment_status->value] ?? 'gray'">
-                        {{ $payStatusLabels[$order->payment_status->value] ?? ucwords(str_replace('_', ' ', $order->payment_status->value)) }}
-                    </x-badge>
+                    @if($order->payment_method === 'cod' && $order->status->value === 'cancelled' && $order->payment_status->value === 'pending')
+                        <x-badge color="gray">{{ __('admin.orders.cod_cancelled_nothing_to_collect') }}</x-badge>
+                    @else
+                        <x-badge :color="$payStatusColors[$order->payment_status->value] ?? 'gray'">
+                            {{ $payStatusLabels[$order->payment_status->value] ?? ucwords(str_replace('_', ' ', $order->payment_status->value)) }}
+                        </x-badge>
+                    @endif
                 </div>
 
                 @if($order->payment_method === 'cod')
@@ -794,7 +798,15 @@
                         <p class="text-gray-500 font-medium uppercase tracking-wide">{{ __('admin.orders.cod_remittance') }}</p>
                         @php $firstSubOrder = $order->subOrders->first(); @endphp
                         @foreach($order->subOrders as $so)
-                            @if(!$so->cod_remittance_confirmed)
+                            @if($so->codCollectionStatus($order) === \App\Models\SubOrder::COD_COLLECTION_CANCELLED)
+                                <div class="flex items-start gap-1.5 text-gray-500">
+                                    <x-heroicon name="x-circle" class="w-3.5 h-3.5 mt-0.5 shrink-0 text-gray-400" />
+                                    <span>
+                                        {{ __('admin.orders.sub_order') }} #{{ $so->sub_order_number }}:
+                                        {{ __('admin.orders.cod_cancelled_nothing_to_collect') }}
+                                    </span>
+                                </div>
+                            @elseif(!$so->cod_remittance_confirmed)
                                 <div class="flex items-start gap-1.5 text-amber-700">
                                     <x-heroicon name="clock" class="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" />
                                     <span>

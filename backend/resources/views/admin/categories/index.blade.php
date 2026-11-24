@@ -9,6 +9,16 @@
 @section('content')
     <div class="space-y-4">
 
+        {{-- Featured has no visible effect where a country home page lacks a "Category pills" block --}}
+        @if($homePagesWithoutFeaturedPills->isNotEmpty())
+            <x-info-callout tone="warning"
+                :title="__('admin.categories.featured_no_pills_title')"
+                :href="auth('admin')->user()?->can('pages.view') ? route('admin.page-builder.index') : null"
+                :link-label="__('admin.categories.featured_no_pills_link')">
+                {{ __('admin.categories.featured_no_pills_body', ['countries' => $homePagesWithoutFeaturedPills->map(fn ($page) => $page->country ? localized($page->country) : '—')->unique()->implode(app()->getLocale() === 'ar' ? '، ' : ', ')]) }}
+            </x-info-callout>
+        @endif
+
         {{-- Toolbar --}}
         <div class="flex items-center justify-between gap-3 flex-wrap">
             <div class="flex items-center gap-2"></div>

@@ -154,7 +154,7 @@
         Object.assign(window.TRANSLATIONS, {
             toggleFailed: @json(__('admin.vouchers_section.toggle_failed')),
             deleteVoucherTitle: @json(__('admin.vouchers_section.delete_voucher_title')),
-            deleteVoucherConfirm: @json(__('admin.vouchers_section.delete_voucher_confirm', ['code' => $voucher->code])),
+            deleteVoucherConfirm: {{ Js::from(__('admin.vouchers_section.delete_voucher_confirm', ['code' => $voucher->code])) }},
         });
 
         document.getElementById('btn-toggle')?.addEventListener('click', function () {

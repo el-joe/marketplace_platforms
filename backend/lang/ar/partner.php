@@ -117,6 +117,7 @@ return [
         'your_share_of_gap' => 'حصتك من الفجوة (تُخصم من مستحقاتك)',
         'alert' => 'تنبيه',
         'cod_pending_notice' => 'في انتظار تأكيد تحصيل الدفع النقدي (COD) من المندوب',
+        'cod_cancelled_nothing_to_collect' => 'الطلب ملغى — لا يوجد مبلغ لتحصيله من المندوب.',
         'current_status' => 'الحالة الحالية',
         'update_out_for_delivery' => 'تحديث: في التوصيل',
         'no_actions_available' => 'لا توجد إجراءات متاحة',

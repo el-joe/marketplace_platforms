@@ -44,7 +44,7 @@
             @if(!empty($group['flat']))
                 @foreach($group['items'] as $item)
                     @php
-                        $isActive = NavigationService::isActive($item['route']);
+                        $isActive = NavigationService::isItemActive($item, $group['items']);
                         $url = \Illuminate\Support\Facades\Route::has($item['route']) ? route($item['route'], $item['route_params'] ?? []) : '#';
                     @endphp
                     <a href="{{ $url }}" class="nav-item {{ $isActive ? 'is-active' : '' }}" title="{{ $item['label'] }}"
@@ -80,7 +80,7 @@
                         <div class="nav-group-items-inner">
                             @foreach($group['items'] as $item)
                                 @php
-                                    $isActive = NavigationService::isActive($item['route']);
+                                    $isActive = NavigationService::isItemActive($item, $group['items']);
                                     $url = \Illuminate\Support\Facades\Route::has($item['route']) ? route($item['route'], $item['route_params'] ?? []) : '#';
                                 @endphp
                                 <a href="{{ $url }}" class="nav-item nav-subitem {{ $isActive ? 'is-active' : '' }}" title="{{ $item['label'] }}"

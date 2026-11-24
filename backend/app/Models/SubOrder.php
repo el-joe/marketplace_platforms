@@ -221,6 +221,37 @@ class SubOrder extends Model
         return $this->hasMany(Refund::class);
     }
 
+    public const COD_COLLECTION_PENDING = 'pending';
+
+    public const COD_COLLECTION_REMITTED = 'remitted';
+
+    public const COD_COLLECTION_CANCELLED = 'cancelled';
+
+    /**
+     * R3 (retest 2026-11-24): the single answer to "is there cash to collect for this sub-order?" used by
+     * the admin COD box, the partner alert and the vendor API. A cancelled sub-order (or one of a cancelled
+     * order) that was never remitted has nothing to collect — reading `cod_remittance_confirmed` alone kept
+     * it "pending, cash with courier" forever. Null when the order is not cash on delivery.
+     */
+    public function codCollectionStatus(?Order $order = null): ?string
+    {
+        $order ??= $this->order;
+
+        if ($order?->payment_method !== 'cod') {
+            return null;
+        }
+
+        if ($this->cod_remittance_confirmed) {
+            return self::COD_COLLECTION_REMITTED;
+        }
+
+        if ($this->status?->value === 'cancelled' || $order->status?->value === 'cancelled') {
+            return self::COD_COLLECTION_CANCELLED;
+        }
+
+        return self::COD_COLLECTION_PENDING;
+    }
+
     public function codSettlement(): BelongsTo
     {
         return $this->belongsTo(DeliveryAgentCodSettlement::class, 'cod_settlement_id');

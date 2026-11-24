@@ -263,7 +263,7 @@
             generating: @json(__('admin.vouchers_section.generating')),
             generate: @json(__('admin.vouchers_section.generate')),
             generateFailed: @json(__('admin.vouchers_section.generate_failed')),
-            vouchersGenerated: @json(__('admin.vouchers_section.vouchers_generated', ['count' => ':count'])),
+            vouchersGenerated: {{ Js::from(__('admin.vouchers_section.vouchers_generated', ['count' => ':count'])) }},
             sampleCodes: @json(__('admin.vouchers_section.sample_codes')),
         });
 
@@ -285,7 +285,7 @@
 
         window.tableActions.delete = async function (id, row) {
             const code = row.code || window.TRANSLATIONS.defaultVoucherLabel;
-            const message = @json(__('admin.vouchers_section.delete_voucher_confirm', ['code' => '%CODE%'])).replace('%CODE%', code);
+            const message = {{ Js::from(__('admin.vouchers_section.delete_voucher_confirm', ['code' => '%CODE%'])) }}.replace('%CODE%', code);
             const confirmed = window.confirmDelete
                 ? await window.confirmDelete(message, { title: window.TRANSLATIONS.deleteVoucherTitle })
                 : confirm(message);

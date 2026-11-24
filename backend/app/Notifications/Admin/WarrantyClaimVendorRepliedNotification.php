@@ -20,7 +20,7 @@ class WarrantyClaimVendorRepliedNotification extends BaseDatabaseBroadcastNotifi
         return [
             'title' => 'Vendor Replied to Warranty Claim',
             'message' => "The vendor has responded to warranty claim #{$this->warrantyClaim->claim_number}.",
-            'url' => '/admin/warranty-claims/' . $this->warrantyClaim->id,
+            'url' => route('admin.warranty-claims.show', $this->warrantyClaim->id),
             'warranty_claim_id' => $this->warrantyClaim->id,
         ];
     }

@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\CategoryShippingMethod;
 use App\Models\Country;
 use App\Models\CountryCategory;
+use App\Models\Page;
 use App\Models\ShippingMethod;
 use App\Services\CategoryCountryAvailabilityService;
 use App\Services\CategoryFormService;
@@ -124,7 +125,33 @@ class CategoryController extends Controller
             ],
             'roots' => $roots,
             'defaultShippingByCategory' => $defaultShippingByCategory,
+            'homePagesWithoutFeaturedPills' => $this->homePagesWithoutFeaturedPills(),
         ]);
+    }
+
+    /**
+     * Published country home pages where Featured categories have no visible effect: they have no visible
+     * "Category pills" block without hand-picked categories (the only place Featured feeds). Read-only.
+     * Empty when no category is featured, so the hint only appears when Featured is actually in use.
+     *
+     * @return Collection<int, Page>
+     */
+    private function homePagesWithoutFeaturedPills(): Collection
+    {
+        if (! Category::query()->where('is_featured', true)->exists()) {
+            return collect();
+        }
+
+        return Page::query()
+            ->published()
+            ->where('page_type', 'home')
+            ->whereNull('app_context_key')
+            ->whereDoesntHave('blocks', fn ($blocks) => $blocks
+                ->where('block_type', 'category_pills')
+                ->where('is_visible', true)
+                ->whereDoesntHave('blockCategories'))
+            ->with('country:id,name_en,name_ar')
+            ->get(['id', 'country_id']);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

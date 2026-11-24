@@ -12,7 +12,7 @@
     @stack('styles')
     <style>[x-cloak]{display:none!important}</style>
     <script>
-    window.trans = @json(['marketer' => __('js.marketer'), 'shared' => __('js.shared')]);
+    window.trans = {{ Js::from(['marketer' => __('js.marketer'), 'shared' => __('js.shared')]) }};
     window.t = window.t || function (path, vars) {
         const parts = String(path).split('.');
         let cur = window.trans || {};

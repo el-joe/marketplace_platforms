@@ -195,10 +195,10 @@
     const catalogBaseUrl = '{{ url('packaging/catalog') }}';
 
     const i18n = @json(__('admin.packaging_catalog'));
-    const countryMeta = @json($countries->mapWithKeys(fn ($c) => [$c->id => ['name' => localized($c), 'currency' => $c->currency_code]]));
+    const countryMeta = {{ Js::from($countries->mapWithKeys(fn ($c) => [$c->id => ['name' => localized($c), 'currency' => $c->currency_code]])) }};
     const typesStoreUrl = '{{ route('admin.packaging.types.store') }}';
     const typesI18n = @json(__('admin.packaging_types'));
-    let packagingTypes = @json($types->map(fn ($t) => ['id' => $t->id, 'name' => $t->localizedName(), 'is_active' => $t->is_active])->values());
+    let packagingTypes = {{ Js::from($types->map(fn ($t) => ['id' => $t->id, 'name' => $t->localizedName(), 'is_active' => $t->is_active])->values()) }};
 
     function escapeHtml(value) {
         const div = document.createElement('div');
