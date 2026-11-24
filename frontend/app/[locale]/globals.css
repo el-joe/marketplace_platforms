@@ -324,3 +324,12 @@ html {
     aspect-ratio: var(--banner-mobile-ratio);
   }
 }
+
+/*
+ * Arabic is a cursive script: letter-spacing pulls joined letters apart and words render
+ * as disconnected glyphs. Tracking utilities are Latin-only typography, so neutralise them
+ * on Arabic text. Unlayered on purpose so it wins over the Tailwind utilities layer.
+ */
+[class*="tracking-"]:lang(ar) {
+  letter-spacing: normal;
+}

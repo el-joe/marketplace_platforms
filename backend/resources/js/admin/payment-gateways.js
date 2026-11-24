@@ -44,7 +44,7 @@ function renderCredentialFields(requiredFields) {
                 <input
                     type="${field.secret ? 'password' : 'text'}"
                     name="credentials[${field.key}]"
-                    placeholder="${field.placeholder ?? (field.secret ? 'Leave blank to keep existing' : '')}"
+                    placeholder="${field.placeholder ?? (field.secret ? i18n('leaveBlank', 'Leave blank to keep existing') : '')}"
                     autocomplete="off"
                     class="col-span-2 block w-full rounded-lg border border-gray-300 py-1.5 px-2.5 text-sm focus:ring-2 focus:ring-primary-200 focus:border-primary-500"
                 >
@@ -171,11 +171,11 @@ $('#gateway-form').on('submit', async function (e) {
 
     try {
         await api(url, method, payload);
-        toast(id ? 'Gateway updated.' : 'Gateway added.');
+        toast(id ? i18n('gatewayUpdated', 'Gateway updated.') : i18n('gatewayAdded', 'Gateway added.'));
         $('#gateway-modal').modal?.('close');
         setTimeout(() => location.reload(), 400);
     } catch (err) {
-        toast(err.message ?? 'Save failed.', 'error');
+        toast(err.message ?? i18n('saveFailed', 'Save failed.'), 'error');
     }
 });
 
@@ -186,11 +186,11 @@ $(document).on('click', '.btn-toggle-gateway', async function () {
     const $btn = $(this);
     try {
         const res = await api(`/payment-gateways/${id}/toggle`, 'POST');
-        $btn.text(res.is_active ? 'Active' : 'Inactive')
+        $btn.text(res.is_active ? i18n('active', 'Active') : i18n('inactive', 'Inactive'))
             .toggleClass('bg-success-50 text-success-700 hover:bg-success-100', res.is_active)
             .toggleClass('bg-gray-100 text-gray-500 hover:bg-gray-200', !res.is_active);
     } catch {
-        toast('Failed to update status.', 'error');
+        toast(i18n('statusFailed', 'Failed to update status.'), 'error');
     }
 });
 
@@ -200,12 +200,12 @@ $(document).on('click', '.btn-test-gateway', async function () {
     const id      = $(this).data('id');
     const $result = $(`.test-result-${id}`);
     $(this).prop('disabled', true);
-    $result.text('Testing…');
+    $result.text(i18n('testing', 'Testing…'));
     try {
         const res = await api(`/payment-gateways/${id}/test-connection`, 'POST');
         $result.text((res.success ? '✅ ' : '❌ ') + (res.message ?? ''));
     } catch (err) {
-        $result.text('❌ ' + (err.message ?? 'Error'));
+        $result.text('❌ ' + (err.message ?? i18n('error', 'Error')));
     } finally {
         $(this).prop('disabled', false);
     }
@@ -214,14 +214,14 @@ $(document).on('click', '.btn-test-gateway', async function () {
 $('#btn-test-gateway-connection').on('click', async function () {
     const id      = $('#gw-id').val();
     const $result = $('#gw-test-result');
-    if (!id) { $result.text('Save first to test connection.'); return; }
+    if (!id) { $result.text(i18n('saveFirst', 'Save first to test connection.')); return; }
     $(this).prop('disabled', true);
-    $result.text('Testing…');
+    $result.text(i18n('testing', 'Testing…'));
     try {
         const res = await api(`/payment-gateways/${id}/test-connection`, 'POST');
         $result.text((res.success ? '✅ ' : '❌ ') + (res.message ?? ''));
     } catch (err) {
-        $result.text('❌ ' + (err.message ?? 'Error'));
+        $result.text('❌ ' + (err.message ?? i18n('error', 'Error')));
     } finally {
         $(this).prop('disabled', false);
     }
@@ -241,10 +241,40 @@ $('#btn-confirm-delete-gateway').on('click', async function () {
     const id = $('#delete-gateway-id').val();
     try {
         await api(`/payment-gateways/${id}`, 'DELETE');
-        toast('Gateway removed.');
+        toast(i18n('gatewayRemoved', 'Gateway removed.'));
         $('#delete-gateway-modal').modal?.('close');
         setTimeout(() => location.reload(), 400);
     } catch (err) {
-        toast(err.message ?? 'Delete failed.', 'error');
+        toast(err.message ?? i18n('deleteFailed', 'Delete failed.'), 'error');
     }
+});
+
+// ── i18n + search ────────────────────────────────────────────────────────────
+
+function i18n(key, fallback) {
+    return window.PAYMENT_GATEWAYS_I18N?.[key] ?? fallback;
+}
+
+$(document).on('input', '#payment-gateway-search', function () {
+    const term = this.value.trim().toLowerCase();
+    let visibleCards = 0;
+
+    $('[data-gateway-search-card]').each(function () {
+        const $card = $(this);
+        const cardTitle = $card.find('h3').first().text().toLowerCase();
+        const titleMatches = term === '' || cardTitle.includes(term);
+        let rowMatches = 0;
+
+        $card.find('[data-gateway-search-row]').each(function () {
+            const matches = titleMatches || $(this).text().toLowerCase().includes(term);
+            $(this).toggle(matches);
+            if (matches) rowMatches++;
+        });
+
+        const showCard = titleMatches || rowMatches > 0;
+        $card.toggle(showCard);
+        if (showCard) visibleCards++;
+    });
+
+    $('#payment-gateway-search-empty').toggleClass('hidden', visibleCards > 0);
 });

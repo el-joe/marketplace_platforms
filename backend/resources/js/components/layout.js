@@ -256,3 +256,19 @@ $(function () {
         $('#global-search-modal').modal('open');
     });
 });
+
+/* ---------- Client-side table search (<x-table.client-search>) ---------- */
+// Filters the rows of server-rendered tables / lists that are not DataTables.
+$(document).on('input', '[data-client-search]', function () {
+    const term = this.value.trim().toLowerCase();
+    const $rows = $($(this).data('client-search')).children().not('[data-client-search-ignore]');
+    let visible = 0;
+
+    $rows.each(function () {
+        const matches = term === '' || $(this).text().toLowerCase().includes(term);
+        $(this).toggle(matches);
+        if (matches) visible++;
+    });
+
+    $(this).siblings('[data-client-search-empty]').toggleClass('hidden', visible > 0 || $rows.length === 0);
+});

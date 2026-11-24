@@ -749,28 +749,28 @@ Route::middleware(['auth.admin', 'admin.vendor.scope', 'admin.timezone'])->group
     });
 
     // ─── Cities ─────────────────────────────────────────────────────────────────────────────
-    Route::prefix('cities')->name('cities.')->middleware('admin.permission:countries.view')->group(function () {
+    Route::prefix('cities')->name('cities.')->middleware('admin.permission:cities.view')->group(function () {
         Route::post('/datatable', [CityController::class, 'datatable'])->name('datatable');
-        Route::post('/bulk-import', [CityController::class, 'bulkImport'])->name('bulk-import')->middleware('admin.permission:countries.edit');
+        Route::post('/bulk-import', [CityController::class, 'bulkImport'])->name('bulk-import')->middleware('admin.permission:cities.manage');
         Route::get('/create', [CityController::class, 'create'])->name('create');
-        Route::post('/', [CityController::class, 'store'])->name('store')->middleware('admin.permission:countries.edit');
+        Route::post('/', [CityController::class, 'store'])->name('store')->middleware('admin.permission:cities.manage');
         Route::get('/', [CityController::class, 'index'])->name('index');
         Route::get('/{id}/edit', [CityController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [CityController::class, 'update'])->name('update')->middleware('admin.permission:countries.edit');
-        Route::delete('/{id}', [CityController::class, 'destroy'])->name('destroy')->middleware('admin.permission:countries.edit');
+        Route::put('/{id}', [CityController::class, 'update'])->name('update')->middleware('admin.permission:cities.manage');
+        Route::delete('/{id}', [CityController::class, 'destroy'])->name('destroy')->middleware('admin.permission:cities.manage');
     });
 
     // ─── Currencies ────────────────────────────────────────────────────────────────────────────
-    Route::prefix('currencies')->name('currencies.')->middleware('admin.permission:countries.view')->group(function () {
+    Route::prefix('currencies')->name('currencies.')->middleware('admin.permission:currencies.view')->group(function () {
         Route::get('/', [CurrencyController::class, 'index'])->name('index');
         Route::get('/rates-table', [CurrencyController::class, 'ratesTable'])->name('rates-table');
-        Route::post('/dispatch-update', [CurrencyController::class, 'dispatchUpdate'])->name('dispatch-update')->middleware('admin.permission:settings.edit');
-        Route::post('/refresh-rates', [CurrencyController::class, 'refreshRates'])->name('refresh-rates')->middleware('admin.permission:settings.edit');
+        Route::post('/dispatch-update', [CurrencyController::class, 'dispatchUpdate'])->name('dispatch-update')->middleware('admin.permission:currencies.manage');
+        Route::post('/refresh-rates', [CurrencyController::class, 'refreshRates'])->name('refresh-rates')->middleware('admin.permission:currencies.manage');
         Route::get('/{code}/edit', [CurrencyController::class, 'edit'])->name('edit');
-        Route::put('/{code}', [CurrencyController::class, 'update'])->name('update')->middleware('admin.permission:settings.edit');
-        Route::patch('/{code}/rate', [CurrencyController::class, 'updateRate'])->name('update-rate')->middleware('admin.permission:settings.edit');
-        Route::post('/{code}/symbol-image', [CurrencyController::class, 'uploadSymbolImage'])->name('symbol-image.upload')->middleware('admin.permission:settings.edit');
-        Route::delete('/{code}/symbol-image', [CurrencyController::class, 'deleteSymbolImage'])->name('symbol-image.delete')->middleware('admin.permission:settings.edit');
+        Route::put('/{code}', [CurrencyController::class, 'update'])->name('update')->middleware('admin.permission:currencies.manage');
+        Route::patch('/{code}/rate', [CurrencyController::class, 'updateRate'])->name('update-rate')->middleware('admin.permission:currencies.manage');
+        Route::post('/{code}/symbol-image', [CurrencyController::class, 'uploadSymbolImage'])->name('symbol-image.upload')->middleware('admin.permission:currencies.manage');
+        Route::delete('/{code}/symbol-image', [CurrencyController::class, 'deleteSymbolImage'])->name('symbol-image.delete')->middleware('admin.permission:currencies.manage');
     });
 
     // ─── Coupons ─────────────────────────────────────────────────────────────────
@@ -1253,15 +1253,15 @@ Route::middleware(['auth.admin', 'admin.vendor.scope', 'admin.timezone'])->group
     });
 
     // ─── Newsletter ───────────────────────────────────────────────────────────
-    Route::prefix('newsletter')->name('newsletter.')->middleware('admin.permission:settings.view')->group(function () {
+    Route::prefix('newsletter')->name('newsletter.')->middleware('admin.permission:newsletter.view')->group(function () {
         Route::get('/', [NewsletterController::class, 'index'])->name('index');
         Route::post('/datatable', [NewsletterController::class, 'datatable'])->name('datatable');
         Route::get('/export', [NewsletterController::class, 'export'])->name('export');
-        Route::delete('/{subscriber}', [NewsletterController::class, 'destroy'])->name('destroy')->middleware('admin.permission:settings.edit');
+        Route::delete('/{subscriber}', [NewsletterController::class, 'destroy'])->name('destroy')->middleware('admin.permission:newsletter.manage');
     });
 
     // ─── Footer Settings ──────────────────────────────────────────────────────
-    Route::prefix('footer-settings')->name('footer-settings.')->middleware('admin.permission:settings.content')->group(function () {
+    Route::prefix('footer-settings')->name('footer-settings.')->middleware('admin.permission:footer_settings.manage')->group(function () {
         Route::get('/', [FooterSettingsController::class, 'index'])->name('index');
         Route::post('/', [FooterSettingsController::class, 'store'])->name('store');
         Route::put('/{footerLink}', [FooterSettingsController::class, 'update'])->name('update');
@@ -1980,20 +1980,20 @@ Route::middleware(['auth.admin', 'admin.vendor.scope', 'admin.timezone'])->group
 
     // ── Radio ─────────────────────────────────────────────────────────────────
     // ── Live Streams ──────────────────────────────────────────────────────────
-    Route::prefix('live-streams')->name('live-streams.')->middleware('admin.permission:pages.view')->group(function () {
+    Route::prefix('live-streams')->name('live-streams.')->middleware('admin.permission:live_streams.view')->group(function () {
         Route::get('/', [LiveStreamController::class, 'index'])->name('index');
         Route::get('/create', [LiveStreamController::class, 'create'])->name('create');
-        Route::post('/', [LiveStreamController::class, 'store'])->name('store')->middleware('admin.permission:pages.manage');
+        Route::post('/', [LiveStreamController::class, 'store'])->name('store')->middleware('admin.permission:live_streams.manage');
         Route::get('/{liveStream}', [LiveStreamController::class, 'show'])->name('show');
         Route::get('/{liveStream}/edit', [LiveStreamController::class, 'edit'])->name('edit');
-        Route::put('/{liveStream}', [LiveStreamController::class, 'update'])->name('update')->middleware('admin.permission:pages.manage');
-        Route::delete('/{liveStream}', [LiveStreamController::class, 'destroy'])->name('destroy')->middleware('admin.permission:pages.manage');
-        Route::post('/{liveStream}/go-live', [LiveStreamController::class, 'goLive'])->name('go-live')->middleware('admin.permission:pages.manage');
-        Route::post('/{liveStream}/end', [LiveStreamController::class, 'endStream'])->name('end')->middleware('admin.permission:pages.manage');
-        Route::post('/{liveStream}/signal', [LiveStreamController::class, 'signal'])->middleware('throttle:600,1')->name('signal')->middleware('admin.permission:pages.manage');
-        Route::post('/{liveStream}/media', [LiveStreamController::class, 'media'])->name('media')->middleware('admin.permission:pages.manage');
+        Route::put('/{liveStream}', [LiveStreamController::class, 'update'])->name('update')->middleware('admin.permission:live_streams.manage');
+        Route::delete('/{liveStream}', [LiveStreamController::class, 'destroy'])->name('destroy')->middleware('admin.permission:live_streams.manage');
+        Route::post('/{liveStream}/go-live', [LiveStreamController::class, 'goLive'])->name('go-live')->middleware('admin.permission:live_streams.manage');
+        Route::post('/{liveStream}/end', [LiveStreamController::class, 'endStream'])->name('end')->middleware('admin.permission:live_streams.manage');
+        Route::post('/{liveStream}/signal', [LiveStreamController::class, 'signal'])->middleware('throttle:600,1')->name('signal')->middleware('admin.permission:live_streams.manage');
+        Route::post('/{liveStream}/media', [LiveStreamController::class, 'media'])->name('media')->middleware('admin.permission:live_streams.manage');
         Route::get('/{liveStream}/comments', [LiveStreamController::class, 'comments'])->name('comments');
-        Route::delete('/{liveStream}/comments/{comment}', [LiveStreamController::class, 'deleteComment'])->name('comments.destroy')->middleware('admin.permission:pages.manage');
+        Route::delete('/{liveStream}/comments/{comment}', [LiveStreamController::class, 'deleteComment'])->name('comments.destroy')->middleware('admin.permission:live_streams.manage');
     });
 
     // ─── Carrier Claims ───────────────────────────────────────────────────────
@@ -2037,71 +2037,71 @@ Route::middleware(['auth.admin', 'admin.vendor.scope', 'admin.timezone'])->group
     });
 
     // ─── Blog Categories ──────────────────────────────────────────────────────
-    Route::prefix('blog/categories')->name('blog.categories.')->middleware('admin.permission:pages.view')->group(function () {
-        Route::post('/reorder', [BlogCategoryController::class, 'reorder'])->name('reorder')->middleware('admin.permission:pages.manage');
+    Route::prefix('blog/categories')->name('blog.categories.')->middleware('admin.permission:blog.view')->group(function () {
+        Route::post('/reorder', [BlogCategoryController::class, 'reorder'])->name('reorder')->middleware('admin.permission:blog.manage');
         Route::get('/', [BlogCategoryController::class, 'index'])->name('index');
-        Route::post('/', [BlogCategoryController::class, 'store'])->name('store')->middleware('admin.permission:pages.manage');
-        Route::put('/{category}', [BlogCategoryController::class, 'update'])->name('update')->middleware('admin.permission:pages.manage');
-        Route::delete('/{category}', [BlogCategoryController::class, 'destroy'])->name('destroy')->middleware('admin.permission:pages.manage');
-        Route::post('/{category}/toggle', [BlogCategoryController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:pages.manage');
+        Route::post('/', [BlogCategoryController::class, 'store'])->name('store')->middleware('admin.permission:blog.manage');
+        Route::put('/{category}', [BlogCategoryController::class, 'update'])->name('update')->middleware('admin.permission:blog.manage');
+        Route::delete('/{category}', [BlogCategoryController::class, 'destroy'])->name('destroy')->middleware('admin.permission:blog.manage');
+        Route::post('/{category}/toggle', [BlogCategoryController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:blog.manage');
     });
 
     // ─── Blog Posts ───────────────────────────────────────────────────────────
-    Route::prefix('blog/posts')->name('blog.posts.')->middleware('admin.permission:pages.view')->group(function () {
+    Route::prefix('blog/posts')->name('blog.posts.')->middleware('admin.permission:blog.view')->group(function () {
         Route::post('/datatable', [BlogPostController::class, 'datatable'])->name('datatable');
         Route::get('/create', [BlogPostController::class, 'create'])->name('create');
         Route::get('/', [BlogPostController::class, 'index'])->name('index');
-        Route::post('/', [BlogPostController::class, 'store'])->name('store')->middleware('admin.permission:pages.manage');
+        Route::post('/', [BlogPostController::class, 'store'])->name('store')->middleware('admin.permission:blog.manage');
         Route::get('/{post}/edit', [BlogPostController::class, 'edit'])->name('edit');
-        Route::put('/{post}', [BlogPostController::class, 'update'])->name('update')->middleware('admin.permission:pages.manage');
-        Route::delete('/{post}', [BlogPostController::class, 'destroy'])->name('destroy')->middleware('admin.permission:pages.manage');
-        Route::post('/{post}/archive', [BlogPostController::class, 'archive'])->name('archive')->middleware('admin.permission:pages.manage');
-        Route::post('/{post}/feature', [BlogPostController::class, 'feature'])->name('feature')->middleware('admin.permission:pages.manage');
-        Route::delete('/{post}/attachments/{file}', [BlogPostController::class, 'deleteAttachment'])->name('attachments.delete')->middleware('admin.permission:pages.manage');
+        Route::put('/{post}', [BlogPostController::class, 'update'])->name('update')->middleware('admin.permission:blog.manage');
+        Route::delete('/{post}', [BlogPostController::class, 'destroy'])->name('destroy')->middleware('admin.permission:blog.manage');
+        Route::post('/{post}/archive', [BlogPostController::class, 'archive'])->name('archive')->middleware('admin.permission:blog.manage');
+        Route::post('/{post}/feature', [BlogPostController::class, 'feature'])->name('feature')->middleware('admin.permission:blog.manage');
+        Route::delete('/{post}/attachments/{file}', [BlogPostController::class, 'deleteAttachment'])->name('attachments.delete')->middleware('admin.permission:blog.manage');
     });
 
     // ─── Ad Support Collections (Knowledge Hub) ──────────────────────────────
-    Route::prefix('adsupport/collections')->name('adsupport.collections.')->middleware('admin.permission:pages.view')->group(function () {
-        Route::post('/reorder', [AdSupportCollectionController::class, 'reorder'])->name('reorder')->middleware('admin.permission:pages.manage');
+    Route::prefix('adsupport/collections')->name('adsupport.collections.')->middleware('admin.permission:adsupport.view')->group(function () {
+        Route::post('/reorder', [AdSupportCollectionController::class, 'reorder'])->name('reorder')->middleware('admin.permission:adsupport.manage');
         Route::get('/', [AdSupportCollectionController::class, 'index'])->name('index');
-        Route::post('/', [AdSupportCollectionController::class, 'store'])->name('store')->middleware('admin.permission:pages.manage');
-        Route::put('/{collection:id}', [AdSupportCollectionController::class, 'update'])->name('update')->middleware('admin.permission:pages.manage');
-        Route::delete('/{collection:id}', [AdSupportCollectionController::class, 'destroy'])->name('destroy')->middleware('admin.permission:pages.manage');
-        Route::post('/{collection:id}/toggle', [AdSupportCollectionController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:pages.manage');
+        Route::post('/', [AdSupportCollectionController::class, 'store'])->name('store')->middleware('admin.permission:adsupport.manage');
+        Route::put('/{collection:id}', [AdSupportCollectionController::class, 'update'])->name('update')->middleware('admin.permission:adsupport.manage');
+        Route::delete('/{collection:id}', [AdSupportCollectionController::class, 'destroy'])->name('destroy')->middleware('admin.permission:adsupport.manage');
+        Route::post('/{collection:id}/toggle', [AdSupportCollectionController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:adsupport.manage');
     });
 
     // ─── Ad Support Articles (Knowledge Hub) ─────────────────────────────────
-    Route::prefix('adsupport/articles')->name('adsupport.articles.')->middleware('admin.permission:pages.view')->group(function () {
+    Route::prefix('adsupport/articles')->name('adsupport.articles.')->middleware('admin.permission:adsupport.view')->group(function () {
         Route::post('/datatable', [AdSupportArticleController::class, 'datatable'])->name('datatable');
         Route::get('/create', [AdSupportArticleController::class, 'create'])->name('create');
         Route::get('/', [AdSupportArticleController::class, 'index'])->name('index');
-        Route::post('/', [AdSupportArticleController::class, 'store'])->name('store')->middleware('admin.permission:pages.manage');
+        Route::post('/', [AdSupportArticleController::class, 'store'])->name('store')->middleware('admin.permission:adsupport.manage');
         Route::get('/{article:id}/edit', [AdSupportArticleController::class, 'edit'])->name('edit');
-        Route::put('/{article:id}', [AdSupportArticleController::class, 'update'])->name('update')->middleware('admin.permission:pages.manage');
-        Route::delete('/{article:id}', [AdSupportArticleController::class, 'destroy'])->name('destroy')->middleware('admin.permission:pages.manage');
-        Route::post('/{article:id}/feature', [AdSupportArticleController::class, 'feature'])->name('feature')->middleware('admin.permission:pages.manage');
+        Route::put('/{article:id}', [AdSupportArticleController::class, 'update'])->name('update')->middleware('admin.permission:adsupport.manage');
+        Route::delete('/{article:id}', [AdSupportArticleController::class, 'destroy'])->name('destroy')->middleware('admin.permission:adsupport.manage');
+        Route::post('/{article:id}/feature', [AdSupportArticleController::class, 'feature'])->name('feature')->middleware('admin.permission:adsupport.manage');
     });
 
     // ─── Help Center Categories (Portal) ─────────────────────────────────────
-    Route::prefix('helpcenter/categories')->name('helpcenter.categories.')->middleware('admin.permission:pages.view')->group(function () {
-        Route::post('/reorder', [HelpCenterCategoryController::class, 'reorder'])->name('reorder')->middleware('admin.permission:pages.manage');
+    Route::prefix('helpcenter/categories')->name('helpcenter.categories.')->middleware('admin.permission:help_center.view')->group(function () {
+        Route::post('/reorder', [HelpCenterCategoryController::class, 'reorder'])->name('reorder')->middleware('admin.permission:help_center.manage');
         Route::get('/', [HelpCenterCategoryController::class, 'index'])->name('index');
-        Route::post('/', [HelpCenterCategoryController::class, 'store'])->name('store')->middleware('admin.permission:pages.manage');
-        Route::put('/{category:id}', [HelpCenterCategoryController::class, 'update'])->name('update')->middleware('admin.permission:pages.manage');
-        Route::delete('/{category:id}', [HelpCenterCategoryController::class, 'destroy'])->name('destroy')->middleware('admin.permission:pages.manage');
-        Route::post('/{category:id}/toggle', [HelpCenterCategoryController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:pages.manage');
+        Route::post('/', [HelpCenterCategoryController::class, 'store'])->name('store')->middleware('admin.permission:help_center.manage');
+        Route::put('/{category:id}', [HelpCenterCategoryController::class, 'update'])->name('update')->middleware('admin.permission:help_center.manage');
+        Route::delete('/{category:id}', [HelpCenterCategoryController::class, 'destroy'])->name('destroy')->middleware('admin.permission:help_center.manage');
+        Route::post('/{category:id}/toggle', [HelpCenterCategoryController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:help_center.manage');
     });
 
     // ─── Help Center Articles (Portal) ───────────────────────────────────────
-    Route::prefix('helpcenter/articles')->name('helpcenter.articles.')->middleware('admin.permission:pages.view')->group(function () {
+    Route::prefix('helpcenter/articles')->name('helpcenter.articles.')->middleware('admin.permission:help_center.view')->group(function () {
         Route::post('/datatable', [HelpCenterArticleController::class, 'datatable'])->name('datatable');
         Route::get('/create', [HelpCenterArticleController::class, 'create'])->name('create');
         Route::get('/', [HelpCenterArticleController::class, 'index'])->name('index');
-        Route::post('/', [HelpCenterArticleController::class, 'store'])->name('store')->middleware('admin.permission:pages.manage');
+        Route::post('/', [HelpCenterArticleController::class, 'store'])->name('store')->middleware('admin.permission:help_center.manage');
         Route::get('/{article:id}/edit', [HelpCenterArticleController::class, 'edit'])->name('edit');
-        Route::put('/{article:id}', [HelpCenterArticleController::class, 'update'])->name('update')->middleware('admin.permission:pages.manage');
-        Route::delete('/{article:id}', [HelpCenterArticleController::class, 'destroy'])->name('destroy')->middleware('admin.permission:pages.manage');
-        Route::post('/{article:id}/feature', [HelpCenterArticleController::class, 'feature'])->name('feature')->middleware('admin.permission:pages.manage');
+        Route::put('/{article:id}', [HelpCenterArticleController::class, 'update'])->name('update')->middleware('admin.permission:help_center.manage');
+        Route::delete('/{article:id}', [HelpCenterArticleController::class, 'destroy'])->name('destroy')->middleware('admin.permission:help_center.manage');
+        Route::post('/{article:id}/feature', [HelpCenterArticleController::class, 'feature'])->name('feature')->middleware('admin.permission:help_center.manage');
     });
 
     // ─── App Contexts (Platform Navigation) ──────────────────────────────────

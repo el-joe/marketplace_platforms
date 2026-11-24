@@ -75,7 +75,9 @@ enum MediaContext: string
             self::CustomPages => ['categories.create', 'categories.edit'],
             self::StaticPages => ['static_pages.create', 'static_pages.edit'],
             // Blog, help-center and ad-support articles are written under the same permission as their routes.
-            self::BlogPosts, self::HelpCenterArticles, self::AdSupportArticles => ['pages.manage'],
+            self::BlogPosts => ['blog.manage'],
+            self::HelpCenterArticles => ['help_center.manage'],
+            self::AdSupportArticles => ['adsupport.manage'],
             default => ['pages.manage'],
         };
     }

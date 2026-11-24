@@ -16,7 +16,7 @@ class FooterSettingsController extends Controller
     public function index(): View
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('settings.content'), 403);
+        abort_unless($admin->hasPermissionTo('footer_settings.manage'), 403);
 
         $links = FooterLink::query()->ordered()->get()->groupBy('group');
 
@@ -32,7 +32,7 @@ class FooterSettingsController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('settings.content'), 403);
+        abort_unless($admin->hasPermissionTo('footer_settings.manage'), 403);
 
         $validated = $this->validateLink($request);
         $validated['is_active'] = $request->boolean('is_active');
@@ -48,7 +48,7 @@ class FooterSettingsController extends Controller
     public function update(Request $request, FooterLink $footerLink): RedirectResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('settings.content'), 403);
+        abort_unless($admin->hasPermissionTo('footer_settings.manage'), 403);
 
         $validated = $this->validateLink($request);
         $validated['is_active'] = $request->boolean('is_active');
@@ -61,7 +61,7 @@ class FooterSettingsController extends Controller
     public function destroy(FooterLink $footerLink): RedirectResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('settings.content'), 403);
+        abort_unless($admin->hasPermissionTo('footer_settings.manage'), 403);
 
         $footerLink->delete();
 
@@ -71,9 +71,9 @@ class FooterSettingsController extends Controller
     public function toggleActive(FooterLink $footerLink): JsonResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('settings.content'), 403);
+        abort_unless($admin->hasPermissionTo('footer_settings.manage'), 403);
 
-        $footerLink->update(['is_active' => !$footerLink->is_active]);
+        $footerLink->update(['is_active' => ! $footerLink->is_active]);
 
         return response()->json(['success' => true, 'is_active' => (bool) $footerLink->fresh()->is_active]);
     }
@@ -81,7 +81,7 @@ class FooterSettingsController extends Controller
     private function validateLink(Request $request): array
     {
         return $request->validate([
-            'group' => 'required|in:' . implode(',', self::GROUPS),
+            'group' => 'required|in:'.implode(',', self::GROUPS),
             'platform' => 'nullable|string|max:50',
             'label_en' => 'nullable|string|max:255',
             'label_ar' => 'nullable|string|max:255',

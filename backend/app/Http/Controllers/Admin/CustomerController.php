@@ -244,22 +244,22 @@ class CustomerController extends Controller
         $reactivateUrl = route('admin.customers.reactivate', $customer->id);
 
         $actions = '<div class="flex items-center gap-1">';
-        $actions .= '<a href="'.$viewUrl.'" class="btn btn-xs btn-secondary">View</a>';
+        $actions .= '<a href="'.$viewUrl.'" class="btn btn-xs btn-secondary">'.e(__('common.view')).'</a>';
 
         if ($canSuspend) {
             if ($customer->status === CustomerStatus::Active) {
                 $actions .= '<button type="button" class="btn btn-xs btn-warning js-suspend-btn"'
-                    .' data-url="'.$suspendUrl.'" data-name="'.e($customer->name).'">Suspend</button>';
+                    .' data-url="'.$suspendUrl.'" data-name="'.e($customer->name).'">'.e(__('admin.suspend')).'</button>';
                 $actions .= '<button type="button" class="btn btn-xs btn-danger js-ban-btn"'
-                    .' data-url="'.$banUrl.'" data-name="'.e($customer->name).'">Ban</button>';
+                    .' data-url="'.$banUrl.'" data-name="'.e($customer->name).'">'.e(__('admin.ban')).'</button>';
             } elseif ($customer->status === CustomerStatus::Suspended) {
                 $actions .= '<button type="button" class="btn btn-xs btn-success js-reactivate-btn"'
-                    .' data-url="'.$reactivateUrl.'" data-name="'.e($customer->name).'">Reactivate</button>';
+                    .' data-url="'.$reactivateUrl.'" data-name="'.e($customer->name).'">'.e(__('admin.reactivate')).'</button>';
                 $actions .= '<button type="button" class="btn btn-xs btn-danger js-ban-btn"'
-                    .' data-url="'.$banUrl.'" data-name="'.e($customer->name).'">Ban</button>';
+                    .' data-url="'.$banUrl.'" data-name="'.e($customer->name).'">'.e(__('admin.ban')).'</button>';
             } elseif ($customer->status === CustomerStatus::Banned) {
                 $actions .= '<button type="button" class="btn btn-xs btn-success js-reactivate-btn"'
-                    .' data-url="'.$reactivateUrl.'" data-name="'.e($customer->name).'">Reactivate</button>';
+                    .' data-url="'.$reactivateUrl.'" data-name="'.e($customer->name).'">'.e(__('admin.reactivate')).'</button>';
             }
         }
 

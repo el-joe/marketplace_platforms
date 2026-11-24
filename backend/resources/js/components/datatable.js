@@ -29,6 +29,16 @@ import 'datatables.net-responsive-dt/css/responsive.dataTables.css';
 import 'datatables.net-select-dt/css/select.dataTables.css';
 import 'datatables.net-buttons-dt/css/buttons.dataTables.css';
 
+// Filter panels render date inputs as `readonly data-flatpickr`; without the
+// picker module they cannot be filled at all. Load it on demand so every table
+// page gets a working date filter without having to @vite it separately.
+// (Vite dedupes the module, so pages that already include it are unaffected.)
+$(function () {
+    if (document.querySelector('[data-flatpickr]')) {
+        import('./flatpickr.js');
+    }
+});
+
 // Registry: tableId → DataTable instance
 const registry = {};
 

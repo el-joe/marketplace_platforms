@@ -54,6 +54,15 @@ final class PermissionLabels
     }
 
     /**
+     * Display name for a role: system roles have a translated name in `permissions.roles`,
+     * custom roles (stored as snake_case slugs) fall back to a headline of the slug.
+     */
+    public static function role(string $roleName, ?string $locale = null): string
+    {
+        return self::lookup('roles', $roleName, $locale) ?? Str::headline($roleName);
+    }
+
+    /**
      * Whether both the group and the permission resolve to a real translation
      * (not the headline fallback) in the given locale.
      */

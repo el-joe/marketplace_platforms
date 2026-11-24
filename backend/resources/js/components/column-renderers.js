@@ -18,6 +18,26 @@
    ========================================================= */
 const _isAr = document.documentElement.lang === 'ar';
 
+// Dates follow the panel language and the panel's display timezone (the same one
+// the server-rendered pages use via admin_tz()), never raw UTC strings.
+const _dateLocale = _isAr ? 'ar-u-nu-latn' : 'en-GB';
+const _displayTimezone = document.querySelector('meta[name="display-timezone"]')?.content || undefined;
+
+function formatDisplayDate(value, withTime = false) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    const options = { year: 'numeric', month: 'short', day: 'numeric', timeZone: _displayTimezone };
+    if (withTime) {
+        Object.assign(options, { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+    try {
+        return date.toLocaleString(_dateLocale, options);
+    } catch {
+        delete options.timeZone;
+        return date.toLocaleString(_dateLocale, options);
+    }
+}
+
 function timeAgo(dateStr) {
     if (!dateStr) return '—';
     const now = Date.now();
@@ -139,22 +159,18 @@ window.Renderers = {
      */
     dateAgo(data) {
         if (!data) return '—';
-        const formatted = new Date(data).toLocaleDateString('en-EG', {
-            year: 'numeric', month: 'short', day: 'numeric',
-        });
-        return `<span class="text-gray-500 text-xs" title="${data}">${timeAgo(data)}</span>
-                <span class="hidden">${formatted}</span>`;
+        const exact = formatDisplayDate(data, true);
+        return `<span class="text-gray-500 text-xs cursor-help" title="${exact}">${timeAgo(data)}</span>
+                <span class="hidden">${exact}</span>`;
     },
 
     /**
      * date(data, type, row)
-     * Formats as "Jan 1, 2025". Directly usable as a render function.
+     * Formats as "23 Nov 2026" / "23 نوفمبر 2026" in the panel language and display timezone.
      */
     date(data) {
         if (!data) return '—';
-        return new Date(data).toLocaleDateString('en-EG', {
-            year: 'numeric', month: 'short', day: 'numeric',
-        });
+        return formatDisplayDate(data);
     },
 
     /**

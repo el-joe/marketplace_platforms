@@ -28,11 +28,13 @@
         <x-stat-card title="{{ __('common.active') }}" :value="$stats['active']" icon="check-circle" iconBg="bg-emerald-100 text-emerald-600" />
         <x-stat-card
             title="{{ __('admin.blog.most_posts') }}"
-            :value="$stats['top_category'] ? $stats['top_category']->name_en . ' (' . $stats['top_category']->posts_count . ')' : '—'"
+            :value="$stats['top_category'] ? localized($stats['top_category']) . ' (' . $stats['top_category']->posts_count . ')' : '—'"
             icon="pencil-square"
             iconBg="bg-amber-100 text-amber-600"
             class="sm:col-span-2 lg:col-span-1" />
     </div>
+
+    <x-table.client-search target="#category-tree" />
 
     {{-- Tree table --}}
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -133,7 +135,7 @@
                         </tr>
                         @endforeach
                     @empty
-                        <tr>
+                        <tr data-client-search-ignore>
                             <td colspan="8" class="px-4 py-10 text-center text-gray-400">{{ __('admin.blog.no_categories_yet') }}</td>
                         </tr>
                     @endforelse

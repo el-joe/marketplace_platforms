@@ -33,11 +33,11 @@ class PortalArticleSanitizationTest extends TestCase
 
     private function contentAdmin(): Admin
     {
-        foreach (['vendors.assigned_only', 'pages.view', 'pages.manage'] as $name) {
+        foreach (['vendors.assigned_only', 'blog.view', 'blog.manage', 'help_center.view', 'help_center.manage', 'adsupport.view', 'adsupport.manage'] as $name) {
             Permission::findOrCreate($name, 'admin');
         }
         $admin = Admin::factory()->create();
-        $admin->givePermissionTo(['pages.view', 'pages.manage']);
+        $admin->givePermissionTo(['blog.view', 'blog.manage', 'help_center.view', 'help_center.manage', 'adsupport.view', 'adsupport.manage']);
 
         return $admin;
     }

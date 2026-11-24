@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Payment Gateways')
+@section('title', __('admin.static_text.admin_payment_gateways_index.payment_gateways'))
 
 @section('content')
 
@@ -32,7 +32,7 @@
                     @elseif($gw->type === 'internal') bg-purple-50 text-purple-700
                     @else bg-green-50 text-green-700
                     @endif">
-                    {{ ucfirst($gw->type) }}
+                    {{ __('admin.static_text.admin_payment_gateways_index.type_'.$gw->type) === 'admin.static_text.admin_payment_gateways_index.type_'.$gw->type ? ucfirst($gw->type) : __('admin.static_text.admin_payment_gateways_index.type_'.$gw->type) }}
                 </span>
                 <div class="flex gap-1.5 text-xs text-gray-400 mt-1">
                     @if($gw->supports_webhook)
@@ -65,8 +65,16 @@
 </div>
 
 {{-- Per-Country Configuration --}}
+<div class="mb-4 flex items-center gap-3">
+    <div class="relative w-full sm:w-80">
+        <x-heroicon name="magnifying-glass" class="w-4 h-4 text-gray-400 absolute top-1/2 -translate-y-1/2 start-3 pointer-events-none" />
+        <input type="search" id="payment-gateway-search" class="form-input text-sm w-full ps-9"
+            placeholder="{{ __('admin.static_text.admin_payment_gateways_index.search_placeholder') }}" autocomplete="off">
+    </div>
+</div>
+<p id="payment-gateway-search-empty" class="hidden text-sm text-gray-400 italic mb-4">{{ __('admin.static_text.admin_payment_gateways_index.no_search_results') }}</p>
 @forelse($countries as $country)
-    <div class="mb-4 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div class="mb-4 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" data-gateway-search-card>
         {{-- Country Header --}}
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div>
@@ -74,7 +82,7 @@
                     {{ localized($country) }}
                     <span class="ml-1 text-sm font-normal text-gray-400">({{ $country->currency_code }})</span>
                 </h3>
-                <p class="text-xs text-gray-400 mt-0.5">{{ $country->countryPaymentGateways->count() }} gateway(s) configured</p>
+                <p class="text-xs text-gray-400 mt-0.5">{{ trans_choice('admin.static_text.admin_payment_gateways_index.gateways_configured', $country->countryPaymentGateways->count(), ['count' => $country->countryPaymentGateways->count()]) }}</p>
             </div>
             <button type="button"
                 class="btn-add-country-gateway inline-flex items-center gap-1 rounded-lg bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-700 hover:bg-primary-100"
@@ -92,7 +100,7 @@
         @else
             <ul class="divide-y divide-gray-100" id="sortable-{{ $country->id }}">
                 @foreach($country->countryPaymentGateways as $cpg)
-                    <li class="flex items-center gap-3 px-5 py-3" data-id="{{ $cpg->id }}">
+                    <li class="flex items-center gap-3 px-5 py-3" data-id="{{ $cpg->id }}" data-gateway-search-row>
                         {{-- Drag handle --}}
                         <span class="cursor-grab text-gray-300 hover:text-gray-400">
                             <x-heroicon name="bars-3" class="w-4 h-4" />
@@ -112,16 +120,16 @@
                             {{-- Environment badge --}}
                             <span class="ml-1.5 text-xs rounded px-1.5 py-0.5
                                 {{ $cpg->environment === 'production' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
-                                {{ $cpg->environment === 'production' ? 'Production' : 'Sandbox' }}
+                                {{ $cpg->environment === 'production' ? __('admin.static_text.admin_payment_gateways_index.env_production') : __('admin.static_text.admin_payment_gateways_index.env_sandbox') }}
                             </span>
                             {{-- Configured badge --}}
                             @if($cpg->is_configured)
                                 <span class="ml-1 text-xs rounded px-1.5 py-0.5 bg-success-50 text-success-700 border border-success-200">
-                                    ✓ Configured
+                                    ✓ {{ __('admin.static_text.admin_payment_gateways_index.configured') }}
                                 </span>
                             @elseif(!empty($cpg->gateway?->required_fields))
                                 <span class="ml-1 text-xs rounded px-1.5 py-0.5 bg-red-50 text-red-700 border border-red-200">
-                                    ⚠ No credentials
+                                    ⚠ {{ __('admin.static_text.admin_payment_gateways_index.no_credentials') }}
                                 </span>
                             @endif
                         </div>
@@ -137,14 +145,14 @@
                             class="btn-toggle-gateway rounded-full px-2 py-0.5 text-xs font-semibold
                                 {{ $cpg->is_active ? 'bg-success-50 text-success-700 hover:bg-success-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}"
                             data-id="{{ $cpg->id }}">
-                            {{ $cpg->is_active ? 'Active' : 'Inactive' }}
+                            {{ $cpg->is_active ? __('common.active') : __('common.inactive') }}
                         </button>
                         {{-- Test --}}
                         @if($cpg->gateway?->code && !in_array($cpg->gateway->code, ['cod', 'wallet']))
                             <button type="button"
                                 class="btn-test-gateway text-xs text-primary-600 hover:text-primary-800 border border-primary-200 rounded px-2 py-0.5"
                                 data-id="{{ $cpg->id }}">
-                                Test
+                                {{ __('admin.static_text.admin_payment_gateways_index.test') }}
                             </button>
                             <span class="test-result-{{ $cpg->id }} text-xs text-gray-400"></span>
                         @endif
@@ -196,7 +204,7 @@
         <div class="px-6 py-4 space-y-4">
             {{-- Gateway selector (add mode only) --}}
             <div id="gw-gateway-select-wrapper">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Gateway</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_payment_gateways_index.gateway') }}</label>
                 <select id="gw-gateway-id" name="gateway_id"
                     class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
                     <option value="">{{ __('admin.static_text.admin_payment_gateways_index.select_gateway') }}</option>
@@ -213,18 +221,18 @@
             </div>
             {{-- Edit mode: read-only gateway name --}}
             <div id="gw-gateway-name-wrapper" class="hidden">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Gateway</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_payment_gateways_index.gateway') }}</label>
                 <p id="gw-gateway-name-display" class="text-sm font-semibold text-gray-900"></p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Display Name (EN)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_payment_gateways_index.display_name_en') }}</label>
                     <input type="text" name="display_name_en" id="gw-display-name-en"
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Display Name (AR)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_payment_gateways_index.display_name_ar') }}</label>
                     <input type="text" name="display_name_ar" id="gw-display-name-ar" dir="rtl"
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
                 </div>
@@ -232,11 +240,11 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Environment</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_payment_gateways_index.environment') }}</label>
                     <select name="environment" id="gw-environment"
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
-                        <option value="sandbox">Sandbox (testing)</option>
-                        <option value="production">Production (live)</option>
+                        <option value="sandbox">{{ __('admin.static_text.admin_payment_gateways_index.sandbox_testing') }}</option>
+                        <option value="production">{{ __('admin.static_text.admin_payment_gateways_index.production_live') }}</option>
                     </select>
                 </div>
                 <div>
@@ -248,12 +256,12 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Fee %</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_payment_gateways_index.fee_pct') }}</label>
                     <input type="number" name="fee_pct" id="gw-fee-pct" step="0.01" min="0" max="100" value="0"
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Fixed Fee (base units)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_payment_gateways_index.fixed_fee') }}</label>
                     <input type="number" name="fee_fixed" id="gw-fee-fixed" min="0" step="0.01" value="0"
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
                 </div>
@@ -290,7 +298,7 @@
         </div>
 
         <x-slot:footer>
-            <button type="button" data-modal-close class="btn-secondary">Cancel</button>
+            <button type="button" data-modal-close class="btn-secondary">{{ __('common.cancel') }}</button>
             <button type="submit" form="gateway-form" class="btn-primary">{{ __('admin.static_text.admin_payment_gateways_index.save_gateway') }}</button>
         </x-slot:footer>
     </form>
@@ -303,13 +311,28 @@
         <input type="hidden" id="delete-gateway-id">
     </div>
     <x-slot:footer>
-        <button type="button" data-modal-close class="btn-secondary">Cancel</button>
-        <button type="button" id="btn-confirm-delete-gateway" class="btn-danger">Remove</button>
+        <button type="button" data-modal-close class="btn-secondary">{{ __('common.cancel') }}</button>
+        <button type="button" id="btn-confirm-delete-gateway" class="btn-danger">{{ __('admin.static_text.admin_payment_gateways_index.remove') }}</button>
     </x-slot:footer>
 </x-modal>
 
 @push('scripts')
 <script>
+window.PAYMENT_GATEWAYS_I18N = @js([
+    'active' => __('common.active'),
+    'inactive' => __('common.inactive'),
+    'leaveBlank' => __('admin.static_text.admin_payment_gateways_index.leave_blank_to_keep_existing'),
+    'gatewayUpdated' => __('admin.static_text.admin_payment_gateways_index.gateway_updated'),
+    'gatewayAdded' => __('admin.static_text.admin_payment_gateways_index.gateway_added'),
+    'gatewayRemoved' => __('admin.static_text.admin_payment_gateways_index.gateway_removed'),
+    'saveFailed' => __('admin.static_text.admin_payment_gateways_index.save_failed'),
+    'statusFailed' => __('admin.static_text.admin_payment_gateways_index.status_failed'),
+    'testing' => __('admin.static_text.admin_payment_gateways_index.testing'),
+    'error' => __('admin.static_text.admin_payment_gateways_index.error'),
+    'saveFirst' => __('admin.static_text.admin_payment_gateways_index.save_first_to_test'),
+    'deleteFailed' => __('admin.static_text.admin_payment_gateways_index.delete_failed'),
+]);
+
 async function uploadGatewayImage(gatewayId, input) {
     const file = input.files[0];
     if (!file) return;
@@ -332,15 +355,15 @@ async function uploadGatewayImage(gatewayId, input) {
             window.Toast?.success(data.message);
             setTimeout(() => location.reload(), 800);
         } else {
-            window.Toast?.error(data.message ?? 'Upload failed.');
+            window.Toast?.error(data.message ?? @js(__('admin.static_text.admin_payment_gateways_index.upload_failed')));
         }
     } catch (e) {
-        window.Toast?.error('Upload failed.');
+        window.Toast?.error(@js(__('admin.static_text.admin_payment_gateways_index.upload_failed')));
     }
 }
 
 async function deleteGatewayImage(gatewayId, btn) {
-    if (!confirm('Remove this image?')) return;
+    if (!confirm(@js(__('admin.static_text.admin_payment_gateways_index.remove_image_confirm')))) return;
 
     try {
         const res = await fetch(`{{ url('/payment-gateways/gateways') }}/${gatewayId}/image`, {
@@ -356,10 +379,10 @@ async function deleteGatewayImage(gatewayId, btn) {
             window.Toast?.success(data.message);
             setTimeout(() => location.reload(), 800);
         } else {
-            window.Toast?.error(data.message ?? 'Delete failed.');
+            window.Toast?.error(data.message ?? @js(__('admin.static_text.admin_payment_gateways_index.delete_failed')));
         }
     } catch (e) {
-        window.Toast?.error('Delete failed.');
+        window.Toast?.error(@js(__('admin.static_text.admin_payment_gateways_index.delete_failed')));
     }
 }
 </script>

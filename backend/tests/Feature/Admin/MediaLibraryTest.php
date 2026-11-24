@@ -350,7 +350,7 @@ class MediaLibraryTest extends TestCase
     #[DataProvider('articleEditorContexts')]
     public function test_article_editor_images_are_uploaded_instead_of_embedded(string $context, string $directory, string $fileType, string $createRoute): void
     {
-        $this->actingAs($this->pageBuilderAdmin(), 'admin');
+        $this->actingAs($this->admin(['blog.view', 'blog.manage', 'help_center.view', 'help_center.manage', 'adsupport.view', 'adsupport.manage']), 'admin');
 
         $this->get(route($createRoute))
             ->assertOk()

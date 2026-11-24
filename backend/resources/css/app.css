@@ -292,3 +292,13 @@ html[dir="rtl"] #marketer-content {
 ::-webkit-scrollbar-thumb:hover {
     background-color: #52525b; /* zinc-600 */
 }
+
+/*
+ * Arabic is a cursive script: any letter-spacing pulls the joined letters apart and the
+ * word renders as scattered, disconnected glyphs (client report, point 24 — "تصميم مرن").
+ * Tracking utilities are a Latin-typography device, so they are neutralised for Arabic text
+ * in every panel. Unlayered on purpose so it wins over the Tailwind utilities layer.
+ */
+[class*="tracking-"]:lang(ar) {
+    letter-spacing: normal;
+}

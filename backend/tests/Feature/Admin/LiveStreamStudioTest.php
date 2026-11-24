@@ -16,7 +16,7 @@ class LiveStreamStudioTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function admin(array $perms = ['pages.view', 'pages.manage']): Admin
+    private function admin(array $perms = ['live_streams.view', 'live_streams.manage']): Admin
     {
         Permission::firstOrCreate(['name' => 'vendors.assigned_only', 'guard_name' => 'admin']);
         foreach ($perms as $p) {

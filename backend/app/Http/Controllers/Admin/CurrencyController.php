@@ -110,7 +110,7 @@ class CurrencyController extends Controller
     public function updateRate(Request $request, string $code): JsonResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('settings.edit'), 403);
+        abort_unless($admin->hasPermissionTo('currencies.manage'), 403);
 
         $data = $request->validate([
             'rate' => ['required', 'numeric', 'min:0.000001'],
@@ -200,7 +200,7 @@ class CurrencyController extends Controller
     public function refreshRates(): JsonResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('settings.edit'), 403);
+        abort_unless($admin->hasPermissionTo('currencies.manage'), 403);
 
         UpdateExchangeRatesJob::dispatch();
 

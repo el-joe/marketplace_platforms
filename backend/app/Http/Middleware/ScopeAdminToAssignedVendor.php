@@ -15,6 +15,15 @@ class ScopeAdminToAssignedVendor
     {
         $admin = Auth::guard('admin')->user();
 
+        // A super admin is never scoped: the vendors.assigned_only restriction and
+        // acquisition-agent visibility only narrow down regular staff accounts.
+        if ($admin && $admin->hasRole('super_admin', 'admin')) {
+            $request->attributes->set('is_scoped_admin', false);
+            $request->attributes->set('scoped_vendor_ids', null);
+
+            return $next($request);
+        }
+
         $acquisitionVendorIds = $admin
             ? VendorAcquisitionCommission::where('admin_id', $admin->id)
                 ->where('status', 'active')
@@ -28,7 +37,7 @@ class ScopeAdminToAssignedVendor
 
             $request->attributes->set('is_scoped_admin', true);
             $request->attributes->set('scoped_vendor_ids', $vendorIds);
-        } elseif ($admin && !empty($acquisitionVendorIds)) {
+        } elseif ($admin && ! empty($acquisitionVendorIds)) {
             // Not a scoped account-manager admin, but has acquisition commissions:
             // grant view access to just those vendors.
             $request->attributes->set('is_scoped_admin', true);

@@ -11,6 +11,7 @@ use App\Models\AdminLoginSession;
 use App\Models\Country;
 use App\Services\ActivityLoggerService;
 use App\Services\Auth\CredentialDeliveryService;
+use App\Support\PermissionLabels;
 use App\Support\PortalPermissions;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
@@ -100,8 +101,8 @@ class AdminController extends Controller
                 'name' => e($row->name),
                 'email' => e($row->email),
                 'phone' => e($row->phone ?? ''),
-                'country_name' => e($row->country?->name_en ?? '—'),
-                'roles' => $row->getRoleNames()->toArray(),
+                'country_name' => e($row->country ? localized($row->country) : '—'),
+                'roles' => $row->getRoleNames()->map(fn (string $role) => e(PermissionLabels::role($role)))->values()->toArray(),
                 'status' => $row->status?->value,
                 'last_login_at' => $row->last_login_at,
                 'created_at' => $row->created_at,

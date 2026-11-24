@@ -1,6 +1,7 @@
 import { fetchInstance } from "@/src/lib/utils";
 import resolveCookie from "@/src/helpers/resolveCookie";
 import type { ApiEnvelope, ActiveSessionsResponse } from "../helpers/types";
+import type { ChangePasswordFormValues } from "../helpers/change-password.schema";
 
 /** Feature-only: permanently deletes the authenticated customer's account. DELETE /profile */
 export async function deleteProfile(): Promise<void> {
@@ -32,5 +33,18 @@ export async function revokeAllDevices(): Promise<void> {
   await fetchInstance<unknown>("/security/sessions/all", {
     method: "DELETE",
     body: JSON.stringify({ current_device_token: currentDeviceToken }),
+  });
+}
+
+/**
+ * Feature-only: POST /security/change-password. On success the API invalidates every
+ * token of this customer (this device included), so the caller must sign out afterwards.
+ */
+export async function changePassword(
+  values: ChangePasswordFormValues,
+): Promise<void> {
+  await fetchInstance<unknown>("/security/change-password", {
+    method: "POST",
+    body: JSON.stringify(values),
   });
 }

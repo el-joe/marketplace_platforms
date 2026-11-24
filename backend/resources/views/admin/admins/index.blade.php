@@ -103,13 +103,13 @@
                 'type' => 'select',
                 'name' => 'role',
                 'label' => __('admin.admins_section.role'),
-                'options' => ['' => __('admin.admins_section.all_roles')] + $roles->pluck('name', 'name')->toArray(),
+                'options' => ['' => __('admin.admins_section.all_roles')] + $roles->pluck('name', 'name')->map(fn ($role) => \App\Support\PermissionLabels::role($role))->toArray(),
             ],
             [
                 'type' => 'select',
                 'name' => 'country_id',
                 'label' => __('admin.admins_section.country_column'),
-                'options' => ['' => __('admin.admins_section.all_countries')] + $countries->pluck('name_en', 'id')->toArray(),
+                'options' => ['' => __('admin.admins_section.all_countries')] + $countries->mapWithKeys(fn ($country) => [$country->id => localized($country)])->toArray(),
             ],
         ];
     @endphp

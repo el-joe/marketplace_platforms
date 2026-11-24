@@ -73,10 +73,26 @@ class UpdateWarehouseRequest extends FormRequest
                 'default_max_quantity' => null,
                 'default_max_capacity_m3' => null,
             ]);
+        } elseif ($this->isDefaultLimitLeftBlank()) {
+            // A limit type with no value means "no default limit", not a validation error.
+            $this->merge([
+                'default_limit_type' => null,
+                'default_max_quantity' => null,
+                'default_max_capacity_m3' => null,
+            ]);
         } elseif ($this->input('default_limit_type') === 'quantity') {
             $this->merge(['default_max_capacity_m3' => null]);
         } elseif ($this->input('default_limit_type') === 'capacity') {
             $this->merge(['default_max_quantity' => null]);
         }
+    }
+
+    private function isDefaultLimitLeftBlank(): bool
+    {
+        return match ($this->input('default_limit_type')) {
+            'quantity' => ! $this->filled('default_max_quantity'),
+            'capacity' => ! $this->filled('default_max_capacity_m3'),
+            default => false,
+        };
     }
 }

@@ -58,6 +58,14 @@ return [
         'app_contexts' => 'Content — App Contexts',
         'static_pages' => 'Content — Static Pages',
         'faqs' => 'Content — FAQs',
+        'blog' => 'Content — Blog',
+        'help_center' => 'Content — Help Center',
+        'adsupport' => 'Content — Ad Support Center',
+        'live_streams' => 'Content — Live Streams',
+        'cities' => 'System — Cities',
+        'currencies' => 'System — Currencies',
+        'newsletter' => 'Marketing — Newsletter',
+        'footer_settings' => 'Content — Footer Settings',
         'portal_content' => 'Seller Portal — Content',
         'portal_analytics' => 'Seller Portal — Analytics',
         'customers' => 'Customers',
@@ -146,6 +154,17 @@ return [
      * permissions whose action part alone is not descriptive. Anything else falls back to
      * the shared `actions` above.
      */
+    'roles' => [
+        'super_admin' => 'Super Admin',
+        'operations_admin' => 'Operations Admin',
+        'finance_admin' => 'Finance Admin',
+        'marketing_admin' => 'Marketing Admin',
+        'vendor_relations_admin' => 'Vendor Relations Admin',
+        'vendor_owner' => 'Vendor Owner',
+        'vendor_manager' => 'Vendor Manager',
+        'vendor_staff' => 'Vendor Staff',
+    ],
+
     'guards' => [
         'vendor' => [
             'groups' => [

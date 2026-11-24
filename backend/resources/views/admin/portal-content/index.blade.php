@@ -17,6 +17,8 @@
         </div>
     @endif
 
+    <x-table.client-search target="#portal-content-pages" />
+
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="table-responsive">
             <table class="min-w-full divide-y divide-gray-200">
@@ -27,7 +29,7 @@
                         <th class="px-4 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('admin.portal_content.edit_by_country') }}</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody id="portal-content-pages" class="divide-y divide-gray-100">
                     @forelse($pages as $page)
                         @php($label = $config[$page->page_key]['label_'.$locale] ?? null)
                         <tr class="hover:bg-gray-50">
@@ -50,7 +52,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr>
+                        <tr data-client-search-ignore>
                             <td colspan="3" class="px-4 py-8 text-center text-sm text-gray-400">{{ __('admin.portal_content.empty_state') }}</td>
                         </tr>
                     @endforelse

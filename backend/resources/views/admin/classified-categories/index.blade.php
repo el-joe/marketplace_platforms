@@ -22,6 +22,17 @@
         </button>
     </div>
 
+    {{-- Travel & Tourism is a separate account type that the portal shows under the Classifieds card --}}
+    <div class="flex items-start gap-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+        <x-heroicon name="information-circle" class="w-5 h-5 shrink-0 mt-0.5" />
+        <p>
+            {{ __('admin.classifieds.travel_option_note') }}
+            <a href="{{ route('admin.travel.agencies.index') }}" class="font-medium underline hover:no-underline">{{ __('admin.classifieds.travel_option_link') }}</a>
+        </p>
+    </div>
+
+    <x-table.client-search target="#category-tree" />
+
     {{-- Tree table --}}
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div class="table-responsive">

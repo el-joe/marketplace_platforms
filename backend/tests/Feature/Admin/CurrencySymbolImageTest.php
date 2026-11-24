@@ -17,10 +17,10 @@ class CurrencySymbolImageTest extends TestCase
     private function admin(): Admin
     {
         Permission::firstOrCreate(['name' => 'vendors.assigned_only', 'guard_name' => 'admin']);
-        Permission::firstOrCreate(['name' => 'settings.edit', 'guard_name' => 'admin']);
+        Permission::firstOrCreate(['name' => 'currencies.manage', 'guard_name' => 'admin']);
         $a = Admin::factory()->create();
-        Permission::firstOrCreate(['name' => 'countries.view', 'guard_name' => 'admin']);
-        $a->givePermissionTo(['settings.edit', 'countries.view']);
+        Permission::firstOrCreate(['name' => 'currencies.view', 'guard_name' => 'admin']);
+        $a->givePermissionTo(['currencies.manage', 'currencies.view']);
 
         return $a;
     }

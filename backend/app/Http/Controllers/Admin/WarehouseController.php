@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\InventoryMovementType;
 use App\Enums\InventoryTransferStatus;
+use App\Enums\VendorGlobalStatus;
 use App\Enums\WarehouseType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreTransferRequest;
@@ -30,6 +31,7 @@ use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -379,7 +381,7 @@ class WarehouseController extends Controller
         abort_unless($admin->hasPermissionTo('warehouses.view'), 403);
 
         $countries = Bilingual::options(Country::where('is_active', true));
-        $vendors = Vendor::where('global_status', 'approved')->orderBy('store_name')->pluck('store_name', 'id');
+        $vendors = $this->ownerVendorOptions();
         $admins = Admin::orderBy('name')->pluck('name', 'id');
         $currencies = Currency::where('is_active', true)->orderBy('code')->pluck('code', 'code');
 
@@ -405,11 +407,31 @@ class WarehouseController extends Controller
         abort_unless($admin->hasPermissionTo('warehouses.view'), 403);
 
         $countries = Bilingual::options(Country::where('is_active', true));
-        $vendors = Vendor::where('global_status', 'approved')->orderBy('store_name')->pluck('store_name', 'id');
+        $vendors = $this->ownerVendorOptions($warehouse->owner_vendor_id);
         $admins = Admin::orderBy('name')->pluck('name', 'id');
         $currencies = Currency::where('is_active', true)->orderBy('code')->pluck('code', 'code');
 
         return view('admin.warehouses.edit', compact('warehouse', 'countries', 'vendors', 'admins', 'currencies'));
+    }
+
+    /**
+     * Vendors selectable as a warehouse owner: every active vendor, plus the
+     * current owner (even if no longer active) so an edit never drops it.
+     *
+     * @return Collection<string, string>
+     */
+    private function ownerVendorOptions(?string $currentOwnerId = null): Collection
+    {
+        return Vendor::query()
+            ->where(function ($query) use ($currentOwnerId) {
+                $query->where('global_status', VendorGlobalStatus::Active->value);
+
+                if ($currentOwnerId !== null) {
+                    $query->orWhere('id', $currentOwnerId);
+                }
+            })
+            ->orderBy('store_name')
+            ->pluck('store_name', 'id');
     }
 
     public function update(UpdateWarehouseRequest $request, Warehouse $warehouse): RedirectResponse
@@ -630,7 +652,7 @@ class WarehouseController extends Controller
         abort_unless($admin->hasPermissionTo('warehouses.view'), 403);
 
         $warehouses = Warehouse::where('is_active', true)->orderBy('name')->pluck('name', 'id');
-        $vendors = Vendor::where('global_status', 'approved')->orderBy('store_name')->pluck('store_name', 'id');
+        $vendors = $this->ownerVendorOptions();
 
         return view('admin.warehouses.transfers.create', compact('warehouses', 'vendors'));
     }
